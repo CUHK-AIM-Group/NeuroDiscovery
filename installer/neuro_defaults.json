@@ -1,0 +1,30 @@
+{
+  "_comment": "Default template written by config_wizard.py into neuroclaw_environment.json. Edit before running the wizard to pre-fill values.",
+  "setup_type": "conda",
+  "python_path": null,
+  "conda_env": "neuroclaw",
+  "docker_config": null,
+  "cuda": {
+    "version": null,
+    "torch_build": "cpu-only",
+    "device": "cpu"
+  },
+  "toolchain": {
+    "fsl_home": null,
+    "freesurfer_home": null,
+    "dcm2niix": null,
+    "matlab_path": null
+  },
+  "llm_backend": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "api_key_env": "OPENAI_API_KEY",
+    "base_url": null,
+    "local_endpoint": null
+  },
+  "neuro_defaults": {
+    "bids_root": "~/data/bids",
+    "output_root": "~/data/outputs",
+    "n_jobs": 4
+  }
+}

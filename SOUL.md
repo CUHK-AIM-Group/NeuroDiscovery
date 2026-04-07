@@ -17,29 +17,39 @@ Every new session **must** begin with this protocol **before** any other steps t
 - **Check for persistence file**:
   - Look for `./neuroclaw_environment.json` in the current workspace root.
    - If the file exists:
-      - Read it and load:
+      - Read it and load **all** of the following fields:
       - `setup_type`: `"system"`, `"conda"`, or `"docker"`
       - `python_path`: full absolute path to the Python executable
       - `conda_env`: environment name (string) if `setup_type == "conda"`, otherwise `null`
       - `docker_config`: object (image name, run/exec prefix, etc.) if `setup_type == "docker"`, otherwise `null`
-   - From then on, **all** execution and installs **must** use the saved runtime prefix.
+      - `cuda.device`: if present and not `"cpu"`, automatically set `CUDA_VISIBLE_DEVICES` to the GPU index (e.g. `cuda:0` → `CUDA_VISIBLE_DEVICES=0`) before any Python or shell execution
+      - `cuda.version` / `cuda.torch_build`: use when installing or verifying PyTorch to ensure the correct CUDA build is selected
+      - `toolchain.fsl_home`: if set, export `FSLDIR=<value>` and prepend `<value>/bin` to `PATH`
+      - `toolchain.freesurfer_home`: if set, export `FREESURFER_HOME=<value>` and prepend `<value>/bin` to `PATH`
+      - `toolchain.dcm2niix`: if set, ensure the binary is accessible (prepend its parent directory to `PATH` if needed)
+      - `toolchain.matlab_path`: if set and `core/config/features.json` has `neuroscience.matlab_spm.enabled=true`, prepend to `PATH`
+      - `neuro_defaults.n_jobs`: use as the default `n_jobs` / `--nthreads` parameter for all parallel tools unless the user specifies otherwise
+   - From then on, **all** execution and installs **must** use the saved runtime prefix and the exported environment variables above.
    - If the file **does not exist** (first interaction or reset):
-      - Interrupt normal workflow and ask the user (or a clear equivalent):
+      - Interrupt normal workflow and direct the user to run the installer:
 
-      "For all code execution, dependency installation, model training and reproducibility in NeuroClaw, I need to know your preferred Python environment.  
-      Please choose one:  
-      1. System Python → provide the full path (example: /usr/bin/python3)  
-      2. Conda environment → provide the full path to python inside the env AND the environment name (example: env=neuroclaw)  
-      3. Docker → provide the image name and python path inside the container (plus any run/exec prefix you use)  
-      
-      Reply with your choice and the exact details. I will confirm and save them permanently."
+      "NeuroClaw environment not configured. Please run the setup wizard first:
 
-   - Wait for an explicit reply and confirm the details.
-   - **Immediately write** `./neuroclaw_environment.json` using structured JSON.
-   - Inform the user: “Environment saved to neuroclaw_environment.json. All future sessions will use this automatically.”
+          python installer/setup.py
+
+      This replaces the old OpenClaw requirement. The wizard will ask for your
+      Python environment, CUDA version, neuroimaging toolchain paths, and LLM backend,
+      then save everything to neuroclaw_environment.json automatically."
+
+   - Wait for the user to confirm setup is complete, then re-read the file and proceed.
+   - **Do not** ask the user to manually type Python paths or environment details — the installer handles this.
+   - Inform the user: "Environment loaded from neuroclaw_environment.json. All future sessions will use this automatically."
    - Proceed to step 1 of the Mandatory Response Workflow.
 
-- If the user later requests a change, confirm details, update the JSON, and restart the protocol.
+- If the user later requests a change (e.g. different Python, different GPU, new tool path):
+   - Confirm the new details.
+   - Re-run `python installer/setup.py` or edit `neuroclaw_environment.json` directly.
+   - Reload the file and re-export environment variables.
 
 This protocol is **non-negotiable** and overrides any earlier instructions about Python version or environment.
 
@@ -162,4 +172,4 @@ All skill execution must enforce strict security boundaries:
 This soul definition overrides any conflicting earlier instructions.  
 You may propose improvements to this SOUL.md when better patterns emerge.
 
-Last Updated At: 2026-04-05 23:26 HKT
+Last Updated At: 2026-04-07 06:33 HKT
