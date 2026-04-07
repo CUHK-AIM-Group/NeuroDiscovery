@@ -1,0 +1,107 @@
+{
+  "_comment": "NeuroClaw feature toggles. Set 'enabled: false' to disable a feature without removing its code.",
+  "core": {
+    "agent_loop": {
+      "enabled": true,
+      "description": "LLM conversation loop and tool-call dispatcher"
+    },
+    "skill_loader": {
+      "enabled": true,
+      "description": "Scan skills/*/SKILL.md and register skills"
+    },
+    "tool_runtime": {
+      "enabled": true,
+      "description": "handler.js / Python handler execution sandbox"
+    },
+    "session_manager": {
+      "enabled": true,
+      "description": "Session persistence and context-window compression"
+    },
+    "tmux_shell": {
+      "enabled": true,
+      "description": "claw-shell tmux-based safe shell execution"
+    },
+    "web_ui": {
+      "enabled": true,
+      "description": "Browser-based chat GUI served at http://localhost:7080 (requires fastapi + uvicorn)"
+    }
+  },
+  "llm_backends": {
+    "openai": {
+      "enabled": true,
+      "description": "OpenAI API (GPT-4o, GPT-4-turbo, \u2026)"
+    },
+    "anthropic": {
+      "enabled": true,
+      "description": "Anthropic API (Claude 3.x, \u2026)"
+    },
+    "local_ollama": {
+      "enabled": true,
+      "description": "Local model via Ollama HTTP endpoint"
+    },
+    "local_llamacpp": {
+      "enabled": true,
+      "description": "Local model via llama.cpp server"
+    }
+  },
+  "connectors": {
+    "whatsapp": {
+      "enabled": false,
+      "description": "WhatsApp messaging integration \u2014 not needed for neuroscience"
+    },
+    "telegram": {
+      "enabled": false,
+      "description": "Telegram bot integration \u2014 not needed for neuroscience"
+    },
+    "slack": {
+      "enabled": false,
+      "description": "Slack workspace integration \u2014 not needed for neuroscience"
+    },
+    "calendar": {
+      "enabled": false,
+      "description": "Generic calendar / task-reminder integration"
+    },
+    "ecommerce": {
+      "enabled": false,
+      "description": "E-commerce / customer-service skills"
+    },
+    "saas_auth": {
+      "enabled": false,
+      "description": "Multi-tenant SaaS authentication module"
+    }
+  },
+  "neuroscience": {
+    "fsl": {
+      "enabled": true,
+      "description": "FSL structural/functional/diffusion tools"
+    },
+    "freesurfer": {
+      "enabled": true,
+      "description": "FreeSurfer MRI segmentation and parcellation"
+    },
+    "fmriprep": {
+      "enabled": true,
+      "description": "fMRIPrep preprocessing pipeline"
+    },
+    "qsiprep": {
+      "enabled": true,
+      "description": "QSIPrep diffusion MRI preprocessing"
+    },
+    "mne": {
+      "enabled": true,
+      "description": "MNE-Python EEG/MEG analysis"
+    },
+    "dcm2niix": {
+      "enabled": true,
+      "description": "DICOM to NIfTI conversion (dcm2niix)"
+    },
+    "docker_containers": {
+      "enabled": true,
+      "description": "Docker-based tool containers (fMRIPrep, qsiPrep)"
+    },
+    "matlab_spm": {
+      "enabled": true,
+      "description": "MATLAB / SPM integration (disabled by default; enable if MATLAB is licensed)"
+    }
+  }
+}

@@ -105,4 +105,30 @@
 
 ---
 
+## Environment Configuration
+
+> This section is auto-populated by `installer/setup.py`. Update it whenever you re-run the installer or change your environment.
+
+- **Setup type**: _(update after running installer — e.g. `conda`)_
+- **Conda environment**: _(e.g. `neuroclaw`)_
+- **Python path**: _(e.g. `/opt/conda/envs/neuroclaw/bin/python`)_
+- **CUDA version**: _(e.g. `12.1`; or `cpu-only` if no GPU)_
+- **PyTorch build**: _(e.g. `cu121`; or `cpu-only`)_
+- **Default device**: _(e.g. `cuda:0`; or `cpu`)_
+- **FSL home** (`FSLDIR`): _(e.g. `/usr/local/fsl`; or `null` if not installed)_
+- **FreeSurfer home** (`FREESURFER_HOME`): _(e.g. `/usr/local/freesurfer`; or `null`)_
+- **dcm2niix path**: _(e.g. `/usr/local/bin/dcm2niix`; or `null`)_
+- **MATLAB path**: _(e.g. `/usr/local/MATLAB/R2024a/bin/matlab`; or `null`)_
+- **LLM provider**: _(e.g. `openai` / `anthropic` / `local`)_
+- **LLM model**: _(e.g. `gpt-4o`)_
+- **LLM API key env var**: _(e.g. `OPENAI_API_KEY` — the variable name, not the value)_
+- **Default BIDS root**: _(e.g. `~/data/bids`)_
+- **Default output root**: _(e.g. `~/data/outputs`)_
+- **Default n_jobs**: _(e.g. `4`)_
+
+The authoritative values are stored in `neuroclaw_environment.json` at the workspace root.
+Read that file (not this section) for programmatic access.
+
+---
+
 Update this file whenever new preferences or context are provided.
