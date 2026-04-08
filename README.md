@@ -30,11 +30,17 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 ## 🚀 Updates
 
+- **[2026.04.08]**: We have completed the dataset part of NeuroBench; our NeuroClaw now runs independently and offers a Web UI.
 - **[2026.04.06]**: We begin constructing NeuroBench for multi-agent framework evaluation.
 - **[2026.04.02]**: v0.1 released with complete NeuroClaw framework and core functionality.
 
 <a id="key-features"></a>
 ## ✨ Key Features
+
+<div align="center">
+  <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
+</div>
+
 ### 🔄 Dataset-First Architecture
 Organize capabilities around "which dataset to process" instead of "which tool to call":
 - **ADNI Dataset** → Integrated ADNI standardized processing pipeline
@@ -225,6 +231,12 @@ NeuroClaw/
 
 <a id="skill-quick-reference"></a>
 ## 🛠️ Skill Quick Reference
+
+<div align="center">
+  <img src="materials/skill-helper.png" alt="Skill Helper Guide" style="width: 80%; max-width: 100%;" />
+</div>
+
+> **Tip**: Click the ℹ️ icon on any skill card in the Web UI to view expanded documentation, usage examples, and recent execution logs.
 
 ### Base Layer
 | Skill | Function | Status |

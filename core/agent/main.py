@@ -28,13 +28,16 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
 ENV_FILE = REPO_ROOT / "neuroclaw_environment.json"
 FEATURES_FILE = REPO_ROOT / "core" / "config" / "features.json"
+AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 
 # Ensure the repo root is on sys.path so that `from core.X import Y` works
 # regardless of the working directory when main.py is invoked directly.
@@ -276,6 +279,127 @@ def _build_local_client(cfg: dict):
     }
 
 
+def _looks_dangerous_shell_command(command: str) -> bool:
+    """Return True for obviously destructive shell commands."""
+    lower = f" {str(command or '').lower()} "
+    blocked = [
+        " rm -rf ",
+        " mkfs ",
+        " shutdown ",
+        " reboot ",
+        " poweroff ",
+        " dd if=",
+        " :(){",
+    ]
+    return any(token in lower for token in blocked)
+
+
+def _write_agent_shell_status(command: str, cwd: Path, pid: int) -> None:
+    payload = {
+        "source": "agent_shell",
+        "command": command,
+        "started_at": int(time.time() * 1000),
+        "pid": int(pid),
+        "cwd": str(cwd),
+    }
+    try:
+        AGENT_SHELL_STATUS_FILE.write_text(
+            json.dumps(payload, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
+def _clear_agent_shell_status() -> None:
+    try:
+        if AGENT_SHELL_STATUS_FILE.exists():
+            AGENT_SHELL_STATUS_FILE.unlink()
+    except Exception:
+        pass
+
+
+def _run_shell_command(
+    command: str,
+    cwd: Path,
+    timeout_sec: int = 180,
+) -> dict[str, Any]:
+    """
+    Run command in user's default shell while inheriting process environment.
+
+    The command runs with the same env vars exported by load_environment(),
+    including FSLDIR/FREESURFER_HOME/CUDA_VISIBLE_DEVICES.
+    """
+    cmd = str(command or "").strip()
+    if not cmd:
+        return {"success": False, "error": "empty command"}
+
+    if _looks_dangerous_shell_command(cmd):
+        return {
+            "success": False,
+            "error": "blocked_dangerous_command",
+            "message": "Command blocked by safety policy. Ask user for explicit confirmation.",
+        }
+
+    shell_path = os.environ.get("SHELL") or "/bin/bash"
+    shell_name = Path(shell_path).name.lower()
+    if shell_name in {"bash", "zsh", "sh", "dash", "ksh", "fish"}:
+        argv = [shell_path, "-lc", cmd]
+    else:
+        argv = [shell_path, "-c", cmd]
+
+    env = os.environ.copy()
+    proc: subprocess.Popen[str] | None = None
+    try:
+        proc = subprocess.Popen(
+            argv,
+            cwd=str(cwd),
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        _write_agent_shell_status(cmd, cwd, proc.pid)
+        stdout, stderr = proc.communicate(timeout=max(1, int(timeout_sec)))
+        return {
+            "success": proc.returncode == 0,
+            "returncode": proc.returncode,
+            "stdout": stdout,
+            "stderr": stderr,
+            "shell": shell_path,
+            "cwd": str(cwd),
+        }
+    except subprocess.TimeoutExpired as exc:
+        if proc is not None:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+            try:
+                _stdout, _stderr = proc.communicate(timeout=5)
+            except Exception:
+                _stdout, _stderr = "", ""
+        else:
+            _stdout, _stderr = "", ""
+        return {
+            "success": False,
+            "error": f"timeout_after_{int(timeout_sec)}s",
+            "stdout": _stdout or exc.stdout or "",
+            "stderr": _stderr or exc.stderr or "",
+            "shell": shell_path,
+            "cwd": str(cwd),
+        }
+    except Exception as exc:  # pragma: no cover
+        return {
+            "success": False,
+            "error": str(exc),
+            "shell": shell_path,
+            "cwd": str(cwd),
+        }
+    finally:
+        _clear_agent_shell_status()
+
+
 # ── Agent session ──────────────────────────────────────────────────────────────
 
 class AgentSession:
@@ -363,10 +487,7 @@ class AgentSession:
             return "[Agent: LLM backend not configured]"
 
         if provider == "openai":
-            resp = self._llm.chat.completions.create(
-                model=model, messages=self.history
-            )
-            return resp.choices[0].message.content or ""
+            return self._chat_openai_with_tools(model)
 
         if provider == "anthropic":
             system_msg = next(
@@ -398,6 +519,92 @@ class AgentSession:
             return data.get("message", {}).get("content", "")
 
         return "[Agent: LLM backend not configured]"
+
+    def _chat_openai_with_tools(self, model: str) -> str:
+        """OpenAI chat with a minimal native shell tool-call loop."""
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_shell_command",
+                    "description": (
+                        "Run a shell command in the local workspace using default shell "
+                        "and inherited environment variables."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "command": {
+                                "type": "string",
+                                "description": "Exact shell command to execute.",
+                            },
+                            "timeout_sec": {
+                                "type": "integer",
+                                "description": "Timeout in seconds (default 180).",
+                            },
+                        },
+                        "required": ["command"],
+                    },
+                },
+            }
+        ]
+
+        messages: list[dict[str, Any]] = list(self.history)
+        for _ in range(4):
+            resp = self._llm.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+            )
+            message = resp.choices[0].message
+            tool_calls = list(getattr(message, "tool_calls", []) or [])
+
+            if not tool_calls:
+                return message.content or ""
+
+            assistant_tool_msg = {
+                "role": "assistant",
+                "content": message.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in tool_calls
+                ],
+            }
+            messages.append(assistant_tool_msg)
+
+            for tc in tool_calls:
+                name = tc.function.name
+                try:
+                    args = json.loads(tc.function.arguments or "{}")
+                except Exception:
+                    args = {}
+
+                if name == "run_shell_command":
+                    result = _run_shell_command(
+                        command=str(args.get("command", "")),
+                        cwd=self.workspace,
+                        timeout_sec=int(args.get("timeout_sec", 180)),
+                    )
+                else:
+                    result = {"success": False, "error": f"unknown tool: {name}"}
+
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(result, ensure_ascii=False),
+                    }
+                )
+
+        return "[Agent: tool-call loop reached max iterations]"
 
     def _build_system_prompt(self, skills: list[dict]) -> str:
         soul_path = self.workspace / "SOUL.md"

@@ -1,4 +1,8 @@
 const { execSync } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const STATUS_FILE = path.join("/tmp", "neuroclaw_claw_shell_status.json");
 
 function ensureSession() {
   try {
@@ -10,7 +14,27 @@ function ensureSession() {
 
 function sendCommand(cmd) {
   const escaped = cmd.replace(/"/g, '\\"');
+  const status = {
+    command: cmd,
+    started_at: Date.now(),
+    tmux_session: "claw",
+  };
+  try {
+    fs.writeFileSync(STATUS_FILE, JSON.stringify(status, null, 2), "utf8");
+  } catch {
+    // status display is best-effort only
+  }
   execSync(`tmux send-keys -t claw "${escaped}" C-m`);
+}
+
+function clearCommandStatus() {
+  try {
+    if (fs.existsSync(STATUS_FILE)) {
+      fs.unlinkSync(STATUS_FILE);
+    }
+  } catch {
+    // ignore
+  }
 }
 
 function readOutput() {
@@ -50,6 +74,19 @@ async function claw_shell_run(input) {
   await new Promise(r => setTimeout(r, 500));
 
   const output = readOutput();
+  // If tmux is back at a shell prompt, clear the transient status file.
+  try {
+    const current = execSync("tmux display-message -p -t claw '#{pane_current_command}'", { stdio: "pipe" })
+      .toString("utf8")
+      .trim()
+      .toLowerCase();
+    const shellNames = new Set(["bash", "zsh", "fish", "sh", "dash", "tmux"]);
+    if (shellNames.has(current)) {
+      clearCommandStatus();
+    }
+  } catch {
+    // keep status file if we cannot inspect tmux
+  }
   return { command, output };
 }
 
