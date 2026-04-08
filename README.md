@@ -38,7 +38,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 ## ✨ Key Features
 
 <div align="center">
-  <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
+  <img src="materials/main.png" alt="NeuroClaw Framework Overview" style="width: 95%; max-width: 100%;" />
 </div>
 
 ### 🔄 Dataset-First Architecture
@@ -129,6 +129,10 @@ Users simply specify the target dataset, and the system automatically recommends
    ```bash
    python core/agent/main.py --web --port 8080 --host 0.0.0.0
    ```
+
+<div align="center">
+  <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
+</div>
 
 ### Verify Installation
 ```bash
@@ -231,10 +235,6 @@ NeuroClaw/
 
 <a id="skill-quick-reference"></a>
 ## 🛠️ Skill Quick Reference
-
-<div align="center">
-  <img src="materials/skill-helper.png" alt="Skill Helper Guide" style="width: 80%; max-width: 100%;" />
-</div>
 
 > **Tip**: Click the ℹ️ icon on any skill card in the Web UI to view expanded documentation, usage examples, and recent execution logs.
 
