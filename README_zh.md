@@ -253,6 +253,7 @@ NeuroClaw/
 | `overleaf-skill` | Overleaf 同步与协作写作操作 | ✅ |
 | `academic-research-hub` | 多来源学术检索与论文获取 | ✅ |
 | `bids-organizer` | 原始数据组织为 BIDS 结构 | ✅ |
+| `brain-visualization` | 脑网络、脑区激活与 FreeSurfer 表面结果可视化 | ✅ |
 | `beautiful-log` | 将 User/NeuroClaw 直接对话导出为美观 HTML 日志 | ✅ |
 | `harness-core` | Harness 工程 SDK（验证、检查点、审计日志、漂移检测） | ✅ |
 
@@ -277,6 +278,7 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 | `qsiprep-tool` | qsiPrep 扩散 MRI 流水线封装 | ✅ |
 | `hcppipeline-tool` | HCP 风格处理流水线工具 | ✅ |
 | `dipy-tool` | 基于 DIPY 的扩散 MRI 处理 | ✅ |
+| `nibabel-skill` | 底层神经影像文件 I/O 与仿射感知数据访问 | ✅ |
 | `nilearn-tool` | 快速影像特征提取与解码准备 | ✅ |
 | `conn-tool` | 功能连接计算与分析 | ✅ |
 | `freesurfer-tool` | 基于 FreeSurfer 的 MRI 处理与分割 | ✅ |
@@ -288,6 +290,15 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 | `brain_gnn` | BrainGNN：用于 fMRI 分类的图神经网络 | ✅ |
 | `fm_app` | FM-APP：fMRI+sMRI 多阶段表型预测 | ✅ |
 | `neurostorm` | NeuroStorm：神经影像基础模型 | ✅ |
+| `glm` | 用于任务态 fMRI 激活分析与组水平推断的一二级 GLM | ✅ |
+| `ica` | 基于独立成分分析的静息态网络分解 | ✅ |
+| `dictlearning` | 基于字典学习的稀疏静息态网络分解 | ✅ |
+| `svm` | 基于 ROI/表格特征的经典神经影像疾病分类 | ✅ |
+| `spacenet` | 带稀疏系数图的体素级神经影像疾病分类 | ✅ |
+| `kmeans` | 基于 K-means 聚类的脑区划分 | ✅ |
+| `hierarchical` | 基于层次聚类的多尺度脑区划分 | ✅ |
+| `filtering` | 面向神经影像时序信号的时间滤波去噪 | ✅ |
+| `detrending` | 面向神经影像时序信号的时间漂移去除 | ✅ |
 
 #### Dataset
 | Skill | 功能 | 状态 |
@@ -339,5 +350,6 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 
 感谢：
 - [OpenClaw](https://github.com/openclaw/openclaw) 框架贡献者
+- [Karcen/rs-fMRI-Pipeline-Tutorial](https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial) 提供脑可视化流程与方法参考
 - 全体贡献者与用户反馈
 - 开源神经科学工具社区（MNE-Python、FreeSurfer、FSL 等）

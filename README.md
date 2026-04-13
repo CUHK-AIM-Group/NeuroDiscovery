@@ -253,6 +253,7 @@ NeuroClaw/
 | `overleaf-skill` | Overleaf sync and collaborative manuscript operations | ✅ |
 | `academic-research-hub` | Multi-source academic search and paper retrieval | ✅ |
 | `bids-organizer` | Base skill for organizing raw data into BIDS structure | ✅ |
+| `brain-visualization` | Brain network, atlas activation, and FreeSurfer surface visualization | ✅ |
 | `beautiful-log` | Export clean User/NeuroClaw dialogue into beautiful HTML logs | ✅ |
 | `harness-core` | Harness engineering SDK (verification, checkpointing, audit logging, drift detection) | ✅ |
 
@@ -277,6 +278,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `qsiprep-tool` | qsiPrep pipeline wrapper for diffusion MRI | ✅ |
 | `hcppipeline-tool` | HCP-style processing pipeline utilities | ✅ |
 | `dipy-tool` | Diffusion MRI processing via DIPY | ✅ |
+| `nibabel-skill` | Low-level neuroimaging file I/O and affine-aware data access | ✅ |
 | `nilearn-tool` | Fast neuroimaging feature extraction and decoding prep | ✅ |
 | `conn-tool` | Functional connectivity computation and analysis | ✅ |
 | `freesurfer-tool` | FreeSurfer-based MRI processing and segmentation | ✅ |
@@ -288,6 +290,15 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `brain_gnn` | BrainGNN: graph neural network for fMRI classification | ✅ |
 | `fm_app` | FM-APP: multi-stage phenotype prediction with fMRI+sMRI | ✅ |
 | `neurostorm` | NeuroStorm: neuroimaging foundation model | ✅ |
+| `glm` | Classical first-level and second-level GLM for task-fMRI activation and group inference | ✅ |
+| `ica` | Resting-state network decomposition via independent component analysis | ✅ |
+| `dictlearning` | Sparse resting-state network decomposition via dictionary learning | ✅ |
+| `svm` | Classical neuroimaging disease classification with ROI/tabular features | ✅ |
+| `spacenet` | Voxel-wise neuroimaging disease classification with sparse coefficient maps | ✅ |
+| `kmeans` | Brain parcellation via K-means clustering | ✅ |
+| `hierarchical` | Multi-scale brain parcellation via hierarchical clustering | ✅ |
+| `filtering` | Temporal filtering for neuroimaging signal denoising | ✅ |
+| `detrending` | Temporal drift removal for neuroimaging signal denoising | ✅ |
 
 #### Dataset
 | Skill | Function | Status |
@@ -339,5 +350,6 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 
 Thanks to:
 - [OpenClaw](https://github.com/openclaw/openclaw) framework contributors
+- [Karcen/rs-fMRI-Pipeline-Tutorial](https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial) for the brain visualization workflow inspiration
 - All contributors and user feedback
 - Open-source neuroscience tools community (MNE-Python, FreeSurfer, FSL, etc.)

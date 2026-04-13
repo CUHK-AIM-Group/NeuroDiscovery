@@ -13,6 +13,24 @@ It is **never called directly by the user**. It is delegated to by `fmri-skill` 
 
 **Research use only.**
 
+## Agent Reference Rule
+
+When the agent needs Nilearn-based implementation code, it should first consult the curated snippets in `skills/nilearn-tool/scripts/` instead of copying directly from long tutorial scripts with hard-coded paths.
+
+Reference snippets available:
+- `scripts/preprocess_bold_reference.py` -> dummy removal, smoothing, band-pass filtering, MNI resampling
+- `scripts/connectome_reference.py` -> atlas ROI extraction and ROI-to-ROI connectivity export
+- `scripts/zalff_summary_reference.py` -> MNI resampling, zALFF summary, atlas-level regional export
+- `scripts/task_glm_reference.py` -> first-level task GLM with design matrix and contrast maps
+- `scripts/second_level_glm_reference.py` -> group-level GLM from subject contrast maps
+- `scripts/rest_ica_reference.py` -> resting-state CanICA component extraction
+- `scripts/rest_dictlearning_reference.py` -> resting-state DictLearning component extraction
+- `scripts/svm_classifier_reference.py` -> ROI/tabular disease classification with SVM
+- `scripts/spacenet_classifier_reference.py` -> voxel-wise disease classification with SpaceNet
+- `scripts/kmeans_parcellation_reference.py` -> mask-based K-means brain parcellation
+- `scripts/hierarchical_parcellation_reference.py` -> mask-based hierarchical brain parcellation
+- `scripts/denoise_timeseries_reference.py` -> confound regression and detrending with `clean_img`
+
 ---
 
 ## Scope (What this tool does / does not do)
@@ -63,6 +81,60 @@ conn = ConnectivityMeasure(kind="correlation").fit_transform([roi_ts])[0]  # (R,
 
 ### 4) Seed-to-voxel connectivity (concept)
 - Use `NiftiSpheresMasker` for seed TS, `NiftiMasker` for voxel TS, then correlate and Fisher-z.
+
+## Curated Reference Snippets
+
+These scripts are distilled from `rs-fMRI-Pipeline-Tutorial/` and should be the preferred starting point for new code in this skill:
+
+### `scripts/preprocess_bold_reference.py`
+- Covers the Nilearn-centric part of resting-state preprocessing shown in `multimodal_brain_connectivity_pipeline.py`
+- Includes dummy-scan removal, spatial smoothing, temporal band-pass filtering, and MNI152 resampling
+
+Example:
+```bash
+python skills/nilearn-tool/scripts/preprocess_bold_reference.py \
+  --bold path/to/rest_bold.nii.gz \
+  --output fmri_output/sub-001/nilearn/preprocessed_bold_mni.nii.gz
+```
+
+### `scripts/connectome_reference.py`
+- Extracts atlas ROI time series with `NiftiLabelsMasker`
+- Computes ROI-to-ROI connectivity with `ConnectivityMeasure`
+- Exports `roi_timeseries.csv`, `connectome.npy`, and `connectome.csv`
+
+Example:
+```bash
+python skills/nilearn-tool/scripts/connectome_reference.py \
+  --bold path/to/preprocessed_bold_mni.nii.gz \
+  --atlas path/to/AAL3v1.nii \
+  --labels path/to/AAL3v1.nii.txt \
+  --output-dir fmri_output/sub-001/nilearn/connectome
+```
+
+### `scripts/zalff_summary_reference.py`
+- Adapts the regional zALFF summarization logic from `MNI152_zALFF_Brain_Region_Activation_Analysis.py`
+- Uses Nilearn resampling, cleaning, and `NiftiLabelsMasker` for atlas-level reporting
+
+Example:
+```bash
+python skills/nilearn-tool/scripts/zalff_summary_reference.py \
+  --bold path/to/rest_bold.nii.gz \
+  --atlas path/to/AAL3v1.nii \
+  --labels path/to/AAL3v1.nii.txt \
+  --mask path/to/mni_mask.nii.gz \
+  --output-dir fmri_output/sub-001/nilearn/zalff
+```
+
+### Additional model-routing snippets
+- `scripts/task_glm_reference.py` -> first-level task GLM
+- `scripts/second_level_glm_reference.py` -> second-level / group GLM
+- `scripts/rest_ica_reference.py` -> resting-state ICA decomposition
+- `scripts/rest_dictlearning_reference.py` -> resting-state DictLearning decomposition
+- `scripts/svm_classifier_reference.py` -> tabular / ROI SVM classifier
+- `scripts/spacenet_classifier_reference.py` -> voxel-wise SpaceNet classifier
+- `scripts/kmeans_parcellation_reference.py` -> K-means parcellation from masked image features
+- `scripts/hierarchical_parcellation_reference.py` -> Hierarchical parcellation from masked image features
+- `scripts/denoise_timeseries_reference.py` -> confound-aware detrending and time-series cleaning
 
 ---
 
@@ -115,6 +187,19 @@ conda install -n neuroclaw-nilearn -c conda-forge nilearn nibabel numpy scipy pa
 ## Reference
 - Nilearn documentation: https://nilearn.github.io/
 - fMRIPrep confounds interface: Nilearn `nilearn.interfaces.fmriprep`
+- Curated code snippets in this skill:
+  - `skills/nilearn-tool/scripts/preprocess_bold_reference.py`
+  - `skills/nilearn-tool/scripts/connectome_reference.py`
+  - `skills/nilearn-tool/scripts/zalff_summary_reference.py`
+  - `skills/nilearn-tool/scripts/task_glm_reference.py`
+  - `skills/nilearn-tool/scripts/second_level_glm_reference.py`
+  - `skills/nilearn-tool/scripts/rest_ica_reference.py`
+  - `skills/nilearn-tool/scripts/rest_dictlearning_reference.py`
+  - `skills/nilearn-tool/scripts/svm_classifier_reference.py`
+  - `skills/nilearn-tool/scripts/spacenet_classifier_reference.py`
+  - `skills/nilearn-tool/scripts/kmeans_parcellation_reference.py`
+  - `skills/nilearn-tool/scripts/hierarchical_parcellation_reference.py`
+  - `skills/nilearn-tool/scripts/denoise_timeseries_reference.py`
 
 ## Post-Execution Verification (Harness Integration)
 
@@ -174,5 +259,5 @@ logger.log_validation(
 ---
 
 Created At: 2026-03-26 0:54 HKT
-Last Updated At: 2026-04-05 02:03 HKT
+Last Updated At: 2026-04-14 00:26 HKT
 Author: chengwang96
