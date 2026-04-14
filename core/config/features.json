@@ -100,7 +100,7 @@
       "description": "Docker-based tool containers (fMRIPrep, qsiPrep)"
     },
     "matlab_spm": {
-      "enabled": true,
+      "enabled": false,
       "description": "MATLAB / SPM integration (disabled by default; enable if MATLAB is licensed)"
     }
   }

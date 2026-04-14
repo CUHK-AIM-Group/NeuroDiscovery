@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -38,6 +39,14 @@ AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 7080
+ATTACHMENT_MAX_FILE_BYTES = 15 * 1024 * 1024
+ATTACHMENT_MAX_EMBED_CHARS = 12000
+SUPPORTED_ATTACHMENT_EXTENSIONS = {
+    ".txt", ".md", ".markdown", ".json", ".yaml", ".yml", ".csv", ".tsv",
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".sh", ".bash", ".zsh", ".sql",
+    ".html", ".css", ".xml", ".log", ".rst", ".ini", ".toml", ".cfg",
+    ".pdf", ".docx", ".xlsx", ".pptx",
+}
 
 
 def _fallback_title_from_user_text(text: str) -> str:
@@ -240,6 +249,153 @@ def _selected_skills_context(selected_names: list[str], skills: list[dict[str, A
     return "\n\n".join(chunks)
 
 
+def _attachment_extension(filename: str) -> str:
+    return Path(str(filename or "")).suffix.lower().strip()
+
+
+def _truncate_text(text: str, max_chars: int = ATTACHMENT_MAX_EMBED_CHARS) -> tuple[str, bool]:
+    raw = str(text or "")
+    if len(raw) <= max_chars:
+        return raw, False
+    return raw[:max_chars].rstrip() + "\n[Content truncated]", True
+
+
+def _decode_text_attachment(raw: bytes) -> str:
+    for encoding in ("utf-8", "utf-8-sig", "gb18030", "latin-1"):
+        try:
+            return raw.decode(encoding)
+        except Exception:
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
+def _extract_pdf_text(raw: bytes) -> str:
+    from pypdf import PdfReader  # type: ignore
+
+    reader = PdfReader(io.BytesIO(raw))
+    chunks: list[str] = []
+    for page in reader.pages[:120]:
+        txt = (page.extract_text() or "").strip()
+        if txt:
+            chunks.append(txt)
+    return "\n\n".join(chunks)
+
+
+def _extract_docx_text(raw: bytes) -> str:
+    from docx import Document  # type: ignore
+
+    doc = Document(io.BytesIO(raw))
+    chunks: list[str] = []
+
+    for para in doc.paragraphs:
+        txt = (para.text or "").strip()
+        if txt:
+            chunks.append(txt)
+
+    for table in doc.tables:
+        for row in table.rows:
+            vals = [str(cell.text or "").strip() for cell in row.cells]
+            vals = [v for v in vals if v]
+            if vals:
+                chunks.append(" | ".join(vals))
+
+    return "\n".join(chunks)
+
+
+def _extract_xlsx_text(raw: bytes) -> str:
+    from openpyxl import load_workbook  # type: ignore
+
+    wb = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    lines: list[str] = []
+    for ws in wb.worksheets[:12]:
+        lines.append(f"[Sheet] {ws.title}")
+        row_count = 0
+        for row in ws.iter_rows(max_row=200, max_col=30, values_only=True):
+            cells = ["" if v is None else str(v).strip() for v in row]
+            if not any(cells):
+                continue
+            lines.append("\t".join(cells))
+            row_count += 1
+            if row_count >= 200:
+                lines.append("[Rows truncated]")
+                break
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _extract_pptx_text(raw: bytes) -> str:
+    from pptx import Presentation  # type: ignore
+
+    prs = Presentation(io.BytesIO(raw))
+    lines: list[str] = []
+    for idx, slide in enumerate(prs.slides[:80], start=1):
+        lines.append(f"[Slide {idx}]")
+        for shape in slide.shapes:
+            txt = ""
+            try:
+                txt = (shape.text or "").strip()  # type: ignore[attr-defined]
+            except Exception:
+                txt = ""
+            if txt:
+                lines.append(txt)
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _parse_attachment_content(filename: str, content_type: str, raw: bytes) -> dict[str, Any]:
+    ext = _attachment_extension(filename)
+    if ext not in SUPPORTED_ATTACHMENT_EXTENSIONS:
+        return {
+            "ok": False,
+            "error": (
+                f"Unsupported extension '{ext or 'unknown'}'. "
+                "Supported: " + ", ".join(sorted(SUPPORTED_ATTACHMENT_EXTENSIONS))
+            ),
+        }
+
+    if ext in {
+        ".txt", ".md", ".markdown", ".json", ".yaml", ".yml", ".csv", ".tsv",
+        ".py", ".js", ".ts", ".tsx", ".jsx", ".sh", ".bash", ".zsh", ".sql",
+        ".html", ".css", ".xml", ".log", ".rst", ".ini", ".toml", ".cfg",
+    }:
+        text = _decode_text_attachment(raw)
+    elif ext == ".pdf":
+        try:
+            text = _extract_pdf_text(raw)
+        except ImportError:
+            return {"ok": False, "error": "PDF parser missing. Install: pypdf"}
+    elif ext == ".docx":
+        try:
+            text = _extract_docx_text(raw)
+        except ImportError:
+            return {"ok": False, "error": "DOCX parser missing. Install: python-docx"}
+    elif ext == ".xlsx":
+        try:
+            text = _extract_xlsx_text(raw)
+        except ImportError:
+            return {"ok": False, "error": "XLSX parser missing. Install: openpyxl"}
+    elif ext == ".pptx":
+        try:
+            text = _extract_pptx_text(raw)
+        except ImportError:
+            return {"ok": False, "error": "PPTX parser missing. Install: python-pptx"}
+    else:
+        return {"ok": False, "error": "Unsupported file type"}
+
+    cleaned = str(text or "").strip()
+    if not cleaned:
+        return {"ok": False, "error": "No readable text found in file"}
+
+    truncated_text, truncated = _truncate_text(cleaned)
+    return {
+        "ok": True,
+        "text": truncated_text,
+        "truncated": truncated,
+        "ext": ext,
+        "content_type": content_type,
+    }
+
+
 def _normalize_skill_token(text: str) -> str:
     """Normalize a skill token for robust mention matching."""
     t = str(text or "").lower()
@@ -395,7 +551,7 @@ def create_app() -> Any:
     """Build and return the FastAPI application object."""
     _require_webdeps()
 
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect  # type: ignore
+    from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect  # type: ignore
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse  # type: ignore
     from fastapi.staticfiles import StaticFiles  # type: ignore
 
@@ -407,6 +563,7 @@ def create_app() -> Any:
         AgentSession,
         build_llm_client,
         load_environment,
+        save_environment,
     )
 
     # SkillLoader lives in a hyphenated directory (core/skill-loader/), so we
@@ -466,6 +623,50 @@ def create_app() -> Any:
             ]
         }
 
+    @app.post("/api/attachments/parse")
+    async def parse_attachments(files: list[UploadFile] = File(...)) -> Any:
+        if not files:
+            return JSONResponse({"type": "error", "message": "No files uploaded"}, status_code=400)
+
+        parsed_files: list[dict[str, Any]] = []
+        for upload in files[:24]:
+            name = str(upload.filename or "untitled")
+            content_type = str(upload.content_type or "unknown")
+            raw = await upload.read()
+            size = len(raw)
+
+            item: dict[str, Any] = {
+                "name": name,
+                "size": size,
+                "content_type": content_type,
+            }
+
+            if size > ATTACHMENT_MAX_FILE_BYTES:
+                item.update(
+                    {
+                        "ok": False,
+                        "error": (
+                            f"File too large ({size} bytes). "
+                            f"Limit is {ATTACHMENT_MAX_FILE_BYTES} bytes."
+                        ),
+                    }
+                )
+                parsed_files.append(item)
+                continue
+
+            try:
+                item.update(_parse_attachment_content(name, content_type, raw))
+            except Exception as exc:
+                item.update({"ok": False, "error": f"Parse failed: {exc}"})
+            parsed_files.append(item)
+
+        return {
+            "type": "done",
+            "files": parsed_files,
+            "max_file_bytes": ATTACHMENT_MAX_FILE_BYTES,
+            "supported_extensions": sorted(SUPPORTED_ATTACHMENT_EXTENSIONS),
+        }
+
     @app.get("/api/env")
     async def get_env() -> dict:
         """Return non-sensitive parts of the runtime environment config."""
@@ -477,10 +678,46 @@ def create_app() -> Any:
         return {
             "provider": provider,
             "model": llm.get("model", "unknown"),
+            "available_models": llm.get("available_models", []),
             "cuda_device": env.get("cuda", {}).get("device", "cpu"),
             "setup_type": env.get("setup_type", "unknown"),
             "conda_env": env.get("conda_env"),
             "api_key_present": api_key_present,
+        }
+
+    @app.post("/api/env/model")
+    async def set_model(payload: dict) -> Any:
+        """Switch current provider/model to one of the configured options."""
+        provider = str(payload.get("provider", "")).strip()
+        model = str(payload.get("model", "")).strip()
+        if not provider or not model:
+            return JSONResponse(
+                {"type": "error", "message": "provider and model are required"},
+                status_code=400,
+            )
+
+        env = load_environment()
+        llm = env.setdefault("llm_backend", {})
+        available_models = llm.get("available_models", [])
+        if not any(
+            isinstance(item, dict)
+            and str(item.get("provider", "")).strip() == provider
+            and str(item.get("model", item.get("id", item.get("name", "")))).strip() == model
+            for item in available_models
+        ):
+            return JSONResponse(
+                {"type": "error", "message": "Requested provider/model is not configured"},
+                status_code=400,
+            )
+
+        llm["provider"] = provider
+        llm["model"] = model
+        save_environment(env)
+        return {
+            "type": "done",
+            "provider": provider,
+            "model": model,
+            "available_models": llm.get("available_models", []),
         }
 
     @app.post("/api/chat")
@@ -547,7 +784,15 @@ def create_app() -> Any:
         session.history.append({"role": "user", "content": user_payload})
 
         reply = await asyncio.to_thread(session._chat)
-        return {"type": "done", "content": reply}
+        llm_cfg = session.env.get("llm_backend", {})
+        provider_used = str(llm_cfg.get("provider", "unknown"))
+        model_used = str(llm_cfg.get("model", "unknown"))
+        return {
+            "type": "done",
+            "content": reply,
+            "provider_used": provider_used,
+            "model_used": model_used,
+        }
 
     @app.post("/api/chat/title")
     async def chat_title(payload: dict) -> Any:

@@ -467,7 +467,7 @@ def _setup_neuro_defaults() -> dict:
 # ── Step 7: Web UI dependencies ────────────────────────────────────────────────
 def _setup_webui(python_path: str) -> None:
     """
-    Optionally install fastapi + uvicorn so the browser-based Web UI works.
+    Optionally install Web UI + attachment parser dependencies.
 
     Parameters
     ----------
@@ -482,25 +482,44 @@ def _setup_webui(python_path: str) -> None:
         "  http://localhost:7080  (start with: python core/agent/main.py --web)\n"
     )
 
-    # Check if fastapi and uvicorn are already available
-    _have_fastapi = bool(shutil.which("uvicorn")) or _check_importable(python_path, "fastapi")
-    if _have_fastapi:
-        _log("Web UI dependencies (fastapi, uvicorn) already installed — skipping.")
+    required_modules = ["fastapi", "uvicorn", "pypdf", "docx", "openpyxl", "pptx"]
+    if all(_check_importable(python_path, module) for module in required_modules):
+        _log(
+            "Web UI dependencies (fastapi, uvicorn, pypdf, python-docx, openpyxl, python-pptx) "
+            "already installed — skipping."
+        )
         return
 
-    if not _ask_yn("Install Web UI dependencies (fastapi + uvicorn)?", default=True):
-        _log("Skipped Web UI dependencies. Run  pip install 'fastapi[standard]' uvicorn  to install later.")
+    if not _ask_yn(
+        "Install Web UI dependencies (fastapi + uvicorn + attachment parsers)?",
+        default=True,
+    ):
+        _log(
+            "Skipped Web UI dependencies. Run  pip install 'fastapi[standard]' uvicorn "
+            "pypdf python-docx openpyxl python-pptx  to install later."
+        )
         return
 
-    cmd = [python_path, "-m", "pip", "install", "fastapi[standard]", "uvicorn"]
+    cmd = [
+        python_path,
+        "-m",
+        "pip",
+        "install",
+        "fastapi[standard]",
+        "uvicorn",
+        "pypdf",
+        "python-docx",
+        "openpyxl",
+        "python-pptx",
+    ]
     _log("Installing: " + " ".join(cmd))
     proc = subprocess.run(cmd, check=False)
     if proc.returncode == 0:
-        _log("Web UI dependencies installed successfully.")
+        _log("Web UI dependencies installed successfully (including attachment parsers).")
     else:
         _log(
             "WARNING: Web UI installation failed. Install manually with:\n"
-            "    pip install 'fastapi[standard]' uvicorn"
+            "    pip install 'fastapi[standard]' uvicorn pypdf python-docx openpyxl python-pptx"
         )
 
 

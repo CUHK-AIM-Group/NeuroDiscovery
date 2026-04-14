@@ -19,4 +19,8 @@ benchmark_results/
 Thumbs.db
 materials/CVPR_2026/neuroclaw_preprint_nature.tex
 materials/CVPR_2026/eeg_encoding_protocol_final.tex
-.vscode/settings.json
+.vscode/
+.cursor/
+output/
+benchmark-env/
+hcp_env/

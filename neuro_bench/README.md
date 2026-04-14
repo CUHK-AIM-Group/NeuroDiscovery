@@ -36,6 +36,33 @@ In practice, `task.md` is the contract for evaluation. It defines:
 - Expected outputs and naming conventions
 - Important checks to verify task completion quality
 
+## Benchmark Usage
+
+You can run NeuroClaw benchmark tasks in two ways:
+
+### Web benchmark mode
+```bash
+python core/agent/main.py --web --benchmark
+```
+
+### CLI benchmark batch mode
+```bash
+python core/agent/main.py --benchmark
+```
+
+In CLI benchmark mode, NeuroClaw will ask for:
+- the benchmark directory path
+- the model name to evaluate
+
+Then it will:
+- recursively read every `task.md` under the selected benchmark directory
+- sort tasks alphabetically by task folder name
+- execute each task in sequence without asking for intermediate confirmation
+- show progress in the terminal only
+- save one report per task to `output/<case_id>_<model_name>.md`
+
+Each report includes the solution thinking, the tools used, and the commands or code that were used or suggested.
+
 
 Example:
 ```bash

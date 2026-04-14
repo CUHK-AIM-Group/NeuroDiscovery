@@ -102,6 +102,15 @@
       border-radius: 999px;
       padding: 5px 11px;
     }
+    .model-select {
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      outline: none;
+      min-width: 180px;
+      cursor: pointer;
+    }
 
     .spacer { flex: 1; }
 
@@ -187,9 +196,13 @@
 
     .chat-actions {
       padding: 0 12px 10px;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
     }
     .new-chat-btn {
-      width: 100%;
+      width: auto;
+      flex: 1 1 0;
       border: 1px solid var(--border);
       background: var(--surface-elev);
       color: var(--text);
@@ -201,6 +214,20 @@
       transition: all var(--ease);
     }
     .new-chat-btn:hover { border-color: color-mix(in oklab, var(--accent), var(--border) 65%); transform: translateY(-1px); }
+    .clear-chat-btn {
+      width: auto;
+      flex: 1 1 0;
+      border: 1px solid color-mix(in oklab, #d64545, var(--border) 40%);
+      background: color-mix(in oklab, #d64545, transparent 92%);
+      color: color-mix(in oklab, #d64545, var(--text) 22%);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--ease);
+    }
+    .clear-chat-btn:hover { border-color: color-mix(in oklab, #d64545, var(--border) 20%); transform: translateY(-1px); }
 
     .chat-list, .skill-list {
       list-style: none;
@@ -800,7 +827,12 @@
       <img class="brand-logo" src="/materials/logo.png" alt="NeuroClaw logo">
       <div class="brand-name">NeuroClaw</div>
     </div>
-    <div class="model-badge" id="model-label">Loading model...</div>
+    <div class="model-badge">
+      <span id="model-label">Model</span>
+      <select id="model-select" class="model-select" aria-label="Select model">
+        <option value="">Loading model...</option>
+      </select>
+    </div>
     <div class="spacer"></div>
     <div class="theme-switch" role="tablist" aria-label="Theme switcher">
       <button class="theme-btn" data-theme="light" type="button">Day</button>
@@ -823,6 +855,7 @@
         <div class="section-body">
           <div class="chat-actions">
             <button class="new-chat-btn" id="new-chat-btn" type="button">+ New Chat</button>
+            <button class="clear-chat-btn" id="clear-chat-btn" type="button">Clear All Chats</button>
           </div>
           <ul class="chat-list" id="chat-list"></ul>
           <div class="empty-hint" id="chat-empty-hint" style="display:none;">No sessions yet, creating one automatically...</div>
@@ -851,8 +884,8 @@
       <div class="input-area">
         <div class="attach-list" id="attach-list"></div>
         <div class="input-row">
-          <input id="file-input" type="file" multiple hidden>
-          <button id="upload-btn" class="upload-btn" title="Upload files" type="button">📎</button>
+          <input id="file-input" type="file" accept=".txt,.md,.markdown,.json,.yaml,.yml,.csv,.tsv,.py,.js,.ts,.tsx,.jsx,.sh,.bash,.zsh,.sql,.html,.css,.xml,.log,.rst,.ini,.toml,.cfg,.pdf,.docx,.xlsx,.pptx" multiple hidden>
+          <button id="upload-btn" class="upload-btn" title="Upload supported files" type="button">📎</button>
           <textarea id="msg-input" rows="1" placeholder="Ask NeuroClaw... (Enter to send, Shift+Enter for newline)"></textarea>
           <button id="send-btn" title="Send" type="button">➤</button>
         </div>
@@ -940,11 +973,13 @@
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
   const modelLabel = document.getElementById('model-label');
+  const modelSelect = document.getElementById('model-select');
   const errorBanner = document.getElementById('error-banner');
   const chatListEl = document.getElementById('chat-list');
   const skillListEl = document.getElementById('skill-list');
   const chatEmptyHintEl = document.getElementById('chat-empty-hint');
   const newChatBtn = document.getElementById('new-chat-btn');
+  const clearChatBtn = document.getElementById('clear-chat-btn');
   const fileInputEl = document.getElementById('file-input');
   const uploadBtnEl = document.getElementById('upload-btn');
   const attachListEl = document.getElementById('attach-list');
@@ -958,8 +993,14 @@
 
   const SESSION_KEY = 'neuroclaw.web.sessions.v1';
   const PREF_KEY = 'neuroclaw.web.prefs.v1';
-  const MAX_TEXT_FILE_BYTES = 2 * 1024 * 1024;
+  const MAX_ATTACHMENT_FILE_BYTES = 15 * 1024 * 1024;
   const MAX_EMBED_CHARS = 12000;
+  const SUPPORTED_ATTACHMENT_EXTENSIONS = [
+    '.txt', '.md', '.markdown', '.json', '.yaml', '.yml', '.csv', '.tsv',
+    '.py', '.js', '.ts', '.tsx', '.jsx', '.sh', '.bash', '.zsh', '.sql',
+    '.html', '.css', '.xml', '.log', '.rst', '.ini', '.toml', '.cfg',
+    '.pdf', '.docx', '.xlsx', '.pptx',
+  ];
   const SHELL_STATUS_POLL_MS = 1000;
 
   const state = {
@@ -980,9 +1021,11 @@
       active: false,
       text: '',
       startedAt: 0,
+      sessionId: null,
       poller: null,
     },
     requestController: null,
+    availableModels: [],
   };
 
   const ASSISTANT_AVATAR_SRC = '/materials/logo.png';
@@ -1024,6 +1067,43 @@
     statusText.textContent = text;
   }
 
+  function renderModelOptions(selectedProvider, selectedModel) {
+    const items = Array.isArray(state.availableModels) ? state.availableModels : [];
+    modelSelect.innerHTML = '';
+    if (!items.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'Model unavailable';
+      modelSelect.appendChild(option);
+      modelSelect.disabled = true;
+      return;
+    }
+
+    items.forEach(item => {
+      const option = document.createElement('option');
+      option.value = JSON.stringify({ provider: item.provider, model: item.model });
+      option.textContent = item.label || `${item.provider} / ${item.model}`;
+      option.selected = item.provider === selectedProvider && item.model === selectedModel;
+      modelSelect.appendChild(option);
+    });
+    modelSelect.disabled = false;
+  }
+
+  async function switchModel(provider, model) {
+    const resp = await fetch('/api/env/model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, model }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.message || 'Unable to switch model');
+    }
+    state.availableModels = Array.isArray(data.available_models) ? data.available_models : state.availableModels;
+    renderModelOptions(data.provider, data.model);
+    setStatus('connected', `Ready · ${data.provider} / ${data.model}`);
+  }
+
   function setSendButtonMode(mode) {
     const busy = mode === 'stop';
     sendBtn.textContent = busy ? '⏹' : '➤';
@@ -1040,20 +1120,27 @@
   }
 
   function applyShellStatus(status) {
+    const wasActive = state.execution.active;
+
     if (!status || !status.active) {
       state.execution.active = false;
       state.execution.text = '';
       state.execution.startedAt = 0;
-      removeExecutionIndicator();
+      state.execution.sessionId = null;
+      syncExecutionIndicatorVisibility();
       return;
     }
 
     const newCommand = String(status.command || '').trim();
     if (newCommand) state.execution.text = newCommand;
 
+    if (!wasActive) {
+      state.execution.sessionId = state.activeSessionId || null;
+    }
+
     state.execution.active = true;
     state.execution.startedAt = Number(status.started_at || Date.now());
-    upsertExecutionIndicator(state.execution.text, state.execution.startedAt);
+    syncExecutionIndicatorVisibility();
   }
 
   async function refreshShellStatus() {
@@ -1200,6 +1287,26 @@
     saveSessions();
     renderChatList();
     renderActiveSession();
+  }
+
+  function clearAllSessions() {
+    if (!state.sessions.length) return;
+    const ok = confirm('Clear all chat history? This cannot be undone.');
+    if (!ok) return;
+
+    state.sessions = [];
+    state.activeSessionId = null;
+    state.openSessionMenuId = null;
+    state.menuPosition = null;
+    state.editingMessageId = null;
+    state.selectedSkills = [];
+    clearPendingFiles();
+    removeTypingIndicator();
+
+    createSession('New Chat');
+    renderSkills(state.skills);
+    renderPendingFiles();
+    inputEl.focus();
   }
 
   function downloadTextFile(filename, content, mimeType) {
@@ -1412,10 +1519,26 @@
 
   function addPendingFiles(fileList) {
     const incoming = Array.from(fileList || []);
+    const rejected = [];
+
     for (const file of incoming) {
+      const ext = '.' + String(file.name || '').split('.').pop().toLowerCase();
+      if (!SUPPORTED_ATTACHMENT_EXTENSIONS.includes(ext)) {
+        rejected.push(`${file.name} (unsupported type)`);
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_FILE_BYTES) {
+        rejected.push(`${file.name} (too large, max ${formatBytes(MAX_ATTACHMENT_FILE_BYTES)})`);
+        continue;
+      }
       const duplicate = state.pendingFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified);
       if (!duplicate) state.pendingFiles.push(file);
     }
+
+    if (rejected.length) {
+      showError(`Some files were skipped:\n${rejected.slice(0, 3).join('\n')}`);
+    }
+
     renderPendingFiles();
   }
 
@@ -1443,38 +1566,63 @@
 
   async function buildAttachmentText(files) {
     if (!files.length) return '';
+
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file, file.name));
+
+    let payload = null;
+    try {
+      const resp = await fetch('/api/attachments/parse', {
+        method: 'POST',
+        body: formData,
+      });
+      payload = await resp.json();
+      if (!resp.ok || payload.type === 'error') {
+        showError(payload.message || 'Attachment parser failed.');
+        return '';
+      }
+    } catch (_e) {
+      showError('Attachment parser is unavailable.');
+      return '';
+    }
+
     const blocks = [];
-    for (const file of files) {
-      const typeLabel = file.type || 'unknown';
-      if (file.size > MAX_TEXT_FILE_BYTES) {
-        blocks.push(`- ${file.name} (${formatBytes(file.size)}, ${typeLabel}): skipped because file is larger than 2 MB.`);
+    const notes = [];
+    const parsedFiles = Array.isArray(payload.files) ? payload.files : [];
+    for (const item of parsedFiles) {
+      const name = String(item.name || 'untitled');
+      const size = Number(item.size || 0);
+      const typeLabel = String(item.content_type || item.type || 'unknown');
+
+      if (!item.ok) {
+        notes.push(`- ${name} (${formatBytes(size)}, ${typeLabel}): ${String(item.error || 'unable to parse')}`);
         continue;
       }
 
-      let textContent = '';
-      try {
-        textContent = await file.text();
-      } catch (_e) {
-        blocks.push(`- ${file.name} (${formatBytes(file.size)}, ${typeLabel}): unable to read file content.`);
-        continue;
-      }
-
+      let textContent = String(item.text || '');
       if (textContent.length > MAX_EMBED_CHARS) {
         textContent = textContent.slice(0, MAX_EMBED_CHARS) + '\n[Content truncated]';
       }
 
       blocks.push([
-        `### File: ${file.name}`,
+        `### File: ${name}`,
         `Type: ${typeLabel}`,
-        `Size: ${formatBytes(file.size)}`,
+        `Size: ${formatBytes(size)}`,
         '```text',
         textContent,
         '```',
       ].join('\n'));
     }
 
+    if (!blocks.length && notes.length) {
+      showError('No readable attachment content.');
+      return '';
+    }
     if (!blocks.length) return '';
-    return ['Attached files:', ...blocks].join('\n\n');
+
+    const chunks = ['Attached files:', ...blocks];
+    if (notes.length) chunks.push('Attachment parser notes:\n' + notes.join('\n'));
+    return chunks.join('\n\n');
   }
 
   function shouldAutoGenerateTitle(session) {
@@ -1529,6 +1677,12 @@
     }
   }
 
+  function formatModelDebugLabel(modelName) {
+    const raw = String(modelName || '').trim();
+    if (!raw) return '';
+    return raw.length > 28 ? `${raw.slice(0, 25)}...` : raw;
+  }
+
   function actionIcon(name) {
     if (name === 'regen') return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.3-6.3"/><path d="M18 2v4h-4"/><path d="M21 12a9 9 0 0 1-15.3 6.3"/><path d="M6 22v-4h4"/></svg>';
     if (name === 'edit') return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h6"/><path d="M5.5 18.5 18 6a2.1 2.1 0 0 0-3-3L2.5 15.5 2 21l5.5-.5z"/></svg>';
@@ -1581,7 +1735,11 @@
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     const timeLabel = formatMessageTime(message.time);
-    wrapper.innerHTML = `<div class="avatar-col"><div class="avatar"><img src="${ASSISTANT_AVATAR_SRC}" alt="Assistant"></div><div class="msg-time">${escapeHtml(timeLabel)}</div></div>`;
+    const modelLabel = String(message.modelUsed || '').trim();
+    const modelShort = formatModelDebugLabel(modelLabel);
+    const metaLabel = modelShort ? `${timeLabel} · ${modelShort}` : timeLabel;
+    const metaTitle = modelLabel ? ` title="${escapeHtml(modelLabel)}"` : '';
+    wrapper.innerHTML = `<div class="avatar-col"><div class="avatar"><img src="${ASSISTANT_AVATAR_SRC}" alt="Assistant"></div><div class="msg-time"${metaTitle}>${escapeHtml(metaLabel)}</div></div>`;
     try {
       bubble.innerHTML = window.marked.parse(String(message.content || ''));
     } catch (_e) {
@@ -1610,6 +1768,7 @@
     const session = getActiveSession();
     if (!session || !session.messages.length) {
       welcomeEl.style.display = 'block';
+      syncExecutionIndicatorVisibility();
       scrollToBottom();
       return;
     }
@@ -1620,6 +1779,7 @@
       if (msg.role === 'user') addUserBubble(msg, i);
       if (msg.role === 'assistant') addAssistantBubble(msg, i);
     }
+    syncExecutionIndicatorVisibility();
     scrollToBottom();
   }
 
@@ -1666,6 +1826,21 @@
   function removeExecutionIndicator() {
     const el = document.getElementById('execution-indicator');
     if (el) el.remove();
+  }
+
+  function syncExecutionIndicatorVisibility() {
+    const shouldShow = Boolean(
+      state.execution.active &&
+      state.execution.sessionId &&
+      state.execution.sessionId === state.activeSessionId
+    );
+
+    if (!shouldShow) {
+      removeExecutionIndicator();
+      return;
+    }
+
+    upsertExecutionIndicator(state.execution.text, state.execution.startedAt);
   }
 
   function formatExecutionCommandForDisplay(command) {
@@ -1773,7 +1948,8 @@
         showError(data.message || 'Chat request failed');
       } else {
         const reply = String(data.content || '');
-        session.messages.push({ id: newMessageId(), role: 'assistant', content: reply, time: nowISO() });
+        const modelUsed = String(data.model_used || '').trim();
+        session.messages.push({ id: newMessageId(), role: 'assistant', content: reply, modelUsed, time: nowISO() });
 
         if (shouldAutoGenerateTitle(session)) {
           const modelTitle = await requestAutoTitle(displayText, reply);
@@ -1853,7 +2029,8 @@
         showError(data.message || 'Chat request failed');
       } else {
         const reply = String(data.content || '');
-        session.messages.push({ id: newMessageId(), role: 'assistant', content: reply, time: nowISO() });
+        const modelUsed = String(data.model_used || '').trim();
+        session.messages.push({ id: newMessageId(), role: 'assistant', content: reply, modelUsed, time: nowISO() });
         session.updatedAt = nowISO();
         state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
         saveSessions();
@@ -1962,6 +2139,10 @@
     newChatBtn.addEventListener('click', () => {
       createSession('New Chat');
       inputEl.focus();
+    });
+
+    clearChatBtn.addEventListener('click', () => {
+      clearAllSessions();
     });
 
     uploadBtnEl.addEventListener('click', () => {
@@ -2239,6 +2420,19 @@
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
     });
+
+    modelSelect.addEventListener('change', async () => {
+      if (!modelSelect.value) return;
+      try {
+        const choice = JSON.parse(modelSelect.value);
+        setStatus('working', `Switching to ${choice.provider} / ${choice.model}`);
+        await switchModel(choice.provider, choice.model);
+      } catch (err) {
+        setStatus('error', 'Model switch failed');
+        showError(err && err.message ? err.message : 'Unable to switch model.');
+        await loadEnv();
+      }
+    });
   }
 
   async function loadSkills() {
@@ -2255,7 +2449,9 @@
     try {
       const resp = await fetch('/api/env');
       const data = await resp.json();
-      modelLabel.textContent = data.provider && data.model ? `${data.provider} / ${data.model}` : 'Model unavailable';
+      modelLabel.textContent = 'Model';
+      state.availableModels = Array.isArray(data.available_models) ? data.available_models : [];
+      renderModelOptions(data.provider, data.model);
       if (data.api_key_present === false) {
         setStatus('error', 'Setup required');
         showError('LLM API key missing. Please update neuroclaw_environment.json or set env key.');
@@ -2263,7 +2459,9 @@
         setStatus('connected', 'Ready');
       }
     } catch (_e) {
-      modelLabel.textContent = 'Model unavailable';
+      modelLabel.textContent = 'Model';
+      state.availableModels = [];
+      renderModelOptions('', '');
       setStatus('error', 'Offline');
       showError('Unable to fetch runtime environment.');
     }
@@ -2271,6 +2469,7 @@
 
   function boot() {
     loadState();
+    fileInputEl.setAttribute('accept', SUPPORTED_ATTACHMENT_EXTENSIONS.join(','));
     bindEvents();
     applyTheme(state.theme);
     applySectionState();
