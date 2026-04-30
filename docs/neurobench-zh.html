@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | NeuroBench</title>
+    <meta
+      name="description"
+      content="NeuroClaw 的 NeuroBench 介绍，包括任务范围、运行方式与评分流程。"
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index-zh.html">Home</a>
+        <a href="neurobench-zh.html">NeuroBench</a>
+        <a href="faq-zh.html">FAQ</a>
+        <a href="get-started-zh.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="neurobench.html" aria-label="切换到英文">EN</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">联系我们</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero reveal faq-intro">
+        <p class="eyebrow">NeuroBench</p>
+        <h1>NeuroClaw 的 benchmark 评测页</h1>
+        <p class="lead">
+          NeuroBench 用于评估端到端神经影像工作流、复现准备度以及技能驱动执行能力。
+        </p>
+      </section>
+
+      <section class="panel reveal">
+        <h2>Benchmark Overview</h2>
+        <div class="figure-preview">
+          <img src="assets/benchmark-preview.png" alt="Benchmark overview" />
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <h2>NeuroBench 覆盖什么</h2>
+        <div class="bench-grid">
+          <article>
+            <h3>覆盖范围</h3>
+            <p>结构像、功能像、扩散像、EEG 以及多模态整合任务。</p>
+          </article>
+          <article>
+            <h3>评测维度</h3>
+            <p>规划质量、工具/技能使用合理性、命令与代码正确性、复现准备度。</p>
+          </article>
+          <article>
+            <h3>任务设计</h3>
+            <p>每个任务目录都包含一个 task.md 指令文件，明确输入、输出和检查项。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="split reveal">
+        <div>
+          <p class="eyebrow">Benchmark 运行</p>
+          <h2>如何执行任务</h2>
+          <p>
+            NeuroBench 支持基线运行和技能增强运行，可以在 Web UI 或命令行批量执行。
+          </p>
+          <ul>
+            <li><code>with-skills</code>：使用 <code>skills/</code> 中加载的技能。</li>
+            <li><code>no-skills</code>：不使用技能的基线运行。</li>
+            <li><code>--benchmark-compare-skills</code>：对同一任务同时运行两种版本。</li>
+            <li>输出会写入 <code>output/</code>。</li>
+          </ul>
+        </div>
+        <div class="code-stack">
+          <pre><code># Web benchmark 模式
+python core/agent/main.py --web --benchmark
+
+# CLI benchmark 批量运行
+python core/agent/main.py --benchmark
+
+# CLI 下的技能对照
+python core/agent/main.py --benchmark --benchmark-compare-skills</code></pre>
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <h2>评分</h2>
+        <p class="sub">
+          使用 <code>--score-benchmark</code> 可以对 <code>output/</code> 中已有报告进行打分，评分规则基于 GPT-5.4 的加权 rubric。
+        </p>
+        <div class="code-stack">
+          <pre><code>python core/agent/main.py --score-benchmark
+python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
+        </div>
+      </section>
+
+      <section class="cta reveal">
+        <h2>benchmark 工作流</h2>
+        <p>先跑任务，再对生成的报告打分，用于分析质量与效率。</p>
+        <div class="actions">
+          <a class="btn" href="get-started-zh.html">快速开始</a>
+          <a class="btn ghost" href="faq-zh.html">FAQ</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

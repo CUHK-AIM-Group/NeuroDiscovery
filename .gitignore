@@ -12,7 +12,14 @@ __pycache__/
 *.pyo
 
 # Common data/output directories (user-specific)
-benchmark_results/
+output/
+benchmark-env/
+hcp_env/
+main.tex
+UKBAnalytica_v2-main
+tools_probe.py
+docs/skill-usage-trace.md
+scripts/
 
 # OS artifacts
 .DS_Store
@@ -21,6 +28,3 @@ materials/CVPR_2026/neuroclaw_preprint_nature.tex
 materials/CVPR_2026/eeg_encoding_protocol_final.tex
 .vscode/
 .cursor/
-output/
-benchmark-env/
-hcp_env/

@@ -21,6 +21,23 @@ It strictly follows NeuroClaw hierarchical design principles:
 4. On confirmation, delegate each step via `claw-shell`.
 5. Save outputs into a clean folder structure (`smri_output/`).
 
+## Benchmark-Facing Default Mainline
+
+For benchmark-style structural MRI tasks, start from the narrowest valid anatomical mainline and only add optional branches when the prompt or inputs explicitly require them.
+
+- If the task is full structural MRI processing with no explicit T2w or FLAIR dependency:
+  - Default to `DICOM -> NIfTI if needed -> T1w mainline -> FreeSurfer recon-all -> feature/stat table export`.
+  - Keep T2w, FLAIR, WMH, HCP structural, and DICOM re-export as optional branches, not default branches.
+- If the task is only DICOM conversion:
+  - Delegate to `dcm2nii` and stop there.
+- If the task asks for quick volumetric preprocessing only:
+  - Prefer the `fsl-tool` route rather than mixing FreeSurfer and HCP options in the mainline.
+- If optional modalities or branches are missing:
+  - Mark them as skipped or blocked.
+  - Do not widen the task into unrelated structural subpipelines.
+
+Avoid listing unrelated modality-adjacent tools in the primary plan for T1-only structural benchmarks.
+
 **Research use only.**
 
 ---

@@ -10,14 +10,21 @@ Preprocessed BOLD data with ROI definitions
 Connectivity matrices (ROI-to-ROI, seed-to-voxel) and statistical maps
 
 ## Key Points
-- Load preprocessed BOLD into CONN
-- Perform seed-to-voxel functional connectivity
-- Compute ROI-to-ROI correlation matrices
-- Run psychophysiological interaction (PPI) analyses
-- Perform generalized PPI (gPPI) if required
-- Optional: Dynamic causal modeling (DCM)
-- Generate statistical maps and connectivity strength measures
-- Output results in standard formats (NIfTI, CSV, MAT)
+- Required inputs are:
+	- preprocessed BOLD
+	- ROI or atlas definitions
+	- writable output directory
+- If required inputs are missing, return:
+	- Missing required input
+- Default benchmark-facing mainline:
+	- load preprocessed BOLD into CONN
+	- compute ROI-to-ROI correlation matrices
+	- compute seed-to-voxel connectivity when seeds are provided
+	- write outputs to a deterministic benchmark output directory
+- Do not require DCM, gPPI, broad MATLAB project scaffolding, or multi-stage environment orchestration unless the task explicitly provides task-design inputs that require them.
+- Reserve PPI/gPPI for tasks with explicit conditions/onsets.
+- Generate connectivity matrices and statistical maps in standard formats (NIfTI, CSV, MAT)
+- Keep the response focused on direct connectivity analysis from already preprocessed BOLD rather than broader preprocessing or multimodal expansion.
 
 ## Evaluation Criteria
 - Task completion verified by presence of required output files

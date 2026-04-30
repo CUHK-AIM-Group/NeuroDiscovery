@@ -20,7 +20,7 @@ If any required input is missing, return:
 
 - Use FSL-compatible workflow and commands.
 - Save all generated artifacts to:
-  - benchmark_results/T33_fsl_tensor_fit/
+  - benchmark_results/T31_fsl_tensor_fit/
 - Long-running processing is allowed to run as a background job.
 
 ## Expected Output
@@ -30,6 +30,7 @@ Expected output artifact(s):
 - FA map
 - MD map
 - Principal diffusion direction outputs
+- Optional additional DTIFIT outputs such as L1/L2/L3, tensor, S0, and mode are allowed but are not required to satisfy the benchmark.
 
 Recommended metadata file:
 

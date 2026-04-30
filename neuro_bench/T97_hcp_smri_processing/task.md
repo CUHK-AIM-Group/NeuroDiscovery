@@ -4,21 +4,28 @@
 Run complete structural MRI processing pipeline on HCP data
 
 ## Inputs
-HCP structural MRI (T1w, T2w) from BIDS staging
+HCP structural MRI (T1w, T2w) from local staged inputs
 
 ## Outputs
 Structural derivatives in smri_output/
 
 ## Key Points
-- Delegate to smri-skill for multi-method processing
-- Run FSL fsl_anat: brain extraction, tissue segmentation, MNI registration
-- Run FreeSurfer recon-all: surface reconstruction, segmentation, statistics
-- Run HCP structural pipeline: PreFreeSurfer + FreeSurfer + PostFreeSurfer
+- Required inputs are:
+	- local T1w image
+	- local T2w image
+	- installed HCP Pipelines, FSL, and FreeSurfer license/environment
+- If T1w or T2w is missing, return:
+	- Missing required input
+- Use the canonical HCP structural-only mainline:
+	- PreFreeSurferPipeline.sh
+	- FreeSurferPipeline.sh
+	- PostFreeSurferPipeline.sh
+- Do not expand into generic `smri-skill` multi-method processing, fMRIPrep, functional MRI, diffusion MRI, download workflows, or multimodal orchestration.
+- Keep outputs under a deterministic benchmark structural output directory and focus on HCP structural derivatives, surfaces, and QC.
 - Generate cortical thickness maps and surface atlases
 - Compute cortical and subcortical statistics
 - Output HCP-grade surfaces (white, pial, inflated)
 - Include QC metrics and visualization
-- Save transformation matrices for multimodal registration
 
 ## Evaluation Criteria
 - Task completion verified by presence of required output files

@@ -4,7 +4,9 @@
 Run FSL randomise or FEAT group-level analysis across multiple subjects
 
 ## Inputs
-First-level cope/varcope files from multiple subjects
+First-level cope/varcope files from multiple subjects and writable output location
+
+If the required first-level inputs are missing, explicitly report `Missing required input` instead of changing the task to a different analysis type.
 
 ## Outputs
 Group-level statistical maps and contrast estimates
@@ -18,10 +20,10 @@ Group-level statistical maps and contrast estimates
 - Identify significant clusters and peaks
 - Generate group-level contrasts and parameter estimates
 - Output statistical maps in NIFTI format and MNI coordinates
+- Keep the task on the group-level inference step; do not restart subject-level preprocessing, first-level modeling, or unrelated connectivity workflows
 
 ## Evaluation Criteria
 - Task completion verified by presence of required output files
 - Output files must be in correct format (NIfTI, CSV, TSV, NPZ where applicable)
 - Statistical maps must contain valid numerical data with proper dimensions
-- Connectivity matrices must be symmetric and valid (values between -1 and 1)
 - No errors during processing, comprehensive logs generated

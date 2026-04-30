@@ -22,6 +22,27 @@ It strictly follows the NeuroClaw hierarchical design principles:
 4. On confirmation, delegate every step to the appropriate skill via `claw-shell`.
 5. After execution, save all outputs in a clean directory structure (`fmri_output/`).
 
+## Benchmark-Facing Default Mainline
+
+For benchmark-style prompts, choose the narrowest task-faithful fMRI route first and do not widen into unrelated branches just because multiple downstream tools are available.
+
+- If the prompt is task fMRI or mentions events, contrasts, design matrices, conditions, first-level, second-level, FEAT, cope, or z-stat maps:
+  - Default to `BIDS -> fMRIPrep -> first-level GLM -> group-level GLM if requested`.
+  - Keep the answer on the GLM/statistical path.
+  - Do not introduce resting-state connectivity, CONN, PPI, DCM, or EEG branches unless the prompt explicitly asks for them.
+- If the prompt is resting-state or asks for ROI time series / connectivity:
+  - Default to `BIDS -> fMRIPrep -> XCP-D or ROI/connectivity extraction`.
+  - Do not introduce task-GLM steps unless the prompt explicitly asks for task analysis.
+  - If the prompt is an ADNI-like or other raw-data resting-state benchmark, keep the answer on the narrow mainline `raw data -> minimal BIDS organization -> fMRIPrep -> resting-state ROI/connectivity outputs`.
+  - Do not expand the primary solution into EEG branches, CONN, effective connectivity, or broad multimodal orchestration unless the prompt explicitly asks for those branches.
+- If required task-fMRI inputs such as `events.tsv`, contrasts, or condition timing are missing:
+  - State `Missing required input` explicitly.
+  - Do not silently switch the task into a resting-state pipeline.
+- Do not delegate to unrelated modality skills such as EEG for fMRI-only tasks.
+- In benchmark mode, do not make environment creation, broad project scaffolding, or long installation/setup sections the center of the answer when the task is asking for the executable imaging mainline.
+
+When multiple fMRI routes are possible, prefer one explicit mainline plus a short note about blocked optional branches rather than a multi-branch menu inside the primary solution.
+
 **Research use only.**
 
 ## Quick Reference (Common fMRI Tasks – Updated 2026-03-28)

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | FAQ</title>
+    <meta
+      name="description"
+      content="Frequently asked questions about NeuroClaw, including pricing, framework and IDE compatibility, privacy, and benchmark usage."
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="neurobench.html">NeuroBench</a>
+        <a href="faq.html">FAQ</a>
+        <a href="get-started.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="faq-zh.html" aria-label="Switch to Chinese">中文</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">Contact Us</a>
+      </div>
+    </header>
+
+    <main id="faq">
+      <section class="hero reveal faq-intro">
+        <p class="eyebrow">Frequently Asked Questions</p>
+        <h1>NeuroClaw FAQ</h1>
+      </section>
+
+      <section class="panel reveal">
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary>Is NeuroClaw free to use?</summary>
+            <div class="faq-answer">
+              Yes. The NeuroClaw repository is publicly available and can be used according to the project license in the repository. You do not pay a platform fee to inspect the code or run it locally; your own compute, storage, and third-party service costs still apply.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Can NeuroClaw capabilities work with other frameworks or IDEs?</summary>
+            <div class="faq-answer">
+              NeuroClaw's core skills are compatible with platforms such as OpenClaw, Hermes, and Claude Code. In the future, we will add conversion scripts to support compatibility for all NeuroClaw capabilities.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How is my data handled?</summary>
+            <div class="faq-answer">
+              NeuroClaw runs locally unless you explicitly connect it to external services. Your datasets, files, and outputs remain under your control, and any prompts or artifacts sent to a third-party model depend on the backend you configure.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>What does the benchmark evaluate?</summary>
+            <div class="faq-answer">
+              NeuroBench evaluates executability, output validity, planning quality, tool/skill reasonableness, and reproducibility readiness. It is designed for realistic neuroimaging workflows, not just one-shot question answering.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How do I run the benchmark?</summary>
+            <div class="faq-answer">
+              Use the Web UI with <code>python core/agent/main.py --web --benchmark</code>, or run the CLI batch runner with <code>python core/agent/main.py --benchmark</code>. To compare skill-enabled and baseline runs, add <code>--benchmark-compare-skills</code>.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Can I run long sessions or multiple sessions?</summary>
+            <div class="faq-answer">
+              Yes. NeuroClaw is designed for iterative experiment loops and can sustain long-running sessions. You can run separate sessions in different terminals or browser tabs, but the actual capacity depends on your local resources and the model backend you choose.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>What does the setup wizard configure?</summary>
+            <div class="faq-answer">
+              The bundled installer guides Python environment setup, related dependencies, neuroimaging toolchain paths, LLM backend selection, default directories, and Web UI attachment support.
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel reveal faq-contact">
+        <p class="eyebrow">Still have questions?</p>
+        <h2>Contact the team</h2>
+        <p>
+          If your question is not covered here, reach out and we can clarify setup, compatibility, or benchmark usage.
+        </p>
+        <div class="actions">
+          <a class="btn" href="mailto:chengwang@link.cuhk.edu.hk">Email Us</a>
+          <a class="btn ghost" href="index.html">Back to Home</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

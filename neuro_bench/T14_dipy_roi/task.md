@@ -45,6 +45,11 @@ Expected file naming:
 
 (Any non-empty subset is acceptable, according to chosen metric subset.)
 
+Output structure rule:
+
+- Write one CSV per selected metric.
+- Do not collapse multiple metrics into a single combined CSV.
+
 CSV requirements:
 
 - Sorted by `label`

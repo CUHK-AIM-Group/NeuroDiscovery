@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | 快速开始</title>
+    <meta
+      name="description"
+      content="NeuroClaw 安装与快速使用指南，包括安装、启动、验证和 benchmark 评测方法。"
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index-zh.html">Home</a>
+        <a href="neurobench-zh.html">NeuroBench</a>
+        <a href="faq-zh.html">FAQ</a>
+        <a href="get-started-zh.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="get-started.html" aria-label="Switch to English">EN</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">Contact Us</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero reveal">
+        <p class="eyebrow">快速开始</p>
+        <h1>几步即可安装并启动 NeuroClaw</h1>
+        <p class="lead">
+          在这一页中，你可以完成 NeuroClaw 的安装、启动与验证。
+        </p>
+        <div class="actions">
+          <a class="btn" href="#install">开始安装</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw/blob/main/README_zh.md" target="_blank" rel="noreferrer">查看 README</a>
+        </div>
+      </section>
+
+      <section id="requirements" class="panel reveal">
+        <h2>前置条件</h2>
+        <div class="cards">
+          <article>
+            <h3>核心要求</h3>
+            <p>需要 Python >= 3.10 和 Git。</p>
+          </article>
+          <article>
+            <h3>可选项</h3>
+            <p>建议使用 Conda 或 Mamba 隔离环境，GPU 场景可检查 nvidia-smi 或 nvcc。</p>
+          </article>
+          <article>
+            <h3>Web UI 附件</h3>
+            <p>建议安装 pypdf、python-docx、openpyxl、python-pptx。</p>
+          </article>
+          <article>
+            <h3>安装向导</h3>
+            <p>NeuroClaw 提供安装向导，帮助配置运行环境、工具链路径和 Web UI 相关依赖。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="install" class="split reveal">
+        <div>
+          <p class="eyebrow">安装</p>
+          <h2>克隆并配置</h2>
+          <p>
+            内置安装器会引导你完成 Python 运行时、CUDA/GPU、神经影像工具链、LLM 后端、默认目录以及 Web UI 依赖的配置。
+          </p>
+          <ul>
+            <li>克隆仓库。</li>
+            <li>运行安装向导：<code>python installer/setup.py</code></li>
+            <li>如需快速配置，可使用 <code>--non-interactive</code>。</li>
+            <li>如有需要，可手动安装 Web UI 依赖。</li>
+          </ul>
+        </div>
+        <div class="code-stack">
+          <pre><code>git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
+cd NeuroClaw
+python installer/setup.py
+python installer/setup.py --non-interactive
+pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx</code></pre>
+        </div>
+      </section>
+
+      <section id="launch" class="split reveal">
+        <div>
+          <p class="eyebrow">快速使用</p>
+          <h2>启动 NeuroClaw</h2>
+          <p>
+            你可以在终端里使用 REPL，也可以使用浏览器 Web UI。
+          </p>
+          <ul>
+            <li>终端 REPL：<code>python core/agent/main.py</code></li>
+            <li>Web UI：<code>python core/agent/main.py --web</code></li>
+            <li>浏览器访问 <code>http://localhost:7080</code>。</li>
+            <li>如需远程访问或自定义端口，可使用 <code>--port</code> 和 <code>--host</code>。</li>
+          </ul>
+        </div>
+        <div class="code-stack">
+          <pre><code>python core/agent/main.py
+python core/agent/main.py --web
+python core/agent/main.py --web --port 8080 --host 0.0.0.0</code></pre>
+        </div>
+      </section>
+
+      <section id="verify" class="panel reveal">
+        <h2>验证安装</h2>
+        <p class="sub">可以用下面的检查确认环境文件和技能注册表工作正常。</p>
+        <div class="code-stack">
+          <pre><code># 检查环境文件是否有效
+python installer/setup.py --check
+
+# 列出已注册的神经科学技能（Python）
+python -c "
+from core.skill_loader.loader import SkillLoader
+from pathlib import Path
+skills = SkillLoader(Path('skills')).load_all()
+for s in skills:
+    print(s['name'])
+"</code></pre>
+        </div>
+      </section>
+
+      <section class="cta reveal">
+        <h2>下一步</h2>
+        <p>NeuroClaw 启动后，你就可以从主页继续浏览 benchmark、FAQ 和其他页面。</p>
+        <div class="actions">
+          <a class="btn" href="index-zh.html">返回首页</a>
+          <a class="btn ghost" href="neurobench-zh.html">NeuroBench</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw" target="_blank" rel="noreferrer">仓库</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

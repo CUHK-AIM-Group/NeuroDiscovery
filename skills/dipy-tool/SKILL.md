@@ -143,6 +143,14 @@ conda run -n neuroclaw-dipy python skills/dipy-tool/dipy_pipeline.py \
 - **ROI alignment**: ROI/atlas labels must be in the *same voxel space* as the DWI-derived metrics. Registration/warping is handled by other tools (e.g., FSL/ANTs/HCP pipelines).
 - **Numerical stability**: small negative eigenvalues can occur; this pipeline clips them to zero before FA computation.
 
+## Benchmark Adapter Guidance
+
+For benchmark-style ROI-statistics tasks, treat this tool as a library of narrow downstream building blocks rather than a mandatory full DWI pipeline.
+
+- If the prompt already provides metric maps plus an ROI/atlas image, start directly from `scripts/roi_stats_reference.py` or an equivalent narrow ROI-statistics implementation.
+- Do not automatically prepend DWI loading, masking, or tensor fitting when the required metric maps already exist.
+- Preserve the benchmark output contract: when the task expects separate ROI summary files per metric, write one CSV per selected metric rather than a single combined table unless the prompt explicitly asks for a merged export.
+
 ---
 
 ## Complementary / Related Skills

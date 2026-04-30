@@ -63,12 +63,17 @@ def _ask_yn(prompt: str, default: bool = True) -> bool:
 
 
 def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(cmd, 127, stdout="", stderr="command not found")
 
 
 def _detect_cuda() -> str | None:
     """Return CUDA version string (e.g. '12.1') or None."""
     for bin_name in ("nvcc", "nvidia-smi"):
+        if not shutil.which(bin_name):
+            continue
         result = _run([bin_name, "--version"])
         if result.returncode == 0:
             for line in result.stdout.splitlines():
@@ -243,13 +248,14 @@ def _setup_cuda(snap: dict, python_path: str) -> dict:
     torch_build = _ask("PyTorch CUDA build tag", default_build)
 
     # Detect GPU device
-    gpu_count_result = _run(
-        ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"]
-    )
-    if gpu_count_result.returncode == 0:
-        gpus = [g.strip() for g in gpu_count_result.stdout.strip().splitlines() if g.strip()]
-        if gpus:
-            _log(f"Detected GPU(s): {', '.join(gpus)}")
+    if shutil.which("nvidia-smi"):
+        gpu_count_result = _run(
+            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"]
+        )
+        if gpu_count_result.returncode == 0:
+            gpus = [g.strip() for g in gpu_count_result.stdout.strip().splitlines() if g.strip()]
+            if gpus:
+                _log(f"Detected GPU(s): {', '.join(gpus)}")
     device = _ask("Default CUDA device", "cuda:0")
 
     cuda_cfg: dict = {"version": cuda_version, "torch_build": torch_build, "device": device}
@@ -378,9 +384,9 @@ def _setup_llm() -> dict:
     print("\n" + "=" * 60)
     print("[NeuroClaw Setup] Step 4 — LLM Backend")
     print("=" * 60)
-    print("  1. OpenAI API               → enter API key")
+    print("  1. OpenAI API               → configure provider/model only")
     print("  2. OpenAI-compatible API    → custom baseUrl (Azure, Groq, DeepSeek, …)")
-    print("  3. Anthropic                → enter API key")
+    print("  3. Anthropic                → configure provider/model only")
     print("  4. Local model              → Ollama endpoint or llama.cpp path")
     choice = _ask("Choose [1/2/3/4]", "1")
 
@@ -396,16 +402,10 @@ def _setup_llm() -> dict:
         llm["provider"] = "anthropic"
         llm["model"] = _ask("Model name", "claude-3-5-sonnet-20241022")
         llm["api_key_env"] = "ANTHROPIC_API_KEY"
-        key = _ask("Paste API key to set it now (or press Enter to set it later via env var)")
-        # Anthropic keys begin with "sk-ant-"; accept any non-empty input that looks like a key
-        if key and key.startswith("sk-ant-"):
-            os.environ["ANTHROPIC_API_KEY"] = key
-            _log("Anthropic API key stored in environment (not persisted to disk).")
-        elif key:
-            _log(
-                "Input does not look like an Anthropic API key (expected 'sk-ant-...'). "
-                "Set ANTHROPIC_API_KEY manually before starting NeuroClaw."
-            )
+        _log(
+            "LLM API key is not collected during setup. Pass it at runtime via "
+            "--api-key or export ANTHROPIC_API_KEY before starting NeuroClaw."
+        )
         _log(f"LLM: Anthropic {llm['model']}")
 
     elif choice == "4":
@@ -423,26 +423,20 @@ def _setup_llm() -> dict:
         llm["base_url"] = base_url or None
         env_var = _ask("Environment variable name for the API key", "OPENAI_API_KEY")
         llm["api_key_env"] = env_var
-        key = _ask("Paste API key to set it now (or press Enter to set it later via env var)", "")
-        if key:
-            os.environ[env_var] = key
-            _log(f"API key stored in environment variable {env_var} (not persisted to disk).")
+        _log(
+            f"LLM API key is not collected during setup. Pass it at runtime via --api-key "
+            f"or export {env_var} before starting NeuroClaw."
+        )
         _log(f"LLM: OpenAI-compatible {llm['model']} at {base_url}")
 
     else:  # default: OpenAI
         llm["provider"] = "openai"
         llm["model"] = _ask("Model name", "gpt-4o")
         llm["api_key_env"] = "OPENAI_API_KEY"
-        key = _ask("Paste API key to set it now (or press Enter to set it later via env var)")
-        # OpenAI keys begin with "sk-"
-        if key and key.startswith("sk-"):
-            os.environ["OPENAI_API_KEY"] = key
-            _log("OpenAI API key stored in environment (not persisted to disk).")
-        elif key:
-            _log(
-                "Input does not look like an OpenAI API key (expected 'sk-...'). "
-                "Set OPENAI_API_KEY manually before starting NeuroClaw."
-            )
+        _log(
+            "LLM API key is not collected during setup. Pass it at runtime via "
+            "--api-key or export OPENAI_API_KEY before starting NeuroClaw."
+        )
         _log(f"LLM: OpenAI {llm['model']}")
 
     return llm

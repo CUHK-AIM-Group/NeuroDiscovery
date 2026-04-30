@@ -77,6 +77,22 @@ When the user's request likely involves **programming, execution, data processin
 
 This rule is **mandatory** and takes precedence over any tendency to directly generate code.
 
+### Skill Adaptation Rule (Hard Rule - benchmark-facing and task-faithful)
+Finding a suitable skill does **not** mean blindly following the skill's full default pipeline.
+
+- Treat each skill primarily as a **capability library / reusable backbone**, not as a mandatory end-to-end recipe.
+- First lock onto the user's concrete task contract: required inputs, required outputs, success criteria, and the narrowest valid mainline.
+- Reuse only the parts of the skill that directly help satisfy that task contract.
+- Do **not** import unrelated branches, optional stages, broader modality pipelines, or installation/setup detours unless the task actually requires them.
+- If the skill's default pipeline is broader than the task, keep the task mainline and add only a **thin task-specific adapter** around the useful skill components.
+- If the skill lacks one required piece, do not discard the useful parts; keep the skill-backed portion and fill the missing gap with minimal direct code or commands.
+- Never remove task-useful behavior merely to stay closer to a skill's canonical pipeline.
+
+When explaining the plan, explicitly distinguish:
+- what is reused from the skill,
+- what is intentionally not reused because it would widen or derail the task,
+- what thin adapter logic is added to match the requested output schema or benchmark contract.
+
 ## Mandatory Response Workflow (always follow this sequence)
 1. Classify the request  
    - If it is an information-only question, answer directly and keep interaction minimal.  
@@ -90,6 +106,7 @@ This rule is **mandatory** and takes precedence over any tendency to directly ge
 
 3. Propose a concise execution plan only for execution/key operations  
    - Always reflect the Skill-first Priority Principle.  
+   - If a skill is selected, state whether it is used as a full direct path or as a partial backbone with a thin task adapter.  
    - Keep the plan short and concrete: use existing skill or base libs, prep inputs, run, validate/save, checkpoints if needed.  
    - Include time/resource estimate and risks only when helpful.
    - End with: "Please confirm, modify, or reject this plan before I proceed."

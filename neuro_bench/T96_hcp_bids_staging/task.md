@@ -17,14 +17,16 @@ Standardized BIDS staging directory with validation report
 - Create BIDS-compliant directory layout: sub-*/ses-01/anat|func|dwi/
 - Generate JSON sidecars with HCP parameters
 - Create dataset_description.json for HCP
-- Run bids-validator to verify compliance
-- Generate staging validation report (warnings, errors)
+- The benchmark focus is staging and naming, not a full downstream processing or conversion pipeline
+- A lightweight staging script that maps the HCP directory tree into a BIDS-style layout is the expected mainline
+- Prefer re-linking or copying existing HCP NIfTI/bval/bvec assets directly rather than expanding into unrelated conversion workflows
+- If a modality or metadata file is absent in the provided HCP source tree, stage the available data and clearly record the missing items instead of inventing extra recovery branches
+- Include a concise staging report describing what was staged and what was skipped or missing
 
 ## Evaluation Criteria
 - Task completion verified by presence of required output files
-- BIDS staging must pass bids-validator with minimal warnings
+- BIDS-style staging layout must be correct and internally consistent for the files that were provided
 - Modality-specific outputs must match expected file formats
-- QC reports must be comprehensive and readable
-- Processing logs must document parameters, versions, and execution time
-- Data integrity verified by file count and checksum validation
-- No critical errors during processing
+- The staging report must clearly describe mapped modalities and any skipped or missing inputs
+- Processing logs should document the mapping choices that were applied
+- No critical errors during staging

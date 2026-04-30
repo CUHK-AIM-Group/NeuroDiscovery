@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | Closed-Loop Agentic AI for Executable and Reproducible Neuroimaging Research</title>
+    <meta
+      name="description"
+      content="NeuroClaw is a closed-loop agentic AI system for executable and reproducible neuroimaging research."
+    />
+    <meta property="og:title" content="NeuroClaw" />
+    <meta
+      property="og:description"
+      content="Closed-loop agentic AI for executable and reproducible neuroimaging research."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/CUHK-AIM-Group/NeuroClaw/main/materials/logo.png" />
+    <meta name="theme-color" content="#0f5c57" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
+        <img
+          src="https://raw.githubusercontent.com/CUHK-AIM-Group/NeuroClaw/main/materials/logo.png"
+          alt="NeuroClaw logo"
+        />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="neurobench.html">NeuroBench</a>
+        <a href="faq.html">FAQ</a>
+        <a href="get-started.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="index-zh.html" aria-label="Switch to Chinese">中文</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">Contact Us</a>
+      </div>
+    </header>
+
+    <main id="home">
+      <section class="hero reveal">
+        <h1>Closed-Loop Agentic AI for <span>Executable and Reproducible Neuroimaging Research</span></h1>
+        <p class="lead">
+          NeuroClaw turns neuroimaging workflows into executable, iterative, and reproducible research loops across data preparation, model execution, validation, and refinement.
+        </p>
+        <div class="institutions-logos" aria-label="Institutions">
+          <button class="institution-logo" type="button" aria-label="CUHK">
+            <img src="assets/logos/cuhk.png" alt="CUHK logo" />
+          </button>
+          <button class="institution-logo" type="button" aria-label="Massachusetts General Hospital">
+            <img src="assets/logos/mgh.png" alt="Massachusetts General Hospital logo" />
+          </button>
+          <button class="institution-logo" type="button" aria-label="Lehigh University">
+            <img src="assets/logos/lehigh.png" alt="Lehigh University logo" />
+          </button>
+        </div>
+        <div class="actions">
+          <a class="btn" href="https://github.com/CUHK-AIM-Group/NeuroClaw" target="_blank" rel="noreferrer">Explore Repository</a>
+          <a class="btn ghost" href="https://arxiv.org/abs/2604.24696" target="_blank" rel="noreferrer">arXiv Paper</a>
+        </div>
+        <div class="metrics">
+          <article>
+            <h3>100</h3>
+            <p>Benchmark Coverage</p>
+          </article>
+          <article>
+            <h3>Skill Hierarchy</h3>
+            <p>base-subagent-interface</p>
+          </article>
+          <article>
+            <h3>ADNI, HCP and more</h3>
+            <p>Dataset-Aware Orchestration</p>
+          </article>
+          <article>
+            <h3>Traceable</h3>
+            <p>Execution and Audit Logs</p>
+          </article>
+        </div>
+        <div class="framework-block" style="margin:18px 0 12px;padding:20px;border-radius:10px;background:linear-gradient(180deg, #f9fdfc 0%, #ffffff 100%);box-shadow:0 6px 18px rgba(15,92,87,0.06);">
+          <h2 style="text-align:center;margin:0 0 12px;font-family: 'Source Serif 4', serif;color:#0f5c57;">NeuroClaw Overview</h2>
+          <div style="text-align:center;">
+            <img src="assets/framework.png" alt="NeuroClaw framework" style="width:100%;max-width:1100px;border-radius:8px;" />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel reveal" style="margin-top:6px;">
+        <h2>Why NeuroClaw</h2>
+        <div class="cards">
+          <article>
+            <h3>Raw-Data-Aware Orchestration</h3>
+            <p>NeuroClaw starts from raw multimodal data and uses dataset semantics, BIDS metadata, and workflow stage context to keep downstream analyses scientifically coherent.</p>
+          </article>
+          <article>
+            <h3>Executable Harness Engineering</h3>
+            <p>Managed Python environments, Docker support, GPU setup, checkpoints, artifact checks, and audit logs make neuroimaging toolchains easier to rerun and verify.</p>
+          </article>
+          <article>
+            <h3>Hierarchical Skill Architecture</h3>
+            <p>A three-tier interface, subagent, and base-skill design decomposes long neuroimaging workflows into controlled, reusable operations across tools, modalities, datasets, and models.</p>
+          </article>
+          <article>
+            <h3>Benchmark-Grounded Evaluation</h3>
+            <p>NeuroBench evaluates planning completeness, tool-use reasonableness, and command/code correctness under realistic neuroimaging tasks with and without NeuroClaw skills.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <h2>Skill Library Coverage</h2>
+        <div class="cards">
+          <article>
+            <h3>1. Basic Processing</h3>
+            <p><strong>1.1 Data I/O and BIDS</strong>: BIDS organization, DICOM→NIfTI, NIfTI→DICOM, metadata checks, and low-level NIfTI/FreeSurfer I/O with Nibabel.</p>
+            <p><strong>1.2 Environment and Engineering</strong>: Conda, Docker, dependency planning, shell execution, Git workflows, Overleaf, harness utilities, and skill updates.</p>
+            <p><strong>1.3 Research Discovery</strong>: academic literature search, multi-engine evidence collection, research idea generation, and method design support.</p>
+          </article>
+          <article>
+            <h3>2. Tool-Centric Skills</h3>
+            <p><strong>2.1 Structural and Functional Toolchains</strong>: FreeSurfer, FSL, Nilearn, fMRIPrep, CONN, and HCP Pipelines for reconstruction, segmentation, registration, GLM, ICA, and connectivity.</p>
+            <p><strong>2.2 Diffusion and Electrophysiology</strong>: DIPY, QSIPrep, and MNE support denoising, tensor metrics, tractography, EEG cleaning, and feature extraction.</p>
+            <p><strong>2.3 Visualization and Clinical Interop</strong>: brain network visualization, zALFF regional summaries, FreeSurfer mesh export, and DICOM-compatible output conversion.</p>
+          </article>
+          <article>
+            <h3>3. Modality-Centric Skills</h3>
+            <p><strong>3.1 sMRI</strong>: T1/T2 preprocessing, tissue segmentation, cortical parcellation, FreeSurfer surfaces, and WMH segmentation from FLAIR+T1w inputs.</p>
+            <p><strong>3.2 fMRI</strong>: preprocessing, denoising, ROI time series, seed/ROI connectivity, task GLM, resting-state ICA, and effective connectivity routes.</p>
+            <p><strong>3.3 DWI + EEG</strong>: eddy correction, diffusion tensor metrics, tractography, connectome construction, EEG artifact removal, spectral analysis, and feature extraction.</p>
+          </article>
+          <article>
+            <h3>4. Dataset-Centric Skills</h3>
+            <p><strong>4.1 ADNI</strong>: acquisition guidance, BIDS organization, preprocessing, ROI analysis, phenotype modeling, and derived dataset generation.</p>
+            <p><strong>4.2 HCP</strong>: structural, functional, and diffusion execution across HCP Pipelines with multimodal result integration.</p>
+            <p><strong>4.3 UK Biobank and Expansion Targets</strong>: UKB post-extraction brain analysis plus routes that can extend toward ADHD200, ABCD, ABIDE, COBRE, PNC, HBN, and UCLA datasets.</p>
+          </article>
+          <article>
+            <h3>5. Model-Centric Skills</h3>
+            <p><strong>5.1 Deep Learning</strong>: BrainGNN, FM-APP, and NeuroStorm for phenotype prediction and neuroimaging representation learning.</p>
+            <p><strong>5.2 Statistical and Classical ML</strong>: GLM, ICA, DictLearning, SVM, SpaceNet, K-means, hierarchical clustering, filtering, and detrending.</p>
+            <p><strong>5.3 Model Routing</strong>: unified model entry with preprocessing dependency checks, input/output mapping, executable plans, and benchmark-friendly evaluation steps.</p>
+          </article>
+          <article>
+            <h3>6. Research Workflow Skills</h3>
+            <p><strong>6.1 End-to-End Pipelines</strong>: single-modality and dataset-specific chains for sMRI, fMRI, DWI, EEG, ADNI, HCP, and UKB analysis.</p>
+            <p><strong>6.2 Experiment Control</strong>: METHOD-to-experiment execution, Git-based setup, ablations, checkpoints, verification, audit logs, and resumable runs.</p>
+            <p><strong>6.3 Research Output</strong>: manuscript writing, clean dialogue logs, visualization assets, reproducibility reports, and maintainable skill-library updates.</p>
+          </article>
+        </div>
+        <h3 class="dataset-table-title">Supported Dataset Overview</h3>
+        <div class="dataset-table-wrap" aria-label="Dataset coverage table">
+          <style>
+            .dataset-table td:first-child, .dataset-table th:first-child,
+            .dataset-table td:last-child, .dataset-table th:last-child { text-align: center; }
+          </style>
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>Dataset</th>
+                <th>Supported Modalities</th>
+                <th>Additional Data</th>
+                <th>Cohort Scale</th>
+                <th>Official Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ABCD Study</td>
+                <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Physical and mental health; substance use; culture/environment; neurocognition; biological data</td>
+                <td>Target cohort of ~11,500 children; full cohort releases through the NIMH Data Archive</td>
+                <td><a href="https://abcdstudy.org/" target="_blank" rel="noreferrer">ABCD Study</a></td>
+              </tr>
+              <tr>
+                <td>ABIDE</td>
+                <td>T1w; rs-fMRI</td>
+                <td>ASD/control phenotypic data</td>
+                <td>1,112 datasets from 17 international sites</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/abide/" target="_blank" rel="noreferrer">ABIDE</a></td>
+              </tr>
+              <tr>
+                <td>ADHD-200</td>
+                <td>T1w; rs-fMRI</td>
+                <td>Diagnostic status; ADHD symptom measures; demographics; medication history; QC measures</td>
+                <td>776 participants/datasets across 8 imaging sites</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/adhd200/" target="_blank" rel="noreferrer">ADHD-200</a></td>
+              </tr>
+              <tr>
+                <td>ADNI</td>
+                <td>T1w; T2w; FLAIR; dMRI; rs-fMRI; PET</td>
+                <td>Genetics/omics data; clinical and cognitive assessments</td>
+                <td>~2,000+ participants across ADNI phases</td>
+                <td><a href="https://adni.loni.usc.edu/" target="_blank" rel="noreferrer">ADNI</a></td>
+              </tr>
+              <tr>
+                <td>BOLD5000</td>
+                <td>T1w; task-fMRI</td>
+                <td>Visual image stimuli; category and image metadata</td>
+                <td>4 participants with 5,000-image visual fMRI sessions</td>
+                <td><a href="https://bold5000-dataset.github.io/" target="_blank" rel="noreferrer">BOLD5000</a></td>
+              </tr>
+              <tr>
+                <td>COBRE</td>
+                <td>T1w; rs-fMRI</td>
+                <td>Demographics; handedness; diagnostic information</td>
+                <td>147 participants: 72 schizophrenia patients and 75 healthy controls</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html" target="_blank" rel="noreferrer">COBRE</a></td>
+              </tr>
+              <tr>
+                <td>DMT-HAR-MED</td>
+                <td>rs-fMRI</td>
+                <td>Psychedelic intervention conditions; behavioral and physiological measures</td>
+                <td>40 participants in OpenNeuro ds006644</td>
+                <td><a href="https://openneuro.org/datasets/ds006644/versions/1.0.1" target="_blank" rel="noreferrer">DMT-HAR-MED</a></td>
+              </tr>
+              <tr>
+                <td>HBN</td>
+                <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG</td>
+                <td>Psychiatric, behavioral, cognitive, lifestyle, genetics, actigraphy</td>
+                <td>~3,900+ released participants; target resource of at least 10,000 ages 5-21</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/" target="_blank" rel="noreferrer">HBN</a></td>
+              </tr>
+              <tr>
+                <td>HCP Aging</td>
+                <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Behavioral, cognitive, health, and demographic measures</td>
+                <td>~700+ adults ages 36-100</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-aging" target="_blank" rel="noreferrer">HCP Aging</a></td>
+              </tr>
+              <tr>
+                <td>HCP Development</td>
+                <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Behavioral, cognitive, health, and demographic measures</td>
+                <td>~600+ children and adolescents ages 5-21</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-development" target="_blank" rel="noreferrer">HCP Development</a></td>
+              </tr>
+              <tr>
+                <td>HCP Early Psychosis</td>
+                <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Diagnostic, clinical, behavioral, and cognitive measures</td>
+                <td>~250 early psychosis and control participants</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-early-psychosis" target="_blank" rel="noreferrer">HCP Early Psychosis</a></td>
+              </tr>
+              <tr>
+                <td>HCP Young Adult</td>
+                <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Behavioral and cognitive measures</td>
+                <td>~1,200 young adult participants</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-young-adult" target="_blank" rel="noreferrer">HCP Young Adult</a></td>
+              </tr>
+              <tr>
+                <td>MND</td>
+                <td>rs-fMRI; task-fMRI</td>
+                <td>Motor neuron disease diagnosis and clinical measures</td>
+                <td>59 participants in OpenNeuro ds005874</td>
+                <td><a href="https://openneuro.org/datasets/ds005874/versions/1.1.0" target="_blank" rel="noreferrer">MND</a></td>
+              </tr>
+              <tr>
+                <td>Natural Scenes Dataset</td>
+                <td>T1w; task-fMRI</td>
+                <td>Natural image stimuli; behavioral responses; image annotations</td>
+                <td>8 participants with dense repeated visual fMRI</td>
+                <td><a href="https://naturalscenesdataset.org/" target="_blank" rel="noreferrer">Natural Scenes Dataset</a></td>
+              </tr>
+              <tr>
+                <td>PNC</td>
+                <td>T1w; dMRI; ASL; rs-fMRI; task-fMRI</td>
+                <td>Genotyping; clinical and neuropsychiatric assessment; Computerized Neurocognitive Battery</td>
+                <td>&gt;9,500 youth cohort; 1,445 participants with neuroimaging</td>
+                <td><a href="https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html" target="_blank" rel="noreferrer">PNC</a></td>
+              </tr>
+              <tr>
+                <td>REST-meta-MDD</td>
+                <td>rs-fMRI</td>
+                <td>MDD diagnosis; clinical and demographic measures</td>
+                <td>2,428 participants across 25 cohorts</td>
+                <td><a href="http://rfmri.org/REST-meta-MDD" target="_blank" rel="noreferrer">REST-meta-MDD</a></td>
+              </tr>
+              <tr>
+                <td>SEED-IV</td>
+                <td>EEG</td>
+                <td>Emotion labels across four affective categories; trial-level session metadata</td>
+                <td>15 subjects across 3 sessions for emotion decoding benchmarks</td>
+                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-IV</a></td>
+              </tr>
+              <tr>
+                <td>SEED-VIG</td>
+                <td>EEG</td>
+                <td>Vigilance/fatigue labels; continuous alertness annotations; behavioral metadata</td>
+                <td>23 subjects in sustained-attention driving-style vigilance recordings</td>
+                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-VIG</a></td>
+              </tr>
+              <tr>
+                <td>TCP</td>
+                <td>rs-fMRI</td>
+                <td>Psychiatric diagnostic interviews; cognitive and clinical assessments</td>
+                <td>245 transdiagnostic participants</td>
+                <td><a href="https://openneuro.org/datasets/ds004215" target="_blank" rel="noreferrer">TCP</a></td>
+              </tr>
+              <tr>
+                <td>UCLA CNP</td>
+                <td>T1w; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Diagnostic groups; neuropsychological and phenotypic assessments</td>
+                <td>272 participants in OpenNeuro ds000030</td>
+                <td><a href="https://openneuro.org/datasets/ds000030" target="_blank" rel="noreferrer">UCLA CNP</a></td>
+              </tr>
+              <tr>
+                <td>UK Biobank</td>
+                <td>T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI</td>
+                <td>Genotype/genomic data; questionnaires; hospital records; environmental data; sociodemographic data; physical measures</td>
+                <td>~50,000 participants with multimodal imaging data</td>
+                <td><a href="https://www.ukbiobank.ac.uk/" target="_blank" rel="noreferrer">UK Biobank</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="cta reveal">
+        <h2>Build with NeuroClaw</h2>
+        <p>Use NeuroClaw to prototype auditable neuroimaging pipelines and autonomous experiment loops in your lab.</p>
+        <div class="actions">
+          <a class="btn" href="get-started.html">Get Started</a>
+          <a class="btn ghost" href="neurobench.html">NeuroBench</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        NeuroClaw © 2026 ·
+        <a href="http://www.ee.cuhk.edu.hk/~yxyuan/" target="_blank" rel="noreferrer">CUHK-AIM-Group</a>
+      </p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -20,6 +20,57 @@ It strictly follows NeuroClaw hierarchical design principles:
 4. On confirmation, delegate each step to the relevant tool skill via `claw-shell`.
 5. Save outputs into `dwi_output/`.
 
+When the task includes tractography or connectome construction, default to the strongest task-faithful diffusion route available rather than a generic tensor-only fallback:
+- Prefer `QSIPrep -> MRtrix3` style downstream processing with multi-tissue FOD, ACT, SIFT2, and `tck2connectome` when data quality and inputs support it.
+- Use tensor-only DIPY/DTI examples as a fallback, not as the default full-pipeline answer, unless the data are truly limited or the user explicitly requests a lightweight DTI-only workflow.
+- If atlas/parcellation, label tables, registration/alignment targets, or tractography-critical settings are missing, state `Missing required input` explicitly and ask the user to choose the key analysis options before execution instead of silently assuming weak defaults.
+
+## Benchmark-Facing Default Mainline
+
+For benchmark-style DWI prompts, choose one explicit diffusion mainline and keep unrelated modality or alternative preprocessing branches out of the primary answer.
+
+- If the prompt asks for a full DWI pipeline ending in tractography or a connectome:
+    - Default to `BIDS -> QSIPrep -> MRtrix3-style downstream tractography/connectome`.
+    - Keep the mainline focused on preprocessing, tensor/derived maps if requested, atlas alignment, tractography, and connectome export.
+    - Do not introduce fMRI, EEG, HCP multimodal, or generic nilearn connectivity branches.
+- If the prompt asks only for preprocessing or tensor metrics:
+    - Stop at `QSIPrep` or `FSL/DIPY` tensor outputs and do not expand into tractography.
+- If the prompt starts from existing tensor metric maps or asks only for ROI-wise metric summaries:
+    - Do not restart from raw DWI loading, preprocessing, tensor fitting, or tractography.
+    - Stay on the downstream ROI-statistics path the task actually asks for.
+- If the prompt already provides a tractogram or otherwise starts downstream of preprocessing:
+    - Do not restart from raw DWI preprocessing or full tractography reconstruction.
+    - Stay on the downstream mainline the task actually asks for, such as `tck2connectome` from an existing filtered tractogram plus atlas/parcellation.
+- If the connectome-critical inputs are missing, such as atlas/parcellation, LUT, registration target, or shell/model constraints:
+    - State `Missing required input` explicitly.
+    - Do not replace the requested full pipeline with a weaker tensor-only pipeline unless the prompt explicitly allows that fallback.
+
+Prefer one narrow answer pattern plus a short blocked-items note over a broad menu of QSIPrep/FSL/HCP/MRtrix alternatives.
+
+### Existing-Metric ROI Statistics Path
+
+When the task already provides one or more metric maps such as `FA`, `MD`, `AD`, or `RD` together with an atlas/label image, the default mainline should be:
+
+1. verify atlas and metric-map space compatibility,
+2. select only the provided metric subset,
+3. compute per-label statistics on those metric maps,
+4. write one CSV per selected metric,
+5. report any geometry or missing-input blockers.
+
+In this situation, do not broaden the answer into DWI preprocessing, bval/bvec handling, new tensor fitting, or tractography unless the prompt explicitly asks to regenerate those prerequisites.
+
+### Existing-Tractography Connectome Path
+
+When the task already provides a tractogram and asks for a structural connectome, the default mainline should be:
+
+1. verify the tractogram format and atlas/parcellation space,
+2. verify node labels/LUT or declare them missing,
+3. run `tck2connectome` on the provided tractogram,
+4. export `connectome.csv` and optional assignments/weighted outputs,
+5. report any alignment or labeling blockers.
+
+In this situation, do not broaden the answer into response estimation, CSD fitting, new whole-brain tractography generation, or unrelated preprocessing unless the prompt explicitly asks to regenerate those prerequisites.
+
 **Research use only.**
 
 ---
@@ -43,12 +94,44 @@ It strictly follows NeuroClaw hierarchical design principles:
 ---
 
 ## Recommended Default Strategy
-- **BIDS input + robust preprocessing + QC** → `qsiprep-tool`
-- **FSL eddy/topup + low-level control** → `fsl-tool`
-- **HCP-style preprocessing** → `hcppipeline-tool`
+- **Default benchmark route for full DWI/connectome tasks** → `qsiprep-tool` for preprocessing, then MRtrix3-style multi-tissue FOD + ACT + SIFT2 + `tck2connectome`
+- **BIDS input + robust preprocessing + QC only** → `qsiprep-tool`
+- **FSL eddy/topup + low-level control when explicitly requested** → `fsl-tool`
+- **HCP-style preprocessing only when the prompt explicitly calls for HCP conventions or inputs** → `hcppipeline-tool`
+
+### Preferred Full-Pipeline Answer Pattern
+When the user asks for a full DWI pipeline that ends in tractography or connectome outputs, the plan should usually be framed as:
+1. Organize raw inputs into BIDS.
+2. Run `qsiprep-tool` preprocessing with rotated bvecs and QC.
+3. Confirm structural/parcellation prerequisites for connectomics:
+    - T1w image quality and space
+    - FreeSurfer `aparc+aseg` or another atlas/parcellation
+    - label table / LUT
+    - DWI-space alignment target or registration route
+4. Build an MRtrix3-style downstream workflow:
+    - 5TT segmentation
+    - label conversion to connectome nodes
+    - response estimation
+    - multi-tissue CSD FODs
+    - ACT tractography with backtracking
+    - SIFT2 weighting or SIFT filtering
+    - `tck2connectome`
+5. Only fall back to tensor-only tractography/connectivity if the data or missing inputs make the preferred route invalid.
+
+### Missing Inputs And User Choices
+If the task cannot be fully specified from the prompt alone, ask for the missing analysis-critical items before execution. Typical required user decisions include:
+- Which atlas/parcellation to use for the connectome: FreeSurfer `aparc+aseg`, Desikan, Destrieux, Schaefer, AAL, or a user-supplied atlas
+- Whether the atlas is already in DWI space, T1w space, or MNI space, and what registration path should be used
+- Whether a labels/LUT CSV/TSV is available and which file should define ROI names/order
+- Whether the acquisition is single-shell or multi-shell, which constrains DTI-only vs FOD/CSD modeling
+- Tractography algorithm and scale choices when they materially affect the result, for example deterministic vs probabilistic tracking, target streamline count, minimum/maximum streamline length, cutoff threshold, SIFT vs SIFT2, and connectome weighting rule
+
+If those inputs are missing, do both of the following:
+1. State `Missing required input:` and list the exact missing files or decisions.
+2. Offer the user a short menu of high-impact parameter choices instead of burying them in assumptions.
 
 ### HCP-Style MRtrix3 Tractography Workflow
-Generate high-quality fiber tracts with FOD + ACT + SIFT filtering → VTK visualization.
+Generate high-quality fiber tracts with FOD + ACT + SIFT2/SIFT filtering → VTK visualization and connectome generation.
 
 **Inputs:** Preprocessed DWI (motion/eddy/distortion corrected), rotated bvecs, T1w (ACPC-aligned), FreeSurfer `aparc+aseg.nii.gz`, brain mask
 
@@ -58,10 +141,10 @@ Generate high-quality fiber tracts with FOD + ACT + SIFT filtering → VTK visua
 3. DWI format conversion to MIF with gradient info
 4. Multi-tissue response functions (WM/GM/CSF) via `msmt_5tt`
 5. Multi-tissue CSD FOD computation → WM_FODs, GM, CSF
-6. ACT-constrained tractography with backtracking (50k streamlines)
-7. SIFT filtering (FOD-density matching, reduces quantization bias)
+6. ACT-constrained tractography with backtracking (50k streamlines or user-selected target)
+7. Prefer SIFT2 streamline weighting; use SIFT filtering when a filtered tractogram file is specifically required
 8. VTK format conversion for visualization
-9. (Optional) ROI connectome matrix via tck2connectome
+9. ROI connectome matrix via `tck2connectome`, ideally with SIFT2 weights when available
 
 **Runtime:** 30–60 min/subject | **Disk:** ~30 GB/subject (intermediate MIF files) | **Memory:** 16–32 GB | **Cores:** 8–16 (multi-threaded)
 
@@ -98,9 +181,12 @@ source $FSLDIR/etc/fslconf/fsl.sh && export PATH=$FSLDIR/bin:$PATH
 | 4 | `dwi2response msmt_5tt DWI.mif 5TT.mif RF_*.txt` | DWI, 5TT | RF_WM/GM/CSF.txt | Multi-tissue response functions |
 | 5 | `dwi2fod msmt_csd DWI.mif RF_*.txt WM_FODs.mif ...` | DWI, responses | WM_FODs.mif | FOD computation (multi-tissue CSD) |
 | 6 | `tckgen WM_FODs.mif 5W.tck -act 5TT.mif -backtrack ...` | FOD, 5TT | 5W.tck | 50k streamlines w/ ACT constraints; backtrack, minlength 15, maxlength 600, **cutoff 0.06** |
-| 7 | `tcksift 5W.tck WM_FODs.mif 5W_SIFT_v2.tck -act ...` | tractogram, FOD | 5W_SIFT_v2.tck | SIFT filtering: FOD-density matching, reduces quantization bias |
-| 8 | `trk2vtk 5W_SIFT_v2.tck fiber_*.vtk` | tractogram | VTK file | Visualization in ParaView/TrackVis |
-| 9 | `tck2connectome 5W_SIFT_v2.tck nodes.mif connectome.csv` | tractogram, parcels | connectome.csv | **(Optional)** ROI×ROI connectivity matrix |
+| 7 | `tcksift2 5W.tck WM_FODs.mif sift2_weights.txt -act ...` | tractogram, FOD | sift2_weights.txt | Preferred quantitative weighting for connectome construction |
+| 8 | `trk2vtk 5W.tck fiber_*.vtk` | tractogram | VTK file | Visualization in ParaView/TrackVis |
+| 9 | `tck2connectome 5W.tck nodes.mif connectome.csv -tck_weights_in sift2_weights.txt` | tractogram, parcels, SIFT2 weights | connectome.csv | Preferred ROI×ROI structural connectome |
+
+If the user explicitly wants a filtered tractogram artifact, an additional SIFT run is still valid:
+- `tcksift 5W.tck WM_FODs.mif 5W_SIFT_v2.tck -act 5TT.mif`
 
 ---
 
@@ -184,9 +270,10 @@ All outputs must be written under `./dwi_output/`:
   - `mrtrix3/WM_FODs.mif`                (white matter fiber orientation distribution)
   - `mrtrix3/GM.mif`, `CSF.mif`          (tissue density maps)
   - `mrtrix3/5W.tck`                     (raw tractogram, 50k streamlines)
-  - `mrtrix3/5W_SIFT_v2.tck`             (SIFT-filtered tractogram, 50k streamlines)
+    - `mrtrix3/sift2_weights.txt`          (preferred SIFT2 streamline weights)
+    - `mrtrix3/5W_SIFT_v2.tck`             (optional SIFT-filtered tractogram when explicitly requested)
   - `mrtrix3/fiber_mrtrix_5W_SIFT_v2.vtk` (VTK format for visualization)
-  - `mrtrix3/connectome.csv`             (ROI×ROI connectivity matrix, optional)
+    - `mrtrix3/connectome.csv`             (ROI×ROI connectivity matrix, preferably SIFT2-weighted)
 - `dwi_output/logs/`        (claw-shell logs/tags, MRtrix3 command logs)
 
 ---
@@ -205,7 +292,8 @@ All outputs must be written under `./dwi_output/`:
 - **Multi-tissue CSD** (msmt_csd) decomposes WM/GM/CSF jointly; improves specificity
 - **ACT:** enforces WM→GM interface endings; **backtrack** allows complex anatomy
 - **Cutoff 0.06** typical for single-shell; adjust for multi-shell or high b-value
-- **SIFT filtering:** reduces quantization bias; FOD-density matching → mechanistically justified connectivity
+- **SIFT2 weighting:** usually preferred for quantitative connectomes; preserve the full tractogram and pass weights into `tck2connectome`
+- **SIFT filtering:** still useful when the downstream consumer explicitly needs a filtered tractogram file
 - **Runtime:** 30–60 min/subject; **disk:** ~30 GB; **RAM:** 16–32 GB; **cores:** 8–16 (multi-threaded)
 
 **Limitations:**

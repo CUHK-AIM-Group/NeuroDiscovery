@@ -2,7 +2,12 @@
 
 <img src="materials/logo.png" alt="NeuroClaw Logo" width="200" />
 
-# NeuroClaw: From Raw Data to Reproducible Models
+# NeuroClaw: Closed-Loop Agentic AI for Executable and Reproducible Neuroimaging Research
+
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Skills](https://img.shields.io/badge/skills-51-purple)](skills)
+[![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
 
 [中文版 README](README_zh.md)
 
@@ -17,11 +22,11 @@
 
 ## 📖 Overview
 
-**NeuroClaw** is a neuroscience-first platform built on the [OpenClaw](https://github.com/openclaw/openclaw) framework. Its core strength is **neuroimaging dataset and model adaptation**: turning raw scans into usable inputs quickly, and enabling medical practitioners to run deep learning models with minimal setup.
+**NeuroClaw** is a research assistant for executable and reproducible neuroimaging research. Its core strength is **neuroimaging dataset and model adaptation**: turning raw scans into usable inputs quickly, and enabling medical practitioners to run deep learning models with minimal setup.
 
 Neuroimaging datasets demand specialized preprocessing, and preprocessing quality directly determines model validity. Many workflows assume curated datasets, while MedicalClaw provides limited automation for open-source model execution (primarily large projects like TimesFM and AlphaFold), leaving users to spend significant time on environment configuration.
 
-NeuroClaw prioritizes **data processing** and **model configuration/execution**. It remains an end-to-end Claw system, but for neuroscience its center of gravity is data and models.
+NeuroClaw prioritizes **data processing** and **model configuration/execution**. It ships with independent GUI and CLI interfaces for day-to-day use, and can also be installed as a reusable skill library inside agent projects such as OpenClaw, Hermes, and Claude Code.
 
 **Notes**
 - We constructed **NeuroBench** to benchmark multi-agent performance across neuroimaging workflows, especially raw data processing and model execution, and plan to refine and evaluate existing medical and general claw systems.
@@ -30,25 +35,49 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 ## 🚀 Updates
 
-- **[2026.04.15]**: Added CLI batch benchmark execution, expanded benchmark metrics and scoring utilities.
-- **[2026.04.08]**: We have completed the dataset part of NeuroBench; our NeuroClaw now runs independently and offers a Web UI.
-- **[2026.04.06]**: We begin constructing NeuroBench for multi-agent framework evaluation.
+- **[2026.04.28]**: Our technical report is now available on arXiv: https://arxiv.org/abs/2604.24696
+- **[2026.04.22]**: v1.0 released — stable release with improvements and full documentation.
+- **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroClaw/
+- **[2026.04.08]**: NeuroBench released for multi-agent neuroimaging workflow evaluation.
 - **[2026.04.02]**: v0.1 released with complete NeuroClaw framework and core functionality.
 
 <a id="key-features"></a>
 ## ✨ Key Features
 
 <div align="center">
-  <img src="materials/main.png" alt="NeuroClaw Framework Overview" style="width: 95%; max-width: 100%;" />
+  <img src="materials/framework.png" alt="NeuroClaw Framework Overview" style="width: 95%; max-width: 100%;" />
 </div>
 
-### 🔄 Dataset-First Architecture
-Organize capabilities around "which dataset to process" instead of "which tool to call":
-- **ADNI Dataset** → Integrated ADNI standardized processing pipeline
-- **UK Biobank** → Environment-aware deployment adaptation
-- **Other Public Datasets** → Quick-start tool chains
+### 🔄 Data-Aware Orchestration
+- **Dataset-Context Planning**: Organize capabilities around dataset structure, metadata, and workflow stage instead of simply "which tool to call"
+- **Automatic Skill Recommendation**: Users specify the target dataset, and NeuroClaw recommends relevant skills and executable workflows
+- **Preprocessing Constraint Awareness**: Dataset-specific modality availability and preprocessing requirements are considered during orchestration
 
-Users simply specify the target dataset, and the system automatically recommends and orchestrates relevant skills.
+#### Supported Dataset Overview
+
+| Dataset | Supported Modalities | Additional Data | Cohort Scale | Official Link |
+| :---: | --- | --- | --- | :---: |
+| ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Physical and mental health; substance use; culture/environment; neurocognition; biological data | Target cohort of ~11,500 children; full cohort releases through the NIMH Data Archive | https://abcdstudy.org/ |
+| ABIDE | T1w; rs-fMRI | ASD/control phenotypic data | 1,112 datasets from 17 international sites | https://fcon_1000.projects.nitrc.org/indi/abide/ |
+| ADHD-200 | T1w; rs-fMRI | Diagnostic status; ADHD symptom measures; demographics; medication history; QC measures | 776 participants/datasets across 8 imaging sites | https://fcon_1000.projects.nitrc.org/indi/adhd200/ |
+| ADNI | T1w; T2w; FLAIR; dMRI; rs-fMRI; PET | Genetics/omics data; clinical and cognitive assessments | ~2,000+ participants across ADNI phases | https://adni.loni.usc.edu/ |
+| BOLD5000 | T1w; task-fMRI | Visual image stimuli; category and image metadata | 4 participants with 5,000-image visual fMRI sessions | https://bold5000-dataset.github.io/ |
+| COBRE | T1w; rs-fMRI | Demographics; handedness; diagnostic information | 147 participants: 72 schizophrenia patients and 75 healthy controls | https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html |
+| DMT-HAR-MED | rs-fMRI | Psychedelic intervention conditions; behavioral and physiological measures | 40 participants in OpenNeuro ds006644 | https://openneuro.org/datasets/ds006644/versions/1.0.1 |
+| HBN | T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG | Psychiatric, behavioral, cognitive, lifestyle, genetics, actigraphy | ~3,900+ released participants; target resource of at least 10,000 ages 5-21 | https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/ |
+| HCP Aging | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral, cognitive, health, and demographic measures | ~700+ adults ages 36-100 | https://www.humanconnectome.org/study/hcp-lifespan-aging |
+| HCP Development | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral, cognitive, health, and demographic measures | ~600+ children and adolescents ages 5-21 | https://www.humanconnectome.org/study/hcp-lifespan-development |
+| HCP Early Psychosis | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Diagnostic, clinical, behavioral, and cognitive measures | ~250 early psychosis and control participants | https://www.humanconnectome.org/study/hcp-early-psychosis |
+| HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral and cognitive measures | ~1,200 young adult participants | https://www.humanconnectome.org/study/hcp-young-adult |
+| MND | rs-fMRI; task-fMRI | Motor neuron disease diagnosis and clinical measures | 59 participants in OpenNeuro ds005874 | https://openneuro.org/datasets/ds005874/versions/1.1.0 |
+| Natural Scenes Dataset | T1w; task-fMRI | Natural image stimuli; behavioral responses; image annotations | 8 participants with dense repeated visual fMRI | https://naturalscenesdataset.org/ |
+| PNC | T1w; dMRI; ASL; rs-fMRI; task-fMRI | Genotyping; clinical and neuropsychiatric assessment; Computerized Neurocognitive Battery | >9,500 youth cohort; 1,445 participants with neuroimaging | https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html |
+| REST-meta-MDD | rs-fMRI | MDD diagnosis; clinical and demographic measures | 2,428 participants across 25 cohorts | http://rfmri.org/REST-meta-MDD |
+| SEED-IV | EEG | Emotion labels across four affective categories; trial-level session metadata | 15 subjects across 3 sessions for emotion decoding benchmarks | https://bcmi.sjtu.edu.cn/home/seed/ |
+| SEED-VIG | EEG | Vigilance/fatigue labels; continuous alertness annotations; behavioral metadata | 23 subjects in sustained-attention driving-style vigilance recordings | https://bcmi.sjtu.edu.cn/home/seed/ |
+| TCP | rs-fMRI | Psychiatric diagnostic interviews; cognitive and clinical assessments | 245 transdiagnostic participants | https://openneuro.org/datasets/ds004215 |
+| UCLA CNP | T1w; dMRI; rs-fMRI; task-fMRI | Diagnostic groups; neuropsychological and phenotypic assessments | 272 participants in OpenNeuro ds000030 | https://openneuro.org/datasets/ds000030 |
+| UK Biobank | T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI | Genotype/genomic data; questionnaires; hospital records; environmental data; sociodemographic data; physical measures | ~50,000 participants with multimodal imaging data | https://www.ukbiobank.ac.uk/ |
 
 ### 🎯 Executability and Reproducibility
 - **Automatic Dependency Management**: No manual installation needed; the system detects and resolves dependencies
@@ -64,11 +93,10 @@ Users simply specify the target dataset, and the system automatically recommends
 - **Result Visualization**: Scientific data visualization, statistical chart generation
 - **Paper Writing**: Auto-generated drafts, format standardization
 
-### 🤝 OpenClaw Compatibility
-- **NeuroClaw is now self-contained** — OpenClaw does not need to be installed separately.
-  The bundled `core/` engine provides the same agent loop, skill loader, and tool runtime.
-- `skills/`, `materials/`, `USER.md`, and `SOUL.md` remain fully compatible with existing
-  OpenClaw workspaces if you still want to use NeuroClaw as an add-on.
+### 🤝 Flexible Integration
+- **NeuroClaw works as a standalone research assistant** with its own GUI and CLI, so researchers can use it directly without depending on another host project.
+- `skills/`, `materials/`, `USER.md`, and `SOUL.md` can also be installed as a reusable skill library in existing agent systems such as OpenClaw, Hermes, and Claude Code.
+- The bundled `core/` engine provides an integrated agent loop, skill loader, and tool runtime for standalone deployments.
 - Non-neuroscience connectors (WhatsApp, Telegram, Slack, calendar, e-commerce, SaaS auth)
   are disabled by default via `core/config/features.json` and can be re-enabled if needed.
 
@@ -84,7 +112,7 @@ Users simply specify the target dataset, and the system automatically recommends
 - *(Optional)* `nvidia-smi` / `nvcc` for GPU support
 - *(Recommended for Web UI attachments)* `pypdf`, `python-docx`, `openpyxl`, `python-pptx`
 
-> **NeuroClaw is now self-contained** — OpenClaw does not need to be installed separately.
+> **NeuroClaw runs as a standalone research assistant** with its own GUI and CLI.
 > The bundled installer configures everything, including your Python environment,
 > CUDA version, neuroimaging toolchain, and LLM backend.
 
@@ -100,15 +128,17 @@ Users simply specify the target dataset, and the system automatically recommends
    ```bash
    python installer/setup.py
    ```
+  This installs the standalone NeuroClaw environment for both the GUI and CLI workflows.
   The wizard will walk you through:
   - Python runtime (system / conda / Docker)
   - CUDA / GPU configuration and optional PyTorch install
   - Neuroscience toolchain paths (FSL, FreeSurfer, dcm2niix, etc.)
-  - LLM backend (OpenAI, Anthropic, or local model)
+  - LLM backend selection (OpenAI, Anthropic, or local model)
   - Default BIDS and output directories
   - Web UI dependencies and attachment parsers (PDF/DOCX/XLSX/PPTX)
 
    Settings are saved to `neuroclaw_environment.json` and loaded automatically on every future session.
+   Setup does not ask for an API key. Pass the key only at runtime with `--api-key`, or export the configured environment variable before startup.
 
    For a quick non-interactive setup with auto-detected defaults:
    ```bash
@@ -121,17 +151,19 @@ Users simply specify the target dataset, and the system automatically recommends
     ```
 
 3. **Start NeuroClaw**
-
-   **Option A — Interactive REPL (terminal)**
+   
+   *Option A — Interactive REPL (terminal)*
    ```bash
-   python core/agent/main.py
+   python core/agent/main.py --api-key "$OPENAI_API_KEY"
    ```
 
-   **Option B — Browser Web UI** *(recommended)*
+   *Option B — Browser Web UI (recommended)*
    ```bash
-   python core/agent/main.py --web
+   python core/agent/main.py --web --api-key "$OPENAI_API_KEY"
    ```
    Then open **http://localhost:7080** in your browser. The Web UI features a chat interface, skills sidebar, markdown rendering, and code syntax highlighting.
+
+  If you prefer environment variables, export the provider-specific key first and start NeuroClaw without `--api-key`.
 
     Web UI attachment parsing currently supports these file types:
     - Text/config/code: `.txt`, `.md`, `.markdown`, `.json`, `.yaml`, `.yml`, `.csv`, `.tsv`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sh`, `.bash`, `.zsh`, `.sql`, `.html`, `.css`, `.xml`, `.log`, `.rst`, `.ini`, `.toml`, `.cfg`
@@ -141,12 +173,14 @@ Users simply specify the target dataset, and the system automatically recommends
 
    To use a custom port or bind to all interfaces (e.g., for remote access):
    ```bash
-   python core/agent/main.py --web --port 8080 --host 0.0.0.0
+  python core/agent/main.py --web --port 8080 --host 0.0.0.0 --api-key "$OPENAI_API_KEY"
    ```
 
 <div align="center">
   <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
 </div>
+
+> Note: We provide benchmark run results and per-model outputs under `materials/benchmark_results/`. These artifacts can be used as practical references when running NeuroClaw benchmarks or reproducing model outputs.
 
 ### Verify Installation
 ```bash
@@ -165,7 +199,24 @@ for s in skills:
 
 ### Benchmark Evaluation
 
-NeuroBench tasks live under `neuro_bench/`, and each task directory contains a `task.md` contract.
+NeuroBench tasks live under `neuro_bench/`, and each task directory contains a `task.md` instruction file.
+
+NeuroBench currently accepts these benchmark configurations:
+- `with-skills`: the agent can use the skills loaded from `skills/`
+- `no-skills`: the baseline run without skills
+- `with-skills` + `no-skills` paired comparison: enable `--benchmark-compare-skills` to run both variants for the same task set
+
+Benchmark scoring is handled separately with `--score-benchmark`: it reads reports in `output/`, applies a GPT-5.4 weighted rubric, and generates numeric scores for planning completeness, tool/skill reasonableness, and command/code correctness. For fairness, each task case is scored in one batch across all comparable models to reduce scoring-standard drift. Skill-call counts are recorded separately and used for efficiency analysis.
+
+To score existing benchmark reports:
+```bash
+python core/agent/main.py --score-benchmark
+```
+
+To speed up scoring on larger runs:
+```bash
+python core/agent/main.py --score-benchmark --score-workers 8
+```
 
 **Web benchmark mode**
 ```bash
@@ -175,6 +226,11 @@ python core/agent/main.py --web --benchmark
 **CLI benchmark batch runner**
 ```bash
 python core/agent/main.py --benchmark
+```
+
+To run the paired skill comparison in CLI mode:
+```bash
+python core/agent/main.py --benchmark --benchmark-compare-skills
 ```
 
 In CLI benchmark mode, NeuroClaw will ask for:
@@ -188,7 +244,7 @@ Then it will:
 - print progress in the terminal only
 - save reports under `output/<model_name>/`, with one markdown report per case and run
 
-The benchmark reports include the solution thinking, tools used, and the commands or code that were used or suggested.
+The benchmark reports include the solution thinking, skills used, skill-call counts, and the commands or code that were used or suggested.
 
 ---
 
@@ -227,6 +283,7 @@ NeuroClaw/
 │   ├── adni-skill/
 │   ├── bids-organizer/
 │   ├── beautiful-log/
+│   ├── brain-visualization/
 │   ├── claw-shell/
 │   ├── conda-env-manager/
 │   ├── conn-tool/
@@ -234,7 +291,8 @@ NeuroClaw/
 │   ├── dependency-planner/
 │   ├── dipy-tool/
 │   ├── docker-env-manager/
-│   ├── dti-skill/
+│   ├── nibabel-skill/
+│   ├── dwi-skill/
 │   ├── eeg-skill/
 │   ├── experiment-controller/
 │   ├── fmri-skill/
@@ -244,6 +302,8 @@ NeuroClaw/
 │   ├── git-essentials/
 │   ├── git-workflows/
 │   ├── hcp-skill/
+│   ├── ukb-skill/
+│   ├── harness-core/
 │   ├── hcppipeline-tool/
 │   ├── method-design/
 │   ├── mne-eeg-tool/
@@ -263,9 +323,9 @@ NeuroClaw/
 │   ├── T00_installer_validation/   # Validates installer output
 │   └── …
 │
-├── materials/                      # Research materials and reference resources
+├── materials/                      # Research materials, benchmark run results, and model outputs
 │   ├── CVPR_2026/
-│   └── examples/
+│   └── benchmark_results/
 │
 └── LICENSE                         # License
 
@@ -293,9 +353,8 @@ NeuroClaw/
 | `overleaf-skill` | Overleaf sync and collaborative manuscript operations | ✅ |
 | `academic-research-hub` | Multi-source academic search and paper retrieval | ✅ |
 | `bids-organizer` | Base skill for organizing raw data into BIDS structure | ✅ |
-| `brain-visualization` | Brain network, atlas activation, and FreeSurfer surface visualization | ✅ |
 | `beautiful-log` | Export clean User/NeuroClaw dialogue into beautiful HTML logs | ✅ |
-| `harness-core` | Harness engineering SDK (verification, checkpointing, audit logging, drift detection) | ✅ |
+| `skill-updater` | Skill updater and management utilities | ✅ |
 
 ### Interface Layer (Task Orchestration)
 | Skill | Function | Status |
@@ -312,13 +371,15 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 #### Tool
 | Skill | Function | Status |
 |------|----------|--------|
+| `brain-visualization` | Publication-ready figures and 3D assets (connectomes, atlas summaries, FreeSurfer PLY) | ✅ |
+| `harness-core` | Core harness SDK: verification, checkpointing, drift detection, audit logging | ✅ |
 | `mne-eeg-tool` | Base-layer MNE-Python implementation for EEG | ✅ |
 | `fsl-tool` | FSL-based sMRI/fMRI/DWI processing utilities | ✅ |
 | `fmriprep-tool` | fMRIPrep pipeline wrapper and execution | ✅ |
 | `qsiprep-tool` | qsiPrep pipeline wrapper for diffusion MRI | ✅ |
 | `hcppipeline-tool` | HCP-style processing pipeline utilities | ✅ |
 | `dipy-tool` | Diffusion MRI processing via DIPY | ✅ |
-| `nibabel-skill` | Low-level neuroimaging file I/O and affine-aware data access | ✅ |
+| `nibabel-skill` | Low-level neuroimaging I/O and geometry handling (NIfTI, affine, FreeSurfer I/O) | ✅ |
 | `nilearn-tool` | Fast neuroimaging feature extraction and decoding prep | ✅ |
 | `conn-tool` | Functional connectivity computation and analysis | ✅ |
 | `freesurfer-tool` | FreeSurfer-based MRI processing and segmentation | ✅ |
@@ -345,7 +406,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 |------|----------|--------|
 | `adni-skill` | ADNI dataset automated processing workflow | ✅ |
 | `hcp-skill` | HCP-YA dataset automated processing workflow | ✅ |
-| `ukb-skill` | UKB brain imaging automated processing workflow | ⏳ |
+| `ukb-skill` | UKB brain imaging automated processing workflow | ✅ |
 
 #### Modality
 | Skill | Function | Status |
@@ -353,7 +414,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `eeg-skill` | EEG preprocessing and feature extraction workflows | ✅ |
 | `fmri-skill` | Functional MRI preprocessing and analysis workflows | ✅ |
 | `smri-skill` | Structural MRI preprocessing and analysis workflows | ✅ |
-| `dti-skill` | Diffusion MRI preprocessing and analysis workflows | ✅ |
+| `dwi-skill` | Diffusion MRI preprocessing and analysis workflows | ✅ |
 
 **Legend**: ✅ Implemented | 🏗️ In Development | ⏳ Planned
 

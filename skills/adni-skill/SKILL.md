@@ -9,6 +9,10 @@ license: MIT License (NeuroClaw custom skill - freely modifiable within the proj
 ## Overview
 `adni-skill` is the NeuroClaw orchestration skill for ADNI subject-level fMRI + T1 workflows.
 
+It supports two distinct usage modes:
+1. A narrow ADNI raw NIfTI -> BIDS staging path.
+2. A full downstream ADNI workflow path (BIDS + fMRIPrep + DK68 ROI extraction).
+
 It coordinates a fixed two-stage pipeline:
 1. Prepare ADNI data into BIDS and run fMRIPrep.
 2. Run DK68 ROI extraction with QC.
@@ -24,6 +28,37 @@ This skill follows NeuroClaw hierarchy:
 - Delegates all execution via `claw-shell` to tool skills.
 
 **Research use only.**
+
+---
+
+## Narrow Path: ADNI Raw NIfTI -> BIDS Staging
+
+Use this path when the task only asks to reorganize raw ADNI NIfTI files into a BIDS-style dataset and does not require preprocessing, ROI extraction, VQA generation, EEG handling, or DICOM conversion.
+
+### When this narrow path should dominate
+- The task objective is limited to ADNI NIfTI staging, BIDS renaming, sidecar handling, and dataset-level metadata.
+- Inputs are already local ADNI NIfTI files or ADNI-style subject/date folders.
+- The required deliverable is a direct staging script or command sequence, not a plan for fMRIPrep or downstream analysis.
+
+### Narrow-path contract
+- Do not widen the solution to fMRIPrep, DK68, VQA, EEG, or generic multi-modality BIDS conversion unless the task explicitly requires them.
+- Treat this as a direct file-organization problem: scan ADNI subject/session layout, normalize subject and visit labels, map modalities to BIDS names, copy or symlink NIfTI plus matching sidecars, and write dataset-level metadata plus staging logs.
+- If the task is benchmark-style, prefer a single direct end-to-end staging script over a confirmation-first orchestration plan.
+
+### Expected narrow-path behavior
+1. Detect ADNI-style subject IDs such as `130_S_0969` and normalize them to deterministic BIDS labels such as `sub-130S0969`.
+2. Detect visit/date information and normalize it to a deterministic session label such as `ses-M00` or `ses-YYYYMMDD` according to the task contract.
+3. Route modalities narrowly:
+  - T1/MPRAGE/SPGR -> `anat/*_T1w`
+  - T2 -> `anat/*_T2w`
+  - FLAIR -> `anat/*_FLAIR`
+  - rs-fMRI/fMRI/BOLD -> `func/*_task-rest_bold`
+  - DTI/DWI only if explicitly present in the raw ADNI NIfTI inputs
+4. Preserve or rename matching JSON sidecars when available; if metadata is absent, create only the minimal dataset files required by the task and log the limitation.
+5. Emit dataset-level outputs such as `dataset_description.json`, `participants.tsv`, `README`, and a manifest or skipped-file report when the task expects staging auditability.
+
+### Important restriction for narrow staging tasks
+For ADNI raw NIfTI -> BIDS staging tasks, do not let the broader full-workflow examples below pull the answer into fMRIPrep, DK68 ROI extraction, VQA generation, EEG tooling, or DICOM conversion. Those are separate paths, not the mainline.
 
 ---
 

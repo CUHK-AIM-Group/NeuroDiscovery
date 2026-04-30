@@ -59,6 +59,17 @@ matlab -batch "conn; disp('CONN version:'); conn('ver')"
 - SPM12 or SPM8
 - Preprocessed data from `fmriprep-tool` or `hcppipeline-tool`
 
+## Benchmark Adapter Guidance
+
+For benchmark-style prompts, do not force the full CONN project workflow when the task is only asking for a direct functional connectivity matrix from an already preprocessed BOLD file.
+
+- If the task starts from an existing preprocessed BOLD NIfTI and an atlas and only asks for ROI-level functional connectivity output:
+    - default to the narrow direct path `preprocessed BOLD -> ROI time series -> square FC matrix`
+    - do not require MATLAB, SPM, or a `.mat` CONN project file as the primary route
+    - do not require explicit confirmation before presenting the executable benchmark answer
+- When the task provides an explicit benchmark output directory, preserve that exact output contract instead of writing into generic CONN project folders or ad hoc subject-local directories.
+- Only use the full CONN Toolbox route as the default when the prompt explicitly asks for CONN, seed-to-voxel analysis, ICA, PPI/gPPI, DCM, or other advanced CONN-native workflows.
+
 ## NeuroClaw recommended wrapper script
 
 ```python

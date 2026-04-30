@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | Get Started</title>
+    <meta
+      name="description"
+      content="Installation and quick start guide for NeuroClaw, including setup, launch, and verification steps."
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="neurobench.html">NeuroBench</a>
+        <a href="faq.html">FAQ</a>
+        <a href="get-started.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="get-started-zh.html" aria-label="Switch to Chinese">中文</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">Contact Us</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero reveal">
+        <p class="eyebrow">Get Started</p>
+        <h1>Install and launch NeuroClaw in a few steps</h1>
+        <p class="lead">
+          Install NeuroClaw, launch the agent, and verify the setup from one place.
+        </p>
+        <div class="actions">
+          <a class="btn" href="#install">Start Installation</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw/blob/main/README.md" target="_blank" rel="noreferrer">Open README</a>
+        </div>
+      </section>
+
+      <section id="requirements" class="panel reveal">
+        <h2>Requirements</h2>
+        <div class="cards">
+          <article>
+            <h3>Core</h3>
+            <p>Python >= 3.10 and Git are required.</p>
+          </article>
+          <article>
+            <h3>Optional</h3>
+            <p>Conda or Mamba for isolation, and nvidia-smi or nvcc for GPU support.</p>
+          </article>
+          <article>
+            <h3>Web UI Attachments</h3>
+            <p>Recommended packages include pypdf, python-docx, openpyxl, and python-pptx.</p>
+          </article>
+          <article>
+            <h3>Setup Wizard</h3>
+            <p>NeuroClaw provides a setup wizard for runtime configuration, toolchain paths, and Web UI dependencies.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="install" class="split reveal">
+        <div>
+          <p class="eyebrow">Installation</p>
+          <h2>Clone and configure</h2>
+          <p>
+            The bundled installer walks you through Python runtime selection, CUDA/GPU configuration, neuroscience toolchain paths, LLM backend selection, default directories, and Web UI dependencies.
+          </p>
+          <ul>
+            <li>Clone the repository.</li>
+            <li>Run the setup wizard: <code>python installer/setup.py</code></li>
+            <li>Use <code>--non-interactive</code> for a quick auto-detected setup.</li>
+            <li>If needed, install Web UI dependencies manually.</li>
+          </ul>
+        </div>
+        <div class="code-stack">
+          <pre><code>git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
+cd NeuroClaw
+python installer/setup.py
+python installer/setup.py --non-interactive
+pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx</code></pre>
+        </div>
+      </section>
+
+      <section id="launch" class="split reveal">
+        <div>
+          <p class="eyebrow">Quick Use</p>
+          <h2>Start NeuroClaw</h2>
+          <p>
+            You can run NeuroClaw either in the terminal REPL or in the browser-based Web UI.
+          </p>
+          <ul>
+            <li>Terminal REPL: <code>python core/agent/main.py</code></li>
+            <li>Web UI: <code>python core/agent/main.py --web</code></li>
+            <li>Open <code>http://localhost:7080</code> in your browser.</li>
+            <li>Use <code>--port</code> and <code>--host</code> for remote access or custom binding.</li>
+          </ul>
+        </div>
+        <div class="code-stack">
+          <pre><code>python core/agent/main.py
+python core/agent/main.py --web
+python core/agent/main.py --web --port 8080 --host 0.0.0.0</code></pre>
+        </div>
+      </section>
+
+      <section id="verify" class="panel reveal">
+        <h2>Verify Installation</h2>
+        <p class="sub">Use these checks to confirm the environment file and skill registry are working as expected.</p>
+        <div class="code-stack">
+          <pre><code># Check that the environment file is valid
+python installer/setup.py --check
+
+# List registered neuroscience skills (Python)
+python -c "
+from core.skill_loader.loader import SkillLoader
+from pathlib import Path
+skills = SkillLoader(Path('skills')).load_all()
+for s in skills:
+    print(s['name'])
+"</code></pre>
+        </div>
+      </section>
+
+      <section class="cta reveal">
+        <h2>Next Step</h2>
+        <p>Once NeuroClaw is running, you can explore the benchmark, FAQ, and homepage pages directly from the site.</p>
+        <div class="actions">
+          <a class="btn" href="index.html">Back to Home</a>
+          <a class="btn ghost" href="neurobench.html">NeuroBench</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw" target="_blank" rel="noreferrer">Repository</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

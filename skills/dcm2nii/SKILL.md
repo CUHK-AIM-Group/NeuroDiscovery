@@ -14,6 +14,18 @@ NIfTI (.nii/.nii.gz) is the de-facto standard in neuroimaging research — compa
 This skill wraps `dcm2niix` (latest stable release as of 2026), the most widely used and actively maintained DICOM→NIfTI converter in neuroimaging.  
 It produces high-fidelity 3D/4D NIfTI volumes + comprehensive JSON sidecar files containing DICOM tags (BIDS-compatible when using `-b y`).
 
+## Benchmark-Facing Default Mainline
+
+For benchmark-style DICOM conversion tasks, default to the narrow canonical answer instead of a broad converter survey:
+
+- Preferred default command shape: `dcm2niix -z y -b y -o <output_dir> <dicom_dir>`
+- For batch conversion, the default answer should be a simple loop over subject/session or series directories.
+- Metadata preservation means emitting paired `.nii.gz` and `.json` outputs; present this as the primary validation target.
+- Prefer `dcm2niix` over legacy `dcm2nii` unless the user explicitly asks for the legacy converter.
+- Do not lead with installation, Docker, anonymization, or wrapper-script material unless the prompt asks for those concerns or the task is blocked by a missing binary.
+
+If the prompt is specifically about structural MRI DICOM conversion, keep the answer focused on batch conversion plus sidecar validation. Do not expand into downstream BIDS curation or anatomical processing unless requested.
+
 **Research use only** — not certified for clinical diagnostic workflows.
 
 ## Quick Reference

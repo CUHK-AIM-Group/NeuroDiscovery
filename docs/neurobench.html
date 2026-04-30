@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | NeuroBench</title>
+    <meta
+      name="description"
+      content="NeuroBench overview, benchmark configurations, and scoring workflow for NeuroClaw."
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="neurobench.html">NeuroBench</a>
+        <a href="faq.html">FAQ</a>
+        <a href="get-started.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="neurobench-zh.html" aria-label="Switch to Chinese">中文</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">Contact Us</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero reveal faq-intro">
+        <p class="eyebrow">NeuroBench</p>
+        <h1>Benchmark evaluation for NeuroClaw</h1>
+        <p class="lead">
+          NeuroBench is the benchmark suite used to evaluate end-to-end neuroimaging workflows, reproducibility readiness, and skill-guided execution.
+        </p>
+      </section>
+
+      <section class="panel reveal">
+        <h2>Benchmark Overview</h2>
+        <div class="figure-preview">
+          <img src="assets/benchmark-preview.png" alt="Benchmark overview" />
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <h2>What NeuroBench covers</h2>
+        <div class="bench-grid">
+          <article>
+            <h3>Coverage</h3>
+            <p>Structural MRI, functional MRI, diffusion MRI, EEG, and multimodal integration tasks.</p>
+          </article>
+          <article>
+            <h3>Evaluation</h3>
+            <p>Planning quality, tool/skill reasonableness, code/command correctness, and reproducibility readiness.</p>
+          </article>
+          <article>
+            <h3>Task Design</h3>
+            <p>Each task directory contains a task.md instruction file with explicit inputs, outputs, and checks.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="split reveal">
+        <div>
+          <p class="eyebrow">Benchmark Runs</p>
+          <h2>How to execute tasks</h2>
+          <p>
+            NeuroBench supports baseline and skill-enabled runs. You can execute it from the Web UI or from the CLI batch runner.
+          </p>
+          <ul>
+            <li><code>with-skills</code>: use skills loaded from <code>skills/</code>.</li>
+            <li><code>no-skills</code>: run without skills for baseline comparison.</li>
+            <li><code>--benchmark-compare-skills</code>: run paired variants for the same tasks.</li>
+            <li>Outputs are written to <code>output/</code>.</li>
+          </ul>
+        </div>
+        <div class="code-stack">
+          <pre><code># Web benchmark mode
+python core/agent/main.py --web --benchmark
+
+# CLI benchmark batch runner
+python core/agent/main.py --benchmark
+
+# Paired skill comparison
+python core/agent/main.py --benchmark --benchmark-compare-skills</code></pre>
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <h2>Scoring</h2>
+        <p class="sub">
+          Use <code>--score-benchmark</code> to score existing reports in <code>output/</code> with a GPT-5.4 weighted rubric.
+        </p>
+        <div class="code-stack">
+          <pre><code>python core/agent/main.py --score-benchmark
+python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
+        </div>
+      </section>
+
+      <section class="cta reveal">
+        <h2>Benchmark workflow</h2>
+        <p>Run tasks first, then score the generated reports to analyze quality and efficiency.</p>
+        <div class="actions">
+          <a class="btn" href="get-started.html">Get Started</a>
+          <a class="btn ghost" href="faq.html">FAQ</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

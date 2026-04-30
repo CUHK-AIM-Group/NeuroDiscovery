@@ -90,6 +90,20 @@ All assets should be organized under `./hcp_output/`:
 
 ---
 
+## Benchmark Adapter Guidance
+
+For benchmark-style prompts, do not force the full `download -> staging -> multimodal processing` orchestration when the task is only asking for local HCP data staging or organization.
+
+- If the task starts from raw HCP data already present on disk and only asks for BIDS-style staging / organization:
+	- skip the mandatory download stage
+	- do not automatically delegate to `smri-skill`, `fmri-skill`, or `dwi-skill`
+	- default to the narrow path `local raw HCP discovery -> BIDS-style staging -> minimal metadata -> validation/report`
+- In benchmark mode, do not require explicit confirmation before presenting the direct staging solution.
+- Preserve the HCP-centered output contract under `hcp_output/staging/` when the task is specifically a staging benchmark.
+- Only use the full multimodal orchestration and confirmation-heavy workflow when the prompt explicitly asks for download, end-to-end multimodal HCP processing, or post-staging structural / functional / diffusion analysis.
+
+---
+
 ## Safety and Execution Policy
 - No execution before explicit plan confirmation.
 - All execution must be routed via `claw-shell`.

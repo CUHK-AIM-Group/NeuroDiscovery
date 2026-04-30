@@ -18,6 +18,7 @@
 - Deep learning framework preference: PyTorch (modular, well-documented code strongly preferred)  
 - Frequently used datasets/domains: ADNI, UK Biobank, OpenNeuro, HCP, local clinical cohorts (when ethics-approved and de-identified)  
 - High priority: ability to guide dependency installation, reproduce published models, handle real data processing pipelines  
+- Current agent focus: benchmark reliability, real tool-calling behavior, with-skills vs no-skills evaluation fairness, and avoiding fabricated "skill usage" claims without tool evidence  
 - Output preferences:  
   - Tables for method/dataset/model comparisons  
   - Code + description for figures (matplotlib/seaborn/ plotly)  
@@ -54,6 +55,8 @@
   - Output value bounds: error if predictions out of plausible range
 
 ### Logging & Persistence Strategy
+These are preferred operating defaults, not guaranteed repository-wide implemented behavior unless explicitly wired in code.
+
 - **Audit log format**: JSONL (JSON Lines) — one structured event per line
 - **Audit log location**: `{workspace_root}/logs/audit_{YYYY-MM-DD}.jsonl` (rotated daily)
 - **Metadata captured per event**:
@@ -68,6 +71,13 @@
   - Checkpoint retention: keep last 5 checkpoints + current (auto-cleanup older files)
   - Compression: use LZ4 compression (fast + good ratio) for checkpoint storage
   - Checkpoint integrity: verify SHA256 hash before resuming
+
+Current repository status:
+- Lightweight session checkpoints are implemented in `core/session/manager.py`
+- Current checkpoint location: `{workspace_root}/.neuroclaw_checkpoints/`
+- Current checkpoint format: JSON
+- Current retention implemented in code: last 5 checkpoints
+- Audit logging / LZ4 compression / SHA256 checkpoint verification are still preferences unless separately implemented
 
 - **Log retention**:
   - Audit logs: keep for 90 days (exportable to archive before deletion)
@@ -109,22 +119,22 @@
 
 > This section is auto-populated by `installer/setup.py`. Update it whenever you re-run the installer or change your environment.
 
-- **Setup type**: _(update after running installer — e.g. `conda`)_
-- **Conda environment**: _(e.g. `neuroclaw`)_
-- **Python path**: _(e.g. `/opt/conda/envs/neuroclaw/bin/python`)_
-- **CUDA version**: _(e.g. `12.1`; or `cpu-only` if no GPU)_
-- **PyTorch build**: _(e.g. `cu121`; or `cpu-only`)_
-- **Default device**: _(e.g. `cuda:0`; or `cpu`)_
-- **FSL home** (`FSLDIR`): _(e.g. `/usr/local/fsl`; or `null` if not installed)_
-- **FreeSurfer home** (`FREESURFER_HOME`): _(e.g. `/usr/local/freesurfer`; or `null`)_
-- **dcm2niix path**: _(e.g. `/usr/local/bin/dcm2niix`; or `null`)_
-- **MATLAB path**: _(e.g. `/usr/local/MATLAB/R2024a/bin/matlab`; or `null`)_
-- **LLM provider**: _(e.g. `openai` / `anthropic` / `local`)_
-- **LLM model**: _(e.g. `gpt-4o`)_
-- **LLM API key env var**: _(e.g. `OPENAI_API_KEY` — the variable name, not the value)_
-- **Default BIDS root**: _(e.g. `~/data/bids`)_
-- **Default output root**: _(e.g. `~/data/outputs`)_
-- **Default n_jobs**: _(e.g. `4`)_
+- **Setup type**: `conda`
+- **Conda environment**: `neuroclaw`
+- **Python path**: `/home/cheng/miniconda3/envs/neuroclaw/bin/python`
+- **CUDA version**: `13.0`
+- **PyTorch build**: `cu130`
+- **Default device**: `cuda:0`
+- **FSL home** (`FSLDIR`): `/usr/local/fsl`
+- **FreeSurfer home** (`FREESURFER_HOME`): `/usr/local/freesurfer`
+- **dcm2niix path**: `/home/cheng/miniconda3/envs/neuroclaw/bin/dcm2niix`
+- **MATLAB path**: `null`
+- **LLM provider**: `openai`
+- **LLM model**: `gpt-5.4-mini`
+- **LLM API key env var**: `OPENAI_API_KEY`
+- **Default BIDS root**: `~/data/bids`
+- **Default output root**: `~/data/outputs`
+- **Default n_jobs**: `4`
 
 The authoritative values are stored in `neuroclaw_environment.json` at the workspace root.
 Read that file (not this section) for programmatic access.

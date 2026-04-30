@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | 常见问题</title>
+    <meta
+      name="description"
+      content="NeuroClaw 常见问题，包括收费、框架与 IDE 兼容性、数据处理和 benchmark 使用方式。"
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index-zh.html">Home</a>
+        <a href="neurobench-zh.html">NeuroBench</a>
+        <a href="faq-zh.html">FAQ</a>
+        <a href="get-started-zh.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="faq.html" aria-label="切换到英文">EN</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">联系我们</a>
+      </div>
+    </header>
+
+    <main id="faq">
+      <section class="hero reveal faq-intro">
+        <p class="eyebrow">常见问题</p>
+        <h1>NeuroClaw FAQ</h1>
+      </section>
+
+      <section class="panel reveal">
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary>NeuroClaw 需要收费吗？</summary>
+            <div class="faq-answer">
+              不需要。NeuroClaw 仓库是公开的，可按照仓库中的许可证使用。你不需要为查看代码或在本地运行平台本身付费；但你自己的计算资源、存储空间以及第三方服务费用仍然需要承担。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>NeuroClaw 的能力能兼容其他框架或者 IDE 吗？</summary>
+            <div class="faq-answer">
+              NeuroClaw 的核心技能与 OpenClaw、Hermes、Claude Code 等平台兼容。我们未来将增加转换脚本来实现对 NeuroClaw 全部能力的兼容。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>我的数据会被如何处理？</summary>
+            <div class="faq-answer">
+              NeuroClaw 默认在本地运行，除非你显式接入外部服务。你的数据、文件和输出由你自己控制；只有当你配置第三方模型后，提示词或中间产物才可能发送到外部后端。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>benchmark 主要评测什么？</summary>
+            <div class="faq-answer">
+              NeuroBench 评测的是可执行性、输出有效性、规划质量、工具/技能使用是否合理，以及复现准备度。它面向真实神经影像工作流，而不是单轮问答。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>benchmark 怎么运行？</summary>
+            <div class="faq-answer">
+              可以使用 Web UI：<code>python core/agent/main.py --web --benchmark</code>，也可以使用命令行批量运行：<code>python core/agent/main.py --benchmark</code>。如果要对比技能版和基线版，再加上 <code>--benchmark-compare-skills</code>。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>可以跑很长的会话，或者同时开多个会话吗？</summary>
+            <div class="faq-answer">
+              可以。NeuroClaw 本身就是为迭代式实验闭环设计的，适合长时间运行。你可以在不同终端或浏览器标签里开多个会话，但实际能力仍取决于本地资源和所选模型后端。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>安装向导会配置哪些内容？</summary>
+            <div class="faq-answer">
+              内置安装器会引导你配置 Python 环境、相关依赖、神经影像工具链路径、LLM 后端、默认目录以及 Web UI 附件支持。
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel reveal faq-contact">
+        <p class="eyebrow">还有其他问题？</p>
+        <h2>联系团队</h2>
+        <p>
+          如果这里没有覆盖你的问题，可以联系我们进一步确认安装、兼容性或 benchmark 使用方式。
+        </p>
+        <div class="actions">
+          <a class="btn" href="mailto:chengwang@link.cuhk.edu.hk">发送邮件</a>
+          <a class="btn ghost" href="index-zh.html">返回首页</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

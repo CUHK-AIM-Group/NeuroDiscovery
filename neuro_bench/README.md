@@ -30,7 +30,7 @@ The benchmark is grouped by workflow families so you can evaluate specific capab
 Each task directory includes:
 - `task.md`: objective, input, output, and key steps
 
-In practice, `task.md` is the contract for evaluation. It defines:
+In practice, `task.md` is the instruction file for evaluation. It defines:
 - Required input assumptions (file type, folder organization, mandatory metadata)
 - Processing objective and expected pipeline behavior
 - Expected outputs and naming conventions
@@ -40,6 +40,23 @@ In practice, `task.md` is the contract for evaluation. It defines:
 
 You can run NeuroClaw benchmark tasks in two ways:
 
+NeuroBench accepts the following benchmark configurations:
+- `with-skills`: the agent may use loaded skills from `skills/`
+- `no-skills`: baseline run with skills disabled
+- paired comparison: `--benchmark-compare-skills` runs both variants for the same task set
+
+Benchmark scoring is handled separately with `--score-benchmark`. It reads reports in `output/`, applies a GPT-5.4 weighted rubric, and generates numeric scores for planning completeness, tool/skill reasonableness, and command/code correctness. For fairness, each task case is jointly scored across all comparable models in one batch to reduce scoring-standard drift. Skill-call counts are tracked separately for efficiency analysis.
+
+To score existing benchmark reports:
+```bash
+python core/agent/main.py --score-benchmark
+```
+
+To speed up scoring on larger runs:
+```bash
+python core/agent/main.py --score-benchmark --score-workers 8
+```
+
 ### Web benchmark mode
 ```bash
 python core/agent/main.py --web --benchmark
@@ -48,6 +65,11 @@ python core/agent/main.py --web --benchmark
 ### CLI benchmark batch mode
 ```bash
 python core/agent/main.py --benchmark
+```
+
+Paired skill comparison in CLI mode:
+```bash
+python core/agent/main.py --benchmark --benchmark-compare-skills
 ```
 
 In CLI benchmark mode, NeuroClaw will ask for:
@@ -61,7 +83,7 @@ Then it will:
 - show progress in the terminal only
 - save one report per task to `output/<case_id>_<model_name>.md`
 
-Each report includes the solution thinking, the tools used, and the commands or code that were used or suggested.
+Each report includes the solution thinking, the skills used, skill-call counts, and the commands or code that were used or suggested.
 
 
 Example:

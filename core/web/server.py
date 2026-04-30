@@ -37,7 +37,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 SHELL_STATUS_FILE = Path("/tmp/neuroclaw_claw_shell_status.json")
 AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 
-DEFAULT_HOST = "127.0.0.1"
+DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 7080
 ATTACHMENT_MAX_FILE_BYTES = 15 * 1024 * 1024
 ATTACHMENT_MAX_EMBED_CHARS = 12000

@@ -34,12 +34,35 @@ This skill serves as the **NeuroClaw interface-layer wrapper** for the HCP Pipel
 ## Common Shell Command Examples
 
 ```bash
-# Structural pipeline (most commonly used first)
+# Structural pipeline (benchmark-safe baseline: BIDS-aware discovery + validation first)
+SUBJECT="sub-001"
+SESSION=""
+BIDS_DIR="/data/bids"
+OUTDIR="/data/hcp_output"
+
+if [[ -n "${SESSION}" ]]; then
+    ANAT_DIR="${BIDS_DIR}/${SUBJECT}/${SESSION}/anat"
+    HCP_SUBJECT="${SUBJECT}_${SESSION}"
+else
+    ANAT_DIR="${BIDS_DIR}/${SUBJECT}/anat"
+    HCP_SUBJECT="${SUBJECT}"
+fi
+
+T1W="$(find "${ANAT_DIR}" -maxdepth 1 -type f -name '*_T1w.nii.gz' | sort | head -n 1)"
+T2W="$(find "${ANAT_DIR}" -maxdepth 1 -type f -name '*_T2w.nii.gz' | sort | head -n 1)"
+
+[[ -f "${T1W}" ]] || { echo "Missing required input: T1w"; exit 1; }
+[[ -f "${T2W}" ]] || { echo "Missing required input: T2w"; exit 1; }
+[[ -x "${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh" ]] || { echo "Missing required HCP resource: PreFreeSurferPipeline.sh"; exit 1; }
+
 ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
-  --path=/data/hcp_output \
-  --subject=sub-001 \
-  --t1=/data/bids/sub-001/anat/sub-001_T1w.nii.gz \
-  --t2=/data/bids/sub-001/anat/sub-001_T2w.nii.gz
+    --path="${OUTDIR}" \
+    --subject="${HCP_SUBJECT}" \
+    --t1="${T1W}" \
+    --t2="${T2W}" \
+    --SEPhaseNeg=NONE \
+    --SEPhasePos=NONE \
+    --gdcoeffs=NONE
 
 # Functional pipeline with ICA-FIX
 ${HCPPIPEDIR}/fMRIVolume/fMRIVolumePipeline.sh \
@@ -70,6 +93,8 @@ echo $HCPPIPEDIR
 - Sufficient disk space (20–100 GB per subject) and RAM (≥32 GB recommended)
 
 ## NeuroClaw recommended wrapper script
+Use this only as a last-resort orchestration reference. For benchmark-style tasks, prefer a direct task-level shell plan that first discovers BIDS inputs, checks required HCP resources, and only then calls the official stage script.
+
 ```python
 # hcppipeline_wrapper.py (placed inside the skill folder for reference)
 import subprocess
@@ -100,6 +125,7 @@ if __name__ == "__main__":
 - All actual pipeline execution is routed through `claw-shell` due to extremely long runtimes.
 - HCP Pipelines are very resource-intensive and disk-heavy.
 - Requires well-organized input data (preferably BIDS via `bids-organizer` first).
+- For benchmark or contract-sensitive tasks, do not stop at the bare `PreFreeSurferPipeline.sh --path --subject --t1 --t2` surface. First resolve BIDS subject/session inputs, validate required template/config resources, and make missing-input or no-fieldmap/no-gdc decisions explicit.
 - ICA-FIX denoising is one of the strongest features of HCP functional pipeline.
 - Surface-based MSMAll registration provides superior alignment compared to volume-based methods.
 
