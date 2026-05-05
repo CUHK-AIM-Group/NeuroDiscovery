@@ -48,10 +48,27 @@ When FreeSurfer is not detected:
 - This skill then verifies `$FREESURFER_HOME` and `recon-all` availability
 
 **Prerequisites**:
-- `dependency-planner` (mandatory for installation)  
-- `claw-shell` (mandatory for command execution)  
-- Valid FreeSurfer academic license (free registration required)  
+- `dependency-planner` (mandatory for installation)
+- `claw-shell` (mandatory for command execution)
+- Valid FreeSurfer academic license (free registration required)
 - ≥16 GB RAM recommended (32 GB+ strongly preferred for `-all`)
+
+## Agent Reference Rule
+
+When the agent needs FreeSurfer processing implementation code, it should first consult the curated snippet in `skills/freesurfer-tool/scripts/` instead of copying from the embedded wrapper below.
+
+Reference snippet available:
+- `scripts/freesurfer_processor.py` -> recon-all pipeline orchestration: environment setup, stage selection, parallel flags, claw-shell delegation
+
+Example:
+```bash
+python skills/freesurfer-tool/scripts/freesurfer_processor.py \
+    --input-mri sub-001_T1w.nii.gz \
+    --subjid sub-001 \
+    --subjects-dir /data/freesurfer_output \
+    --stages all \
+    --extra-flags "-T2 T2.nii.gz -parallel -openmp 12"
+```
 
 ## NeuroClaw recommended wrapper script
 
@@ -200,6 +217,9 @@ License registration: https://surfer.nmr.mgh.harvard.edu/registration.html
 Documentation: https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferWiki  
 
 Custom NeuroClaw skill created to integrate FreeSurfer safely into the hierarchical skill structure.
+
+Curated reference snippet in this skill:
+- `skills/freesurfer-tool/scripts/freesurfer_processor.py`
 
 ## Post-Execution Verification (Harness Integration)
 
