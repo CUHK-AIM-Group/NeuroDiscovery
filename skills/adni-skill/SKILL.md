@@ -2,8 +2,13 @@
 name: adni-skill
 description: "Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroClaw dataset-orchestration layer for ADNI."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: subagent
+skill_type: dataset
+dependencies:
+  - bids-organizer
+  - fmriprep-tool
+  - claw-shell
 ---
-
 # ADNI Skill (Dataset-Orchestration Layer)
 
 ## Overview

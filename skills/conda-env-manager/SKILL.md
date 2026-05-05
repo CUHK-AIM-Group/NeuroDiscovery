@@ -2,8 +2,11 @@
 name: conda-env-manager
 description: "Use this skill whenever the user wants to create, activate, list, export, update, clone, remove, or otherwise manage conda environments, or when a deep-learning / model skill requires a clean, isolated conda environment (e.g. 'create conda env for torch 2.3 cuda', 'export current env to yml', 'list all my conda envs', 'update packages in neuroclaw-dl', 'remove old env', 'clone env for reproducibility', 'install pytorch in new env'). Triggers include: 'conda create', 'conda env', 'make new environment', 'export yml', 'activate env', 'conda list envs', 'update conda env', 'clean environment', 'reproduce env', 'conda remove'. This skill is the mandatory gatekeeper for conda operations: it ALWAYS plans first, shows commands + risks + best practices, and waits for explicit user confirmation before executing anything."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: tool
+dependencies:
+  - dependency-planner
 ---
-
 # Conda Environment Manager
 
 ## Overview

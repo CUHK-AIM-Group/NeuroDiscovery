@@ -2,8 +2,12 @@
 name: braingnn
 description: "Use this model doc whenever the user wants to run BrainGNN for fMRI phenotype prediction, including graph construction, training, and evaluation. This document focuses on model-level usage and delegates upstream preprocessing to fmri-skill (and optionally hcp-skill)."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - run_models
 ---
-
 # BrainGNN Model Doc
 
 ## Overview

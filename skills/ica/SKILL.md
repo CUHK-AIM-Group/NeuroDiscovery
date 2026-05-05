@@ -2,8 +2,13 @@
 name: ica
 description: "Use this model doc whenever the user wants to perform resting-state network decomposition using ICA. This is a non-deep-learning unsupervised route focused on extracting intrinsic connectivity networks, component maps, and subject-level time series from resting-state fMRI."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # ICA Model Doc
 
 ## Overview

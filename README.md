@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-51-purple)](skills)
+[![Skills](https://img.shields.io/badge/skills-58-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
 
 [中文版 README](README_zh.md)
@@ -32,9 +32,11 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 - We constructed **NeuroBench** to benchmark multi-agent performance across neuroimaging workflows, especially raw data processing and model execution, and plan to refine and evaluate existing medical and general claw systems.
 - Each SKILL.md ends with the author information; please open an issue to the corresponding author if you have questions.
 
+---
 
 ## 🚀 Updates
 
+- **[2026.05.06]**: All 58 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill-loader DAG validation ensures dependency graph correctness.
 - **[2026.04.28]**: Our technical report is now available on arXiv: https://arxiv.org/abs/2604.24696
 - **[2026.04.22]**: v1.0 released — stable release with improvements and full documentation.
 - **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroClaw/
@@ -270,6 +272,9 @@ NeuroClaw/
 │   │   └── runtime.py
 │   ├── session/                    # Session persistence and context-window compression
 │   │   └── manager.py
+│   ├── checkpoint/                 # Shadow-git filesystem checkpoint manager
+│   │   ├── __init__.py
+│   │   └── manager.py
 │   └── config/
 │       └── features.json           # Feature toggles (disable WhatsApp/Slack/etc.; enable web_ui)
 │
@@ -278,36 +283,52 @@ NeuroClaw/
 │   ├── config_wizard.py            # Interactive 6-step configuration wizard (incl. Web UI deps)
 │   └── neuro_defaults.json         # Neuroscience-specific default template
 │
-├── skills/                         # Flat skill directory
+├── skills/                         # 58 skills: base (34) / subagent (18) / interface (6)
+│   ├── abide-skill/
+│   ├── abcd-skill/
 │   ├── academic-research-hub/
+│   ├── adhd200-skill/
 │   ├── adni-skill/
 │   ├── bids-organizer/
 │   ├── beautiful-log/
+│   ├── bold5000-skill/
 │   ├── brain-visualization/
+│   ├── brain_gnn/
 │   ├── claw-shell/
+│   ├── cobre-skill/
 │   ├── conda-env-manager/
 │   ├── conn-tool/
 │   ├── dcm2nii/
 │   ├── dependency-planner/
+│   ├── detrending/
+│   ├── dictlearning/
 │   ├── dipy-tool/
+│   ├── dmt-har-med-skill/
 │   ├── docker-env-manager/
-│   ├── nibabel-skill/
 │   ├── dwi-skill/
 │   ├── eeg-skill/
 │   ├── experiment-controller/
+│   ├── filtering/
+│   ├── fm_app/
 │   ├── fmri-skill/
 │   ├── fmriprep-tool/
 │   ├── freesurfer-tool/
 │   ├── fsl-tool/
 │   ├── git-essentials/
 │   ├── git-workflows/
-│   ├── hcp-skill/
-│   ├── ukb-skill/
+│   ├── glm/
 │   ├── harness-core/
+│   ├── hcp-skill/
 │   ├── hcppipeline-tool/
+│   ├── hierarchical/
+│   ├── ica/
+│   ├── kmeans/
+│   ├── knowledge-graph-builder/
 │   ├── method-design/
 │   ├── mne-eeg-tool/
 │   ├── multi-search-engine/
+│   ├── neurostorm/
+│   ├── nibabel-skill/
 │   ├── nii2dcm/
 │   ├── nilearn-tool/
 │   ├── overleaf-skill/
@@ -317,6 +338,9 @@ NeuroClaw/
 │   ├── run_models/
 │   ├── skill-updater/
 │   ├── smri-skill/
+│   ├── spacenet/
+│   ├── svm/
+│   ├── ukb-skill/
 │   └── wmh-segmentation/
 │
 ├── neuro_bench/                    # NeuroBench evaluation tasks (T00–T100)
@@ -354,6 +378,7 @@ NeuroClaw/
 | `academic-research-hub` | Multi-source academic search and paper retrieval | ✅ |
 | `bids-organizer` | Base skill for organizing raw data into BIDS structure | ✅ |
 | `beautiful-log` | Export clean User/NeuroClaw dialogue into beautiful HTML logs | ✅ |
+| `knowledge-graph-builder` | Build domain knowledge graphs from literature and databases | ✅ |
 | `skill-updater` | Skill updater and management utilities | ✅ |
 
 ### Interface Layer (Task Orchestration)
@@ -363,7 +388,6 @@ NeuroClaw/
 | `method-design` | Formalizes network architecture and derives theoretical components | ✅ |
 | `experiment-controller` | Finds and executes reproducible research experiments | ✅ |
 | `paper-writing` | Generates hierarchical manuscript drafts from IDEA/METHOD/EXPERIMENT | ✅ |
-| `run_models` | Model registry and model execution orchestration | ✅ |
 
 ### Subagent Layer
 Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**, and **modality**.
@@ -387,6 +411,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 #### Model
 | Skill | Function | Status |
 |------|----------|--------|
+| `run_models` | Model registry and model execution orchestration | ✅ |
 | `wmh-segmentation` | White matter hyperintensity segmentation (MARS-WMH nnU-Net) | ✅ |
 | `brain_gnn` | BrainGNN: graph neural network for fMRI classification | ✅ |
 | `fm_app` | FM-APP: multi-stage phenotype prediction with fMRI+sMRI | ✅ |
@@ -404,7 +429,13 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 #### Dataset
 | Skill | Function | Status |
 |------|----------|--------|
+| `abide-skill` | ABIDE dataset download, BIDS staging, and sMRI/rs-fMRI processing | ✅ |
+| `abcd-skill` | ABCD Study dataset download, BIDS staging, and multimodal processing | ✅ |
+| `adhd200-skill` | ADHD-200 dataset download, BIDS staging, and sMRI/rs-fMRI processing | ✅ |
 | `adni-skill` | ADNI dataset automated processing workflow | ✅ |
+| `bold5000-skill` | BOLD5000 dataset BIDS validation and visual task-fMRI processing | ✅ |
+| `cobre-skill` | COBRE dataset BIDS staging and schizophrenia-control fMRI processing | ✅ |
+| `dmt-har-med-skill` | DMT-HAR-MED dataset BIDS validation and psychedelic rs-fMRI processing | ✅ |
 | `hcp-skill` | HCP-YA dataset automated processing workflow | ✅ |
 | `ukb-skill` | UKB brain imaging automated processing workflow | ✅ |
 
@@ -427,21 +458,24 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 - ✓ Hierarchical architecture design (Interface-Subagent-Base Tool)
 - ✓ Complete Interface layer implementation
 - ✓ Subagent coordination mechanisms
+- ✓ Unified skill metadata format (layer, skill_type, dependencies) with DAG validation
+- ✓ Checkpoint-based recoverable filesystem
+- ☐ Independent subagent execution
+- ☐ Reflection mechanism
+- ☐ Enhanced memory system
 
 ### Dataset Ecosystem
 - ✓ Complete ADNI processing chain
 - ✓ HCP dataset adaptation
-- ☐ UK Biobank adaptation
-- ☐ Multi-dataset workflow support
+- ✓ UK Biobank adaptation
+- 🏗️ Multi-dataset workflow support
 
 ### Model Reproduction & Execution
 - ✓ Automatic paper model retrieval
 - ✓ Automatic environment configuration
 - ✓ Full Harness Engineering for Reproducibility
+- ✓ Experiment checkpoint and state management
 
-### Community & Extensions
-- ☐ Multi-institution collaboration capabilities
-- ☐ Plugin ecosystem for third-party skills
 
 ---
 
@@ -450,7 +484,9 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 ## 🙏 Acknowledgments
 
 Thanks to:
-- [OpenClaw](https://github.com/openclaw/openclaw) framework contributors
-- [Karcen/rs-fMRI-Pipeline-Tutorial](https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial) for the brain visualization workflow inspiration
-- All contributors and user feedback
+- [OpenClaw](https://github.com/openclaw/openclaw)
+- [Hermes](https://github.com/nousresearch/hermes-agent)
+- [Claude Code](https://github.com/anthropics/claude-code)
+- [Karcen/rs-fMRI-Pipeline-Tutorial](https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial)
+- [nature-skills](https://github.com/Yuan1z0825/nature-skills)
 - Open-source neuroscience tools community (MNE-Python, FreeSurfer, FSL, etc.)

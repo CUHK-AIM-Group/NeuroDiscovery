@@ -618,6 +618,10 @@ def create_app() -> Any:
                     "description": s.get("description", ""),
                     "summary_en": s.get("summary_en", ""),
                     "summary_zh": s.get("summary_zh", ""),
+                    "layer": s.get("layer", ""),
+                    "skill_type": s.get("skill_type", ""),
+                    "dependencies": s.get("dependencies", []),
+                    "complementary_skills": s.get("complementary_skills", []),
                 }
                 for s in skills
             ]
@@ -899,6 +903,46 @@ def create_app() -> Any:
             fb = _safe_skill_summary_fallback(skill_name, str(target.get("description", "")))
             return {"type": "done", "summary_en": fb["en"], "summary_zh": fb["zh"]}
 
+    # ── Checkpoint API endpoints ─────────────────────────────────────────────
+
+    @app.get("/api/checkpoints")
+    async def list_checkpoints() -> Any:
+        from core.checkpoint.manager import ShadowCheckpointManager
+        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+        cps = mgr.list_checkpoints(REPO_ROOT)
+        return {"checkpoints": cps}
+
+    @app.get("/api/checkpoints/{checkpoint_id}/diff")
+    async def checkpoint_diff(checkpoint_id: str) -> Any:
+        from core.checkpoint.manager import ShadowCheckpointManager
+        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+        try:
+            diff = mgr.diff_checkpoint(REPO_ROOT, checkpoint_id)
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+        return diff
+
+    @app.post("/api/checkpoints/{checkpoint_id}/restore")
+    async def restore_checkpoint(checkpoint_id: str, payload: dict = {}) -> Any:
+        from core.checkpoint.manager import ShadowCheckpointManager
+        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+        filepath = payload.get("filepath") if payload else None
+        try:
+            result = mgr.restore_checkpoint(REPO_ROOT, checkpoint_id, filepath=filepath)
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+        return {"type": "done", **result}
+
+    @app.get("/api/checkpoints/{checkpoint_id}/files")
+    async def checkpoint_files(checkpoint_id: str) -> Any:
+        from core.checkpoint.manager import ShadowCheckpointManager
+        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+        try:
+            files = mgr.get_files_at_checkpoint(REPO_ROOT, checkpoint_id)
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+        return {"files": files}
+
     # ── WebSocket chat endpoint ─────────────────────────────────────────────────
 
     @app.websocket("/ws/chat")
@@ -927,6 +971,10 @@ def create_app() -> Any:
                         "description": s.get("description", ""),
                         "summary_en": s.get("summary_en", ""),
                         "summary_zh": s.get("summary_zh", ""),
+                        "layer": s.get("layer", ""),
+                        "skill_type": s.get("skill_type", ""),
+                        "dependencies": s.get("dependencies", []),
+                        "complementary_skills": s.get("complementary_skills", []),
                     }
                     for s in skills
                 ],

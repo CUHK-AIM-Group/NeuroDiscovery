@@ -2,8 +2,12 @@
 name: docker-env-manager
 description: "Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroClaw skill (e.g. wmh-segmentation, freesurfer-processor in container mode) requires a clean, isolated, GPU-enabled Docker environment (e.g. 'pull mars-wmh image', 'run container with GPU', 'docker compose up', 'prune unused images', 'build custom dockerfile', 'manage nvidia docker'). Triggers include: 'docker run', 'docker pull', 'docker compose', 'docker build', 'docker env', 'manage container', 'nvidia docker', 'pull image', 'docker prune', 'containerize'. This skill is the **mandatory gatekeeper for all Docker operations** in NeuroClaw: it ALWAYS plans first, shows commands + risks + best practices, and waits for explicit user confirmation before executing anything. All actual Docker execution is routed through `claw-shell`."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: tool
+dependencies:
+  - claw-shell
+  - dependency-planner
 ---
-
 # Docker Environment Manager
 
 ## Overview

@@ -2,8 +2,12 @@
 name: fmriprep-tool
 description: "Use this skill whenever the user wants to perform standardized preprocessing of functional MRI (fMRI) and anatomical MRI data using fMRIPrep. Triggers include: 'fmriprep', 'fMRIPrep', 'fMRI preprocessing', 'BIDS fMRI', 'run fmriprep', 'preprocess bold', 'BOLD preprocessing', 'anatomical preprocessing', or any request involving BIDS-organized fMRI datasets."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
+  - bids-organizer
 ---
-
 # fMRIPrep Tool
 
 ## Overview

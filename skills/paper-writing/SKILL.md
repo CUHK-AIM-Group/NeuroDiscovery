@@ -2,8 +2,10 @@
 name: paper-writing
 description: "Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create LaTeX paper', 'write research paper from IDEA METHOD EXPERIMENT', or any request to transform IDEA.md + METHOD.md + EXPERIMENT.md into a typeset-ready manuscript. This skill is the **mandatory interface-layer writer** in NeuroClaw: it strictly follows the hierarchical manuscript drafting and iterative refinement process (section 4.4 + provided flowchart), never generates the full paper in one shot, saves every intermediate step as a separate file, and produces either clean plain-text or LaTeX output."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: interface
+skill_type: meta
+dependencies: []
 ---
-
 # Paper Writing
 
 ## Overview
@@ -41,6 +43,67 @@ The process preserves narrative coherence, reuses semantic anchors from previous
 # Place files in: skills/paper-writing/
 ```
 
+## Scripts
+
+The `scripts/` directory contains reusable Python modules derived from [nature-skills](https://github.com/Yuan1z0825/nature-skills):
+
+| File | Purpose |
+|------|---------|
+| [`scripts/nature_figure_style.py`](scripts/nature_figure_style.py) | Publication style rcParams, color palettes (`PALETTE`, `PALETTE_NMI_PASTEL`, etc.), and helper functions (`apply_publication_style`, `is_dark`, `add_panel_label`, `finalize_figure`) |
+| [`scripts/figure_templates.py`](scripts/figure_templates.py) | Complete figure templates: grouped bar with legend panel, alpha-graduated ablation bar, multi-panel trend, dual-colormap heatmap |
+| [`scripts/section_phrasebank.py`](scripts/section_phrasebank.py) | Section-specific move orders, phrase families, evidence strength verbs, and transition words for all manuscript sections |
+| [`scripts/data_statement_templates.py`](scripts/data_statement_templates.py) | 12 Data Availability statement templates, anti-patterns to flag, and FAIR audit questions |
+
+## Integrated Knowledge from nature-skills
+
+The paper-writing skill incorporates academic writing standards from the [nature-skills](https://github.com/Yuan1z0825/nature-skills) project (MIT License, Copyright 2026 Yuan Yizhe). The following rules and strategies are applied during the hierarchical drafting process:
+
+### Writing Strategy (from nature-polishing)
+
+| Domain | Rule |
+|--------|------|
+| Hourglass structure | Introduction narrows from broad context to specific gap; Discussion widens from specific findings back to broader implications |
+| Writing order | Write in this order: Results → Methods → Introduction → Discussion → Abstract → Title — not in reading order |
+| Sentence length | Every sentence ≤ 30 words; sentences > 20 words should be checked for multiple propositions; the last sentence of a paragraph is often the weakest |
+| Paragraph control | One controlling idea per paragraph; use thematic linking between paragraphs |
+| Section tense | Results = past-tense reporting verbs + quantitative detail; Discussion = hedging interpretation verbs + mechanism |
+| Hedging calibration | Match claim strength to evidence: *demonstrate* → *suggest* → *may reflect* |
+| Overclaim detection | Flag absolutes ("prove", "conclusively", "unprecedented", "best", "first"), unwarranted causation, and scope expansion |
+| Citation integrity | Cite only sources personally verified; four attribution types: support, borrow, contrast, reuse |
+| British English | signalling, colour, analyse, programme, modelling, behaviour |
+
+### Section Responsibilities
+
+Each section must answer specific questions before the draft moves on.
+Full move orders and phrase families are in [`scripts/section_phrasebank.py`](scripts/section_phrasebank.py):
+
+| Section | Must answer |
+|---------|-------------|
+| **Introduction** | What is the problem? Why does it matter? What has been tried? What is the gap? What is our approach? |
+| **Results** | What did we find? How does it compare? What is the magnitude and direction of effects? |
+| **Discussion** | What do the results mean? How do they relate to prior work? What are the limitations? What is next? |
+| **Conclusion** | What is the single take-away? Why does it matter for the field? |
+| **Abstract** | Problem → Gap → Approach → Key result → Impact (≤ 250 words) |
+
+### Figure Standards (from nature-figure)
+
+When generating or describing figures for the manuscript, use the helpers in [`scripts/nature_figure_style.py`](scripts/nature_figure_style.py) and templates in [`scripts/figure_templates.py`](scripts/figure_templates.py):
+
+- Multi-panel figures follow a three-level information hierarchy: **overview → deviation → relationship**; no two panels may answer the same scientific question.
+- Primary output is always `.svg`; `.png` at 300 dpi is a secondary raster preview.
+- Figure legends ≤ 300 words; titles ≤ 75 characters.
+- Four figure archetypes: quantitative grid, schematic-led composite, image plate + quant, asymmetric mixed-modality.
+- Anti-redundancy: every panel must encode distinct information; no visual duplication across panels.
+
+### Data Availability (from nature-data)
+
+When writing the Data Availability statement, use the templates in [`scripts/data_statement_templates.py`](scripts/data_statement_templates.py):
+
+- Map every result-supporting dataset to a durable access route (public repo → discipline-specific repo → generalist repo → supplementary → request-based).
+- State restriction reason, controller, review route, and access conditions for restricted data.
+- Cite public datasets with DataCite-style metadata: creator, title, repository, year, identifier.
+- Flag weak patterns such as "Data are available upon request" without further detail.
+
 ## Important Notes & Limitations
 - The skill **never** generates the full paper in a single step.
 - Every intermediate step **must** be saved as a separate numbered Markdown file (01_*.md through 10_*.md) to guarantee step-by-step execution in OpenClaw.
@@ -63,9 +126,20 @@ The process preserves narrative coherence, reuses semantic anchors from previous
 - `claw-shell`            → used internally for LaTeX compilation and file operations
 - `overleaf-skill`        → optional sync of final draft to Overleaf
 
+### External Skill Libraries (nature-skills)
+- [`nature-polishing`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-polishing) → academic prose polishing, sentence/paragraph rules, hedging calibration, overclaim detection
+- [`nature-figure`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-figure) → publication-ready figure workflow, chart archetypes, design theory
+- [`nature-data`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-data) → Data Availability statements, repository strategy, FAIR metadata
+- [`nature-paper2ppt`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-paper2ppt) → paper-to-PPTX conversion for journal club presentations
+
 ## Reference & Source
 Hierarchical Manuscript Drafting and Iterative Refinement (section 4.4 of NeuroClaw architecture).  
 Flowchart: multi-agent section generation → ethics review → iterative optimization → narrative writing → de-AI polishing → logic/continuity/length/reference checks → LaTeX repair → final draft.
+
+Integrated writing standards from [nature-skills](https://github.com/Yuan1z0825/nature-skills) by Yuan Yizhe (MIT License):  
+- Writing strategy, sentence rules, section responsibilities, and phrase bank (nature-polishing)  
+- Figure archetypes, design theory, and chart standards (nature-figure)  
+- Data Availability statement patterns and FAIR checklist (nature-data)
 
 Created At: 2026-03-23  
 Last Updated At: 2026-03-26 00:27 HKT  

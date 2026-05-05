@@ -2,8 +2,12 @@
 name: run_models
 description: "Use this skill whenever the user wants to run phenotype-prediction models, browse model cards, map model inputs/outputs, or choose an execution route for fMRI/sMRI based models. This is a model-entry orchestration skill: it routes requests to model-specific docs and delegates preprocessing to modality skills."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: subagent
+skill_type: model
+dependencies:
+  - fmri-skill
+  - smri-skill
 ---
-
 # Run Models Skill (Model Entry Layer)
 
 ## Overview
@@ -11,7 +15,7 @@ license: MIT License (NeuroClaw custom skill - freely modifiable within the proj
 
 This skill is responsible for:
 - Maintaining a model registry (name, paper, source code, input/output, doc file path)
-- Selecting the correct model document under `run_models/models/`
+- Selecting the correct model skill under `skills/<model-name>/SKILL.md`
 - Coordinating required data preparation before model execution
 - Delegating modality preprocessing to `fmri-skill` and `smri-skill`
 
@@ -27,7 +31,7 @@ This skill does not hardcode detailed install/run commands for each model. Those
 
 ## Core Workflow (Never Bypassed)
 1. Identify requested model and task (classification/regression phenotype prediction).
-2. Locate the corresponding model document under `run_models/models/`.
+2. Locate the corresponding model skill under `skills/<model-name>/SKILL.md`.
 3. Verify required inputs (ROI features, optional sMRI features).
 4. If inputs are not ready, delegate preprocessing to modality skills:
 	 - `fmri-skill` for ROI extraction from fMRI
@@ -41,18 +45,18 @@ This skill does not hardcode detailed install/run commands for each model. Those
 
 | Model | Paper | Code | Input | Output | Model Doc |
 |---|---|---|---|---|---|
-| BrainGNN | Li et al., 2020, *Braingnn: Interpretable brain graph neural network for fmri analysis* | https://github.com/xxlya/BrainGNN_Pytorch/tree/main | fMRI ROI features (graph/node-level ROI representation) | Phenotype prediction (classification/regression) + interpretable graph indicators | `run_models/models/brain_gnn.md` |
-| FM-APP | He et al., 2024, *FM-APP: Foundation model for any phenotype prediction via fMRI to sMRI knowledge transfer* | https://github.com/ZhibinHe/FM-APP | fMRI ROI features + sMRI features | Phenotype prediction (any-phenotype setting) | `run_models/models/fm_app.md` |
-| NeuroStorm | NeuroClaw model entry for storm-related phenotype prediction workflows | see `run_models/models/neurostorm.md` | Multi-modal neuroimaging features as specified in the model doc | Phenotype prediction / downstream inference as specified in the model doc | `run_models/models/neurostorm.md` |
-| GLM | Classical first-level and second-level task-fMRI general linear model | Nilearn / SPM-style implementation route | Preprocessed task fMRI, events, optional confounds, and optional subject-level contrast maps for group inference | Task activation contrasts, group z maps, and statistical inference outputs | `run_models/models/glm.md` |
-| ICA | Classical resting-state network decomposition method | Nilearn decomposition implementation route | Preprocessed resting-state fMRI, optional mask, optional confounds | Intrinsic connectivity component maps, subject time series, optional connectomes | `run_models/models/ica.md` |
-| DictLearning | Classical sparse resting-state network decomposition method | Nilearn decomposition implementation route | Preprocessed resting-state fMRI, optional mask, optional confounds | Sparse component maps, subject time series, optional connectomes | `run_models/models/dictlearning.md` |
-| SVM | Classical disease classification method for neuroimaging | Nilearn / scikit-learn style decoding route | Preprocessed ROI features, labels, optional covariates | Predicted labels, decision scores, CV metrics | `run_models/models/svm.md` |
-| SpaceNet | Classical voxel-wise disease classification method for neuroimaging | Nilearn decoding implementation route | Aligned voxel maps, labels, optional covariates, optional mask | Predicted labels, decision scores, CV metrics, coefficient maps | `run_models/models/spacenet.md` |
-| K-means | Classical brain parcellation method for neuroimaging | Nilearn / clustering-based parcellation route | Preprocessed feature maps or image lists, optional mask, requested parcel count | Parcel labels, cluster summaries, optional centroid outputs | `run_models/models/kmeans.md` |
-| Hierarchical | Classical hierarchical brain parcellation method for neuroimaging | Nilearn / clustering-based parcellation route | Preprocessed feature maps or image lists, optional mask, requested parcel count | Parcel labels, cluster summaries, optional dendrogram outputs | `run_models/models/hierarchical.md` |
-| Filtering | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Denoised BOLD, cleaned time series, optional QC summaries | `run_models/models/filtering.md` |
-| Detrending | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Cleaned BOLD, cleaned time series, optional QC summaries | `run_models/models/detrending.md` |
+| BrainGNN | Li et al., 2020, *Braingnn: Interpretable brain graph neural network for fmri analysis* | https://github.com/xxlya/BrainGNN_Pytorch/tree/main | fMRI ROI features (graph/node-level ROI representation) | Phenotype prediction (classification/regression) + interpretable graph indicators | `skills/brain_gnn/SKILL.md` |
+| FM-APP | He et al., 2024, *FM-APP: Foundation model for any phenotype prediction via fMRI to sMRI knowledge transfer* | https://github.com/ZhibinHe/FM-APP | fMRI ROI features + sMRI features | Phenotype prediction (any-phenotype setting) | `skills/fm_app/SKILL.md` |
+| NeuroStorm | NeuroClaw model entry for storm-related phenotype prediction workflows | see `skills/neurostorm/SKILL.md` | Multi-modal neuroimaging features as specified in the model doc | Phenotype prediction / downstream inference as specified in the model doc | `skills/neurostorm/SKILL.md` |
+| GLM | Classical first-level and second-level task-fMRI general linear model | Nilearn / SPM-style implementation route | Preprocessed task fMRI, events, optional confounds, and optional subject-level contrast maps for group inference | Task activation contrasts, group z maps, and statistical inference outputs | `skills/glm/SKILL.md` |
+| ICA | Classical resting-state network decomposition method | Nilearn decomposition implementation route | Preprocessed resting-state fMRI, optional mask, optional confounds | Intrinsic connectivity component maps, subject time series, optional connectomes | `skills/ica/SKILL.md` |
+| DictLearning | Classical sparse resting-state network decomposition method | Nilearn decomposition implementation route | Preprocessed resting-state fMRI, optional mask, optional confounds | Sparse component maps, subject time series, optional connectomes | `skills/dictlearning/SKILL.md` |
+| SVM | Classical disease classification method for neuroimaging | Nilearn / scikit-learn style decoding route | Preprocessed ROI features, labels, optional covariates | Predicted labels, decision scores, CV metrics | `skills/svm/SKILL.md` |
+| SpaceNet | Classical voxel-wise disease classification method for neuroimaging | Nilearn decoding implementation route | Aligned voxel maps, labels, optional covariates, optional mask | Predicted labels, decision scores, CV metrics, coefficient maps | `skills/spacenet/SKILL.md` |
+| K-means | Classical brain parcellation method for neuroimaging | Nilearn / clustering-based parcellation route | Preprocessed feature maps or image lists, optional mask, requested parcel count | Parcel labels, cluster summaries, optional centroid outputs | `skills/kmeans/SKILL.md` |
+| Hierarchical | Classical hierarchical brain parcellation method for neuroimaging | Nilearn / clustering-based parcellation route | Preprocessed feature maps or image lists, optional mask, requested parcel count | Parcel labels, cluster summaries, optional dendrogram outputs | `skills/hierarchical/SKILL.md` |
+| Filtering | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Denoised BOLD, cleaned time series, optional QC summaries | `skills/filtering/SKILL.md` |
+| Detrending | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Cleaned BOLD, cleaned time series, optional QC summaries | `skills/detrending/SKILL.md` |
 
 ### Citation Notes
 - BrainGNN:
@@ -60,32 +64,32 @@ This skill does not hardcode detailed install/run commands for each model. Those
 - FM-APP:
 	- He Z, Li W, Liu Y, et al. FM-APP. IEEE TMI, 2024, 44(10): 4010-4022.
 - NeuroStorm:
-	- See `run_models/models/neurostorm.md` for the current model card, citation, and execution details.
+	- See `skills/neurostorm/SKILL.md` for the current model card, citation, and execution details.
 - GLM:
-  - Classical first-level and second-level general linear model for task-evoked activation analysis and group-level inference; see `run_models/models/glm.md`.
+  - Classical first-level and second-level general linear model for task-evoked activation analysis and group-level inference; see `skills/glm/SKILL.md`.
 - ICA:
-  - Classical resting-state network decomposition route based on independent component analysis; see `run_models/models/ica.md`.
+  - Classical resting-state network decomposition route based on independent component analysis; see `skills/ica/SKILL.md`.
 - DictLearning:
-  - Classical sparse resting-state network decomposition route; see `run_models/models/dictlearning.md`.
+  - Classical sparse resting-state network decomposition route; see `skills/dictlearning/SKILL.md`.
 - SVM:
-  - Classical disease classification route for ROI-level or tabular decoding; see `run_models/models/svm.md`.
+  - Classical disease classification route for ROI-level or tabular decoding; see `skills/svm/SKILL.md`.
 - SpaceNet:
-  - Classical voxel-wise disease classification route with sparse coefficient maps; see `run_models/models/spacenet.md`.
+  - Classical voxel-wise disease classification route with sparse coefficient maps; see `skills/spacenet/SKILL.md`.
 - K-means:
-  - Classical brain parcellation route for fixed-K parcel discovery; see `run_models/models/kmeans.md`.
+  - Classical brain parcellation route for fixed-K parcel discovery; see `skills/kmeans/SKILL.md`.
 - Hierarchical:
-  - Classical brain parcellation route for multi-scale parcel discovery; see `run_models/models/hierarchical.md`.
+  - Classical brain parcellation route for multi-scale parcel discovery; see `skills/hierarchical/SKILL.md`.
 - Filtering:
-  - Classical signal denoising route for temporal filtering; see `run_models/models/filtering.md`.
+  - Classical signal denoising route for temporal filtering; see `skills/filtering/SKILL.md`.
 - Detrending:
-  - Classical signal denoising route for temporal drift removal; see `run_models/models/detrending.md`.
+  - Classical signal denoising route for temporal drift removal; see `skills/detrending/SKILL.md`.
 
 ## Harness-Aware Model Registration (Declarative + Testing + Drift Detection)
 
 ### Model Specification Format (Extended)
 Every model integrated into run_models **must** include a **model specification file** in JSON format alongside its Markdown documentation:
 
-**File**: `run_models/models/{model_name}_spec.json`
+**File**: `skills/{model_name}/{model_name}_spec.json`
 
 ```json
 {
@@ -166,7 +170,7 @@ Example entry:
 - Failure rate > 1% → stop inference, require manual review
 
 ### Model Card Template (Minimum Required Metadata)
-Each model must include a model card in `run_models/models/{model_name}.md` documenting:
+Each model must include a model card in `skills/{model_name}/SKILL.md` documenting:
 
 ```markdown
 ## Model Card: {model_name}
@@ -211,7 +215,7 @@ Each model must include a model card in `run_models/models/{model_name}.md` docu
 - Typical upstream outputs expected: fMRI ROI features plus structural MRI-derived features
 
 ### NeuroStorm Route
-- Required modality preprocessing: follow the model doc in `run_models/models/neurostorm.md`
+- Required modality preprocessing: follow the model doc in `skills/neurostorm/SKILL.md`
 - Typical upstream outputs expected: inputs and features specified by the NeuroStorm model card
 
 ### GLM Route
@@ -378,7 +382,7 @@ All model-running artifacts should be managed under `./run_models_output/`:
 ## Safety and Execution Policy
 - No execution before explicit user confirmation of the numbered plan.
 - All run/install actions must go through `claw-shell`.
-- If model docs are missing in `run_models/models/`, stop and request or create them before execution.
+- If model skills are missing in `skills/<model-name>/`, stop and request or create them before execution.
 - Keep train/val/test split and target definition explicit to avoid leakage.
 
 ---

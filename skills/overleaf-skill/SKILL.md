@@ -2,8 +2,10 @@
 name: overleaf-skill
 description: "Use this skill whenever the user wants to synchronize NeuroClaw-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'sync to Overleaf', 'upload paper to Overleaf', 'Overleaf project', 'LaTeX sync', 'push draft', 'download Overleaf', 'create Overleaf project', 'tex file to Overleaf', or any request involving paper_draft.tex / collaboration. This skill is the **mandatory interface-layer LaTeX collaborator** in NeuroClaw: it strictly enforces pull-first workflow with diff reporting and per-operation user authorization for any write/create/delete action, uses pyoverleaf (cookie-based), preserves Overleaf version history, integrates directly after paper-writing, and never performs unauthorized modifications."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: interface
+skill_type: utility
+dependencies: []
 ---
-
 # Overleaf Skill
 
 ## Overview

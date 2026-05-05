@@ -2,8 +2,10 @@
 name: nibabel-skill
 description: "Use this skill whenever NeuroClaw needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading FreeSurfer geometry and annotation files. Triggers include: 'nibabel', 'inspect NIfTI', 'read affine', 'save nifti', 'voxel to MNI', 'atlas coordinates', 'read FreeSurfer surface', 'read annot', or any request focused on low-level neuroimaging I/O rather than full preprocessing."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies: []
 ---
-
 # Nibabel Skill
 
 ## Overview

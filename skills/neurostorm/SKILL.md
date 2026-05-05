@@ -2,8 +2,13 @@
 name: neurostorm
 description: "Use this skill whenever the user wants to preprocess fMRI data, pretrain or fine-tune NeuroSTORM, run inference, or benchmark on fMRI tasks (age/gender prediction, phenotype prediction, disease diagnosis, fMRI retrieval, task fMRI state classification). Triggers include: 'fMRI', 'NeuroSTORM', 'fMRI preprocessing', 'fMRI foundation model', 'brain imaging', 'HCP', 'ABCD', 'UKB', 'ADHD200', 'COBRE', 'UCLA', 'NSD', 'BOLD5000', 'disease diagnosis from fMRI', 'pretrain fMRI model', 'fine-tune fMRI', or any request involving .nii/.nii.gz fMRI volume files."
 license: MIT
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - smri-skill
+  - run_models
 ---
-
 # NeuroSTORM Skill
 ## Overview
 `neurostorm-skill` covers all workflows for the **NeuroSTORM fMRI foundation model**: data downloading, preprocessing, pre-training, fine-tuning, and inference.

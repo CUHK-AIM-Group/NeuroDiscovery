@@ -2,8 +2,13 @@
 name: detrending
 description: "Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical detrending methods. This is a non-deep-learning preprocessing route focused on removing low-frequency drift and linear trends from time series before downstream analysis."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # Detrending Model Doc
 
 ## Overview

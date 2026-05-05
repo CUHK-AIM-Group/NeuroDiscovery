@@ -2,8 +2,13 @@
 name: experiment-controller
 description: "Use this skill whenever the user wants to execute experiments based on a finalized method and record results. Triggers include: 'run experiment', 'experiment controller', 'implement experiment', 'run model', 'execute training', 'experiment-controller', 'record results', 'ablation study', or any request to turn METHOD.md into concrete runs and output to EXPERIMENT.md. This skill is the **mandatory interface-layer experiment executor** in NeuroClaw: it searches literature/GitHub for matching experimental setups and codebases, proposes one scheme + repo after user discussion, uses git skills to download and setup, runs the experiment(s), and iteratively appends every result + observation to EXPERIMENT.md."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: interface
+skill_type: meta
+dependencies:
+  - claw-shell
+  - dependency-planner
+  - git-essentials
 ---
-
 # Experiment Controller
 ## Overview
 This skill implements the **Literature/GitHub Search → Scheme Confirmation → Git Execution → Iterative Logging** process for the NeuroClaw experiment-controller phase.

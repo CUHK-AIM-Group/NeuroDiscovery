@@ -2,8 +2,14 @@
 name: svm
 description: "Use this model doc whenever the user wants to perform disease classification with SVM. This is a non-deep-learning supervised route focused on neuroimaging-based case-control prediction from ROI-wise or tabular features."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - smri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # SVM Model Doc
 
 ## Overview

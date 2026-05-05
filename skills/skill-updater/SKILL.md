@@ -2,8 +2,10 @@
 name: skill-updater
 description: "Use this skill after a task succeeds (user confirms 'success' or tools report success). It extracts new experience from the session log + daily memory, locates relevant skills, and proposes diff-formatted updates to SKILL.md files with a clear summary for the user."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: interface
+skill_type: meta
+dependencies: []
 ---
-
 # Skill Updater (Experience-to-Skill Diff)
 
 ## Overview

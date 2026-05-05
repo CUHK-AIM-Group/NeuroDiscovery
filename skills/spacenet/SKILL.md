@@ -2,8 +2,14 @@
 name: spacenet
 description: "Use this model doc whenever the user wants to perform disease classification with SpaceNet. This is a non-deep-learning supervised route focused on voxel-wise neuroimaging-based case-control prediction with sparse and interpretable weight maps."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - smri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # SpaceNet Model Doc
 
 ## Overview

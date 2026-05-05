@@ -2,6 +2,12 @@
 name: hcp-skill
 description: "Use this skill whenever the user wants an end-to-end workflow for the HCP Young Adult dataset, including dataset download, organization, and multimodal processing of sMRI, fMRI, and DTI. Triggers include: 'HCP Young Adult', 'HCP1200', 'process HCP data', 'HCP sMRI fMRI DTI', or any request to run the full HCP multimodal pipeline. This is the NeuroClaw modality-orchestration layer: it plans WHAT to do and delegates execution to other skills."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: subagent
+skill_type: dataset
+dependencies:
+  - smri-skill
+  - fmri-skill
+  - dwi-skill
 ---
 
 # HCP Skill (Dataset-Orchestration Layer)

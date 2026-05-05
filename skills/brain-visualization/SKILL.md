@@ -2,8 +2,12 @@
 name: brain-visualization
 description: "Use this skill whenever the user wants to visualize neuroimaging analysis results, including 3D brain connectivity networks, atlas-based regional activation summaries, or FreeSurfer cortical surface meshes with anatomical colors. Triggers include: 'brain visualization', 'visualize connectome', '3D brain network', 'zALFF visualization', 'brain activation map', 'FreeSurfer PLY export', 'surface mesh rendering', or any request to turn neuroimaging outputs into interpretable figures or 3D models."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: utility
+dependencies:
+  - nibabel-skill
+  - nilearn-tool
 ---
-
 # Brain Visualization
 
 ## Overview

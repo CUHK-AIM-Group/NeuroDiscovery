@@ -2,8 +2,11 @@
 name: dipy-tool
 description: "Use this skill whenever any NeuroClaw diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool skill that contains all specific DIPY code and usage patterns. Never called directly by the user."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # DIPY Tool (Base/Tool Layer)
 
 ## Overview

@@ -2,8 +2,11 @@
 name: fsl-tool
 description: "Use this skill whenever the user wants to process neuroimaging data with FSL (FMRIB Software Library), covering structural MRI, functional MRI (fMRI), and diffusion MRI (dMRI/DTI). Triggers include: 'use FSL', 'FSL processing', 'fsl_anat', 'FEAT', 'MELODIC', 'eddy', 'bedpostx', 'probtrackx', 'BET', 'FAST', 'FLIRT', 'FNIRT', 'run FSL pipeline'. This skill is the NeuroClaw interface-layer wrapper for FSL: checks installation, generates execution plan with concrete shell commands, waits for explicit confirmation, then routes all commands through claw-shell."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # FSL Tool
 
 ## Overview

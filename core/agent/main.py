@@ -3318,6 +3318,12 @@ class AgentSession:
             "completion_tokens": 0,
             "total_tokens": 0,
         }
+        # Checkpoint manager (shadow git file-system snapshots)
+        try:
+            from core.checkpoint.manager import ShadowCheckpointManager
+            self._checkpoint_mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+        except Exception:
+            self._checkpoint_mgr = None  # type: ignore[assignment]
 
     # ── Public API for external callers (e.g. the web server) ──────────────────
 
@@ -3374,11 +3380,131 @@ class AgentSession:
             if not user_input:
                 continue
 
+            # Slash commands
+            if user_input.startswith("/"):
+                cmd_result = self._handle_slash_command(user_input)
+                if cmd_result is not None:
+                    print(f"\n{cmd_result}\n")
+                    continue
+
             self.history.append({"role": "user", "content": user_input})
             response = self._chat()
             print(f"\nNeuroClaw: {response}\n")
             self.history.append({"role": "assistant", "content": response})
             manager.maybe_compress(self.history)
+
+    # ── Slash commands ────────────────────────────────────────────────────────
+
+    def _handle_slash_command(self, raw: str) -> str | None:
+        """Intercept ``/`` commands.  Return ``None`` to pass through to LLM."""
+        parts = raw.strip().split()
+        cmd = parts[0].lower()
+
+        if cmd in ("/help", "/h", "/?"):
+            return self._help_text()
+
+        if cmd == "/checkpoint":
+            return self._checkpoint_command(parts[1:])
+
+        return None  # not recognised — forward to LLM
+
+    def _help_text(self) -> str:
+        return (
+            "Available commands:\n"
+            "  /checkpoint list              Show all checkpoints\n"
+            "  /checkpoint diff [N]          Show changes since checkpoint N (or last)\n"
+            "  /checkpoint rollback N        Restore workspace to checkpoint N\n"
+            "  /checkpoint rollback N <file> Restore single file from checkpoint N\n"
+            "  /help                         Show this help\n"
+        )
+
+    def _checkpoint_command(self, args: list[str]) -> str:
+        if self._checkpoint_mgr is None:
+            return "Checkpoint manager not available."
+        if not args:
+            return self._help_text()
+
+        subcmd = args[0].lower()
+
+        # ── list ──────────────────────────────────────────────────────────────
+        if subcmd == "list":
+            cps = self._checkpoint_mgr.list_checkpoints(self.workspace)
+            if not cps:
+                return "No checkpoints found."
+            lines = ["Checkpoints:"]
+            for i, cp in enumerate(cps):
+                label = f"  ({cp['label']})" if cp.get("label") else ""
+                lines.append(
+                    f"  [{i}] {cp['timestamp']}  {cp['hash'][:12]}  {cp['message'][:60]}{label}"
+                )
+            return "\n".join(lines)
+
+        # ── diff ──────────────────────────────────────────────────────────────
+        if subcmd == "diff":
+            cps = self._checkpoint_mgr.list_checkpoints(self.workspace)
+            if not cps:
+                return "No checkpoints to diff against."
+            idx = len(cps) - 1  # default: last checkpoint
+            if len(args) >= 2:
+                try:
+                    idx = int(args[1])
+                except ValueError:
+                    return f"Invalid checkpoint index: {args[1]}"
+            if idx < 0 or idx >= len(cps):
+                return f"Checkpoint index out of range: {idx} (have {len(cps)})"
+            target = cps[idx]
+            if len(args) >= 3:
+                # Single-file diff
+                filepath = args[2]
+                diff = self._checkpoint_mgr.diff_checkpoint_file(
+                    self.workspace, target["hash"], filepath
+                )
+                if not diff["diff_text"]:
+                    return f"No changes to {filepath} since checkpoint [{idx}]."
+                return (
+                    f"Changes to {filepath} since checkpoint [{idx}]"
+                    f" ({target['timestamp']}):\n\n{diff['diff_text'][:4000]}"
+                )
+            diff = self._checkpoint_mgr.diff_checkpoint(
+                self.workspace, target["hash"]
+            )
+            if not diff["files"]:
+                return f"No changes since checkpoint [{idx}]."
+            return (
+                f"Changes since checkpoint [{idx}] ({target['timestamp']}):\n"
+                f"Files: {', '.join(diff['files'])}\n\n"
+                f"{diff['diff_text'][:4000]}"
+            )
+
+        # ── rollback ──────────────────────────────────────────────────────────
+        if subcmd in ("rollback", "restore"):
+            if len(args) < 2:
+                return "Usage: /checkpoint rollback N [filepath]"
+            cps = self._checkpoint_mgr.list_checkpoints(self.workspace)
+            try:
+                idx = int(args[1])
+            except ValueError:
+                return f"Invalid checkpoint index: {args[1]}"
+            if idx < 0 or idx >= len(cps):
+                return f"Checkpoint index out of range: {idx} (have {len(cps)})"
+            target = cps[idx]
+            filepath = args[2] if len(args) >= 3 else None
+            try:
+                result = self._checkpoint_mgr.restore_checkpoint(
+                    self.workspace, target["hash"], filepath=filepath
+                )
+            except Exception as exc:
+                return f"Rollback failed: {exc}"
+            if filepath:
+                return f"Restored {filepath} from checkpoint [{idx}]."
+            files = result.get("restored_files", [])
+            count = len(files)
+            return (
+                f"Workspace restored to checkpoint [{idx}]"
+                f" ({target['timestamp']}).  {count} file(s) changed."
+            )
+
+        return f"Unknown checkpoint subcommand: {subcmd}"
 
     def _chat(self) -> str:
         """Send history to LLM and return response text (simplified, no streaming)."""
@@ -3442,6 +3568,8 @@ class AgentSession:
 
     def _chat_openai_with_tools(self, model: str) -> str:
         """OpenAI chat with a minimal native shell tool-call loop."""
+        if self._checkpoint_mgr is not None:
+            self._checkpoint_mgr.begin_turn()
         if self.no_skill_mode:
             def _request_once(req_messages: list[dict[str, Any]]) -> tuple[str, dict[str, int]]:
                 resp = _retry_api_call(
@@ -3638,6 +3766,15 @@ class AgentSession:
                 if name == "run_shell_command":
                     shell_cmd = str(args.get("command", ""))
                     timeout_sec = int(args.get("timeout_sec", 180))
+
+                    # Auto-checkpoint before file-modifying commands
+                    if self._checkpoint_mgr is not None and not self.benchmark_mode:
+                        try:
+                            self._checkpoint_mgr.checkpoint(
+                                self.workspace, label=f"before: {shell_cmd[:80]}"
+                            )
+                        except Exception:
+                            pass  # checkpoint failure must never block tool execution
 
                     if self.benchmark_mode and _looks_file_io_shell_command(shell_cmd):
                         result = {

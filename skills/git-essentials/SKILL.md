@@ -2,8 +2,10 @@
 name: git-essentials
 description: Essential Git commands and workflows for version control, branching, and collaboration.
 metadata: {"clawdbot":{"emoji":"🌳","requires":{"bins":["git"]}}}
+layer: base
+skill_type: utility
+dependencies: []
 ---
-
 # Git Essentials
 
 ## Overview

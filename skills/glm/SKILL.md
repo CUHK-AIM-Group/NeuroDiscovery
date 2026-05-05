@@ -2,8 +2,13 @@
 name: glm
 description: "Use this model doc whenever the user wants to run a classical General Linear Model (GLM) for task-evoked fMRI activation analysis. This is a non-deep-learning model route focused on design matrices, first-level/second-level statistics, and statistical maps."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # GLM Model Doc
 
 ## Overview

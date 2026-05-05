@@ -2,8 +2,19 @@
 name: fmri-skill
 description: "Use this skill whenever the user wants to perform fMRI preprocessing, first-level analysis, ROI extraction, functional connectivity, effective connectivity, or atlas-based alignment to MNI152 space using either fMRIPrep, HCP-style pipelines, or CONN Toolbox. Triggers include: 'fmri', 'fMRI analysis', 'functional connectivity', 'effective connectivity', 'ROI extraction', 'seed-based correlation', 'PPI', 'DCM', 'atlas alignment', 'MNI152', 'HCP pipeline', 'CONN toolbox', or any request involving BOLD data."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: modality
+dependencies:
+  - fmriprep-tool
+  - hcppipeline-tool
+  - conn-tool
+  - fsl-tool
+  - bids-organizer
+  - claw-shell
+complementary_skills:
+  - smri-skill
+  - dwi-skill
 ---
-
 # fMRI Skill (Modality Layer)
 
 ## Overview

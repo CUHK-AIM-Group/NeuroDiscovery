@@ -2,8 +2,12 @@
 name: eeg-skill
 description: "Use this skill whenever the user wants to load, preprocess, epoch, filter, or extract features from EEG data (resting-state, task-based, BCI, clinical, motor imagery, emotion, epilepsy, fatigue, etc.). Triggers include: 'eeg', 'EEG preprocessing', 'EEG feature extraction', 'band power', 'downsample to frequency bands', 'motor imagery BCI', 'emotion EEG', 'epilepsy detection', or any request involving .set/.edf/.bdf/.fif/.bids files."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: modality
+dependencies:
+  - mne-eeg-tool
+  - claw-shell
 ---
-
 # EEG Skill (Modality Layer)
 
 ## Overview

@@ -2,8 +2,18 @@
 name: smri-skill
 description: "Use this skill whenever the user wants to process structural MRI (sMRI) such as T1w/T2w/FLAIR for brain extraction, bias correction, tissue segmentation (GM/WM/CSF), registration to MNI, cortical/subcortical parcellation, cortical thickness/volumetry (FreeSurfer), HCP-style structural preprocessing, WMH lesion segmentation (FLAIR+T1), ROI-wise feature extraction, or converting results back to DICOM. This is the NeuroClaw modality-layer interface: it plans WHAT to do and delegates execution to tool skills."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: modality
+dependencies:
+  - freesurfer-tool
+  - fsl-tool
+  - wmh-segmentation
+  - nii2dcm
+  - claw-shell
+complementary_skills:
+  - fmri-skill
+  - dwi-skill
 ---
-
 # sMRI Skill (Modality Layer)
 
 ## Overview

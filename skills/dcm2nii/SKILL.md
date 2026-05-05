@@ -2,8 +2,11 @@
 name: dcm2nii
 description: "Use this skill whenever the user wants to convert DICOM files or folders to NIfTI format (.nii or .nii.gz), extract neuroimaging volumes from clinical DICOM series (MRI, CT, PET, etc.), prepare raw DICOM data for research processing pipelines, anonymize while converting, or batch-convert multiple series/studies. Triggers include: 'DICOM to NIfTI', 'dcm to nii', 'convert dicom to nii.gz', 'dcm2niix', 'extract nii from dicom', 'batch dicom to nifti', 'prepare dicom for freesurfer/fsl/spm', 'anonymized nifti conversion', or any request to transform clinical DICOM data into analysis-ready NIfTI format while preserving orientation, voxel spacing, slice timing (when available), and important metadata in the JSON sidecar."
 license: BSD 3-Clause (original dcm2niix license). See https://github.com/rordenlab/dcm2niix/blob/master/LICENSE for complete terms.
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # DICOM to NIfTI conversion
 
 ## Overview

@@ -2,8 +2,12 @@
 name: knowledge-graph-builder
 description: "Use this skill when users need to build, populate, or extend a domain-specific knowledge graph from literature and structured databases. Triggers include: 'build knowledge graph', 'extract claims from papers', 'ingest data into graph', 'batch extract claims', 'knowledge graph construction', 'populate graph from PubMed', 'extract structured claims', 'ingest atlas data', or any request involving knowledge graph population from scientific literature or biomedical databases. Covers both structured data ingestion (Phase 1) and LLM-based claim extraction from papers (Phase 2)."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: utility
+dependencies:
+  - multi-search-engine
+  - academic-research-hub
 ---
-
 # Knowledge Graph Builder
 
 ## Overview

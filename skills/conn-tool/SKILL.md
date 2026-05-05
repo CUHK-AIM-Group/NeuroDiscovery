@@ -2,8 +2,11 @@
 name: conn-tool
 description: "Use this skill whenever the user wants to perform advanced functional connectivity (ROI-to-ROI, seed-to-voxel, ICA) or effective connectivity (PPI, gPPI, DCM) analysis using the CONN Toolbox. Triggers include: 'conn', 'CONN toolbox', 'functional connectivity', 'effective connectivity', 'ROI-to-ROI', 'seed-to-voxel', 'PPI', 'gPPI', 'DCM', 'psychophysiological interaction', or any request for connectivity analysis after preprocessing."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # CONN Tool
 
 ## Overview

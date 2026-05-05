@@ -2,8 +2,12 @@
 name: bids-organizer
 description: "Use this skill whenever the user wants to automatically organize raw neuroimaging data (DICOM, NIfTI, EEG, etc.) into a valid BIDS (Brain Imaging Data Structure) dataset. Triggers include: 'organize to BIDS', 'BIDS organizer', 'convert to BIDS', 'BIDS conversion', 'bidsify', 'create BIDS dataset', 'raw data to BIDS', or any request to structure data according to BIDS specification."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: tool
+dependencies:
+  - dcm2nii
+  - claw-shell
 ---
-
 # BIDS Organizer
 
 ## Overview

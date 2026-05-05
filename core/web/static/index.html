@@ -238,6 +238,35 @@
     }
     .skill-list { flex: 1; max-height: none; min-height: 0; }
 
+    .checkpoint-list {
+      list-style: none; margin: 0; padding: 0 8px 10px;
+      max-height: 30vh; overflow-y: auto;
+    }
+    .checkpoint-item {
+      width: 100%; border: 1px solid transparent; background: transparent;
+      border-radius: 10px; margin-bottom: 4px; padding: 8px 10px;
+      cursor: pointer; text-align: left; transition: all var(--ease); color: var(--text);
+    }
+    .checkpoint-item:hover { background: var(--surface-soft); border-color: var(--border); }
+    .checkpoint-item.expanded { background: color-mix(in oklab, var(--accent), transparent 92%); }
+    .cp-hash { font-family: monospace; font-size: 11px; color: var(--text-muted); }
+    .cp-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cp-diff-preview {
+      margin-top: 6px; padding: 8px; background: var(--surface-soft);
+      border-radius: 8px; font-family: monospace; font-size: 11px;
+      max-height: 200px; overflow-y: auto; white-space: pre-wrap; display: none;
+    }
+    .cp-diff-preview.open { display: block; }
+    .cp-actions { margin-top: 6px; display: flex; gap: 6px; }
+    .cp-action-btn {
+      border: 1px solid var(--border); background: var(--surface-elev);
+      border-radius: 8px; padding: 5px 10px; font-size: 12px;
+      cursor: pointer; color: var(--text); transition: all var(--ease);
+    }
+    .cp-action-btn:hover { border-color: color-mix(in oklab, var(--accent), var(--border) 50%); }
+    .cp-action-btn.danger { border-color: color-mix(in oklab, #d64545, var(--border) 40%); color: #d64545; }
+    .cp-action-btn.danger:hover { border-color: #d64545; }
+
     .chat-item, .skill-item {
       width: 100%;
       border: 1px solid transparent;
@@ -870,6 +899,17 @@
           <ul class="skill-list" id="skill-list"><li class="empty-hint">Loading skills...</li></ul>
         </div>
       </section>
+
+      <section class="nav-section" id="checkpoints-section">
+        <button class="nav-toggle" data-target="checkpoints" type="button">
+          <span>Checkpoints</span><span class="caret">▾</span>
+        </button>
+        <div class="section-body">
+          <ul class="checkpoint-list" id="checkpoint-list"><li class="empty-hint">No checkpoints yet</li></ul>
+          <button class="clear-chat-btn" id="refresh-checkpoints-btn" type="button"
+                  style="margin:4px 12px 10px;font-size:11px;">Refresh</button>
+        </div>
+      </section>
     </aside>
 
     <div class="chat-panel">
@@ -1015,7 +1055,7 @@
     openSessionMenuId: null,
     menuPosition: null,
     userAvatarId: 'brainy',
-    expanded: { chat: true, skills: true },
+    expanded: { chat: true, skills: true, checkpoints: true },
     theme: 'light',
     execution: {
       active: false,
@@ -1184,6 +1224,7 @@
         if (parsed && parsed.expanded) {
           state.expanded.chat = parsed.expanded.chat !== false;
           state.expanded.skills = parsed.expanded.skills !== false;
+          state.expanded.checkpoints = parsed.expanded.checkpoints !== false;
         }
         if (parsed && (parsed.theme === 'light' || parsed.theme === 'dark')) {
           state.theme = parsed.theme;
@@ -1967,6 +2008,7 @@
         state.selectedSkills = [];
         renderSkills(state.skills);
         renderPendingFiles();
+        loadCheckpoints();
       }
     } catch (err) {
       removeTypingIndicator();
@@ -2110,8 +2152,10 @@
   function applySectionState() {
     const chatSection = document.getElementById('chat-section');
     const skillsSection = document.getElementById('skills-section');
+    const checkpointsSection = document.getElementById('checkpoints-section');
     chatSection.classList.toggle('collapsed', !state.expanded.chat);
     skillsSection.classList.toggle('collapsed', !state.expanded.skills);
+    checkpointsSection.classList.toggle('collapsed', !state.expanded.checkpoints);
     savePrefs();
   }
 
@@ -2410,7 +2454,7 @@
     document.querySelectorAll('.nav-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.target;
-        if (target === 'chat' || target === 'skills') {
+        if (target === 'chat' || target === 'skills' || target === 'checkpoints') {
           state.expanded[target] = !state.expanded[target];
           applySectionState();
         }
@@ -2467,6 +2511,137 @@
     }
   }
 
+  // ── Checkpoints ───────────────────────────────────────────────────────────
+
+  const checkpointListEl = document.getElementById('checkpoint-list');
+  const refreshCheckpointsBtn = document.getElementById('refresh-checkpoints-btn');
+
+  let _checkpointsCache = [];
+
+  async function loadCheckpoints() {
+    try {
+      const resp = await fetch('/api/checkpoints');
+      const data = await resp.json();
+      _checkpointsCache = data.checkpoints || [];
+      renderCheckpoints(_checkpointsCache);
+    } catch (_e) {
+      _checkpointsCache = [];
+      renderCheckpoints([]);
+    }
+  }
+
+  function renderCheckpoints(checkpoints) {
+    if (!checkpoints.length) {
+      checkpointListEl.innerHTML = '<li class="empty-hint">No checkpoints yet</li>';
+      return;
+    }
+    checkpointListEl.innerHTML = checkpoints.map((cp, i) => {
+      const ts = new Date(cp.timestamp).toLocaleString();
+      const shortHash = (cp.hash || '').slice(0, 10);
+      const label = cp.label ? escapeHtml(cp.label) : escapeHtml(cp.message || '');
+      return `
+        <li>
+          <div class="checkpoint-item" data-cp-index="${i}" role="button" tabindex="0">
+            <div class="chat-row">
+              <div class="chat-title">${escapeHtml(ts)}</div>
+            </div>
+            <div class="cp-hash">${escapeHtml(shortHash)}</div>
+            <div class="cp-label">${label}</div>
+            <div class="cp-diff-preview" id="cp-diff-${i}"></div>
+            <div class="cp-actions" style="display:none;" id="cp-actions-${i}">
+              <button class="cp-action-btn" data-cp-diff="${i}" type="button">View Diff</button>
+              <button class="cp-action-btn danger" data-cp-restore="${i}" type="button">Restore</button>
+            </div>
+          </div>
+        </li>`;
+    }).join('');
+  }
+
+  checkpointListEl.addEventListener('click', async (e) => {
+    // View Diff button
+    const diffBtn = e.target.closest('[data-cp-diff]');
+    if (diffBtn) {
+      const idx = parseInt(diffBtn.dataset.cpDiff, 10);
+      const hash = _checkpointsCache[idx] && _checkpointsCache[idx].hash;
+      if (!hash) return;
+      const preview = document.getElementById(`cp-diff-${idx}`);
+      if (preview.classList.contains('open')) {
+        preview.classList.remove('open');
+        return;
+      }
+      preview.textContent = 'Loading diff...';
+      preview.classList.add('open');
+      try {
+        const resp = await fetch(`/api/checkpoints/${hash}/diff`);
+        const data = await resp.json();
+        preview.textContent = data.diff_text || 'No changes.';
+      } catch (_e) {
+        preview.textContent = 'Failed to load diff.';
+      }
+      return;
+    }
+
+    // Restore button
+    const restoreBtn = e.target.closest('[data-cp-restore]');
+    if (restoreBtn) {
+      const idx = parseInt(restoreBtn.dataset.cpRestore, 10);
+      const hash = _checkpointsCache[idx] && _checkpointsCache[idx].hash;
+      if (!hash) return;
+      if (!confirm('Restore workspace to this checkpoint? Current files will be overwritten.')) return;
+      try {
+        const resp = await fetch(`/api/checkpoints/${hash}/restore`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+        });
+        const data = await resp.json();
+        if (data.error) {
+          showError(data.error);
+        } else {
+          showSuccess('Workspace restored.');
+          loadCheckpoints();
+        }
+      } catch (_e) {
+        showError('Restore failed.');
+      }
+      return;
+    }
+
+    // Expand / collapse item
+    const item = e.target.closest('.checkpoint-item');
+    if (item) {
+      const wasExpanded = item.classList.contains('expanded');
+      document.querySelectorAll('.checkpoint-item.expanded').forEach(el => {
+        el.classList.remove('expanded');
+        const acts = el.querySelector('.cp-actions');
+        if (acts) acts.style.display = 'none';
+      });
+      if (!wasExpanded) {
+        item.classList.add('expanded');
+        const acts = item.querySelector('.cp-actions');
+        if (acts) acts.style.display = 'flex';
+      }
+    }
+  });
+
+  refreshCheckpointsBtn.addEventListener('click', loadCheckpoints);
+
+  function showSuccess(message) {
+    const banner = document.getElementById('error-banner');
+    if (!banner) return;
+    banner.textContent = '✓ ' + message;
+    banner.style.display = 'block';
+    banner.style.color = 'var(--ok)';
+    banner.style.background = 'color-mix(in oklab, var(--ok), transparent 88%)';
+    setTimeout(() => {
+      banner.style.display = 'none';
+      banner.style.color = '';
+      banner.style.background = '';
+    }, 4000);
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+
   function boot() {
     loadState();
     fileInputEl.setAttribute('accept', SUPPORTED_ATTACHMENT_EXTENSIONS.join(','));
@@ -2481,6 +2656,7 @@
     renderPendingFiles();
     loadSkills();
     loadEnv();
+    loadCheckpoints();
     inputEl.focus();
   }
 

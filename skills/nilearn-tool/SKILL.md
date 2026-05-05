@@ -2,8 +2,11 @@
 name: nilearn-tool
 description: "Use this skill whenever any NeuroClaw fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decoding utilities. This is the dedicated base/tool skill that contains Nilearn usage patterns and lightweight wrappers. Never called directly by the user."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # Nilearn Tool (Base/Tool Layer)
 
 ## Overview

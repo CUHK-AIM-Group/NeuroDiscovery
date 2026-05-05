@@ -2,8 +2,11 @@
 name: wmh-segmentation
 description: "Use this skill whenever the user wants to perform automated white matter hyperintensity (WMH) segmentation on structural MRI data using the MARS-WMH nnU-Net model. Requires one FLAIR and one T1w NIfTI image (no contrast). Triggers include: 'wmh', 'white matter hyperintensities', 'WMH segmentation', 'MARS-WMH', 'wmh-nnunet', 'segment FLAIR T1', 'white matter lesions', 'vascular WMH', 'mars wmh', or any request to run nnU-Net WMH segmentation on FLAIR+T1w pair."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # WMH Segmentation (MARS-WMH nnU-Net)
 
 ## Overview

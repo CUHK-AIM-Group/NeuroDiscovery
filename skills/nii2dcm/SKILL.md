@@ -2,8 +2,11 @@
 name: nii2dcm
 description: "Use this skill whenever the user wants to convert NIfTI files (.nii or .nii.gz) to DICOM format, create DICOM series from processed neuroimaging results, write segmentation/registration/analysis outputs back to DICOM for PACS compatibility or clinical viewer comparison, or transfer metadata from reference DICOM files. Triggers include: mentions of 'NIfTI to DICOM', 'nii to dcm', 'convert nii.gz to DICOM', 'dicomify segmentation', 'nii2dcm', 'bring results back to DICOM', 'create DICOM from NIfTI', 'nii to dicom series', or any request to take post-processed neuroimaging results (segmentation, registration, bias field correction, synthesis, etc.) and store/view them alongside original patient DICOM data. Also use when modality-specific metadata (especially MR, SVR) or preservation of patient/study information from a reference DICOM is needed. Do NOT use for the reverse conversion (DICOM to NIfTI), non-medical imaging file conversions, or any clinical diagnostic or treatment-related workflows."
 license: BSD 3-Clause (original nii2dcm license). See https://github.com/tomaroberts/nii2dcm/blob/main/LICENSE for complete terms.
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # NIfTI to DICOM conversion
 
 ## Overview

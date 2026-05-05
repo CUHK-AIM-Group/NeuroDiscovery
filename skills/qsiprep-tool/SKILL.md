@@ -2,8 +2,12 @@
 name: qsiprep-tool
 description: "Use this skill whenever the user wants to run QSIPrep (BIDS App) for diffusion MRI (DWI) preprocessing with best-practice workflows (topup/eddy, denoising/unringing options, susceptibility/motion correction, coregistration/normalization, QC reports) on BIDS datasets. This skill is the NeuroClaw interface-layer wrapper for QSIPrep: it checks installation (Docker/Singularity/conda), generates an execution plan with exact commands and resource estimates, waits for explicit confirmation, then routes all execution through claw-shell."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
+  - bids-organizer
 ---
-
 # QSIPrep Tool (Interface Layer)
 
 ## Overview

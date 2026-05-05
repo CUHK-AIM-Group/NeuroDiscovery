@@ -2,8 +2,13 @@
 name: dictlearning
 description: "Use this model doc whenever the user wants to perform resting-state network decomposition using DictLearning. This is a non-deep-learning unsupervised route focused on sparse component extraction, network map discovery, and subject-level time series from resting-state fMRI."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # DictLearning Model Doc
 
 ## Overview

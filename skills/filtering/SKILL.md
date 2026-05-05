@@ -2,8 +2,13 @@
 name: filtering
 description: "Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical temporal filtering methods. This is a non-deep-learning preprocessing route focused on temporal cleaning, frequency selection, and preparation of cleaner time series for downstream analysis."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
+layer: base
+skill_type: model
+dependencies:
+  - fmri-skill
+  - nilearn-tool
+  - run_models
 ---
-
 # Filtering Model Doc
 
 ## Overview

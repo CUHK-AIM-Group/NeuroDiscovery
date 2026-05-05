@@ -2,8 +2,13 @@
 name: ukb-skill
 description: "Use this skill whenever the user wants to analyze already available UK Biobank data for brain-related research, including neurological outcomes, cognitive phenotypes, brain MRI derived phenotypes, survival analysis, subgroup analysis, propensity score analysis, mediation analysis, sensitivity analysis, machine learning, visualization, or manuscript-ready summaries. This skill only covers post-extraction analysis and explicitly excludes RAP access and data download guidance."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: dataset
+dependencies:
+  - nilearn-tool
+  - fsl-tool
+  - claw-shell
 ---
-
 # UKB Skill (Analysis Layer)
 
 ## Overview

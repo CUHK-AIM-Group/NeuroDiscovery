@@ -2,8 +2,17 @@
 name: dwi-skill
 description: "Use this skill whenever the user wants to preprocess diffusion MRI / DWI data, compute diffusion metrics (FA/MD/AD/RD, etc.), extract ROI-wise diffusion features, or run tractography/connectome-related workflows. Triggers include: 'DWI', 'DTI', 'diffusion MRI', 'FA', 'MD', 'AD', 'RD', 'eddy', 'topup', 'QSIPrep', 'tractography', 'connectome', 'TBSS', 'white matter microstructure'. This is the NeuroClaw modality-layer interface: it plans WHAT to do and delegates execution to tool skills."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: modality
+dependencies:
+  - qsiprep-tool
+  - dipy-tool
+  - fsl-tool
+  - claw-shell
+complementary_skills:
+  - fmri-skill
+  - smri-skill
 ---
-
 # DWI Skill (Modality Layer)
 
 ## Overview

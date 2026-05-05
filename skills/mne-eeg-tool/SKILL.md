@@ -2,8 +2,11 @@
 name: mne-eeg-tool
 description: "Use this skill whenever any NeuroClaw modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the dedicated base/tool skill that contains all specific MNE-Python code and usage patterns."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # MNE-EEG Tool (Base/Tool Layer)
 
 ## Overview

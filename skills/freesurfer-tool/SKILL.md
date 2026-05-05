@@ -2,8 +2,11 @@
 name: freesurfer-tool
 description: "Use this skill whenever the user wants to process structural MRI data (T1w, T2w, FLAIR, etc.) with FreeSurfer, especially for cortical/subcortical segmentation, surface reconstruction, parcellation, cortical thickness, volume statistics, or full recon-all pipeline. Triggers include: 'freesurfer', 'recon-all', 'segment MRI', 'FreeSurfer processing', 'cortical segmentation', 'subcortical segmentation', 'run recon-all', 'freesurfer T1', 'process brain MRI with freesurfer', 'aseg aparc', or any request to run FreeSurfer on NIfTI MRI data for research analysis."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # FreeSurfer Tool
 
 ## Overview

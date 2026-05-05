@@ -14,16 +14,51 @@ from typing import Any
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
 
-def _parse_frontmatter(text: str) -> dict[str, str]:
-    """Extract key: value pairs from a YAML-style front-matter block."""
+def _parse_frontmatter(text: str) -> dict[str, Any]:
+    """Extract key: value pairs from a YAML-style front-matter block.
+
+    Supports simple scalar values *and* YAML-style lists::
+
+        dependencies:
+          - fmriprep-tool
+          - fsl-tool
+        layer: subagent
+    """
     match = _FRONTMATTER_RE.match(text)
     if not match:
         return {}
-    result: dict[str, str] = {}
-    for line in match.group(1).splitlines():
+    result: dict[str, Any] = {}
+    lines = match.group(1).splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         if ":" in line:
             key, _, value = line.partition(":")
-            result[key.strip()] = value.strip().strip('"')
+            key = key.strip()
+            value = value.strip().strip('"')
+            if value:
+                # Simple scalar
+                result[key] = value
+            else:
+                # Empty value — check if next lines are list items
+                items: list[str] = []
+                j = i + 1
+                while j < len(lines):
+                    next_line = lines[j].strip()
+                    if next_line.startswith("- "):
+                        items.append(next_line[2:].strip().strip('"'))
+                        j += 1
+                    elif next_line == "" or next_line.startswith("#"):
+                        j += 1
+                    else:
+                        break
+                if items:
+                    result[key] = items
+                else:
+                    result[key] = ""
+                i = j
+                continue
+        i += 1
     return result
 
 
@@ -198,6 +233,10 @@ class SkillLoader:
                         "description": description,
                         "summary_en": summary_en,
                         "summary_zh": summary_zh,
+                        "layer": meta.get("layer", ""),
+                        "skill_type": meta.get("skill_type", ""),
+                        "dependencies": meta.get("dependencies", []),
+                        "complementary_skills": meta.get("complementary_skills", []),
                         "path": skill_dir,
                         "handler": handler,
                         "skill_md": skill_md,

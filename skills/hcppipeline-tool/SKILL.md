@@ -2,8 +2,11 @@
 name: hcppipeline-tool
 description: "Use this skill whenever the user wants to perform high-quality, HCP-style preprocessing of multimodal MRI data (structural, functional, diffusion) using the official HCP Pipelines. Triggers include: 'HCP pipeline', 'HCP preprocessing', 'hcp-fmri', 'hcp-dwi', 'hcp-structural', 'MSMAll', 'ICA-FIX', 'bedpostx', 'probtrackx', or any request to run the Human Connectome Project preprocessing pipelines."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: base
+skill_type: tool
+dependencies:
+  - claw-shell
 ---
-
 # HCP Pipeline Tool
 
 ## Overview

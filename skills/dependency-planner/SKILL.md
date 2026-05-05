@@ -1,10 +1,13 @@
 ---
 name: dependency-planner  
 description: "Use this skill whenever a NeuroClaw skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler, CUDA toolkit, conda environment, system tool, or git-based repository. Triggers include: 'install', 'setup', 'missing dependency', 'fix import error', 'install torch cuda', 'conda create environment', 'pip install from git', 'install nnU-Net', 'setup gcc nvcc', 'prepare environment for deep learning', 'handle dep error', or any phrase indicating the need to prepare or install software components. This skill is the **mandatory gatekeeper**: it ALWAYS plans first, never installs anything without explicit user confirmation."  
-license: MIT License (NeuroClaw custom skill – freely modifiable within the project)  
-
+license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
+layer: subagent
+skill_type: tool
+dependencies:
+  - multi-search-engine
+  - git-essentials
 ---
-
 # Dependency Installation Planner
 
 ## Overview
