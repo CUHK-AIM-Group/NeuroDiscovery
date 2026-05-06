@@ -34,10 +34,13 @@ tools_probe.py
 Thumbs.db
 .vscode/
 .cursor/
-.claude/settings.local.json
 
 # LaTeX build artifacts
 materials/CVPR_2026/neuroclaw_preprint_nature.tex
 materials/CVPR_2026/eeg_encoding_protocol_final.tex
 docs/autoresearch_papers_overview.md
 core/knowledge_graph/README.md
+TODO.md
+CHANGELOG.md
+core/knowledge_graph/autoresearch_pipeline.md
+.claude

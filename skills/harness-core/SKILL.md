@@ -3,7 +3,7 @@ name: harness-core
 description: "Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroClaw skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for harness-compliant execution, validation, and reproducibility. Use this as a foundation/plugin SDK when building or enhancing other skills. Triggers: none (library import only). This skill provides: HarnessController class, VerificationRunner, CheckpointManager, DriftDetector, AuditLogger, DependencyManifest, and related utilities."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
-skill_type: infra
+skill_type: tool
 dependencies: []
 ---
 # Harness Core Library

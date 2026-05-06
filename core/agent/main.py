@@ -1295,10 +1295,10 @@ def _load_skill_loader_class():
 
     loader_mod = _ilu.spec_from_file_location(
         "neuroclaw_skill_loader",
-        REPO_ROOT / "core" / "skill-loader" / "loader.py",
+        REPO_ROOT / "core" / "skill_loader" / "loader.py",
     )
     if loader_mod is None or loader_mod.loader is None:
-        raise RuntimeError("Cannot find core/skill-loader/loader.py")
+        raise RuntimeError("Cannot find core/skill_loader/loader.py")
     mod = __import__("importlib").util.module_from_spec(loader_mod)
     loader_mod.loader.exec_module(mod)
     return mod.SkillLoader
@@ -3344,14 +3344,14 @@ class AgentSession:
 
         import importlib.util as _ilu
 
-        # SkillLoader lives in core/skill-loader/ (hyphen) so we must use
-        # importlib rather than a regular package import.
+        # SkillLoader lives in core/skill_loader/ so we use
+        # importlib for dynamic loading.
         _loader_mod = _ilu.spec_from_file_location(
             "neuroclaw_skill_loader",
-            REPO_ROOT / "core" / "skill-loader" / "loader.py",
+            REPO_ROOT / "core" / "skill_loader" / "loader.py",
         )
         if _loader_mod is None or _loader_mod.loader is None:
-            raise RuntimeError("Cannot find core/skill-loader/loader.py")
+            raise RuntimeError("Cannot find core/skill_loader/loader.py")
         _m = __import__("importlib").util.module_from_spec(_loader_mod)
         _loader_mod.loader.exec_module(_m)
         SkillLoader = _m.SkillLoader
@@ -3376,6 +3376,7 @@ class AgentSession:
                 user_input = input("You: ").strip()
             except (EOFError, KeyboardInterrupt):
                 print("\nSession ended.")
+                self._cleanup_subagents()
                 break
             if not user_input:
                 continue
@@ -3663,6 +3664,47 @@ class AgentSession:
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "spawn_subagent",
+                    "description": (
+                        "Spawn an independent subagent session to execute a subagent-layer "
+                        "skill or a specialized task autonomously. The subagent has its own "
+                        "conversation history, session ID, and can run tool calls independently."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "task": {
+                                "type": "string",
+                                "description": "The task description for the subagent to execute.",
+                            },
+                            "persona": {
+                                "type": "string",
+                                "description": (
+                                    "Optional expert persona: 'biostatistician', "
+                                    "'clinical_neuroscientist', 'methodology_expert'."
+                                ),
+                            },
+                            "skills_filter": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Optional list of skill names to restrict the subagent to.",
+                            },
+                            "mode": {
+                                "type": "string",
+                                "enum": ["run_and_return", "fire_and_forget"],
+                                "description": (
+                                    "'run_and_return' waits for result, "
+                                    "'fire_and_forget' returns immediately."
+                                ),
+                            },
+                        },
+                        "required": ["task"],
+                    },
+                },
+            },
         ]
 
         messages: list[dict[str, Any]] = list(self.history)
@@ -3818,6 +3860,45 @@ class AgentSession:
                             "executed": bool(result.get("success", False)),
                             "success": bool(result.get("success", False)),
                             "skills_used": _extract_skills_from_result_payload(result),
+                            "result": result,
+                        }
+                    )
+                elif name == "spawn_subagent":
+                    task = str(args.get("task", ""))
+                    persona = str(args.get("persona", ""))
+                    skills_filter = args.get("skills_filter")
+                    mode = str(args.get("mode", "run_and_return"))
+                    try:
+                        manager = self._get_or_create_subagent_manager()
+                        session_id = manager.spawn(
+                            task,
+                            persona=persona,
+                            skills_filter=skills_filter,
+                            mode=mode,
+                        )
+                        if mode == "run_and_return":
+                            sub_result = manager.get_result(session_id, timeout=180.0)
+                            result = {
+                                "success": sub_result.status == "completed",
+                                "session_id": session_id,
+                                "response": sub_result.response,
+                                "error": sub_result.error,
+                            }
+                        else:
+                            result = {
+                                "success": True,
+                                "session_id": session_id,
+                                "message": f"Subagent {session_id} spawned in fire-and-forget mode.",
+                            }
+                    except Exception as exc:
+                        result = {"success": False, "error": str(exc)}
+                    self._tool_events.append(
+                        {
+                            "tool": "spawn_subagent",
+                            "command": task[:100],
+                            "executed": True,
+                            "success": bool(result.get("success", False)),
+                            "skills_used": [],
                             "result": result,
                         }
                     )
@@ -4063,6 +4144,26 @@ class AgentSession:
         extra_parts = [part for part in (skill_hint_summary, skill_catalog_summary, skill_exec_summary) if part]
         extra = "\n\n" + "\n\n".join(extra_parts) if extra_parts else ""
         return f"{soul}{loaded_skills_line}{extra}{benchmark_policy}"
+
+    # ── Subagent management ────────────────────────────────────────────────────
+
+    def _get_or_create_subagent_manager(self) -> Any:
+        """Lazy-create the SubagentManager for this session."""
+        if not hasattr(self, "_subagent_manager") or self._subagent_manager is None:
+            from core.subagent.manager import SubagentManager
+            self._subagent_manager = SubagentManager(
+                env=self.env, workspace=self.workspace
+            )
+        return self._subagent_manager
+
+    def _cleanup_subagents(self) -> None:
+        """Cancel and clean up all subagent sessions."""
+        if hasattr(self, "_subagent_manager") and self._subagent_manager is not None:
+            try:
+                self._subagent_manager.shutdown_all()
+            except Exception:
+                pass
+            self._subagent_manager = None
 
     @staticmethod
     def _prompt_setup() -> None:

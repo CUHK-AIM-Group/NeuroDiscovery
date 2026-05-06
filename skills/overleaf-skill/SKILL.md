@@ -3,7 +3,7 @@ name: overleaf-skill
 description: "Use this skill whenever the user wants to synchronize NeuroClaw-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'sync to Overleaf', 'upload paper to Overleaf', 'Overleaf project', 'LaTeX sync', 'push draft', 'download Overleaf', 'create Overleaf project', 'tex file to Overleaf', or any request involving paper_draft.tex / collaboration. This skill is the **mandatory interface-layer LaTeX collaborator** in NeuroClaw: it strictly enforces pull-first workflow with diff reporting and per-operation user authorization for any write/create/delete action, uses pyoverleaf (cookie-based), preserves Overleaf version history, integrates directly after paper-writing, and never performs unauthorized modifications."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
-skill_type: utility
+skill_type: tool
 dependencies: []
 ---
 # Overleaf Skill
@@ -163,18 +163,18 @@ Store cookie temporarily in `.secrets/overleaf_cookie.txt` (never commit it). Re
 - **Project creation**: API support is inconsistent — prefer web UI creation.
 - **Approval behavior**: Use real script files and split steps to minimize repeated prompts.
 
-## When to Trigger
+## When to Call This Skill
 - Immediately after `paper-writing` completes `paper_draft.tex` / `.md`
 - User mentions sync / push / pull / Overleaf / create project / LaTeX collaboration
 - During manuscript polishing, arXiv, or journal submission phase
 - When co-authors need an editable Overleaf link
 
-## Related Skills
+## Complementary / Related Skills
 - `paper-writing` → generates `paper_draft.tex` / `.md`
 - `claw-shell` → handles unzip / diff / mv / local file ops
 - `dependency-planner` → installs pyoverleaf and LaTeX dependencies
 
-## References
+## Reference
 - pyoverleaf GitHub: https://github.com/jkulhanek/pyoverleaf
 - Original inspiration: Eason’s overleaf-skill workflow
 - Core principle: pull → diff → report → confirm; push only with explicit per-operation authorization

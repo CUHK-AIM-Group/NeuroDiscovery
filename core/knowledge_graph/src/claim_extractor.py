@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Optional
 
+import httpx
 from openai import OpenAI
 
 from .schema import Claim, Evidence, PaperRef
@@ -37,9 +38,16 @@ Each claim object fields:
 - population: object with study population info, null if not reported:
   {{"mean_age": number or null, "age_range": "e.g. 18-65" or null, "n_female": int or null, "n_male": int or null, "ethnicity": str or null, "cohort_name": str or null}}
 
+IMPORTANT rules for numeric fields:
+- p_value: output the exact number if reported (e.g. 0.003), or a comparison string like "p < 0.05" or "p > 0.01", or "not_reported" if the abstract does not mention a p-value.
+- effect_size: output the number (e.g. 0.45, 1.2), or "not_reported" if not mentioned.
+- sample_size: output the integer (e.g. 150, 2048), or "not_reported" if not mentioned.
+- effect_metric: output the metric name (e.g. "Cohen's d", "odds ratio", "AUC", "beta"), or "not_reported" if not mentioned.
+- NEVER output null for these four fields — use "not_reported" instead.
+
 Types: brain_region, disease, gene, neurotransmitter, protein, drug, network, biomarker, cognitive_function
 Predicates: reduces, increases, correlates_with, causes, is_biomarker_of, is_risk_factor_for, treats, modulates, activates, inhibits, predicts, mediates, is_associated_with, distinguishes
-Study types: fMRI, PET, DTI, sMRI, EEG, MEG, lesion, meta_analysis, GWAS, animal_model, clinical_trial, case_control, longitudinal, cross_sectional, review
+Study types: fMRI, PET, DTI, sMRI, EEG, MEG, lesion, meta_analysis, GWAS, animal_model, clinical_trial, case_control, longitudinal, cross_sectional, review, cohort, narrative_review
 
 Title: {title}
 PMID: {pmid}
@@ -66,7 +74,7 @@ class ClaimExtractor:
         api_key: str = DEFAULT_API_KEY,
         model: str = DEFAULT_MODEL,
     ):
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.client = OpenAI(base_url=base_url, api_key=api_key, http_client=httpx.Client(verify=False))
         self.model = model
 
     def extract_from_abstract(
@@ -221,6 +229,43 @@ class ClaimExtractor:
 
         return None
 
+    @staticmethod
+    def _parse_numeric(value, target_type: str = "float"):
+        """Parse a numeric field from LLM output.
+
+        Handles: pure numbers, comparison strings ("p < 0.05", "n = 150"),
+        and "not_reported". Returns (parsed_value, raw_string) tuple.
+        """
+        if value is None:
+            return None, "not_reported"
+
+        if isinstance(value, (int, float)):
+            return value, str(value)
+
+        s = str(value).strip().lower()
+        if s in ("not_reported", "n/a", "na", "none", "", "null"):
+            return None, "not_reported"
+
+        # try direct numeric parse
+        try:
+            v = float(s) if target_type == "float" else int(s)
+            return v, s
+        except (ValueError, TypeError):
+            pass
+
+        # extract number from comparison strings like "p < 0.05", "n = 150", "β = -0.32"
+        # strip commas from numbers like "2,048"
+        s_clean = s.replace(",", "")
+        match = re.search(r"[-+]?\d*\.?\d+", s_clean)
+        if match:
+            try:
+                v = float(match.group()) if target_type == "float" else int(float(match.group()))
+                return v, s
+            except (ValueError, TypeError):
+                pass
+
+        return None, s
+
     def _item_to_claim(self, item: dict, paper: PaperRef) -> Optional[Claim]:
         """Convert a single JSON item to a Claim object."""
         subject = item.get("subject", "").strip()
@@ -230,36 +275,30 @@ class ClaimExtractor:
         if not subject or not obj or not predicate:
             return None
 
-        # parse effect size
-        effect_size = item.get("effect_size")
-        if effect_size is not None:
-            try:
-                effect_size = float(effect_size)
-            except (ValueError, TypeError):
-                effect_size = None
+        # parse numeric fields with range/comparison support
+        effect_size, effect_size_raw = self._parse_numeric(item.get("effect_size"), "float")
+        p_value, p_value_raw = self._parse_numeric(item.get("p_value"), "float")
+        sample_size, sample_size_raw = self._parse_numeric(item.get("sample_size"), "int")
 
-        # parse p-value
-        p_value = item.get("p_value")
-        if p_value is not None:
-            try:
-                p_value = float(p_value)
-            except (ValueError, TypeError):
-                p_value = None
+        # store raw strings in metadata for downstream use
+        raw_stats = {}
+        if p_value_raw != "not_reported":
+            raw_stats["p_value_raw"] = p_value_raw
+        if effect_size_raw != "not_reported":
+            raw_stats["effect_size_raw"] = effect_size_raw
+        if sample_size_raw != "not_reported":
+            raw_stats["sample_size_raw"] = sample_size_raw
 
-        # parse sample size
-        sample_size = item.get("sample_size")
-        if sample_size is not None:
-            try:
-                sample_size = int(sample_size)
-            except (ValueError, TypeError):
-                sample_size = None
+        effect_metric = item.get("effect_metric", "")
+        if isinstance(effect_metric, str) and effect_metric.lower() in ("not_reported", "n/a", ""):
+            effect_metric = ""
 
         evidence = Evidence(
             study_type=item.get("study_type", ""),
             methodology=item.get("methodology", ""),
             p_value=p_value,
             effect_size=effect_size,
-            effect_metric=item.get("effect_metric", ""),
+            effect_metric=effect_metric,
             sample_size=sample_size,
             replicability=item.get("replicability", "single_study"),
             direction=item.get("direction", ""),
@@ -302,6 +341,7 @@ class ClaimExtractor:
                 "object_type": item.get("object_type", ""),
                 "conditions": conditions,
                 "population": population,
+                "raw_stats": raw_stats,
             },
         )
 

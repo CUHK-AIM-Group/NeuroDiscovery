@@ -3,7 +3,7 @@ name: paper-writing
 description: "Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create LaTeX paper', 'write research paper from IDEA METHOD EXPERIMENT', or any request to transform IDEA.md + METHOD.md + EXPERIMENT.md into a typeset-ready manuscript. This skill is the **mandatory interface-layer writer** in NeuroClaw: it strictly follows the hierarchical manuscript drafting and iterative refinement process (section 4.4 + provided flowchart), never generates the full paper in one shot, saves every intermediate step as a separate file, and produces either clean plain-text or LaTeX output."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
-skill_type: meta
+skill_type: workflow
 dependencies: []
 ---
 # Paper Writing
@@ -132,7 +132,7 @@ When writing the Data Availability statement, use the templates in [`scripts/dat
 - [`nature-data`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-data) → Data Availability statements, repository strategy, FAIR metadata
 - [`nature-paper2ppt`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-paper2ppt) → paper-to-PPTX conversion for journal club presentations
 
-## Reference & Source
+## Reference
 Hierarchical Manuscript Drafting and Iterative Refinement (section 4.4 of NeuroClaw architecture).  
 Flowchart: multi-agent section generation → ethics review → iterative optimization → narrative writing → de-AI polishing → logic/continuity/length/reference checks → LaTeX repair → final draft.
 
@@ -141,6 +141,6 @@ Integrated writing standards from [nature-skills](https://github.com/Yuan1z0825/
 - Figure archetypes, design theory, and chart standards (nature-figure)  
 - Data Availability statement patterns and FAIR checklist (nature-data)
 
-Created At: 2026-03-23  
+Created At: 2026-03-23 00:00 HKT
 Last Updated At: 2026-03-26 00:27 HKT  
 Author: chengwang96

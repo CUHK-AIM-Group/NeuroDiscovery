@@ -4,9 +4,11 @@ requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
 testpaths = [
+    "core/checkpoint",
     "core/knowledge_graph/tests",
-    "core/skill-loader",
+    "core/skill_loader",
     "core/session",
+    "core/subagent",
 ]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]

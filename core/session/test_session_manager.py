@@ -47,17 +47,15 @@ def test_maybe_compress_with_compression():
         {"role": "assistant", "content": "Response 3"},
     ]
     manager.maybe_compress(history)
-    # Should have: system + summary + 2 recent pairs (4 messages)
-    assert len(history) == 6  # system + summary + 2 user + 2 assistant
+    # Should have: system + summary + keep_recent (2) messages = 4 total
+    assert len(history) == 4
     # First message should be system
     assert history[0]["role"] == "system"
     # Second message should be the summary
     assert "Context summary" in history[1]["content"]
-    # Last 4 messages should be the recent ones
-    assert history[2]["content"] == "Message 2"
-    assert history[3]["content"] == "Response 2"
-    assert history[4]["content"] == "Message 3"
-    assert history[5]["content"] == "Response 3"
+    # Last 2 messages should be the recent ones
+    assert history[2]["content"] == "Message 3"
+    assert history[3]["content"] == "Response 3"
 
 
 def test_maybe_compress_preserves_system():
@@ -121,10 +119,12 @@ def test_load_latest_checkpoint(tmp_path):
 
 def test_load_latest_checkpoint_empty(tmp_path):
     """Test loading when no checkpoints exist."""
+    from core.session.manager import CHECKPOINT_DIR
+
     env = {}
     manager = SessionManager(env)
     # Ensure no checkpoints exist
-    for f in manager._prune_old_checkpoints.__self__._checkpoint_dir.glob("checkpoint_*.json"):
+    for f in CHECKPOINT_DIR.glob("checkpoint_*.json"):
         f.unlink()
     result = manager.load_latest_checkpoint()
     assert result is None
@@ -132,6 +132,8 @@ def test_load_latest_checkpoint_empty(tmp_path):
 
 def test_prune_old_checkpoints(tmp_path):
     """Test that old checkpoints are pruned."""
+    from core.session.manager import CHECKPOINT_DIR
+
     env = {}
     manager = SessionManager(env)
     # Save more than MAX_CHECKPOINTS
@@ -139,7 +141,7 @@ def test_prune_old_checkpoints(tmp_path):
         history = [{"role": "user", "content": f"Message {i}"}]
         manager.save_checkpoint(history)
     # Check that only MAX_CHECKPOINTS remain
-    checkpoints = sorted(manager._checkpoint_dir.glob("checkpoint_*.json"))
+    checkpoints = sorted(CHECKPOINT_DIR.glob("checkpoint_*.json"))
     assert len(checkpoints) <= 5  # MAX_CHECKPOINTS = 5
 
 

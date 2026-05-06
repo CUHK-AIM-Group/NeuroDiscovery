@@ -1,9 +1,8 @@
 ---
 name: git-workflows
 description: Advanced git operations beyond add/commit/push. Use when rebasing, bisecting bugs, using worktrees for parallel development, recovering with reflog, managing subtrees/submodules, resolving merge conflicts, cherry-picking across branches, or working with monorepos.
-metadata: {"clawdbot":{"emoji":"🌿","requires":{"bins":["git"]},"os":["linux","darwin","win32"]}}
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies:
   - git-essentials
 ---
@@ -535,7 +534,7 @@ git push origin --delete v1.2.0  # Remote
 - `git stash push -m "description"` is much better than bare `git stash`. You'll thank yourself when you have 5 stashes.
 - `git log -S "string"` (pickaxe) is the fastest way to find when a function or variable was added or removed.
 
-## Reference & Source
+## Reference
 
 Advanced git workflows skill for NeuroClaw. Complements `git-essentials` for basic operations.
 

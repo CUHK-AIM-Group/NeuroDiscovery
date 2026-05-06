@@ -8,7 +8,7 @@ dependencies:
   - claw-shell
   - dependency-planner
 ---
-# Docker Environment Manager
+# Docker Environment Manager (Tool Layer)
 
 ## Overview
 
@@ -360,7 +360,7 @@ docker start --checkpoint checkpoint_20260405_143000 ${CONTAINER_ID}
 - `dependency-planner` → install Docker Engine + NVIDIA Container Toolkit
 - `multi-search-engine` → lookup latest Docker Hub / GitHub Container Registry instructions
 
-## Reference & Source
+## Reference
 
 Custom interface-layer skill for NeuroClaw, addressing containerized environment setup gaps identified in the MedicalClaw / OpenClaw evaluation and aligned with 2026 Docker + NVIDIA best practices (GPU passthrough, compose reproducibility, claw-shell routing).
 

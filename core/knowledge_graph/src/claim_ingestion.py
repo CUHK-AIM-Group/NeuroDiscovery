@@ -1,15 +1,165 @@
-"""Claim ingestion: resolve entities, add claims to knowledge graph."""
+"""Claim ingestion: resolve entities, refine predicates, add claims to knowledge graph."""
 
 from __future__ import annotations
 
+import json
 import logging
+import os
+import re
 from typing import Optional
+
+from openai import OpenAI
 
 from .claim_extractor import ClaimExtractor, ExtractionResult
 from .graph_manager import KnowledgeGraph
-from .schema import Claim, ConceptNode, DomainTag, Edge, PaperRef
+from .schema import CLAIM_PREDICATES, Claim, ConceptNode, DomainTag, Edge, PaperRef
 
 logger = logging.getLogger(__name__)
+
+# ── RELATE: predicate refinement ──────────────────────────────────────
+
+_VAGUE_PREDICATES = {"is_associated_with", "correlates_with"}
+
+# Rule-based keyword patterns for refining is_associated_with
+_PREDICATE_KEYWORDS: dict[str, list[re.Pattern]] = {
+    "is_risk_factor_for": [
+        re.compile(r"\brisk\s+factor\b", re.I),
+        re.compile(r"\bincreases?\s+(?:the\s+)?risk\b", re.I),
+        re.compile(r"\bassociated\s+with\s+(?:increased|higher)\s+risk\b", re.I),
+        re.compile(r"\bpredispos\w*\b", re.I),
+    ],
+    "is_biomarker_of": [
+        re.compile(r"\bbiomarker\b", re.I),
+        re.compile(r"\bdiagnostic\b", re.I),
+        re.compile(r"\bpredicts?\s+(?:diagnosis|progression|conversion)\b", re.I),
+        re.compile(r"\bsensitivity\s+and\s+specificity\b", re.I),
+    ],
+    "causes": [
+        re.compile(r"\bcauses?\b", re.I),
+        re.compile(r"\binduces?\b", re.I),
+        re.compile(r"\bleads?\s+to\b", re.I),
+        re.compile(r"\bpathogen\w*\b", re.I),
+    ],
+    "predicts": [
+        re.compile(r"\bpredicts?\b", re.I),
+        re.compile(r"\bprognostic\b", re.I),
+        re.compile(r"\bforecasts?\b", re.I),
+    ],
+    "treats": [
+        re.compile(r"\btreats?\b", re.I),
+        re.compile(r"\btherapeutic\b", re.I),
+        re.compile(r"\bintervention\b", re.I),
+        re.compile(r"\badministered\b", re.I),
+    ],
+    "inhibits": [
+        re.compile(r"\binhibits?\b", re.I),
+        re.compile(r"\bsuppress\w*\b", re.I),
+        re.compile(r"\bblocks?\b", re.I),
+        re.compile(r"\bantagonist\b", re.I),
+    ],
+    "activates": [
+        re.compile(r"\bactivat\w*\b", re.I),
+        re.compile(r"\benhances?\b", re.I),
+        re.compile(r"\bstimulat\w*\b", re.I),
+        re.compile(r"\bagonist\b", re.I),
+    ],
+    "increases": [
+        re.compile(r"\bincreases?\b", re.I),
+        re.compile(r"\belevated\b", re.I),
+        re.compile(r"\bhigher\s+(?:levels?|concentrations?|expression)\b", re.I),
+        re.compile(r"\bup-?regulat\w*\b", re.I),
+    ],
+    "reduces": [
+        re.compile(r"\breduces?\b", re.I),
+        re.compile(r"\bdecreases?\b", re.I),
+        re.compile(r"\blower\b", re.I),
+        re.compile(r"\bdown-?regulat\w*\b", re.I),
+    ],
+    "modulates": [
+        re.compile(r"\bmodulat\w*\b", re.I),
+        re.compile(r"\bregulat\w*\b", re.I),
+        re.compile(r"\binfluences?\b", re.I),
+    ],
+}
+
+
+def refine_predicate(claim: Claim, llm_client: Optional[OpenAI] = None, model: str = "") -> str:
+    """Refine vague predicates using rule-based keywords + LLM fallback.
+
+    RELATE-inspired 2-stage pipeline:
+    1. Rule-based: match raw_text keywords against predicate patterns
+    2. LLM fallback: ask LLM to choose the most precise predicate
+
+    Returns the refined predicate (or original if no refinement found).
+    """
+    if claim.predicate not in _VAGUE_PREDICATES:
+        return claim.predicate
+
+    raw = claim.raw_text or ""
+
+    # Stage 1: rule-based keyword matching
+    for predicate, patterns in _PREDICATE_KEYWORDS.items():
+        for pattern in patterns:
+            if pattern.search(raw):
+                logger.debug(
+                    f"refined {claim.predicate} → {predicate} "
+                    f"(keyword match in '{raw[:80]}')"
+                )
+                return predicate
+
+    # Stage 2: LLM fallback for ambiguous cases
+    if llm_client and raw:
+        refined = _llm_refine_predicate(claim, llm_client, model)
+        if refined and refined in CLAIM_PREDICATES:
+            return refined
+
+    return claim.predicate
+
+
+def _llm_refine_predicate(claim: Claim, client: OpenAI, model: str) -> Optional[str]:
+    """Ask LLM to choose the most precise predicate for an ambiguous claim."""
+    prompt = f"""Refine this vague predicate to the most precise one.
+
+Subject: {claim.subject_name} (type: {claim.metadata.get('subject_type', 'unknown')})
+Predicate: {claim.predicate}
+Object: {claim.object_name} (type: {claim.metadata.get('object_type', 'unknown')})
+Context: {claim.raw_text[:300]}
+Study type: {claim.evidence.study_type or 'unknown'}
+
+Choose the best predicate from:
+- is_risk_factor_for (longitudinal/prospective risk)
+- is_biomarker_of (diagnostic accuracy)
+- causes (causal evidence from RCT/MR)
+- predicts (prognostic value)
+- treats (therapeutic intervention)
+- inhibits (suppression/blocking)
+- activates (enhancement/stimulation)
+- increases (elevated levels/expression)
+- reduces (decreased levels/expression)
+- modulates (regulatory influence)
+- correlates_with (direction-unknown association)
+- is_associated_with (keep if truly ambiguous)
+
+Output ONLY the predicate name, nothing else."""
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a biomedical ontology expert. Output only the predicate name."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+            max_tokens=20,
+        )
+        pred = response.choices[0].message.content.strip().lower()
+        if pred in CLAIM_PREDICATES:
+            return pred
+    except Exception as e:
+        logger.debug(f"LLM predicate refinement failed: {e}")
+
+    return None
+
 
 # mapping from claim entity types to domain tags
 ENTITY_TYPE_TO_DOMAIN = {
@@ -109,19 +259,34 @@ def resolve_claim_entities(
 def ingest_claims(
     kg: KnowledgeGraph,
     results: list[ExtractionResult],
+    refine_vague_predicates: bool = True,
+    llm_base_url: str = "",
+    llm_api_key: str = "",
+    llm_model: str = "",
 ) -> dict:
     """Ingest extracted claims into the knowledge graph.
 
     For each claim:
     1. Resolve subject/object to existing concepts (or create new ones)
-    2. Add a Claim node with full metadata
-    3. Add a simplified edge for traversal
+    2. Refine vague predicates (RELATE: is_associated_with → precise predicate)
+    3. Add a Claim node with full metadata
+    4. Add a simplified edge for traversal
 
     Returns summary dict.
     """
     claims_added = 0
     edges_added = 0
     errors = 0
+    predicates_refined = 0
+
+    # initialize LLM client for predicate refinement if needed
+    llm_client = None
+    if refine_vague_predicates:
+        base_url = llm_base_url or os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
+        api_key = llm_api_key or os.environ.get("OPENAI_API_KEY", "")
+        model = llm_model or os.environ.get("OPENAI_MODEL", "gpt-5.5")
+        if api_key:
+            llm_client = OpenAI(base_url=base_url, api_key=api_key)
 
     for result in results:
         if result.error:
@@ -132,6 +297,13 @@ def ingest_claims(
             try:
                 # resolve entities
                 claim = resolve_claim_entities(kg, claim)
+
+                # refine vague predicates (RELATE)
+                if refine_vague_predicates:
+                    original_pred = claim.predicate
+                    claim.predicate = refine_predicate(claim, llm_client, model)
+                    if claim.predicate != original_pred:
+                        predicates_refined += 1
 
                 if not claim.subject_id or not claim.object_id:
                     logger.warning(f"could not resolve entities for claim {claim.id}")
@@ -179,6 +351,7 @@ def ingest_claims(
         "edges_added": edges_added,
         "errors": errors,
         "papers_processed": len(results),
+        "predicates_refined": predicates_refined,
     }
     logger.info(f"claim ingestion complete: {summary}")
     return summary

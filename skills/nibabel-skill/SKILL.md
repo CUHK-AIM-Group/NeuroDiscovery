@@ -168,7 +168,7 @@ Relevant tutorial sources:
 - `brain-visualization` -> final connectome figures and PLY export workflows
 - `freesurfer-tool` -> full structural processing and recon-all workflows
 
-## Reference & Source
+## Reference
 
 This skill is adapted from the nibabel-related code patterns in:
 - rs-fMRI-Pipeline-Tutorial: https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial

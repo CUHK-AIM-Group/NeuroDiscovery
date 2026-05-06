@@ -145,7 +145,7 @@ if __name__ == "__main__":
 - `claw-shell` → safe execution of long-running pipelines
 - `multi-search-engine` / `academic-research-hub` → retrieve latest HCP best practices
 
-## Reference & Source
+## Reference
 Official HCP Pipelines integration for NeuroClaw high-precision multimodal preprocessing.  
 Official repository: https://github.com/Washington-University/HCPpipelines
 

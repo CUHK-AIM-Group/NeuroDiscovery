@@ -3,7 +3,7 @@ name: brain-visualization
 description: "Use this skill whenever the user wants to visualize neuroimaging analysis results, including 3D brain connectivity networks, atlas-based regional activation summaries, or FreeSurfer cortical surface meshes with anatomical colors. Triggers include: 'brain visualization', 'visualize connectome', '3D brain network', 'zALFF visualization', 'brain activation map', 'FreeSurfer PLY export', 'surface mesh rendering', or any request to turn neuroimaging outputs into interpretable figures or 3D models."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies:
   - nibabel-skill
   - nilearn-tool
@@ -170,7 +170,7 @@ If FreeSurfer surface export is needed, ensure FreeSurfer outputs already exist 
 - MNI-space summary workflows assume the volume has already been aligned or resampled appropriately.
 - FreeSurfer colored PLY export depends on valid `.annot` files; missing or mismatched annotations will degrade vertex coloring.
 
-## Reference & Source
+## Reference
 
 This skill is adapted from the visualization ideas and example workflows in:
 - rs-fMRI-Pipeline-Tutorial: https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial

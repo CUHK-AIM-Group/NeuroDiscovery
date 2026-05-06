@@ -1,9 +1,8 @@
 ---
 name: git-essentials
 description: Essential Git commands and workflows for version control, branching, and collaboration.
-metadata: {"clawdbot":{"emoji":"🌳","requires":{"bins":["git"]}}}
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies: []
 ---
 # Git Essentials
@@ -436,7 +435,7 @@ git commit   # Or git merge --continue
 - `git-workflows` → advanced operations (rebase, bisect, worktree, sparse checkout, etc.)
 - `claw-shell` → all Git commands are safely executed through claw-shell
 
-## Reference & Source
+## Reference
 Official docs: https://git-scm.com/doc  
 Pro Git book: https://git-scm.com/book  
 Visual Git guide: https://marklodato.github.io/visual-git-guide/

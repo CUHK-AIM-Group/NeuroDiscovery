@@ -7,7 +7,7 @@ skill_type: tool
 dependencies:
   - dependency-planner
 ---
-# Conda Environment Manager
+# Conda Environment Manager (Tool Layer)
 
 ## Overview
 
@@ -291,7 +291,7 @@ Cloned environments remain **independent** but **traceable** for result comparis
 - `multi-search-engine` → lookup latest conda channel / solver advice
 - `claw-shell` → execution of conda commands
 
-## Reference & Source
+## Reference
 
 Custom interface-layer skill for NeuroClaw, addressing environment setup gaps identified in the MedicalClaw / OpenClaw evaluation and aligned with 2025–2026 conda best practices (isolated environments, yml reproducibility, dry-run safety).
 

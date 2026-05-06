@@ -132,7 +132,7 @@ Features:
 | sMRI (T1w) | `smri-skill` | brain extraction, tissue segmentation, cortical reconstruction | `smri_output/` derivatives |
 | fMRI (T2*w) | `fmri-skill` | preprocessing, denoising, connectivity, task GLM | `fmri_output/` derivatives |
 | MEG | `meg-skill` | source localization, time-frequency, connectivity | `meg_output/` TFR and source |
-| dMRI | `fmri-skill` | diffusion preprocessing, tensor metrics | `dwi_output/` metrics |
+| dMRI | `dwi-skill` | diffusion preprocessing, tensor metrics | `dwi_output/` metrics |
 
 ---
 

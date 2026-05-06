@@ -212,7 +212,7 @@ if __name__ == "__main__":
 - `claw-shell` → safe execution of long-running shell commands  
 - `conda-env-manager` → manage Python environment for post-processing FreeSurfer outputs  
 
-## Reference & Source
+## Reference
 
 Official site: https://surfer.nmr.mgh.harvard.edu  
 Latest stable release (as of 2026): FreeSurfer 8.1.0 or newer  

@@ -101,7 +101,7 @@ def main():
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path(__file__).parent / "data" / "raw",
+        default=Path(__file__).parent.parent / "data" / "raw",
         help="Directory containing raw data files",
     )
     parser.add_argument(

@@ -3,7 +3,7 @@ name: method-design
 description: "Use this skill whenever the user wants to formalize a network architecture and derive theoretical components from a research idea. Triggers include: 'method design', 'design method', 'network architecture', 'formula derivation', 'method-design', 'theoretical framework', 'derive equations', or any request to transform IDEA.md into a detailed METHOD.md. This skill is the **mandatory interface-layer method formalizer** in NeuroClaw: it reads IDEA.md, designs concrete network structures (layers, modules, connections), performs mathematical derivations (equations, loss functions, proofs), and always outputs a structured METHOD.md."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
-skill_type: meta
+skill_type: workflow
 dependencies: []
 ---
 # Method Design
@@ -52,10 +52,10 @@ If any part is ambiguous, it asks the user for clarification before proceeding.
 - `experiment-controller` → consumes METHOD.md
 - `paper-writing` → consumes METHOD.md
 
-## Reference & Source
+## Reference
 NeuroClaw architecture (section 1.5 method-design skill).  
 Flow: IDEA.md parsing → architecture design → equation derivation → pseudocode → METHOD.md  
 
-Created At: 2026-03-24  
+Created At: 2026-03-24 00:00 HKT
 Last Updated At: 2026-03-26 00:14 HKT  
 Author: chengwang96

@@ -311,7 +311,7 @@ if report.failed:
 
 ---
 
-## Reference & Source
+## Reference
 - QSIPrep documentation and BIDS App usage (official docs; version-dependent)
 - NeuroClaw interface-layer pattern aligned with `fmriprep-tool` and `hcppipeline-tool`
 

@@ -141,7 +141,8 @@
             <p><strong>4.1 UK Biobank</strong>：支持大规模脑影像数据访问、BIDS 整理、多模态 sMRI/fMRI/dMRI 处理和表型数据提取，覆盖约 50,000 名受试者。</p>
             <p><strong>4.2 ADNI</strong>：支持数据获取指导、BIDS 整理、预处理、ROI 分析、表型建模和衍生数据集生成。</p>
             <p><strong>4.3 HCP Young Adult</strong>：支持下载、BIDS 整理和多模态 sMRI/fMRI/dMRI 处理，覆盖 7 种任务范式（运动、情绪、赌博、语言、关系、社会、工作记忆）和静息态，提供认知表型提取和 QC 集成。</p>
-            <p>此外还覆盖 HCP Aging、HCP Development、HCP Early Psychosis、ABCD、AIBL、AOMIC、NIFD、OASIS、PNC、PPMI、REST-meta-MDD、SEED-IV、SEED-VIG、TCP、UCLA CNP、Cam-CAN、IXI、MS Lesion Challenge、MND、NSD、ABIDE、ADHD-200、BOLD5000、COBRE、DMT-HAR-MED、HBN 等 26 个公开数据集。</p>
+            <p><strong>4.4 ABCD Study</strong>：支持通过 NIMH Data Archive 下载、BIDS 整理、多模态 sMRI/fMRI/dMRI 处理、表型数据提取和 QC 集成，覆盖约 11,500 名 9-10 岁青少年。</p>
+            <p>此外还覆盖 HCP Aging、HCP Development、HCP Early Psychosis、AIBL、AOMIC、NIFD、OASIS、PNC、PPMI、REST-meta-MDD、SEED-IV、SEED-VIG、TCP、UCLA CNP、Cam-CAN、IXI、MS Challenge、MND、NSD、ABIDE、ADHD-200、BOLD5000、COBRE、DMT-HAR-MED、HBN 等 25 个公开数据集。</p>
           </article>
           <article>
             <h3>5. 模型相关</h3>
@@ -151,7 +152,7 @@
           </article>
           <article>
             <h3>6. 研究工作流相关</h3>
-            <p><strong>6.1 端到端流程</strong>：覆盖 sMRI、fMRI、DWI、EEG、PET、ASL、MEG、ABIDE、ABCD、AIBL、AOMIC、ADHD-200、BOLD5000、COBRE、DMT-HAR-MED、HBN、ADNI、HCP-YA、HCP-A、HCP-D、HCP-EP、Cam-CAN、IXI、MS Challenge、MND、NSD、NIFD、OASIS、PNC、PPMI、REST-meta-MDD、SEED-IV、SEED-VIG、TCP、UCLA CNP 和 UKB 分析中的单模态流程与数据集特定处理链。</p>
+            <p><strong>6.1 端到端流程</strong>：覆盖 sMRI、fMRI、DWI、EEG、PET、ASL、MEG 的单模态处理链，以及 29 个公开神经影像数据集的专用处理流程。</p>
             <p><strong>6.2 实验控制</strong>：从 METHOD 到实验执行，支持 Git 环境搭建、消融实验、检查点、结果验证、审计日志和可恢复运行。</p>
             <p><strong>6.3 科研产出支持</strong>：支持论文写作、清洁对话日志、可视化资产、复现报告，以及可维护的技能库更新。</p>
           </article>
@@ -265,7 +266,7 @@
                 <td>约 600 名受试者</td>
               </tr>
               <tr>
-                <td><a href="https://smart-stats-tools.org/lesion-challenge" target="_blank" rel="noreferrer">Longitudinal MS Lesion Segmentation Challenge</a></td>
+                <td><a href="https://smart-stats-tools.org/lesion-challenge" target="_blank" rel="noreferrer">MS Challenge</a></td>
                 <td>T1w; T2w; FLAIR; PD</td>
                 <td>专家手动病灶分割标注，用于 MS 分割基准</td>
                 <td>5 名 MS 患者的多时间点纵向数据</td>

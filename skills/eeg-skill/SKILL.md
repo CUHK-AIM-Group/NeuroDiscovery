@@ -186,7 +186,7 @@ if report.failed:
 - `mne-eeg-tool` → base/tool layer that contains all specific implementation code
 - `harness-core` → automated verification and audit logging
 
-## Reference & Source
+## Reference
 
 Aligned with NeuroClaw modality-skill pattern (see `freesurfer-tool`, `wmh-segmentation`, etc.).  
 Core libraries: MNE-Python (main), `torchaudio.transforms.MelSpectrogram` (waveform to spectrogram), `scipy.signal.cwt` + `morlet2` (frequency band energy extraction).

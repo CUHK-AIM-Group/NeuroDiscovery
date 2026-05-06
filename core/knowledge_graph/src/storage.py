@@ -13,7 +13,7 @@ from .schema import ConceptNode, Edge
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PATH = Path(__file__).parent / "data" / "knowledge_graph.json"
+DEFAULT_PATH = Path(__file__).parent.parent / "data" / "knowledge_graph.json"
 
 
 def save_graph(kg: KnowledgeGraph, path: Optional[Path] = None) -> Path:

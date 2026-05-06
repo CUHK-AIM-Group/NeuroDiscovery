@@ -16,7 +16,7 @@ complementary_skills:
 # DWI Skill (Modality Layer)
 
 ## Overview
-`dti-skill` is the NeuroClaw **modality-layer** interface skill responsible for diffusion MRI (DWI/DTI) preprocessing and feature extraction.
+`dwi-skill` is the NeuroClaw **modality-layer** interface skill responsible for diffusion MRI (DWI/DTI) preprocessing and feature extraction.
 
 It strictly follows NeuroClaw hierarchical design principles:
 - This skill defines **WHAT needs to be done** and **which tool skill to delegate to**.
@@ -336,7 +336,7 @@ All outputs must be written under `./dwi_output/`:
 
 ---
 
-## Reference & Source
+## Reference
 Aligned with NeuroClaw modality-skill pattern (see `fmri-skill`, `smri-skill`, `eeg-skill`).  
 **Validated pipeline**: HCP-style MRtrix3 fiber tractography (5TT + multi-tissue CSD FOD + ACT + SIFT filtering).  
 Core tools used:
@@ -354,6 +354,6 @@ Core tools used:
 - Fischl et al. (2002): FreeSurfer cortical parcellation
 
 ---
-Created At: 2026-03-26 1:01 HKT
+Created At: 2026-03-26 01:01 HKT
 Last Updated At: 2026-03-28 18:08 HKT
 Author: chengwang96

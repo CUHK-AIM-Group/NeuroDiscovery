@@ -9,7 +9,7 @@ dependencies:
   - fsl-tool
   - claw-shell
 ---
-# UKB Skill (Analysis Layer)
+# UKB Skill (Dataset Layer)
 
 ## Overview
 
@@ -86,6 +86,10 @@ When multiple valid analysis routes exist, prefer one explicit mainline plus a s
 
 | Task | What needs to be done (high level) | Delegate to which skill | Expected outputs |
 |---|---|---|---|
+| Phenotype extraction | Extract and preprocess UKB variables with field ID mapping | `scripts/extract_ukb_phenotype.py` | Preprocessed phenotype CSV |
+| Case extraction | Extract brain-related disease cases by ICD-10/ICD-9 codes | `scripts/extract_ukb_cases.py` | Case/control CSV with prevalence stats |
+| Survival dataset | Build survival dataset with prevalent/incident separation | `scripts/build_ukb_survival.py` | Survival CSV (time, status) |
+| QC summary | Generate per-subject QC with imaging availability | `scripts/ukb_qc_summary.py` | QC summary + exclusion list |
 | Neurological survival analysis | Validate incident-event table, define endpoint, run Cox regression, summarize hazard ratios | `claw-shell` | model summaries, hazard ratio tables, survival outputs |
 | Cognitive phenotype association | Regress cognition or brain-health phenotype on exposure or imaging features | `claw-shell` | beta/OR tables, cleaned regression outputs |
 | Brain MRI phenotype association | Analyze ROI volumes, cortical thickness, WMH burden, diffusion or connectivity summaries | `claw-shell` | ranked effect tables, feature association summaries |
@@ -213,12 +217,94 @@ When this skill is triggered, the response should:
 
 ---
 
-## Reference & Source
+## Companion Scripts
 
-Conceptually inspired by the downstream analysis design of UKBAnalytica, but narrowed here to brain-focused UK Biobank analysis and explicitly excluding data download knowledge.
+Adapted from [UKBAnalytica_v2](https://github.com/Hinna0818/UKBAnalytica_v2) (Nan He, Southern Medical University).
+
+### `scripts/extract_ukb_phenotype.py`
+
+Extract and preprocess UKB phenotype data with automatic field ID mapping.
+
+```bash
+python skills/ukb-skill/scripts/extract_ukb_phenotype.py \
+  --input ukb_raw.csv --output phenotype.csv
+
+python skills/ukb-skill/scripts/extract_ukb_phenotype.py \
+  --input ukb_raw.csv --variables sex,age,bmi,smoking,townsend --output covariates.csv
+
+python skills/ukb-skill/scripts/extract_ukb_phenotype.py --list-variables
+```
+
+Features:
+- 50+ predefined UKB field ID mappings (demographics, lifestyle, biomarkers, brain IDPs, cognition)
+- Automatic preprocessing: invalid code removal, variable-specific recoding
+- Custom variable mapping via JSON
+- Lists all available variables with `--list-variables`
+
+### `scripts/extract_ukb_cases.py`
+
+Extract brain-related disease cases using ICD-10/ICD-9 codes.
+
+```bash
+python skills/ukb-skill/scripts/extract_ukb_cases.py \
+  --input ukb_raw.csv --disease dementia --output dementia_cases.csv
+
+python skills/ukb-skill/scripts/extract_ukb_cases.py \
+  --input ukb_raw.csv --custom-icd G20 --output custom_cases.csv
+
+python skills/ukb-skill/scripts/extract_ukb_cases.py --list-diseases
+```
+
+Features:
+- 15 predefined brain-related disease definitions (dementia, Alzheimer's, stroke, Parkinson's, MS, epilepsy, depression, anxiety, schizophrenia, bipolar, brain tumour, TBI)
+- Multi-source ascertainment: ICD-10, ICD-9, Death register
+- Custom ICD-10 pattern support
+- Prevalence statistics per disease
+
+### `scripts/build_ukb_survival.py`
+
+Build survival analysis datasets with prevalent/incident case separation.
+
+```bash
+python skills/ukb-skill/scripts/build_ukb_survival.py \
+  --input ukb_raw.csv --disease dementia --output survival.csv
+
+python skills/ukb-skill/scripts/build_ukb_survival.py \
+  --input ukb_raw.csv --disease stroke --censor-date 2023-10-31 --output stroke_survival.csv
+```
+
+Features:
+- Follow-up time calculation (years from baseline)
+- Prevalent vs incident case separation
+- Censoring at death or administrative censor date
+- Compatible with Cox regression in downstream analysis
+
+### `scripts/ukb_qc_summary.py`
+
+Generate per-subject QC summaries for brain-related UKB data.
+
+```bash
+python skills/ukb-skill/scripts/ukb_qc_summary.py \
+  --input ukb_raw.csv --output qc_summary.csv
+
+python skills/ukb-skill/scripts/ukb_qc_summary.py \
+  --input ukb_raw.csv --imaging-check --age-min 45 --age-max 80 --output qc_imaging.csv
+```
+
+Features:
+- Covariate completeness check
+- Brain imaging availability (T1w, FLAIR, dMRI, rs-fMRI IDPs)
+- Age range filtering
+- Per-subject QC pass/fail flag
+
+---
+
+## Reference
+
+Companion scripts adapted from [UKBAnalytica_v2](https://github.com/Hinna0818/UKBAnalytica_v2) by Nan He (Southern Medical University). SKILL.md analysis design narrowed to brain-focused UK Biobank research.
 
 Custom NeuroClaw skill.
 
-Created At: 2024-04-20 15:47
-Last Updated At: 2024-04-20 15:47
+Created At: 2026-04-20 15:47 HKT
+Last Updated At: 2026-05-06 15:12 HKT
 Author: chengwang96

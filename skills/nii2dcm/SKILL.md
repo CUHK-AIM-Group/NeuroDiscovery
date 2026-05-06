@@ -130,7 +130,7 @@ python nii2dcm_wrapper.py \
 - `dependency-planner`    → install dependencies
 - `claw-shell`            → safe execution of conversion commands
 
-## Reference & Source
+## Reference
 
 Original: https://github.com/tomaroberts/nii2dcm (v0.1.6, May 2025)  
 Built on: highdicom (DICOM creation), SimpleITK (image I/O)  
@@ -138,6 +138,6 @@ Inspired by: dcm2niix (reverse tool), SVRTK project
 
 Report issues or request extensions (e.g., CT support, 4D handling) in NeuroClaw repo.
 
-Created At: 2026-03-18 20:09:43 HKT  
+Created At: 2026-03-18 20:09 HKT
 Last Updated At: 2026-03-26 00:21 HKT  
 Author: chengwang96

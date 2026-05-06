@@ -3,7 +3,7 @@ name: research-idea
 description: "Use this skill whenever the user wants to generate or refine a research idea through literature search and discussion. Triggers include: 'research idea', 'brainstorm idea', 'generate idea', 'research-idea', 'idea generation', 'discuss new direction', or any request to explore literature and output to IDEA.md. This skill is the **mandatory interface-layer idea generator** in NeuroClaw: it calls networking search skills to retrieve recent papers, identifies gaps/trends, then iteratively discusses with the user to finalize a structured idea, always saving the result as IDEA.md."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
-skill_type: meta
+skill_type: workflow
 dependencies:
   - multi-search-engine
   - academic-research-hub
@@ -56,10 +56,10 @@ If no topic is provided, it first asks the user for a domain (e.g., MRI segmenta
 - `paper-writing` → consumes IDEA.md
 - `experiment-controller` → follows finalized idea
 
-## Reference & Source
+## Reference
 NeuroClaw architecture (section 1.4 research survey skill).  
 Flow: search → gap analysis → proposal → user discussion → IDEA.md  
 
-Created At: 2026-03-24  20:00 HKT
+Created At: 2026-03-24 20:00 HKT
 Last Updated At: 2026-03-26 00:28 HKT  
 Author: chengwang96

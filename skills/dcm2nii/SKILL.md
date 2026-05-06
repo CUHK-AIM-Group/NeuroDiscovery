@@ -176,7 +176,7 @@ python dcm2nii_wrapper.py \
 
 - `dependency-planner`       → install dependencies
 
-## Reference & Source
+## Reference
 
 Original & latest: https://github.com/rordenlab/dcm2niix  
 Documentation: https://www.nitrc.org/plugins/mwiki/index.php/dcm2nii:MainPage  

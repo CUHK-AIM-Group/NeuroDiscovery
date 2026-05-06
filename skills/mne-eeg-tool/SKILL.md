@@ -90,7 +90,7 @@ Functions: `load_eeg`, `detect_and_interpolate_bad_channels`, `preprocess_filter
 - `claw-shell` → executes this skill’s wrapper
 - `dependency-planner` + `conda-env-manager` → creates `neuroclaw-eeg` environment
 
-## Reference & Source
+## Reference
 Official MNE-Python documentation (https://mne.tools) + MNE-Connectivity + mne-microstates.
 Aligned with NeuroClaw base/tool skill pattern (freesurfer-tool, dcm2nii, etc.).
 

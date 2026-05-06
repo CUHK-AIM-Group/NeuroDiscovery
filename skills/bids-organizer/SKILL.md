@@ -8,7 +8,7 @@ dependencies:
   - dcm2nii
   - claw-shell
 ---
-# BIDS Organizer
+# BIDS Organizer (Tool Layer)
 
 ## Overview
 

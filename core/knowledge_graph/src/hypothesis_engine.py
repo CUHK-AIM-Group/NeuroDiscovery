@@ -137,14 +137,19 @@ OPPOSING_PREDICATES = {
 STUDY_TYPE_WEIGHTS = {
     "meta_analysis": 1.0,
     "clinical_trial": 0.9,
-    "longitudinal": 0.8,
-    "case_control": 0.7,
-    "cross_sectional": 0.6,
-    "fMRI": 0.5, "sMRI": 0.5, "PET": 0.5, "EEG": 0.5, "DTI": 0.5, "MEG": 0.5,
-    "animal_model": 0.4,
-    "GWAS": 0.7,
+    "longitudinal": 0.85,
+    "cohort": 0.85,
+    "case_control": 0.8,
+    "systematic_review": 0.8,
+    "PET": 0.8, "fMRI": 0.8, "EEG": 0.8, "sMRI": 0.8,
+    "cross_sectional": 0.7,
+    "animal_model": 0.6,
     "review": 0.3,
+    "narrative_review": 0.2,
 }
+
+# Review-only study types (no independent empirical evidence)
+_REVIEW_TYPES = {"review", "narrative_review", "systematic_review"}
 
 COMMON_RELATIONS = {"is_a", "part_of", "associated_with", "about", "is_associated_with"}
 
@@ -396,6 +401,15 @@ class HypothesisEngine:
         self.kg = kg
         self.G = kg.G
         self._index = kg._index
+        # Build claims index for frequency_boost: (subj, pred, obj) → [claim_meta, ...]
+        self._claims_by_triple: dict[tuple[str, str, str], list[dict]] = {}
+        for nid, node in self._index.items():
+            if "claim" not in node.domain_tags:
+                continue
+            meta = node.metadata
+            key = (meta.get("subject_id", ""), meta.get("predicate", ""), meta.get("object_id", ""))
+            if key[0] and key[2]:
+                self._claims_by_triple.setdefault(key, []).append(meta)
 
     # ── batch generation ───────────────────────────────────────────────
 
@@ -1502,22 +1516,94 @@ class HypothesisEngine:
 
     # ── scoring ────────────────────────────────────────────────────────
 
+    def compute_frequency_boost(self, claim_meta: dict) -> float:
+        """Frequency boost based on independent primary study replication.
+
+        Same (subject, predicate, object) triple appearing in multiple
+        independent primary studies → higher boost.
+        """
+        key = (
+            claim_meta.get("subject_id", ""),
+            claim_meta.get("predicate", ""),
+            claim_meta.get("object_id", ""),
+        )
+        all_claims = self._claims_by_triple.get(key, [])
+        primary_pmids = set()
+        for c in all_claims:
+            st = c.get("evidence", {}).get("study_type", "")
+            if st not in _REVIEW_TYPES:
+                pmid = c.get("source_paper", {}).get("pmid", "")
+                if pmid:
+                    primary_pmids.add(pmid)
+
+        if len(primary_pmids) >= 3:
+            return 1.2   # multiple independent validations
+        elif len(primary_pmids) >= 1:
+            return 1.0   # has primary support
+        else:
+            return 0.5   # review-only, no primary source
+
+    @staticmethod
+    def compute_temporal_decay(claim_meta: dict, reference_year: int = 2026) -> float:
+        """Temporal decay: newer primary studies get higher weight.
+
+        Reviews get no time bonus (1.0). Primary studies decay 3% per year, floor 0.7.
+        """
+        st = claim_meta.get("evidence", {}).get("study_type", "")
+        if st in _REVIEW_TYPES:
+            return 1.0
+        year = claim_meta.get("source_paper", {}).get("year", 0)
+        if not year:
+            return 0.85  # unknown year, neutral
+        age = reference_year - year
+        return max(0.7, 1.0 - 0.03 * age)
+
     def _compute_confidence_score(self, path: list[HypothesisLink]) -> float:
+        """Confidence = geometric_mean(per-link scores).
+
+        Per-link score = base × study_type_weight × frequency_boost
+                        × temporal_decay × p_value_bonus × sample_size_bonus
+        """
         if not path:
             return 0.0
 
         scores = []
         for link in path:
             s = link.confidence
-            study_bonus = STUDY_TYPE_WEIGHTS.get(link.evidence.get("study_type", ""), 0.3)
-            s = 0.7 * s + 0.3 * study_bonus
 
+            # Study type weight
+            study_weight = STUDY_TYPE_WEIGHTS.get(
+                link.evidence.get("study_type", ""), 0.3
+            )
+
+            # Frequency boost & temporal decay (from claim metadata)
+            claim_meta = link.evidence  # evidence dict has study_type, p_value, etc.
+            # Also try to get the full claim metadata from source_paper
+            # For HypothesisLink, evidence and source_paper are separate dicts
+            full_meta = {
+                "evidence": link.evidence,
+                "source_paper": link.source_paper,
+                "subject_id": link.from_id,
+                "predicate": link.relation_type,
+                "object_id": link.to_id,
+            }
+            freq_boost = self.compute_frequency_boost(full_meta)
+            temp_decay = self.compute_temporal_decay(full_meta)
+
+            # Statistical info bonuses
+            p_val_bonus = 1.5 if link.evidence.get("p_value") else 1.0
+            sample_bonus = 1.3 if link.evidence.get("sample_size") else 1.0
+
+            # Combine: base × study_weight × freq × decay × stats
+            s = s * study_weight * freq_boost * temp_decay * p_val_bonus * sample_bonus
+
+            # Replicability adjustment
             if link.evidence.get("replicability") == "replicated":
                 s = min(s + 0.1, 1.0)
             elif link.evidence.get("replicability") == "controversial":
                 s = max(s - 0.1, 0.0)
 
-            scores.append(s)
+            scores.append(min(s, 1.0))
 
         return self._geometric_mean(scores)
 

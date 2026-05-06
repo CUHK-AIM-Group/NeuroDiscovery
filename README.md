@@ -36,7 +36,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 ## 🚀 Updates
 
-- **[2026.05.06]**: Added 14 dataset skills (`camcan-skill`, `ixi-skill`, `mschallenge-skill`, `mnd-skill`, `nsd-skill`, `nifd-skill`, `oasis-skill`, `pnc-skill`, `ppmi-skill`, `rest-mneta-mdd-skill`, `seed-iv-skill`, `seed-vig-skill`, `tcp-skill`, `ucla-cnp-skill`) with companion scripts; split `hcp-skill` into 4 dataset-specific skills (`hcpya-skill`, `hcpa-skill`, `hcpd-skill`, `hcpep-skill`); added 3 modality skills (`pet-skill`, `asl-skill`, `meg-skill`); all 81 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill-loader DAG validation ensures dependency graph correctness.
+- **[2026.05.06]**: Added 19 dataset and modality skills with companion scripts; all 81 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill_loader DAG validation ensures dependency graph correctness.
 - **[2026.04.28]**: Our technical report is now available on arXiv: https://arxiv.org/abs/2604.24696
 - **[2026.04.22]**: v1.0 released — stable release with improvements and full documentation.
 - **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroClaw/
@@ -75,7 +75,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | HCP Early Psychosis | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Diagnostic, clinical, behavioral, and cognitive measures | ~250 early psychosis and control participants | https://www.humanconnectome.org/study/hcp-early-psychosis |
 | HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral and cognitive measures | ~1,200 young adult participants | https://www.humanconnectome.org/study/hcp-young-adult |
 | IXI | T1w; T2w; MRA | Healthy brain MRI from three London hospitals | ~600 subjects | https://brain-development.org/ixi-dataset/ |
-| Longitudinal MS Lesion Segmentation Challenge | T1w; T2w; FLAIR; PD | Expert manual lesion segmentations for MS benchmarking | 5 MS patients with multiple longitudinal timepoints | https://smart-stats-tools.org/lesion-challenge |
+| MS Challenge | T1w; T2w; FLAIR; PD | Expert manual lesion segmentations for MS benchmarking | 5 MS patients with multiple longitudinal timepoints | https://smart-stats-tools.org/lesion-challenge |
 | MND | rs-fMRI; task-fMRI | Motor neuron disease diagnosis and clinical measures | 59 participants in OpenNeuro ds005874 | https://openneuro.org/datasets/ds005874/versions/1.1.0 |
 | Natural Scenes Dataset | T1w; task-fMRI | Natural image stimuli; behavioral responses; image annotations | 8 participants with dense repeated visual fMRI | https://naturalscenesdataset.org/ |
 | NIFD | T1w; fMRI; DTI; PET | FTD clinical and cognitive data; UCSF Memory and Aging Center | Frontotemporal dementia and related disorders cohorts | https://ida.loni.usc.edu/ |
@@ -274,7 +274,7 @@ NeuroClaw/
 │   │   ├── server.py               # FastAPI app: WebSocket chat, /api/skills, /api/env
 │   │   └── static/
 │   │       └── index.html          # Dark-theme chat interface (markdown + syntax highlight)
-│   ├── skill-loader/               # Skill scanner: reads skills/*/SKILL.md and registers tools
+│   ├── skill_loader/               # Skill scanner: reads skills/*/SKILL.md and registers tools
 │   │   └── loader.py
 │   ├── tool-runtime/               # Executes handler.js / Python handlers
 │   │   └── runtime.py

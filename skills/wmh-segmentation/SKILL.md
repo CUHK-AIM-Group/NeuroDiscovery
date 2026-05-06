@@ -123,7 +123,7 @@ echo "WMH segmentation mask saved in $OUTPUT_DIR"
 - `dependency-planner`   → install Docker and NVIDIA Container Toolkit
 - `claw-shell`           → safe Docker execution
 
-## Reference & Source
+## Reference
 Official repo: https://github.com/miac-research/MARS-WMH  
 Docker image: `ghcr.io/miac-research/wmh-nnunet:latest`  
 Custom NeuroClaw skill.

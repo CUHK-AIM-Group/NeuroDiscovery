@@ -2,7 +2,7 @@
 name: "multi-search-engine"
 description: "Multi search engine integration with 17 engines (8 CN + 9 Global). Supports advanced search operators, time filters, site search, privacy engines, and WolframAlpha knowledge queries. No API keys required."
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies: []
 ---
 # Multi Search Engine v2.0.1
@@ -110,10 +110,10 @@ MIT
 ## Complementary / Related Skills
 - `academic-research-hub` → scholarly paper search
 
-## Reference & Source
+## Reference
 Core multi-engine search integration for NeuroClaw (v2.0.1).  
 Used as the primary literature & web search backend across all interface-layer skills.
 
-Created At: 2026-03-24  
+Created At: 2026-03-24 00:00 HKT
 Last Updated At: 2026-03-26 00:18 HKT  
 Author: chengwang96

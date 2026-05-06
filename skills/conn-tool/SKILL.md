@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
 - `dependency-planner` → install CONN + SPM + MATLAB environment
 
-## Reference & Source
+## Reference
 
 - Official CONN Toolbox Website: https://web.conn-toolbox.org/
 - CONN Documentation: https://web.conn-toolbox.org/documentation

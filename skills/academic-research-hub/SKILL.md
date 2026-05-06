@@ -3,7 +3,7 @@ name: academic-research-hub
 description: "Use this skill when users need to search academic papers, download research documents, extract citations, or gather scholarly information. Triggers include: requests to \"find papers on\", \"search research about\", \"download academic articles\", \"get citations for\", or any request involving academic databases like arXiv, PubMed, Semantic Scholar, or Google Scholar. Also use for literature reviews, bibliography generation, and research discovery."
 license: Proprietary
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies:
   - multi-search-engine
 ---
@@ -97,7 +97,7 @@ For tasks like recent multi-platform paper search:
 
 - `multi-search-engine` → general web/academic search
 
-## Reference & Source
+## Reference
 
 - Official documentation and APIs: arXiv, PubMed, Semantic Scholar
 - OpenClawCLI: https://clawhub.ai/

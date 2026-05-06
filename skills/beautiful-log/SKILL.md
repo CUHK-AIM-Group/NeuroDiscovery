@@ -3,7 +3,7 @@ name: beautiful-log
 description: "Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroClaw <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored message cards for each side."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies: []
 ---
 # Beautiful Log (Dialogue-to-HTML)

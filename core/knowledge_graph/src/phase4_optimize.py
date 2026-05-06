@@ -21,7 +21,7 @@ from .storage import load_graph, save_graph
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data"
 GRAPH_FILE = DATA_DIR / "knowledge_graph.json"
 
 
@@ -211,15 +211,17 @@ def apply_evidence_weighting(kg: KnowledgeGraph) -> int:
     Returns number of edges modified.
     """
     WEIGHT_MAP = {
-        "meta_analysis": 1.2,
-        "clinical_trial": 1.1,
-        "longitudinal": 1.1,
-        "case_control": 1.0,
-        "cross_sectional": 0.9,
-        "fMRI": 1.0, "sMRI": 1.0, "PET": 1.0, "EEG": 1.0, "DTI": 1.0,
-        "GWAS": 1.0,
-        "animal_model": 0.8,
-        "review": 0.5,  # significant downweight
+        "meta_analysis": 1.0,
+        "clinical_trial": 0.9,
+        "longitudinal": 0.85,
+        "cohort": 0.85,
+        "case_control": 0.8,
+        "systematic_review": 0.8,
+        "PET": 0.8, "fMRI": 0.8, "EEG": 0.8, "sMRI": 0.8,
+        "cross_sectional": 0.7,
+        "animal_model": 0.6,
+        "review": 0.3,
+        "narrative_review": 0.2,
     }
 
     modified = 0

@@ -3,7 +3,7 @@ name: claw-shell
 description: "Use this skill whenever any NeuroClaw skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', 'shell command', 'tmux claw', 'run in claw session', 'safe shell execution', or any request that requires running terminal commands. This skill is the mandatory gatekeeper for all shell execution in NeuroClaw: it ALWAYS routes commands through the dedicated tmux session `claw`, never touches other sessions, and returns captured output to the calling agent."
 license: MIT License (NeuroClaw core skill – freely modifiable within the project)
 layer: base
-skill_type: infra
+skill_type: tool
 dependencies: []
 ---
 # Claw Shell
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
 - `dependency-planner` → delegates installation and environment variable commands here
 
-## Reference & Source
+## Reference
 
 Custom core skill designed for NeuroClaw to provide safe, tmux-based shell execution while solving the dependency and long-running command issues from the MedicalClaw evaluation.
 

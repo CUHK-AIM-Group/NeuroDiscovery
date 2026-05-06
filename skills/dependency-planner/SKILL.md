@@ -8,7 +8,7 @@ dependencies:
   - multi-search-engine
   - git-essentials
 ---
-# Dependency Installation Planner
+# Dependency Installation Planner (Tool Layer)
 
 ## Overview
 
@@ -320,7 +320,7 @@ When resuming from checkpoint, **dependency-planner** automatically:
 - `conda-env-manager`          → planned subagent for env creation & export
 - `claw-shell`                 → executes all planned shell commands
 
-## Reference & Source
+## Reference
 
 Custom interface-layer skill created for NeuroClaw to close the dependency-management gap highlighted in the MedicalClaw / OpenClaw evaluation report.
 

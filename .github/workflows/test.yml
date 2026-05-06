@@ -1,6 +1,7 @@
 name: Tests
 
 on:
+  push:
   pull_request:
     branches: [main]
 
@@ -19,12 +20,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Configure git
+        run: |
+          git config --global user.name "CI"
+          git config --global user.email "ci@test.local"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
-          # Install project-specific dependencies if needed
-          # pip install -r requirements.txt
+          pip install pytest openai networkx
 
       - name: Run tests
         run: pytest

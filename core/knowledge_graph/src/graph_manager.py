@@ -8,7 +8,7 @@ from typing import Optional
 
 import networkx as nx
 
-from .schema import ConceptNode, Edge, RELATION_TYPES
+from .schema import Claim, ConceptNode, Edge, Evidence, RELATION_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +87,82 @@ class KnowledgeGraph:
             if self.G.number_of_edges() > before:
                 count += 1
         return count
+
+    # ── claim operations ───────────────────────────────────────────────
+
+    def get_claim(self, claim_id: str) -> Optional[Claim]:
+        """Retrieve a Claim by its ID from the graph."""
+        node = self._index.get(claim_id)
+        if node is None:
+            return None
+        meta = node.metadata
+        if not meta or "subject_name" not in meta:
+            return None
+        return Claim.from_dict(meta)
+
+    def update_claim(
+        self,
+        claim_id: str,
+        new_evidence: Optional[Evidence] = None,
+        new_confidence: Optional[float] = None,
+        extra_metadata: Optional[dict] = None,
+    ) -> bool:
+        """Update a claim's evidence, confidence, and/or metadata in-place.
+
+        Updates:
+        1. The claim node's metadata (serialized claim data)
+        2. The simplified edge's confidence
+        3. The 'about' edges' confidence
+
+        Returns True if the claim was found and updated.
+        """
+        node = self._index.get(claim_id)
+        if node is None:
+            logger.warning(f"claim {claim_id} not found in graph")
+            return False
+
+        meta = node.metadata
+        if not meta or "subject_name" not in meta:
+            logger.warning(f"node {claim_id} is not a claim node")
+            return False
+
+        # update evidence in metadata
+        if new_evidence is not None:
+            meta["evidence"] = new_evidence.to_dict()
+
+        # update confidence
+        if new_confidence is not None:
+            meta["confidence"] = new_confidence
+
+        # merge extra metadata
+        if extra_metadata:
+            meta.update(extra_metadata)
+
+        # refresh display name
+        subject = meta.get("subject_name", "")
+        predicate = meta.get("predicate", "")
+        obj = meta.get("object_name", "")
+        node.preferred_name = f"{subject} {predicate} {obj}"
+
+        # also update the serialized claim in node.metadata so it round-trips
+        node.metadata = meta
+
+        # update simplified edge (subject → object)
+        conf = new_confidence if new_confidence is not None else meta.get("confidence", 0.5)
+        subj_id = meta.get("subject_id", "")
+        obj_id = meta.get("object_id", "")
+        if subj_id and obj_id and self.G.has_edge(subj_id, obj_id):
+            edge_data = self.G.edges[subj_id, obj_id]
+            if edge_data.get("metadata", {}).get("claim_id") == claim_id:
+                edge_data["confidence"] = conf
+
+        # update 'about' edges (claim → subject, claim → object)
+        for _, tgt, data in self.G.out_edges(claim_id, data=True):
+            if data.get("relation_type") == "about":
+                data["confidence"] = conf
+
+        logger.debug(f"updated claim {claim_id}, confidence={conf}")
+        return True
 
     # ── query ────────────────────────────────────────────────────────
 

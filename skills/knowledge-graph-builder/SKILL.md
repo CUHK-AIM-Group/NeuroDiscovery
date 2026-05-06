@@ -3,7 +3,7 @@ name: knowledge-graph-builder
 description: "Use this skill when users need to build, populate, or extend a domain-specific knowledge graph from literature and structured databases. Triggers include: 'build knowledge graph', 'extract claims from papers', 'ingest data into graph', 'batch extract claims', 'knowledge graph construction', 'populate graph from PubMed', 'extract structured claims', 'ingest atlas data', or any request involving knowledge graph population from scientific literature or biomedical databases. Covers both structured data ingestion (Phase 1) and LLM-based claim extraction from papers (Phase 2)."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
-skill_type: utility
+skill_type: tool
 dependencies:
   - multi-search-engine
   - academic-research-hub
@@ -294,7 +294,7 @@ Each claim generates **three** graph elements:
 - `research-idea` → consumes knowledge graph for hypothesis generation
 - `method-design` → uses graph structure for method comparison
 
-## Reference & Source
+## Reference
 
 - MDKG paper: Gao et al., "Large language model powered knowledge graph construction for mental health exploration." Nature Communications (2025). PMID: 40804250
 - NeuroNames: Brain region hierarchy
@@ -362,4 +362,5 @@ The batch generator explores these cross-domain pairs:
 
 ---
 Created At: 2026-05-04 20:28 HKT
+Last Updated At: 2026-05-06 14:46 HKT
 Author: chengwang96

@@ -117,6 +117,19 @@ class ShadowCheckpointManager:
         """Reset per-turn dedup state.  Call once at the start of each agent turn."""
         self._dedup.clear()
 
+    def _force_checkpoint(self, workspace: Path, label: str) -> dict:
+        """Create a snapshot unconditionally, bypassing dedup and no-change checks."""
+        ws = Path(workspace).resolve()
+        self._ensure_shadow_repo(ws)
+        self._run_git(ws, "add", "-A")
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        msg = f"checkpoint: {ts} | {label[:120]}"
+        self._run_git(ws, "commit", "-m", msg, "--allow-empty")
+        rev = self._run_git(ws, "rev-parse", "HEAD")
+        commit_hash = rev.stdout.strip()
+        self._prune(ws)
+        return {"commit": commit_hash, "timestamp": ts, "files_changed": 0, "label": label}
+
     def checkpoint(self, workspace: Path, label: str = "") -> dict:
         """Create a snapshot of *workspace* if anything changed.
 
@@ -139,6 +152,12 @@ class ShadowCheckpointManager:
             # Nothing staged — no changes
             return {"skipped": True, "reason": "no_changes"}
 
+        # Count changed files before committing (cached diff is cleared after commit)
+        stat = self._run_git(ws, "diff", "--cached", "--stat", check=False)
+        files_changed = len(
+            [l for l in stat.stdout.strip().splitlines() if l and "|" in l]
+        )
+
         # Commit
         ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
         msg = f"checkpoint: {ts}"
@@ -150,12 +169,6 @@ class ShadowCheckpointManager:
         # Get the commit hash
         rev = self._run_git(ws, "rev-parse", "HEAD")
         commit_hash = rev.stdout.strip()
-
-        # Count changed files
-        stat = self._run_git(ws, "diff", "--cached", "--stat", check=False)
-        files_changed = len(
-            [l for l in stat.stdout.strip().splitlines() if l and "|" in l]
-        )
 
         self._dedup.add(dedup_key)
         self._prune(ws)
@@ -237,8 +250,8 @@ class ShadowCheckpointManager:
         ws = Path(workspace).resolve()
         self._ensure_shadow_repo(ws)
 
-        # Pre-rollback snapshot
-        self.checkpoint(ws, label=f"pre-rollback snapshot (restoring to {commit_hash[:8]})")
+        # Pre-rollback snapshot (always create, even if no pending changes)
+        self._force_checkpoint(ws, label=f"pre-rollback snapshot (restoring to {commit_hash[:8]})")
 
         # Validate commit hash format
         if not re.match(r"^[0-9a-f]{40}$", commit_hash):
@@ -286,12 +299,10 @@ class ShadowCheckpointManager:
         cps = self.list_checkpoints(ws)
         if len(cps) <= self._max_checkpoints:
             return
-        # Delete oldest refs
-        to_remove = cps[: len(cps) - self._max_checkpoints]
-        for cp in to_remove:
-            # Use git update-ref to remove the commit from history
-            # Simpler approach: just rely on gc; for now, cap via reflog expiry
-            pass
-        # Expire reflog and gc
+        # Move HEAD back to the oldest commit we want to keep
+        keep_index = len(cps) - self._max_checkpoints
+        keep_hash = cps[keep_index]["hash"]
+        self._run_git(ws, "reset", "--hard", keep_hash, check=False)
+        # Expire reflog and gc to purge orphaned commits
         self._run_git(ws, "reflog", "expire", "--expire=now", "--all", check=False)
         self._run_git(ws, "gc", "--prune=now", check=False)

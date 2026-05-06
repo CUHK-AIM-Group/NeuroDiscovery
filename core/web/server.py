@@ -566,11 +566,10 @@ def create_app() -> Any:
         save_environment,
     )
 
-    # SkillLoader lives in a hyphenated directory (core/skill-loader/), so we
-    # cannot use a regular package import — use importlib instead.
+    # SkillLoader lives in core/skill_loader/, so we use importlib for dynamic loading.
     _loader_mod = _import_from_path(
         "neuroclaw_skill_loader",
-        REPO_ROOT / "core" / "skill-loader" / "loader.py",
+        REPO_ROOT / "core" / "skill_loader" / "loader.py",
     )
     SkillLoader = _loader_mod.SkillLoader
 

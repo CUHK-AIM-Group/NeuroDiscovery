@@ -158,7 +158,7 @@ def test_skill_loader_init():
     assert loader.skills_dir == Path("skills")
 
 
-def test_skill_loader_find(tmp_path):
+def test_skill_loader_find(tmp_path, monkeypatch):
     """Test skill finding by keyword."""
     # Create a minimal skill structure
     skill_dir = tmp_path / "test-skill"
@@ -171,6 +171,8 @@ layer: base
 ---
 A test skill for preprocessing.""")
 
+    # Change to tmp_path to avoid loading real skills from cwd
+    monkeypatch.chdir(tmp_path)
     loader = SkillLoader(tmp_path)
     results = loader.find("neuroimaging")
     assert len(results) == 1

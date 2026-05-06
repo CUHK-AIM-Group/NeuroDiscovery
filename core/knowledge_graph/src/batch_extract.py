@@ -52,7 +52,7 @@ YEAR_END = 2026
 PAPERS_PER_YEAR = 20
 NCBI_API_KEY = "1e72705978ad50249ffc129798ba3958f308"
 
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data"
 CHECKPOINT_FILE = DATA_DIR / "batch_checkpoint.json"
 PAPERS_CSV = DATA_DIR / "papers_metadata.csv"
 GRAPH_FILE = DATA_DIR / "knowledge_graph.json"

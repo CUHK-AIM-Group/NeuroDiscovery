@@ -41,7 +41,7 @@ It strictly follows the NeuroClaw hierarchical design principles:
 
 | Task | What needs to be done | Delegate to | Expected output |
 |---|---|---|---|
-| BIDS validation | Validate NIFD BIDS structure | `scripts/validate_nsd.py` | Validation report |
+| BIDS validation | Validate NIFD BIDS structure | `scripts/validate_nifd.py` | Validation report |
 | sMRI processing | Brain extraction, tissue segmentation, cortical thickness | `smri-skill` | `smri_output/` derivatives |
 | rs-fMRI processing | Preprocessing, denoising, connectivity | `fmri-skill` | `fmri_output/` connectivity |
 | dMRI processing | Diffusion preprocessing, tensor metrics, tractography | `dwi-skill` | `dwi_output/` metrics |

@@ -161,7 +161,7 @@ For benchmark-style ROI-statistics tasks, treat this tool as a library of narrow
 
 ---
 
-## Reference & Source
+## Reference
 - DIPY documentation: https://dipy.org/documentation/latest/
 - DIPY DTI reconstruction examples (tensor fitting + FA/MD/AD/RD)
 - rs-fMRI-Pipeline-Tutorial: https://github.com/Karcen/rs-fMRI-Pipeline-Tutorial

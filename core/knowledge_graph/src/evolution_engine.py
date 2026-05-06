@@ -29,6 +29,104 @@ from .schema import ConceptNode
 
 logger = logging.getLogger(__name__)
 
+# ── biological plausibility constraints ────────────────────────────────
+
+DIRECTIONALITY_RULES: dict[tuple[str, str], bool] = {
+    ("gene", "protein"): True,           # gene -> protein (transcription)
+    ("protein", "gene"): False,          # protein -> gene (forbidden)
+    ("brain_region", "disease"): True,   # brain region -> disease (valid)
+    ("disease", "brain_region"): False,  # disease -> brain region (forbidden)
+}
+
+PREDICATE_TYPE_COMPAT: dict[str, dict] = {
+    "is_biomarker_of": {
+        "source_types": {"biomarker", "gene", "protein"},
+        "target_types": {"disease", "disorder"},
+        "forbidden": {"neuroanatomy"},   # brain regions are not biomarkers
+    },
+    "causes": {
+        "source_types": {"gene", "drug", "pathogen", "environmental_factor"},
+        "target_types": {"disease", "symptom", "disorder"},
+    },
+    "treats": {
+        "source_types": {"drug", "intervention"},
+        "target_types": {"disease", "symptom"},
+    },
+}
+
+MODALITY_COMPAT: dict[str, set[str]] = {
+    "sMRI": {"cortical_thickness", "gray_matter_volume", "subcortical_volume"},
+    "fMRI": {"functional_connectivity", "activation"},
+    "PET":  {"amyloid_SUVR", "tau_SUVR", "FDG_uptake"},
+    "dMRI": {"structural_connectivity", "FA", "MD"},
+}
+
+# Vague predicates that should be refined
+_VAGUE_PREDICATES = {"is_associated_with", "associated_with", "correlates_with", "about"}
+
+
+class EvolutionMemory:
+    """Tracks operator performance across generations for self-evolutionary learning.
+
+    Records trials/successes/fitness per operator, and per-generation stats.
+    Used by PES directed mutation to weight operator selection.
+    """
+
+    def __init__(self):
+        self.operator_stats: dict[str, dict] = {}  # op_name -> {trials, successes, total_fitness}
+        self.generation_log: list[dict] = []
+        self.failed_mutations: list[dict] = []
+
+    def record_trial(self, op_name: str):
+        if op_name not in self.operator_stats:
+            self.operator_stats[op_name] = {"trials": 0, "successes": 0, "total_fitness": 0.0}
+        self.operator_stats[op_name]["trials"] += 1
+
+    def record_success(self, op_name: str, fitness: float):
+        if op_name not in self.operator_stats:
+            self.operator_stats[op_name] = {"trials": 0, "successes": 0, "total_fitness": 0.0}
+        self.operator_stats[op_name]["successes"] += 1
+        self.operator_stats[op_name]["total_fitness"] += fitness
+
+    def record_failure(self, op_name: str, reason: str = ""):
+        self.failed_mutations.append({"operator": op_name, "reason": reason})
+        if len(self.failed_mutations) > 500:
+            self.failed_mutations = self.failed_mutations[-300:]
+
+    def record_generation(self, gen: int, population: list):
+        fitnesses = [h.metadata.get("fitness", 0) for h in population]
+        self.generation_log.append({
+            "generation": gen,
+            "best": max(fitnesses) if fitnesses else 0,
+            "avg": sum(fitnesses) / max(len(fitnesses), 1),
+            "pop_size": len(population),
+        })
+
+    def get_operator_weights(self) -> dict[str, float]:
+        """Compute operator weights based on historical success rate × avg fitness.
+
+        Returns dict of op_name -> weight (for weighted random selection).
+        Untried operators get a default weight of 1.0.
+        """
+        weights = {}
+        for op_name, stats in self.operator_stats.items():
+            trials = stats["trials"]
+            if trials == 0:
+                weights[op_name] = 1.0
+                continue
+            success_rate = stats["successes"] / trials
+            avg_fitness = stats["total_fitness"] / max(stats["successes"], 1)
+            # weight = success_rate * avg_fitness, with floor of 0.1
+            weights[op_name] = max(0.1, success_rate * avg_fitness)
+        return weights
+
+    def summary(self) -> dict:
+        return {
+            "operators": dict(self.operator_stats),
+            "generations": len(self.generation_log),
+            "total_failures": len(self.failed_mutations),
+        }
+
 
 class EvolutionEngine:
     """Evolve hypotheses via mutation, crossover, and selection."""
@@ -52,6 +150,8 @@ class EvolutionEngine:
         self.crossover_rate = crossover_rate
         self.tournament_size = tournament_size
         self.elitism_n = elitism_n
+        self._current_population: list[Hypothesis] = []
+        self.memory = EvolutionMemory()
 
         self.mutators = [
             self._hop_extension,
@@ -59,6 +159,7 @@ class EvolutionEngine:
             self._biomarker_swap,
             self._outcome_pivot,
             self._mediator_injection,
+            self._convergence_fusion,
         ]
         self.crossovers = [
             self._path_crossover,
@@ -73,6 +174,7 @@ class EvolutionEngine:
         logger.info(f"initial population: {len(population)} individuals")
 
         for gen in range(1, self.n_generations + 1):
+            self._current_population = population
             # score fitness
             for h in population:
                 h.metadata["fitness"] = self._score_fitness(h)
@@ -82,6 +184,7 @@ class EvolutionEngine:
             best = population[0].metadata.get("fitness", 0)
             avg = sum(h.metadata.get("fitness", 0) for h in population) / max(len(population), 1)
             logger.info(f"gen {gen}/{self.n_generations}: best={best:.4f} avg={avg:.4f} pop={len(population)}")
+            self.memory.record_generation(gen, population)
 
             # elitism: keep top N (deduplicate by id)
             seen_ids = set()
@@ -129,6 +232,18 @@ class EvolutionEngine:
             h.composite_score = self.engine._composite_score(h)
 
         population.sort(key=lambda h: h.metadata.get("fitness", 0), reverse=True)
+
+        # log evolution memory summary
+        mem_summary = self.memory.summary()
+        logger.info(
+            f"evolution complete: {mem_summary['generations']} generations, "
+            f"{mem_summary['total_failures']} failures"
+        )
+        for op_name, stats in mem_summary.get("operators", {}).items():
+            if stats["trials"] > 0:
+                sr = stats["successes"] / stats["trials"]
+                logger.info(f"  {op_name}: {stats['trials']} trials, {sr:.1%} success")
+
         return population
 
     # ── initialization ─────────────────────────────────────────────────
@@ -137,11 +252,13 @@ class EvolutionEngine:
         """Seeds + random mutations to fill population."""
         seen_ids: set[str] = set()
         population: list[Hypothesis] = []
+        self._current_population = seeds
         for h in seeds:
             if h.id not in seen_ids:
                 population.append(h)
                 seen_ids.add(h.id)
 
+        self._current_population = population
         attempts = 0
         max_attempts = self.population_size * 5
 
@@ -409,6 +526,62 @@ class EvolutionEngine:
 
         return None
 
+    def _convergence_fusion(self, h: Hypothesis) -> Optional[Hypothesis]:
+        """Merge two independent hypotheses sharing the same target into a
+        multi-biomarker joint prediction.
+
+        Input:  h points to some target T, population has another h2 → T
+        Output: h's path + h2's source as co-biomarker, n_independent_paths=2
+        """
+        if len(h.path) < 2:
+            return None
+
+        # 1. Find candidate partners with same target, different source
+        candidates = [
+            h2 for h2 in self._current_population
+            if h2.target_id == h.target_id
+            and h2.id != h.id
+            and h2.source_id != h.source_id
+            and len(h2.path) >= 2
+        ]
+        if not candidates:
+            return None
+
+        # 2. Select partner: prefer higher fitness
+        candidates.sort(
+            key=lambda x: x.metadata.get("fitness", 0), reverse=True
+        )
+        h2 = candidates[0]
+
+        # 3. Pick the longer/better path as the structural base
+        if len(h.path) >= len(h2.path):
+            base, partner = h, h2
+        else:
+            base, partner = h2, h
+
+        # 4. Build composite source name
+        new_source_name = f"{base.source_name} + {partner.source_name}"
+
+        # 5. Build child using base's path (structural base preserved)
+        child = self._build_child(
+            base,
+            list(base.path),
+            "convergence_fusion",
+            source_id=base.source_id,
+            source_name=new_source_name,
+            target_id=base.target_id,
+            target_name=base.target_name,
+        )
+        if not child:
+            return None
+
+        # 6. Set convergence metadata — triggers bonus in _score_fitness
+        child.metadata["n_independent_paths"] = 2
+        child.metadata["co_biomarker_id"] = partner.source_id
+        child.metadata["co_biomarker_name"] = partner.source_name
+        child.metadata["fusion_partner_id"] = partner.id
+        return child
+
     # ── crossover operators ────────────────────────────────────────────
 
     def _path_crossover(self, h1: Hypothesis, h2: Hypothesis) -> Optional[Hypothesis]:
@@ -499,24 +672,106 @@ class EvolutionEngine:
                                  source_id=src_id, source_name=src_name,
                                  target_id=tgt_id, target_name=tgt_name)
 
+    # ── PES: Plan (weakness analysis) ──────────────────────────────────
+
+    def _analyze_weakness(self, h: Hypothesis) -> dict:
+        """Rule-based weakness analysis: identify the weakest aspect of a hypothesis
+        and recommend a mutation operator.
+
+        Returns dict with keys: suggested_operator, reason, weak_hop (optional).
+        """
+        if len(h.path) < 2:
+            return {"suggested_operator": "hop_extension", "reason": "path too short"}
+
+        # Check 1: vague predicates → hop_extension to find more specific path
+        vague_hops = [
+            i for i, link in enumerate(h.path)
+            if link.relation_type in _VAGUE_PREDICATES
+        ]
+        if vague_hops:
+            return {
+                "suggested_operator": "hop_extension",
+                "reason": f"vague predicate at hop {vague_hops[0]}: {h.path[vague_hops[0]].relation_type}",
+                "weak_hop": vague_hops[0],
+            }
+
+        # Check 2: low-confidence link → hop_contraction to remove weak link
+        confidences = [
+            (i, link.confidence * (self.memory.operator_stats.get("_hop_contraction", {}).get("successes", 1) / max(self.memory.operator_stats.get("_hop_contraction", {}).get("trials", 1), 1)))
+            for i, link in enumerate(h.path)
+        ]
+        if confidences:
+            weakest_hop = min(confidences, key=lambda x: x[1])
+            if weakest_hop[1] < 0.3 and len(h.path) >= 3:
+                return {
+                    "suggested_operator": "hop_contraction",
+                    "reason": f"low confidence at hop {weakest_hop[0]}: {h.path[weakest_hop[0]].from_name} → {h.path[weakest_hop[0]].to_name}",
+                    "weak_hop": weakest_hop[0],
+                }
+
+        # Check 3: convergence opportunity → convergence_fusion
+        same_target = [
+            h2 for h2 in self._current_population
+            if h2.target_id == h.target_id and h2.id != h.id and h2.source_id != h.source_id
+        ]
+        if same_target and h.metadata.get("n_independent_paths", 1) < 2:
+            return {
+                "suggested_operator": "convergence_fusion",
+                "reason": f"convergence opportunity: {len(same_target)} other paths to {h.target_name}",
+            }
+
+        # Check 4: short path → mediator_injection
+        if len(h.path) == 2:
+            return {"suggested_operator": "mediator_injection", "reason": "short path, try adding mediator"}
+
+        # Default: weighted random selection
+        return {"suggested_operator": "", "reason": "no specific weakness found"}
+
     # ── helpers ────────────────────────────────────────────────────────
 
     def _apply_mutation(self, h: Hypothesis) -> Optional[Hypothesis]:
-        """Apply a random mutation operator. Returns None if mutation failed."""
-        if random.random() > self.mutation_rate:
-            return None  # no mutation
+        """PES directed mutation: Plan → Execute → Summarize.
 
-        # try each operator in random order
-        operators = list(self.mutators)
-        random.shuffle(operators)
-        for op in operators:
+        Phase 1 (Plan): analyze weakness, recommend operator
+        Phase 2 (Execute): try recommended operator first, then weighted fallback
+        Phase 3 (Summarize): record success/failure in EvolutionMemory
+        """
+        if random.random() > self.mutation_rate:
+            return None
+
+        # Phase 1: Plan — analyze weakness
+        weakness = self._analyze_weakness(h)
+        recommended = weakness.get("suggested_operator", "")
+
+        # Phase 2: Execute — build operator order (recommended first, then weighted random)
+        op_by_name = {op.__name__.lstrip("_"): op for op in self.mutators}
+        weights = self.memory.get_operator_weights()
+
+        # ordered list: recommended first, then by weight descending
+        remaining = [op for op in self.mutators if op.__name__.lstrip("_") != recommended]
+        remaining.sort(key=lambda op: weights.get(op.__name__.lstrip("_"), 1.0), reverse=True)
+
+        if recommended and recommended in op_by_name:
+            ordered = [op_by_name[recommended]] + remaining
+        else:
+            ordered = remaining
+
+        for op in ordered:
+            op_name = op.__name__.lstrip("_")
+            self.memory.record_trial(op_name)
             try:
                 child = op(h)
                 if child and self._validate(child) and child.id != h.id:
+                    fitness = self._score_fitness(child)
+                    self.memory.record_success(op_name, fitness)
                     return child
+                else:
+                    self.memory.record_failure(op_name, "invalid or identical child")
             except Exception as e:
-                logger.debug(f"mutation {op.__name__} failed: {e}")
-        return None  # all mutations failed
+                logger.debug(f"mutation {op_name} failed: {e}")
+                self.memory.record_failure(op_name, str(e))
+
+        return None
 
     def _apply_crossover(self, h1: Hypothesis, h2: Hypothesis) -> Optional[Hypothesis]:
         """Apply a random crossover operator."""
@@ -616,6 +871,83 @@ class EvolutionEngine:
         child.composite_score = self.engine._composite_score(child)
         return child
 
+    # ── biological plausibility ────────────────────────────────────────
+
+    def _check_biological_plausibility(self, h: Hypothesis) -> list[str]:
+        """Check biological plausibility of hypothesis path.
+
+        Returns a list of violation descriptions. Empty list = plausible.
+        """
+        violations: list[str] = []
+
+        for i, link in enumerate(h.path):
+            src_node = self._index.get(link.from_id)
+            tgt_node = self._index.get(link.to_id)
+            if not src_node or not tgt_node:
+                continue
+
+            src_domains = set(src_node.domain_tags) - {"claim"}
+            tgt_domains = set(tgt_node.domain_tags) - {"claim"}
+
+            # 1. Directionality check
+            for (s_type, t_type), allowed in DIRECTIONALITY_RULES.items():
+                if s_type in src_domains and t_type in tgt_domains:
+                    if not allowed:
+                        violations.append(
+                            f"Step {i+1}: directionality violation — "
+                            f"{s_type} -> {t_type} is forbidden "
+                            f"({link.from_name} --[{link.relation_type}]--> {link.to_name})"
+                        )
+
+            # 2. Predicate-type compatibility check
+            compat = PREDICATE_TYPE_COMPAT.get(link.relation_type)
+            if compat:
+                allowed_src = compat.get("source_types")
+                forbidden_src = compat.get("forbidden", set())
+                if allowed_src and src_domains:
+                    if src_domains & forbidden_src:
+                        violations.append(
+                            f"Step {i+1}: {link.relation_type} source type "
+                            f"{src_domains & forbidden_src} is forbidden "
+                            f"({link.from_name})"
+                        )
+                    elif not (src_domains & allowed_src):
+                        violations.append(
+                            f"Step {i+1}: {link.relation_type} source type "
+                            f"{src_domains} not in allowed types {allowed_src} "
+                            f"({link.from_name})"
+                        )
+
+                forbidden_tgt = compat.get("forbidden", set())
+                if forbidden_tgt and tgt_domains & forbidden_tgt:
+                    violations.append(
+                        f"Step {i+1}: {link.relation_type} target type "
+                        f"{tgt_domains & forbidden_tgt} is forbidden "
+                        f"({link.to_name})"
+                    )
+
+                allowed_tgt = compat.get("target_types")
+                if allowed_tgt and tgt_domains and not (tgt_domains & allowed_tgt):
+                    violations.append(
+                        f"Step {i+1}: {link.relation_type} target type "
+                        f"{tgt_domains} not in allowed types {allowed_tgt} "
+                        f"({link.to_name})"
+                    )
+
+            # 3. Modality compatibility (soft check — infrastructure only)
+            if h.metadata.get("input_modality"):
+                modality = h.metadata["input_modality"]
+                compatible_features = MODALITY_COMPAT.get(modality)
+                if compatible_features:
+                    input_feat = h.metadata.get("input_feature", "").lower()
+                    feat_normalized = input_feat.replace(" ", "_")
+                    if input_feat and not any(
+                        cf.lower() in feat_normalized for cf in compatible_features
+                    ):
+                        pass  # reserved for future strict mode
+
+        return violations
+
     def _validate(self, h: Hypothesis) -> bool:
         """Validate a hypothesis: all edges exist, no cycles, different domains."""
         if not h.path or len(h.path) < 1:
@@ -651,5 +983,13 @@ class EvolutionEngine:
                 for pattern in _NON_MEASURABLE_PATTERNS:
                     if pattern.search(name):
                         return False
+
+        # biological plausibility checks
+        violations = self._check_biological_plausibility(h)
+        if violations:
+            logger.debug(
+                f"biological plausibility rejected {h.id}: {violations[0]}"
+            )
+            return False
 
         return True
