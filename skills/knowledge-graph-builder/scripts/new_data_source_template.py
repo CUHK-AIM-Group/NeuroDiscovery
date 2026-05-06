@@ -13,9 +13,9 @@ import logging
 from pathlib import Path
 
 # Adjust import path for your project structure
-from core.knowledge_graph.schema import ConceptNode, Edge, DomainTag
-from core.knowledge_graph.graph_manager import KnowledgeGraph
-from core.knowledge_graph.storage import load_graph, save_graph
+from core.knowledge_graph.src.schema import ConceptNode, Edge, DomainTag
+from core.knowledge_graph.src.graph_manager import KnowledgeGraph
+from core.knowledge_graph.src.storage import load_graph, save_graph
 
 logger = logging.getLogger(__name__)
 

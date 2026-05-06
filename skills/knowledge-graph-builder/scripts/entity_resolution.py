@@ -18,8 +18,8 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from core.knowledge_graph.schema import ConceptNode, DomainTag
-from core.knowledge_graph.graph_manager import KnowledgeGraph
+from core.knowledge_graph.src.schema import ConceptNode, DomainTag
+from core.knowledge_graph.src.graph_manager import KnowledgeGraph
 
 logger = logging.getLogger(__name__)
 

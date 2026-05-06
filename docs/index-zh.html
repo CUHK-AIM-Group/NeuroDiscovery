@@ -30,8 +30,7 @@
     <div class="bg-orb orb-b"></div>
 
       <style>
-        .dataset-table td:first-child, .dataset-table th:first-child,
-        .dataset-table td:last-child, .dataset-table th:last-child { text-align: center; }
+        .dataset-table td:first-child, .dataset-table th:first-child { text-align: center; }
       </style>
     <header class="topbar">
       <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
@@ -74,7 +73,7 @@
         <div class="metrics">
           <article>
             <h3>技能库</h3>
-            <p>58 个领域工具、模型与流水线</p>
+            <p>81 个领域工具、模型与流水线</p>
           </article>
           <article>
             <h3>分层技能体系</h3>
@@ -133,18 +132,16 @@
             <p><strong>3.1 sMRI</strong>：覆盖 T1/T2 预处理、组织分割、皮层分区、FreeSurfer 表面处理，以及基于 FLAIR+T1w 的 WMH 分割。</p>
             <p><strong>3.2 fMRI</strong>：覆盖预处理、去噪、ROI 时间序列提取、seed/ROI 连接分析、任务态 GLM、静息态 ICA 和有效连接分析。</p>
             <p><strong>3.3 DWI 与 EEG</strong>：支持涡流校正、扩散张量指标、束追踪、连接组构建，以及 EEG 伪迹去除、频谱分析和特征提取。</p>
+            <p><strong>3.4 PET</strong>：支持基于示踪剂特异性参考区域的 SUVR 计算（PiB/FDG/tau）、部分容积校正、多帧动态 PET 处理和基于 ROI 的定量分析。</p>
+            <p><strong>3.5 ASL</strong>：支持基于 Buxton 模型的 CBF 量化（pCASL/CASL/PASL）、M0 归一化、部分容积校正和基于 ROI 的灌注提取。</p>
+            <p><strong>3.6 MEG</strong>：支持源定位（MNE/dSPM/beamformer）、时频分析（Morlet/multitaper）、试次间相干性以及传感器/源空间连接性分析。</p>
           </article>
           <article>
-            <h3>4. 数据集相关</h3>
-            <p><strong>4.1 ADNI</strong>：支持数据获取指导、BIDS 整理、预处理、ROI 分析、表型建模和衍生数据集生成。</p>
-            <p><strong>4.2 HCP</strong>：支持结构、功能和扩散流程执行，并通过 HCP Pipelines 完成多模态结果集成。</p>
-            <p><strong>4.3 ABCD Study</strong>：支持通过 NIMH Data Archive 下载、BIDS 整理、多模态 sMRI/fMRI/dMRI 处理、表型数据提取和 QC 集成。</p>
-            <p><strong>4.4 ABIDE</strong>：支持从 FCP/INDI 下载、BIDS 整理、sMRI 与 rs-fMRI 处理、表型数据提取，以及面向自闭症脑影像的站点感知 QC。</p>
-            <p><strong>4.5 ADHD-200</strong>：支持多站点下载、BIDS 整理、sMRI 与 rs-fMRI 处理、ADHD 表型数据提取，以及站点感知 QC。</p>
-            <p><strong>4.6 BOLD5000</strong>：支持 OpenNeuro 数据的 BIDS 验证、刺激元数据提取和视觉任务态 fMRI 处理。</p>
-            <p><strong>4.7 COBRE</strong>：支持 BIDS 整理、sMRI 与 rs-fMRI 处理、精神分裂症对照表型数据提取和 fMRIPrep QC。</p>
-            <p><strong>4.8 DMT-HAR-MED</strong>：支持 OpenNeuro ds006644 的 BIDS 验证、致幻剂 rs-fMRI 处理和条件表型数据提取。</p>
-            <p><strong>4.9 UK Biobank 与扩展目标</strong>：支持 UKB 导出后的脑科学分析，也可扩展到 PNC、HBN、UCLA 等数据集。</p>
+            <h3>4. 数据集相关（共 29 个公开数据集）</h3>
+            <p><strong>4.1 UK Biobank</strong>：支持大规模脑影像数据访问、BIDS 整理、多模态 sMRI/fMRI/dMRI 处理和表型数据提取，覆盖约 50,000 名受试者。</p>
+            <p><strong>4.2 ADNI</strong>：支持数据获取指导、BIDS 整理、预处理、ROI 分析、表型建模和衍生数据集生成。</p>
+            <p><strong>4.3 HCP Young Adult</strong>：支持下载、BIDS 整理和多模态 sMRI/fMRI/dMRI 处理，覆盖 7 种任务范式（运动、情绪、赌博、语言、关系、社会、工作记忆）和静息态，提供认知表型提取和 QC 集成。</p>
+            <p>此外还覆盖 HCP Aging、HCP Development、HCP Early Psychosis、ABCD、AIBL、AOMIC、NIFD、OASIS、PNC、PPMI、REST-meta-MDD、SEED-IV、SEED-VIG、TCP、UCLA CNP、Cam-CAN、IXI、MS Lesion Challenge、MND、NSD、ABIDE、ADHD-200、BOLD5000、COBRE、DMT-HAR-MED、HBN 等 26 个公开数据集。</p>
           </article>
           <article>
             <h3>5. 模型相关</h3>
@@ -154,7 +151,7 @@
           </article>
           <article>
             <h3>6. 研究工作流相关</h3>
-            <p><strong>6.1 端到端流程</strong>：覆盖 sMRI、fMRI、DWI、EEG、ABIDE、ABCD、ADHD-200、BOLD5000、COBRE、DMT-HAR-MED、ADNI、HCP 和 UKB 分析中的单模态流程与数据集特定处理链。</p>
+            <p><strong>6.1 端到端流程</strong>：覆盖 sMRI、fMRI、DWI、EEG、PET、ASL、MEG、ABIDE、ABCD、AIBL、AOMIC、ADHD-200、BOLD5000、COBRE、DMT-HAR-MED、HBN、ADNI、HCP-YA、HCP-A、HCP-D、HCP-EP、Cam-CAN、IXI、MS Challenge、MND、NSD、NIFD、OASIS、PNC、PPMI、REST-meta-MDD、SEED-IV、SEED-VIG、TCP、UCLA CNP 和 UKB 分析中的单模态流程与数据集特定处理链。</p>
             <p><strong>6.2 实验控制</strong>：从 METHOD 到实验执行，支持 Git 环境搭建、消融实验、检查点、结果验证、审计日志和可恢复运行。</p>
             <p><strong>6.3 科研产出支持</strong>：支持论文写作、清洁对话日志、可视化资产、复现报告，以及可维护的技能库更新。</p>
           </article>
@@ -168,156 +165,182 @@
                 <th>支持模态</th>
                 <th>额外数据</th>
                 <th>队列规模</th>
-                <th>官网链接</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>ABCD Study</td>
+                <td><a href="https://abcdstudy.org/" target="_blank" rel="noreferrer">ABCD Study</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>身体与心理健康、物质使用、文化/环境、神经认知、生物学数据</td>
                 <td>目标队列约 11,500 名儿童；完整批次通过 NIMH Data Archive 发布</td>
-                <td><a href="https://abcdstudy.org/" target="_blank" rel="noreferrer">ABCD Study</a></td>
               </tr>
               <tr>
-                <td>ABIDE</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/abide/" target="_blank" rel="noreferrer">ABIDE</a></td>
                 <td>T1w; rs-fMRI</td>
                 <td>ASD/对照表型数据</td>
                 <td>来自 17 个国际站点的 1,112 份数据集</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/abide/" target="_blank" rel="noreferrer">ABIDE</a></td>
               </tr>
               <tr>
-                <td>ADHD-200</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/adhd200/" target="_blank" rel="noreferrer">ADHD-200</a></td>
                 <td>T1w; rs-fMRI</td>
                 <td>诊断状态、ADHD 症状量表、人口统计学信息、用药史、质控指标</td>
                 <td>8 个成像站点共 776 名参与者/数据集</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/adhd200/" target="_blank" rel="noreferrer">ADHD-200</a></td>
               </tr>
               <tr>
-                <td>ADNI</td>
+                <td><a href="https://aibl.csiro.au/" target="_blank" rel="noreferrer">AIBL</a></td>
+                <td>T1w; PET (PiB, FDG, tau)</td>
+                <td>认知评估、血液生物标志物、生活方式与人口统计学数据、APOE 基因型</td>
+                <td>约 1,100+ 名参与者（健康对照、MCI、AD）</td>
+              </tr>
+              <tr>
+                <td><a href="https://nilab-uva.github.io/AOMIC.github.io/" target="_blank" rel="noreferrer">AOMIC</a></td>
+                <td>T1w; rs-fMRI; task-fMRI</td>
+                <td>人格特质（大五人格）、流体智力、人口统计学数据</td>
+                <td>约 1,000+ 名参与者</td>
+              </tr>
+              <tr>
+                <td><a href="https://adni.loni.usc.edu/" target="_blank" rel="noreferrer">ADNI</a></td>
                 <td>T1w; T2w; FLAIR; dMRI; rs-fMRI; PET</td>
                 <td>遗传/组学数据、临床与认知评估</td>
                 <td>ADNI 各阶段累计约 2,000+ 名参与者</td>
-                <td><a href="https://adni.loni.usc.edu/" target="_blank" rel="noreferrer">ADNI</a></td>
               </tr>
               <tr>
-                <td>BOLD5000</td>
+                <td><a href="https://bold5000-dataset.github.io/" target="_blank" rel="noreferrer">BOLD5000</a></td>
                 <td>T1w; task-fMRI</td>
                 <td>视觉图像刺激、类别与图像元数据</td>
                 <td>4 名参与者，完成 5,000 张图像的视觉 fMRI 实验</td>
-                <td><a href="https://bold5000-dataset.github.io/" target="_blank" rel="noreferrer">BOLD5000</a></td>
               </tr>
               <tr>
-                <td>COBRE</td>
+                <td><a href="https://www.cam-can.org/" target="_blank" rel="noreferrer">Cam-CAN</a></td>
+                <td>T1w; T2*w; rs-fMRI; task-fMRI; MEG</td>
+                <td>覆盖成人寿命跨度的认知、感觉与健康测量</td>
+                <td>约 700 名 18-88 岁参与者</td>
+              </tr>
+              <tr>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html" target="_blank" rel="noreferrer">COBRE</a></td>
                 <td>T1w; rs-fMRI</td>
                 <td>人口统计学信息、利手信息、诊断信息</td>
                 <td>147 名参与者：72 名精神分裂症患者和 75 名健康对照</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html" target="_blank" rel="noreferrer">COBRE</a></td>
               </tr>
               <tr>
-                <td>DMT-HAR-MED</td>
+                <td><a href="https://openneuro.org/datasets/ds006644/versions/1.0.1" target="_blank" rel="noreferrer">DMT-HAR-MED</a></td>
                 <td>rs-fMRI</td>
                 <td>致幻剂干预条件、行为与生理测量</td>
                 <td>OpenNeuro ds006644 中的 40 名参与者</td>
-                <td><a href="https://openneuro.org/datasets/ds006644/versions/1.0.1" target="_blank" rel="noreferrer">DMT-HAR-MED</a></td>
               </tr>
               <tr>
-                <td>HBN</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/" target="_blank" rel="noreferrer">HBN</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG</td>
                 <td>精神病学、行为、认知、生活方式、遗传学、活动记录</td>
                 <td>已发布约 3,900+ 名参与者；目标资源不少于 10,000 名 5-21 岁个体</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/" target="_blank" rel="noreferrer">HBN</a></td>
               </tr>
               <tr>
-                <td>HCP Aging</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-aging" target="_blank" rel="noreferrer">HCP Aging</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>行为、认知、健康与人口统计学测量</td>
                 <td>约 700+ 名 36-100 岁成人</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-aging" target="_blank" rel="noreferrer">HCP Aging</a></td>
               </tr>
               <tr>
-                <td>HCP Development</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-development" target="_blank" rel="noreferrer">HCP Development</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>行为、认知、健康与人口统计学测量</td>
                 <td>约 600+ 名 5-21 岁儿童与青少年</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-development" target="_blank" rel="noreferrer">HCP Development</a></td>
               </tr>
               <tr>
-                <td>HCP Early Psychosis</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-early-psychosis" target="_blank" rel="noreferrer">HCP Early Psychosis</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>诊断、临床、行为与认知测量</td>
                 <td>约 250 名早期精神病与对照参与者</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-early-psychosis" target="_blank" rel="noreferrer">HCP Early Psychosis</a></td>
               </tr>
               <tr>
-                <td>HCP Young Adult</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-young-adult" target="_blank" rel="noreferrer">HCP Young Adult</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>行为与认知测量</td>
                 <td>约 1,200 名青年成人参与者</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-young-adult" target="_blank" rel="noreferrer">HCP Young Adult</a></td>
               </tr>
               <tr>
-                <td>MND</td>
+                <td><a href="https://brain-development.org/ixi-dataset/" target="_blank" rel="noreferrer">IXI</a></td>
+                <td>T1w; T2w; MRA</td>
+                <td>来自伦敦三家医院的健康脑 MRI 数据</td>
+                <td>约 600 名受试者</td>
+              </tr>
+              <tr>
+                <td><a href="https://smart-stats-tools.org/lesion-challenge" target="_blank" rel="noreferrer">Longitudinal MS Lesion Segmentation Challenge</a></td>
+                <td>T1w; T2w; FLAIR; PD</td>
+                <td>专家手动病灶分割标注，用于 MS 分割基准</td>
+                <td>5 名 MS 患者的多时间点纵向数据</td>
+              </tr>
+              <tr>
+                <td><a href="https://openneuro.org/datasets/ds005874/versions/1.1.0" target="_blank" rel="noreferrer">MND</a></td>
                 <td>rs-fMRI; task-fMRI</td>
                 <td>运动神经元病诊断与临床测量</td>
                 <td>OpenNeuro ds005874 中的 59 名参与者</td>
-                <td><a href="https://openneuro.org/datasets/ds005874/versions/1.1.0" target="_blank" rel="noreferrer">MND</a></td>
               </tr>
               <tr>
-                <td>Natural Scenes Dataset</td>
+                <td><a href="https://naturalscenesdataset.org/" target="_blank" rel="noreferrer">Natural Scenes Dataset</a></td>
                 <td>T1w; task-fMRI</td>
                 <td>自然图像刺激、行为反应、图像标注</td>
                 <td>8 名参与者的高密度重复视觉 fMRI 数据</td>
-                <td><a href="https://naturalscenesdataset.org/" target="_blank" rel="noreferrer">Natural Scenes Dataset</a></td>
               </tr>
               <tr>
-                <td>PNC</td>
+                <td><a href="https://ida.loni.usc.edu/" target="_blank" rel="noreferrer">NIFD</a></td>
+                <td>T1w; fMRI; DTI; PET</td>
+                <td>FTD 临床与认知数据，UCSF 记忆与衰老中心</td>
+                <td>额颞叶痴呆及相关病变队列</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.oasis-brains.org/" target="_blank" rel="noreferrer">OASIS</a></td>
+                <td>T1w; PET (PiB)</td>
+                <td>临床与认知评估、痴呆诊断、人口统计学数据</td>
+                <td>横断面（400+）和纵向（150+）参与者，年龄 18-96 岁</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html" target="_blank" rel="noreferrer">PNC</a></td>
                 <td>T1w; dMRI; ASL; rs-fMRI; task-fMRI</td>
                 <td>基因分型、临床与神经精神评估、计算机化神经认知电池</td>
                 <td>青少年队列超过 9,500 人；其中 1,445 人具有神经影像数据</td>
-                <td><a href="https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html" target="_blank" rel="noreferrer">PNC</a></td>
               </tr>
               <tr>
-                <td>REST-meta-MDD</td>
+                <td><a href="https://www.ppmi-info.org/" target="_blank" rel="noreferrer">PPMI</a></td>
+                <td>T1w; rs-fMRI; DAT-SPECT; PET</td>
+                <td>帕金森病的临床、遗传、生物样本和可穿戴传感器数据</td>
+                <td>约 2,000+ 名参与者，覆盖全球 30+ 个临床站点</td>
+              </tr>
+              <tr>
+                <td><a href="http://rfmri.org/REST-meta-MDD" target="_blank" rel="noreferrer">REST-meta-MDD</a></td>
                 <td>rs-fMRI</td>
                 <td>MDD 诊断、临床与人口统计学测量</td>
                 <td>25 个队列共 2,428 名参与者</td>
-                <td><a href="http://rfmri.org/REST-meta-MDD" target="_blank" rel="noreferrer">REST-meta-MDD</a></td>
               </tr>
               <tr>
-                <td>SEED-IV</td>
+                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-IV</a></td>
                 <td>EEG</td>
                 <td>四类情绪标签、试次级会话元数据</td>
                 <td>15 名受试者，覆盖 3 次会话，用于情绪解码基准</td>
-                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-IV</a></td>
               </tr>
               <tr>
-                <td>SEED-VIG</td>
+                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-VIG</a></td>
                 <td>EEG</td>
                 <td>警觉性/疲劳标签、连续清醒度标注、行为元数据</td>
                 <td>23 名受试者的持续注意驾驶场景警觉性记录</td>
-                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-VIG</a></td>
               </tr>
               <tr>
-                <td>TCP</td>
+                <td><a href="https://openneuro.org/datasets/ds004215" target="_blank" rel="noreferrer">TCP</a></td>
                 <td>rs-fMRI</td>
                 <td>精神科诊断访谈、认知与临床评估</td>
                 <td>245 名跨诊断参与者</td>
-                <td><a href="https://openneuro.org/datasets/ds004215" target="_blank" rel="noreferrer">TCP</a></td>
               </tr>
               <tr>
-                <td>UCLA CNP</td>
+                <td><a href="https://openneuro.org/datasets/ds000030" target="_blank" rel="noreferrer">UCLA CNP</a></td>
                 <td>T1w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>诊断分组、神经心理与表型评估</td>
                 <td>OpenNeuro ds000030 中的 272 名参与者</td>
-                <td><a href="https://openneuro.org/datasets/ds000030" target="_blank" rel="noreferrer">UCLA CNP</a></td>
               </tr>
               <tr>
-                <td>UK Biobank</td>
+                <td><a href="https://www.ukbiobank.ac.uk/" target="_blank" rel="noreferrer">UK Biobank</a></td>
                 <td>T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI</td>
                 <td>基因型/基因组数据、问卷、医院记录、环境数据、社会人口学数据、体格测量</td>
                 <td>约 50,000 名参与者具有多模态影像数据</td>
-                <td><a href="https://www.ukbiobank.ac.uk/" target="_blank" rel="noreferrer">UK Biobank</a></td>
               </tr>
             </tbody>
           </table>

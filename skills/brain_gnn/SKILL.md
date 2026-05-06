@@ -1,6 +1,6 @@
 ---
 name: braingnn
-description: "Use this model doc whenever the user wants to run BrainGNN for fMRI phenotype prediction, including graph construction, training, and evaluation. This document focuses on model-level usage and delegates upstream preprocessing to fmri-skill (and optionally hcp-skill)."
+description: "Use this model doc whenever the user wants to run BrainGNN for fMRI phenotype prediction, including graph construction, training, and evaluation. This document focuses on model-level usage and delegates upstream preprocessing to fmri-skill (and optionally hcpya-skill for HCP data)."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: base
 skill_type: model
@@ -20,7 +20,7 @@ BrainGNN is an interpretable graph neural network for fMRI analysis and phenotyp
 
 In NeuroClaw, this document is model-level guidance. Upstream data preparation should be delegated to:
 - `fmri-skill` for fMRI preprocessing and ROI extraction
-- `hcp-skill` when HCP dataset download/orchestration is needed
+- `hcpya-skill` when HCP Young Adult dataset download/orchestration is needed
 
 **Research use only.**
 
@@ -152,7 +152,7 @@ BrainGNN_Pytorch/
 ## NeuroClaw Delegation Rules
 
 - ROI generation and preprocessing: delegate to `fmri-skill`
-- HCP download/orchestration (if needed): delegate to `hcp-skill`
+- HCP download/orchestration (if needed): delegate to `hcpya-skill` (or `hcpa-skill` / `hcpd-skill` / `hcpep-skill` for other HCP variants)
 - Dependency checks: `dependency-planner` + `conda-env-manager`
 - Execution routing: `claw-shell`
 

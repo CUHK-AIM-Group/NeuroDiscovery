@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-58-purple)](skills)
+[![Skills](https://img.shields.io/badge/skills-81-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
 
 [中文版 README](README_zh.md)
@@ -36,7 +36,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 ## 🚀 Updates
 
-- **[2026.05.06]**: All 58 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill-loader DAG validation ensures dependency graph correctness.
+- **[2026.05.06]**: Added 14 dataset skills (`camcan-skill`, `ixi-skill`, `mschallenge-skill`, `mnd-skill`, `nsd-skill`, `nifd-skill`, `oasis-skill`, `pnc-skill`, `ppmi-skill`, `rest-mneta-mdd-skill`, `seed-iv-skill`, `seed-vig-skill`, `tcp-skill`, `ucla-cnp-skill`) with companion scripts; split `hcp-skill` into 4 dataset-specific skills (`hcpya-skill`, `hcpa-skill`, `hcpd-skill`, `hcpep-skill`); added 3 modality skills (`pet-skill`, `asl-skill`, `meg-skill`); all 81 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill-loader DAG validation ensures dependency graph correctness.
 - **[2026.04.28]**: Our technical report is now available on arXiv: https://arxiv.org/abs/2604.24696
 - **[2026.04.22]**: v1.0 released — stable release with improvements and full documentation.
 - **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroClaw/
@@ -62,8 +62,11 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Physical and mental health; substance use; culture/environment; neurocognition; biological data | Target cohort of ~11,500 children; full cohort releases through the NIMH Data Archive | https://abcdstudy.org/ |
 | ABIDE | T1w; rs-fMRI | ASD/control phenotypic data | 1,112 datasets from 17 international sites | https://fcon_1000.projects.nitrc.org/indi/abide/ |
 | ADHD-200 | T1w; rs-fMRI | Diagnostic status; ADHD symptom measures; demographics; medication history; QC measures | 776 participants/datasets across 8 imaging sites | https://fcon_1000.projects.nitrc.org/indi/adhd200/ |
+| AIBL | T1w; PET (PiB, FDG, tau) | Cognitive assessments; blood biomarkers; lifestyle and demographic data; APOE genotype | ~1,100+ participants (healthy controls, MCI, AD) | https://aibl.csiro.au/ |
+| AOMIC | T1w; rs-fMRI; task-fMRI | Personality traits (Big Five); fluid intelligence; demographic data | ~1,000+ participants | https://nilab-uva.github.io/AOMIC.github.io/ |
 | ADNI | T1w; T2w; FLAIR; dMRI; rs-fMRI; PET | Genetics/omics data; clinical and cognitive assessments | ~2,000+ participants across ADNI phases | https://adni.loni.usc.edu/ |
 | BOLD5000 | T1w; task-fMRI | Visual image stimuli; category and image metadata | 4 participants with 5,000-image visual fMRI sessions | https://bold5000-dataset.github.io/ |
+| Cam-CAN | T1w; T2*w; rs-fMRI; task-fMRI; MEG | Cognitive, sensory, and health measures across the adult lifespan | ~700 participants ages 18-88 | https://www.cam-can.org/ |
 | COBRE | T1w; rs-fMRI | Demographics; handedness; diagnostic information | 147 participants: 72 schizophrenia patients and 75 healthy controls | https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html |
 | DMT-HAR-MED | rs-fMRI | Psychedelic intervention conditions; behavioral and physiological measures | 40 participants in OpenNeuro ds006644 | https://openneuro.org/datasets/ds006644/versions/1.0.1 |
 | HBN | T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG | Psychiatric, behavioral, cognitive, lifestyle, genetics, actigraphy | ~3,900+ released participants; target resource of at least 10,000 ages 5-21 | https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/ |
@@ -71,9 +74,14 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | HCP Development | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral, cognitive, health, and demographic measures | ~600+ children and adolescents ages 5-21 | https://www.humanconnectome.org/study/hcp-lifespan-development |
 | HCP Early Psychosis | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Diagnostic, clinical, behavioral, and cognitive measures | ~250 early psychosis and control participants | https://www.humanconnectome.org/study/hcp-early-psychosis |
 | HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral and cognitive measures | ~1,200 young adult participants | https://www.humanconnectome.org/study/hcp-young-adult |
+| IXI | T1w; T2w; MRA | Healthy brain MRI from three London hospitals | ~600 subjects | https://brain-development.org/ixi-dataset/ |
+| Longitudinal MS Lesion Segmentation Challenge | T1w; T2w; FLAIR; PD | Expert manual lesion segmentations for MS benchmarking | 5 MS patients with multiple longitudinal timepoints | https://smart-stats-tools.org/lesion-challenge |
 | MND | rs-fMRI; task-fMRI | Motor neuron disease diagnosis and clinical measures | 59 participants in OpenNeuro ds005874 | https://openneuro.org/datasets/ds005874/versions/1.1.0 |
 | Natural Scenes Dataset | T1w; task-fMRI | Natural image stimuli; behavioral responses; image annotations | 8 participants with dense repeated visual fMRI | https://naturalscenesdataset.org/ |
+| NIFD | T1w; fMRI; DTI; PET | FTD clinical and cognitive data; UCSF Memory and Aging Center | Frontotemporal dementia and related disorders cohorts | https://ida.loni.usc.edu/ |
+| OASIS | T1w; PET (PiB) | Clinical and cognitive assessments; dementia diagnosis; demographic data | Cross-sectional (400+) and longitudinal (150+) participants ages 18-96 | https://www.oasis-brains.org/ |
 | PNC | T1w; dMRI; ASL; rs-fMRI; task-fMRI | Genotyping; clinical and neuropsychiatric assessment; Computerized Neurocognitive Battery | >9,500 youth cohort; 1,445 participants with neuroimaging | https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html |
+| PPMI | T1w; rs-fMRI; DAT-SPECT; PET | Clinical, genetic, biospecimen, and wearable sensor data for Parkinson's disease | ~2,000+ participants across 30+ clinical sites worldwide | https://www.ppmi-info.org/ |
 | REST-meta-MDD | rs-fMRI | MDD diagnosis; clinical and demographic measures | 2,428 participants across 25 cohorts | http://rfmri.org/REST-meta-MDD |
 | SEED-IV | EEG | Emotion labels across four affective categories; trial-level session metadata | 15 subjects across 3 sessions for emotion decoding benchmarks | https://bcmi.sjtu.edu.cn/home/seed/ |
 | SEED-VIG | EEG | Vigilance/fatigue labels; continuous alertness annotations; behavioral metadata | 23 subjects in sustained-attention driving-style vigilance recordings | https://bcmi.sjtu.edu.cn/home/seed/ |
@@ -283,12 +291,15 @@ NeuroClaw/
 │   ├── config_wizard.py            # Interactive 6-step configuration wizard (incl. Web UI deps)
 │   └── neuro_defaults.json         # Neuroscience-specific default template
 │
-├── skills/                         # 58 skills: base (34) / subagent (18) / interface (6)
+├── skills/                         # 81 skills: base (34) / subagent (41) / interface (6)
 │   ├── abide-skill/
+│   ├── aibl-skill/
 │   ├── abcd-skill/
 │   ├── academic-research-hub/
 │   ├── adhd200-skill/
 │   ├── adni-skill/
+│   ├── aomic-skill/
+│   ├── asl-skill/
 │   ├── bids-organizer/
 │   ├── beautiful-log/
 │   ├── bold5000-skill/
@@ -296,6 +307,7 @@ NeuroClaw/
 │   ├── brain_gnn/
 │   ├── claw-shell/
 │   ├── cobre-skill/
+│   ├── camcan-skill/
 │   ├── conda-env-manager/
 │   ├── conn-tool/
 │   ├── dcm2nii/
@@ -318,29 +330,48 @@ NeuroClaw/
 │   ├── git-workflows/
 │   ├── glm/
 │   ├── harness-core/
-│   ├── hcp-skill/
+│   ├── hbn-skill/
+│   ├── hcpa-skill/
+│   ├── hcpd-skill/
+│   ├── hcpep-skill/
+│   ├── hcpya-skill/
 │   ├── hcppipeline-tool/
 │   ├── hierarchical/
 │   ├── ica/
+│   ├── ixi-skill/
 │   ├── kmeans/
 │   ├── knowledge-graph-builder/
 │   ├── method-design/
 │   ├── mne-eeg-tool/
+│   ├── meg-skill/
+│   ├── mnd-skill/
+│   ├── mschallenge-skill/
 │   ├── multi-search-engine/
 │   ├── neurostorm/
 │   ├── nibabel-skill/
+│   ├── nifd-skill/
+│   ├── nsd-skill/
 │   ├── nii2dcm/
 │   ├── nilearn-tool/
+│   ├── oasis-skill/
 │   ├── overleaf-skill/
 │   ├── paper-writing/
+│   ├── pet-skill/
+│   ├── pnc-skill/
+│   ├── ppmi-skill/
 │   ├── qsiprep-tool/
 │   ├── research-idea/
+│   ├── rest-mneta-mdd-skill/
 │   ├── run_models/
+│   ├── seed-iv-skill/
+│   ├── seed-vig-skill/
 │   ├── skill-updater/
 │   ├── smri-skill/
 │   ├── spacenet/
 │   ├── svm/
+│   ├── tcp-skill/
 │   ├── ukb-skill/
+│   ├── ucla-cnp-skill/
 │   └── wmh-segmentation/
 │
 ├── neuro_bench/                    # NeuroBench evaluation tasks (T00–T100)
@@ -430,13 +461,33 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | Skill | Function | Status |
 |------|----------|--------|
 | `abide-skill` | ABIDE dataset download, BIDS staging, and sMRI/rs-fMRI processing | ✅ |
+| `aibl-skill` | AIBL dataset access, BIDS staging, and sMRI/PET processing | ✅ |
 | `abcd-skill` | ABCD Study dataset download, BIDS staging, and multimodal processing | ✅ |
 | `adhd200-skill` | ADHD-200 dataset download, BIDS staging, and sMRI/rs-fMRI processing | ✅ |
 | `adni-skill` | ADNI dataset automated processing workflow | ✅ |
+| `aomic-skill` | AOMIC dataset validation, BIDS staging, and sMRI/rs-fMRI/task-fMRI processing | ✅ |
 | `bold5000-skill` | BOLD5000 dataset BIDS validation and visual task-fMRI processing | ✅ |
+| `camcan-skill` | Cam-CAN dataset BIDS validation, multimodal sMRI/rs-fMRI/task-fMRI/dMRI processing | ✅ |
 | `cobre-skill` | COBRE dataset BIDS staging and schizophrenia-control fMRI processing | ✅ |
 | `dmt-har-med-skill` | DMT-HAR-MED dataset BIDS validation and psychedelic rs-fMRI processing | ✅ |
-| `hcp-skill` | HCP-YA dataset automated processing workflow | ✅ |
+| `hbn-skill` | HBN dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI/EEG processing | ✅ |
+| `hcpa-skill` | HCP Aging dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
+| `hcpd-skill` | HCP Development dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
+| `hcpep-skill` | HCP Early Psychosis dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
+| `hcpya-skill` | HCP Young Adult (HCP1200) dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
+| `ixi-skill` | IXI dataset BIDS validation and multimodal sMRI/MRA/dMRI processing | ✅ |
+| `mnd-skill` | MND dataset BIDS validation, rs-fMRI/task-fMRI processing, and phenotype extraction | ✅ |
+| `mschallenge-skill` | MS Lesion Challenge BIDS validation, lesion analysis, and longitudinal tracking | ✅ |
+| `nsd-skill` | Natural Scenes Dataset BIDS validation, task-fMRI processing, and COCO stimulus extraction | ✅ |
+| `nifd-skill` | NIFD dataset BIDS validation, multimodal sMRI/rs-fMRI/dMRI processing for frontotemporal dementia | ✅ |
+| `oasis-skill` | OASIS dataset BIDS validation, sMRI processing, and phenotype extraction for aging/AD research | ✅ |
+| `pnc-skill` | PNC dataset BIDS validation, multimodal sMRI/rs-fMRI/task-fMRI/dMRI processing for developmental studies | ✅ |
+| `ppmi-skill` | PPMI dataset BIDS validation, multimodal sMRI/rs-fMRI/dMRI processing for Parkinson's disease | ✅ |
+| `rest-mneta-mdd-skill` | REST-meta-MDD multi-site rs-fMRI processing, site harmonization, and depression phenotype extraction | ✅ |
+| `seed-iv-skill` | SEED-IV EEG emotion recognition (4 emotions), feature extraction, and classification | ✅ |
+| `seed-vig-skill` | SEED-VIG EEG vigilance/fatigue detection, feature extraction, and drowsiness classification | ✅ |
+| `tcp-skill` | Transdiagnostic Connectome Project BIDS validation, multimodal sMRI/rs-fMRI/dMRI processing | ✅ |
+| `ucla-cnp-skill` | UCLA CNP BIDS validation, multimodal sMRI/task-fMRI/dMRI processing, multi-disorder phenotyping | ✅ |
 | `ukb-skill` | UKB brain imaging automated processing workflow | ✅ |
 
 #### Modality
@@ -446,6 +497,9 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `fmri-skill` | Functional MRI preprocessing and analysis workflows | ✅ |
 | `smri-skill` | Structural MRI preprocessing and analysis workflows | ✅ |
 | `dwi-skill` | Diffusion MRI preprocessing and analysis workflows | ✅ |
+| `pet-skill` | PET imaging workflows (SUVR computation, reference regions, PVC) | ✅ |
+| `asl-skill` | ASL perfusion MRI workflows (CBF quantification, Buxton model) | ✅ |
+| `meg-skill` | MEG processing workflows (source localization, time-frequency, connectivity) | ✅ |
 
 **Legend**: ✅ Implemented | 🏗️ In Development | ⏳ Planned
 

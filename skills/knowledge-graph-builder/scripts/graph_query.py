@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from core.knowledge_graph.storage import load_graph
+from core.knowledge_graph.src.storage import load_graph
 
 
 def cmd_stats(kg):

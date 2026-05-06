@@ -1,0 +1,340 @@
+"""LLM-based structured claim extraction from neuroscience paper abstracts.
+
+Uses GPT-5.5 via proxy endpoint to extract structured scientific claims
+as (Subject, Predicate, Object, Evidence) triples.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import re
+import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from typing import Optional
+
+from openai import OpenAI
+
+from .schema import Claim, Evidence, PaperRef
+
+logger = logging.getLogger(__name__)
+
+# ── LLM Configuration ──────────────────────────────────────────────
+
+DEFAULT_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
+DEFAULT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+
+EXTRACTION_PROMPT = """Extract ALL scientific claims from this neuroscience paper abstract as JSON array.
+
+Each claim object fields:
+- subject, subject_type, predicate, object, object_type, negated
+- effect_metric, effect_size, p_value, sample_size
+- study_type, methodology, replicability, direction, raw_sentence
+- conditions: list of conditions under which this claim holds (e.g. ["female only", "age > 65", "resting-state fMRI"]). Empty list [] if unconditional.
+- population: object with study population info, null if not reported:
+  {{"mean_age": number or null, "age_range": "e.g. 18-65" or null, "n_female": int or null, "n_male": int or null, "ethnicity": str or null, "cohort_name": str or null}}
+
+Types: brain_region, disease, gene, neurotransmitter, protein, drug, network, biomarker, cognitive_function
+Predicates: reduces, increases, correlates_with, causes, is_biomarker_of, is_risk_factor_for, treats, modulates, activates, inhibits, predicts, mediates, is_associated_with, distinguishes
+Study types: fMRI, PET, DTI, sMRI, EEG, MEG, lesion, meta_analysis, GWAS, animal_model, clinical_trial, case_control, longitudinal, cross_sectional, review
+
+Title: {title}
+PMID: {pmid}
+Abstract: {abstract}
+
+Return JSON array. Empty array [] if no claims."""
+
+
+@dataclass
+class ExtractionResult:
+    """Result of claim extraction from a single paper."""
+    paper: PaperRef
+    claims: list[Claim]
+    raw_response: str = ""
+    error: str = ""
+
+
+class ClaimExtractor:
+    """Extract structured claims from paper abstracts using LLM."""
+
+    def __init__(
+        self,
+        base_url: str = DEFAULT_BASE_URL,
+        api_key: str = DEFAULT_API_KEY,
+        model: str = DEFAULT_MODEL,
+    ):
+        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.model = model
+
+    def extract_from_abstract(
+        self,
+        abstract: str,
+        paper: PaperRef,
+    ) -> ExtractionResult:
+        """Extract claims from a single paper abstract.
+
+        Args:
+            abstract: The paper abstract text.
+            paper: Paper metadata (PMID, title, authors, etc.).
+
+        Returns:
+            ExtractionResult with extracted claims.
+        """
+        # truncate very long abstracts to avoid token limits
+        if len(abstract) > 2000:
+            abstract = abstract[:2000] + "..."
+
+        prompt = EXTRACTION_PROMPT.format(
+            abstract=abstract,
+            pmid=paper.pmid or "unknown",
+            title=paper.title or "unknown",
+            authors=paper.authors or "unknown",
+            year=paper.year or "unknown",
+            journal=paper.journal or "unknown",
+        )
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a precise neuroscience data extraction system. Output only valid JSON."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.1,
+                max_tokens=8192,
+            )
+
+            raw_text = response.choices[0].message.content.strip()
+            claims = self._parse_response(raw_text, paper)
+
+            return ExtractionResult(
+                paper=paper,
+                claims=claims,
+                raw_response=raw_text,
+            )
+
+        except Exception as e:
+            logger.error(f"extraction failed for PMID {paper.pmid}: {e}")
+            return ExtractionResult(
+                paper=paper,
+                claims=[],
+                error=str(e),
+            )
+
+    def extract_batch(
+        self,
+        papers: list[tuple[str, PaperRef]],
+        max_workers: int = 1,
+    ) -> list[ExtractionResult]:
+        """Extract claims from multiple papers.
+
+        Args:
+            papers: List of (abstract, PaperRef) tuples.
+            max_workers: Number of parallel workers. 1 = sequential.
+
+        Returns:
+            List of ExtractionResult (same order as input).
+        """
+        if max_workers <= 1:
+            # sequential mode
+            results = []
+            for i, (abstract, paper) in enumerate(papers):
+                logger.info(f"extracting claims [{i+1}/{len(papers)}] PMID={paper.pmid}")
+                result = self.extract_from_abstract(abstract, paper)
+                logger.info(f"  extracted {len(result.claims)} claims")
+                results.append(result)
+            return results
+
+        # parallel mode
+        results: list[Optional[ExtractionResult]] = [None] * len(papers)
+
+        def _extract_one(idx: int, abstract: str, paper: PaperRef) -> tuple[int, ExtractionResult]:
+            logger.info(f"extracting claims [{idx+1}/{len(papers)}] PMID={paper.pmid}")
+            result = self.extract_from_abstract(abstract, paper)
+            logger.info(f"  extracted {len(result.claims)} claims (PMID={paper.pmid})")
+            return idx, result
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(_extract_one, i, abstract, paper)
+                for i, (abstract, paper) in enumerate(papers)
+            ]
+            for future in as_completed(futures):
+                idx, result = future.result()
+                results[idx] = result
+
+        return results
+
+    def _parse_response(self, raw_text: str, paper: PaperRef) -> list[Claim]:
+        """Parse LLM JSON response into Claim objects."""
+        # try to extract JSON array from response
+        json_str = self._extract_json(raw_text)
+        if not json_str:
+            logger.warning(f"no JSON found in response for PMID {paper.pmid}")
+            return []
+
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            logger.warning(f"JSON parse error for PMID {paper.pmid}: {e}")
+            return []
+
+        if not isinstance(data, list):
+            data = [data]
+
+        claims = []
+        for item in data:
+            try:
+                claim = self._item_to_claim(item, paper)
+                if claim:
+                    claims.append(claim)
+            except Exception as e:
+                logger.warning(f"failed to parse claim item: {e}")
+                continue
+
+        return claims
+
+    def _extract_json(self, text: str) -> Optional[str]:
+        """Extract JSON array or object from LLM response text."""
+        text = text.strip()
+
+        # try direct parse first
+        if text.startswith("[") or text.startswith("{"):
+            return text
+
+        # fix common LLM error: double brackets [[...]]
+        if text.startswith("[["):
+            text = text[1:]
+
+        # try to find JSON in markdown code block
+        match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", text)
+        if match:
+            return match.group(1).strip()
+
+        # try to find JSON array in text
+        match = re.search(r"\[[\s\S]*\]", text)
+        if match:
+            return match.group(0)
+
+        return None
+
+    def _item_to_claim(self, item: dict, paper: PaperRef) -> Optional[Claim]:
+        """Convert a single JSON item to a Claim object."""
+        subject = item.get("subject", "").strip()
+        obj = item.get("object", "").strip()
+        predicate = item.get("predicate", "").strip()
+
+        if not subject or not obj or not predicate:
+            return None
+
+        # parse effect size
+        effect_size = item.get("effect_size")
+        if effect_size is not None:
+            try:
+                effect_size = float(effect_size)
+            except (ValueError, TypeError):
+                effect_size = None
+
+        # parse p-value
+        p_value = item.get("p_value")
+        if p_value is not None:
+            try:
+                p_value = float(p_value)
+            except (ValueError, TypeError):
+                p_value = None
+
+        # parse sample size
+        sample_size = item.get("sample_size")
+        if sample_size is not None:
+            try:
+                sample_size = int(sample_size)
+            except (ValueError, TypeError):
+                sample_size = None
+
+        evidence = Evidence(
+            study_type=item.get("study_type", ""),
+            methodology=item.get("methodology", ""),
+            p_value=p_value,
+            effect_size=effect_size,
+            effect_metric=item.get("effect_metric", ""),
+            sample_size=sample_size,
+            replicability=item.get("replicability", "single_study"),
+            direction=item.get("direction", ""),
+        )
+
+        # generate claim ID
+        claim_id = f"CLM:{uuid.uuid4().hex[:12]}"
+
+        # parse conditions and population (contextualized triplets)
+        conditions = item.get("conditions") or []
+        if not isinstance(conditions, list):
+            conditions = [str(conditions)]
+
+        population = item.get("population")
+        if isinstance(population, dict):
+            # normalize numeric fields
+            for key in ("mean_age", "n_female", "n_male"):
+                if population.get(key) is not None:
+                    try:
+                        population[key] = float(population[key]) if key == "mean_age" else int(population[key])
+                    except (ValueError, TypeError):
+                        population[key] = None
+        else:
+            population = None
+
+        return Claim(
+            id=claim_id,
+            subject_id="",  # will be resolved during ingestion
+            subject_name=subject,
+            predicate=predicate,
+            object_id="",   # will be resolved during ingestion
+            object_name=obj,
+            negated=bool(item.get("negated", False)),
+            confidence=self._estimate_confidence(evidence),
+            evidence=evidence,
+            source_paper=paper,
+            raw_text=item.get("raw_sentence", ""),
+            metadata={
+                "subject_type": item.get("subject_type", ""),
+                "object_type": item.get("object_type", ""),
+                "conditions": conditions,
+                "population": population,
+            },
+        )
+
+    def _estimate_confidence(self, evidence: Evidence) -> float:
+        """Estimate claim confidence based on evidence quality."""
+        score = 0.5  # baseline
+
+        # p-value boost
+        if evidence.p_value is not None:
+            if evidence.p_value < 0.001:
+                score += 0.2
+            elif evidence.p_value < 0.01:
+                score += 0.15
+            elif evidence.p_value < 0.05:
+                score += 0.1
+
+        # sample size boost
+        if evidence.sample_size is not None:
+            if evidence.sample_size > 1000:
+                score += 0.15
+            elif evidence.sample_size > 100:
+                score += 0.1
+            elif evidence.sample_size > 30:
+                score += 0.05
+
+        # replicability boost
+        if evidence.replicability == "replicated":
+            score += 0.15
+        elif evidence.replicability == "controversial":
+            score -= 0.1
+
+        # meta-analysis boost
+        if evidence.study_type == "meta_analysis":
+            score += 0.15
+
+        return min(max(score, 0.0), 1.0)

@@ -73,7 +73,7 @@
         <div class="metrics">
           <article>
             <h3>Skill Library</h3>
-            <p>58 Domain Tools, Models &amp; Pipelines</p>
+            <p>81 Domain Tools, Models &amp; Pipelines</p>
           </article>
           <article>
             <h3>Skill Hierarchy</h3>
@@ -138,18 +138,16 @@
             <p><strong>3.1 sMRI</strong>: T1/T2 preprocessing, tissue segmentation, cortical parcellation, FreeSurfer surfaces, and WMH segmentation from FLAIR+T1w inputs.</p>
             <p><strong>3.2 fMRI</strong>: preprocessing, denoising, ROI time series, seed/ROI connectivity, task GLM, resting-state ICA, and effective connectivity routes.</p>
             <p><strong>3.3 DWI + EEG</strong>: eddy correction, diffusion tensor metrics, tractography, connectome construction, EEG artifact removal, spectral analysis, and feature extraction.</p>
+            <p><strong>3.4 PET</strong>: SUVR computation with tracer-specific reference regions (PiB/FDG/tau), partial volume correction, multi-frame dynamic PET support, and ROI-based quantification.</p>
+            <p><strong>3.5 ASL</strong>: CBF quantification via the Buxton model (pCASL/CASL/PASL), M0 normalization, partial volume correction, and ROI-based perfusion extraction.</p>
+            <p><strong>3.6 MEG</strong>: source localization (MNE/dSPM/beamformer), time-frequency analysis (Morlet/multitaper), inter-trial coherence, and sensor/source-space connectivity.</p>
           </article>
           <article>
-            <h3>4. Dataset-Centric Skills</h3>
-            <p><strong>4.1 ADNI</strong>: acquisition guidance, BIDS organization, preprocessing, ROI analysis, phenotype modeling, and derived dataset generation.</p>
-            <p><strong>4.2 HCP</strong>: structural, functional, and diffusion execution across HCP Pipelines with multimodal result integration.</p>
-            <p><strong>4.3 ABCD Study</strong>: download via NIMH Data Archive, BIDS organization, multimodal sMRI/fMRI/dMRI processing, phenotype extraction, and QC integration.</p>
-            <p><strong>4.4 ABIDE</strong>: download from FCP/INDI, BIDS organization, sMRI and rs-fMRI processing, phenotype extraction, and site-aware QC for autism brain imaging.</p>
-            <p><strong>4.5 ADHD-200</strong>: multi-site download, BIDS organization, sMRI and rs-fMRI processing, ADHD phenotype extraction, and site-aware QC.</p>
-            <p><strong>4.6 BOLD5000</strong>: BIDS validation for OpenNeuro data, stimulus metadata extraction, and visual task-fMRI processing.</p>
-            <p><strong>4.7 COBRE</strong>: BIDS organization, sMRI and rs-fMRI processing, schizophrenia-control phenotype extraction, and fMRIPrep QC.</p>
-            <p><strong>4.8 DMT-HAR-MED</strong>: BIDS validation for OpenNeuro ds006644, psychedelic rs-fMRI processing, and condition-based phenotype extraction.</p>
-            <p><strong>4.9 UK Biobank and Expansion Targets</strong>: UKB post-extraction brain analysis plus routes that can extend toward PNC, HBN, and UCLA datasets.</p>
+            <h3>4. Dataset-Centric Skills (29 public datasets)</h3>
+            <p><strong>4.1 UK Biobank</strong>: large-scale brain imaging data access, BIDS organization, multimodal sMRI/fMRI/dMRI processing, and phenotype extraction, covering ~50,000 participants.</p>
+            <p><strong>4.2 ADNI</strong>: acquisition guidance, BIDS organization, preprocessing, ROI analysis, phenotype modeling, and derived dataset generation.</p>
+            <p><strong>4.3 HCP Young Adult</strong>: download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing across 7 task paradigms (motor, emotion, gambling, language, relational, social, working memory) and resting-state, with cognitive phenotype extraction and QC integration.</p>
+            <p>Also covers HCP Aging, HCP Development, HCP Early Psychosis, ABCD, AIBL, AOMIC, NIFD, OASIS, PNC, PPMI, REST-meta-MDD, SEED-IV, SEED-VIG, TCP, UCLA CNP, Cam-CAN, IXI, MS Lesion Challenge, MND, NSD, ABIDE, ADHD-200, BOLD5000, COBRE, DMT-HAR-MED, and HBN.</p>
           </article>
           <article>
             <h3>5. Model-Centric Skills</h3>
@@ -159,7 +157,7 @@
           </article>
           <article>
             <h3>6. Research Workflow Skills</h3>
-            <p><strong>6.1 End-to-End Pipelines</strong>: single-modality and dataset-specific chains for sMRI, fMRI, DWI, EEG, ABIDE, ABCD, ADHD-200, BOLD5000, COBRE, DMT-HAR-MED, ADNI, HCP, and UKB analysis.</p>
+            <p><strong>6.1 End-to-End Pipelines</strong>: single-modality and dataset-specific chains for sMRI, fMRI, DWI, EEG, PET, ASL, MEG, ABIDE, ABCD, AIBL, AOMIC, ADHD-200, BOLD5000, COBRE, DMT-HAR-MED, HBN, ADNI, HCP-YA, HCP-A, HCP-D, HCP-EP, Cam-CAN, IXI, MS Challenge, MND, NSD, NIFD, OASIS, PNC, PPMI, REST-meta-MDD, SEED-IV, SEED-VIG, TCP, UCLA CNP, and UKB analysis.</p>
             <p><strong>6.2 Experiment Control</strong>: METHOD-to-experiment execution, Git-based setup, ablations, checkpoints, verification, audit logs, and resumable runs.</p>
             <p><strong>6.3 Research Output</strong>: manuscript writing, clean dialogue logs, visualization assets, reproducibility reports, and maintainable skill-library updates.</p>
           </article>
@@ -167,8 +165,7 @@
         <h3 class="dataset-table-title">Supported Dataset Overview</h3>
         <div class="dataset-table-wrap" aria-label="Dataset coverage table">
           <style>
-            .dataset-table td:first-child, .dataset-table th:first-child,
-            .dataset-table td:last-child, .dataset-table th:last-child { text-align: center; }
+            .dataset-table td:first-child, .dataset-table th:first-child { text-align: center; }
           </style>
           <table class="dataset-table">
             <thead>
@@ -177,156 +174,182 @@
                 <th>Supported Modalities</th>
                 <th>Additional Data</th>
                 <th>Cohort Scale</th>
-                <th>Official Link</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>ABCD Study</td>
+                <td><a href="https://abcdstudy.org/" target="_blank" rel="noreferrer">ABCD Study</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Physical and mental health; substance use; culture/environment; neurocognition; biological data</td>
                 <td>Target cohort of ~11,500 children; full cohort releases through the NIMH Data Archive</td>
-                <td><a href="https://abcdstudy.org/" target="_blank" rel="noreferrer">ABCD Study</a></td>
               </tr>
               <tr>
-                <td>ABIDE</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/abide/" target="_blank" rel="noreferrer">ABIDE</a></td>
                 <td>T1w; rs-fMRI</td>
                 <td>ASD/control phenotypic data</td>
                 <td>1,112 datasets from 17 international sites</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/abide/" target="_blank" rel="noreferrer">ABIDE</a></td>
               </tr>
               <tr>
-                <td>ADHD-200</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/adhd200/" target="_blank" rel="noreferrer">ADHD-200</a></td>
                 <td>T1w; rs-fMRI</td>
                 <td>Diagnostic status; ADHD symptom measures; demographics; medication history; QC measures</td>
                 <td>776 participants/datasets across 8 imaging sites</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/adhd200/" target="_blank" rel="noreferrer">ADHD-200</a></td>
               </tr>
               <tr>
-                <td>ADNI</td>
+                <td><a href="https://aibl.csiro.au/" target="_blank" rel="noreferrer">AIBL</a></td>
+                <td>T1w; PET (PiB, FDG, tau)</td>
+                <td>Cognitive assessments; blood biomarkers; lifestyle and demographic data; APOE genotype</td>
+                <td>~1,100+ participants (healthy controls, MCI, AD)</td>
+              </tr>
+              <tr>
+                <td><a href="https://nilab-uva.github.io/AOMIC.github.io/" target="_blank" rel="noreferrer">AOMIC</a></td>
+                <td>T1w; rs-fMRI; task-fMRI</td>
+                <td>Personality traits (Big Five); fluid intelligence; demographic data</td>
+                <td>~1,000+ participants</td>
+              </tr>
+              <tr>
+                <td><a href="https://adni.loni.usc.edu/" target="_blank" rel="noreferrer">ADNI</a></td>
                 <td>T1w; T2w; FLAIR; dMRI; rs-fMRI; PET</td>
                 <td>Genetics/omics data; clinical and cognitive assessments</td>
                 <td>~2,000+ participants across ADNI phases</td>
-                <td><a href="https://adni.loni.usc.edu/" target="_blank" rel="noreferrer">ADNI</a></td>
               </tr>
               <tr>
-                <td>BOLD5000</td>
+                <td><a href="https://bold5000-dataset.github.io/" target="_blank" rel="noreferrer">BOLD5000</a></td>
                 <td>T1w; task-fMRI</td>
                 <td>Visual image stimuli; category and image metadata</td>
                 <td>4 participants with 5,000-image visual fMRI sessions</td>
-                <td><a href="https://bold5000-dataset.github.io/" target="_blank" rel="noreferrer">BOLD5000</a></td>
               </tr>
               <tr>
-                <td>COBRE</td>
+                <td><a href="https://www.cam-can.org/" target="_blank" rel="noreferrer">Cam-CAN</a></td>
+                <td>T1w; T2*w; rs-fMRI; task-fMRI; MEG</td>
+                <td>Cognitive, sensory, and health measures across the adult lifespan</td>
+                <td>~700 participants ages 18-88</td>
+              </tr>
+              <tr>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html" target="_blank" rel="noreferrer">COBRE</a></td>
                 <td>T1w; rs-fMRI</td>
                 <td>Demographics; handedness; diagnostic information</td>
                 <td>147 participants: 72 schizophrenia patients and 75 healthy controls</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html" target="_blank" rel="noreferrer">COBRE</a></td>
               </tr>
               <tr>
-                <td>DMT-HAR-MED</td>
+                <td><a href="https://openneuro.org/datasets/ds006644/versions/1.0.1" target="_blank" rel="noreferrer">DMT-HAR-MED</a></td>
                 <td>rs-fMRI</td>
                 <td>Psychedelic intervention conditions; behavioral and physiological measures</td>
                 <td>40 participants in OpenNeuro ds006644</td>
-                <td><a href="https://openneuro.org/datasets/ds006644/versions/1.0.1" target="_blank" rel="noreferrer">DMT-HAR-MED</a></td>
               </tr>
               <tr>
-                <td>HBN</td>
+                <td><a href="https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/" target="_blank" rel="noreferrer">HBN</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG</td>
                 <td>Psychiatric, behavioral, cognitive, lifestyle, genetics, actigraphy</td>
                 <td>~3,900+ released participants; target resource of at least 10,000 ages 5-21</td>
-                <td><a href="https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/" target="_blank" rel="noreferrer">HBN</a></td>
               </tr>
               <tr>
-                <td>HCP Aging</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-aging" target="_blank" rel="noreferrer">HCP Aging</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Behavioral, cognitive, health, and demographic measures</td>
                 <td>~700+ adults ages 36-100</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-aging" target="_blank" rel="noreferrer">HCP Aging</a></td>
               </tr>
               <tr>
-                <td>HCP Development</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-development" target="_blank" rel="noreferrer">HCP Development</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Behavioral, cognitive, health, and demographic measures</td>
                 <td>~600+ children and adolescents ages 5-21</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-lifespan-development" target="_blank" rel="noreferrer">HCP Development</a></td>
               </tr>
               <tr>
-                <td>HCP Early Psychosis</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-early-psychosis" target="_blank" rel="noreferrer">HCP Early Psychosis</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Diagnostic, clinical, behavioral, and cognitive measures</td>
                 <td>~250 early psychosis and control participants</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-early-psychosis" target="_blank" rel="noreferrer">HCP Early Psychosis</a></td>
               </tr>
               <tr>
-                <td>HCP Young Adult</td>
+                <td><a href="https://www.humanconnectome.org/study/hcp-young-adult" target="_blank" rel="noreferrer">HCP Young Adult</a></td>
                 <td>T1w; T2w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Behavioral and cognitive measures</td>
                 <td>~1,200 young adult participants</td>
-                <td><a href="https://www.humanconnectome.org/study/hcp-young-adult" target="_blank" rel="noreferrer">HCP Young Adult</a></td>
               </tr>
               <tr>
-                <td>MND</td>
+                <td><a href="https://brain-development.org/ixi-dataset/" target="_blank" rel="noreferrer">IXI</a></td>
+                <td>T1w; T2w; MRA</td>
+                <td>Healthy brain MRI from three London hospitals</td>
+                <td>~600 subjects</td>
+              </tr>
+              <tr>
+                <td><a href="https://smart-stats-tools.org/lesion-challenge" target="_blank" rel="noreferrer">Longitudinal MS Lesion Segmentation Challenge</a></td>
+                <td>T1w; T2w; FLAIR; PD</td>
+                <td>Expert manual lesion segmentations for MS benchmarking</td>
+                <td>5 MS patients with multiple longitudinal timepoints</td>
+              </tr>
+              <tr>
+                <td><a href="https://openneuro.org/datasets/ds005874/versions/1.1.0" target="_blank" rel="noreferrer">MND</a></td>
                 <td>rs-fMRI; task-fMRI</td>
                 <td>Motor neuron disease diagnosis and clinical measures</td>
                 <td>59 participants in OpenNeuro ds005874</td>
-                <td><a href="https://openneuro.org/datasets/ds005874/versions/1.1.0" target="_blank" rel="noreferrer">MND</a></td>
               </tr>
               <tr>
-                <td>Natural Scenes Dataset</td>
+                <td><a href="https://naturalscenesdataset.org/" target="_blank" rel="noreferrer">Natural Scenes Dataset</a></td>
                 <td>T1w; task-fMRI</td>
                 <td>Natural image stimuli; behavioral responses; image annotations</td>
                 <td>8 participants with dense repeated visual fMRI</td>
-                <td><a href="https://naturalscenesdataset.org/" target="_blank" rel="noreferrer">Natural Scenes Dataset</a></td>
               </tr>
               <tr>
-                <td>PNC</td>
+                <td><a href="https://ida.loni.usc.edu/" target="_blank" rel="noreferrer">NIFD</a></td>
+                <td>T1w; fMRI; DTI; PET</td>
+                <td>FTD clinical and cognitive data; UCSF Memory and Aging Center</td>
+                <td>Frontotemporal dementia and related disorders cohorts</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.oasis-brains.org/" target="_blank" rel="noreferrer">OASIS</a></td>
+                <td>T1w; PET (PiB)</td>
+                <td>Clinical and cognitive assessments; dementia diagnosis; demographic data</td>
+                <td>Cross-sectional (400+) and longitudinal (150+) participants ages 18-96</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html" target="_blank" rel="noreferrer">PNC</a></td>
                 <td>T1w; dMRI; ASL; rs-fMRI; task-fMRI</td>
                 <td>Genotyping; clinical and neuropsychiatric assessment; Computerized Neurocognitive Battery</td>
                 <td>&gt;9,500 youth cohort; 1,445 participants with neuroimaging</td>
-                <td><a href="https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html" target="_blank" rel="noreferrer">PNC</a></td>
               </tr>
               <tr>
-                <td>REST-meta-MDD</td>
+                <td><a href="https://www.ppmi-info.org/" target="_blank" rel="noreferrer">PPMI</a></td>
+                <td>T1w; rs-fMRI; DAT-SPECT; PET</td>
+                <td>Clinical, genetic, biospecimen, and wearable sensor data for Parkinson's disease</td>
+                <td>~2,000+ participants across 30+ clinical sites worldwide</td>
+              </tr>
+              <tr>
+                <td><a href="http://rfmri.org/REST-meta-MDD" target="_blank" rel="noreferrer">REST-meta-MDD</a></td>
                 <td>rs-fMRI</td>
                 <td>MDD diagnosis; clinical and demographic measures</td>
                 <td>2,428 participants across 25 cohorts</td>
-                <td><a href="http://rfmri.org/REST-meta-MDD" target="_blank" rel="noreferrer">REST-meta-MDD</a></td>
               </tr>
               <tr>
-                <td>SEED-IV</td>
+                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-IV</a></td>
                 <td>EEG</td>
                 <td>Emotion labels across four affective categories; trial-level session metadata</td>
                 <td>15 subjects across 3 sessions for emotion decoding benchmarks</td>
-                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-IV</a></td>
               </tr>
               <tr>
-                <td>SEED-VIG</td>
+                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-VIG</a></td>
                 <td>EEG</td>
                 <td>Vigilance/fatigue labels; continuous alertness annotations; behavioral metadata</td>
                 <td>23 subjects in sustained-attention driving-style vigilance recordings</td>
-                <td><a href="https://bcmi.sjtu.edu.cn/home/seed/" target="_blank" rel="noreferrer">SEED-VIG</a></td>
               </tr>
               <tr>
-                <td>TCP</td>
+                <td><a href="https://openneuro.org/datasets/ds004215" target="_blank" rel="noreferrer">TCP</a></td>
                 <td>rs-fMRI</td>
                 <td>Psychiatric diagnostic interviews; cognitive and clinical assessments</td>
                 <td>245 transdiagnostic participants</td>
-                <td><a href="https://openneuro.org/datasets/ds004215" target="_blank" rel="noreferrer">TCP</a></td>
               </tr>
               <tr>
-                <td>UCLA CNP</td>
+                <td><a href="https://openneuro.org/datasets/ds000030" target="_blank" rel="noreferrer">UCLA CNP</a></td>
                 <td>T1w; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Diagnostic groups; neuropsychological and phenotypic assessments</td>
                 <td>272 participants in OpenNeuro ds000030</td>
-                <td><a href="https://openneuro.org/datasets/ds000030" target="_blank" rel="noreferrer">UCLA CNP</a></td>
               </tr>
               <tr>
-                <td>UK Biobank</td>
+                <td><a href="https://www.ukbiobank.ac.uk/" target="_blank" rel="noreferrer">UK Biobank</a></td>
                 <td>T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI</td>
                 <td>Genotype/genomic data; questionnaires; hospital records; environmental data; sociodemographic data; physical measures</td>
                 <td>~50,000 participants with multimodal imaging data</td>
-                <td><a href="https://www.ukbiobank.ac.uk/" target="_blank" rel="noreferrer">UK Biobank</a></td>
               </tr>
             </tbody>
           </table>

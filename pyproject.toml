@@ -1,0 +1,13 @@
+[project]
+name = "neuroclaw"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "core/knowledge_graph/tests",
+    "core/skill-loader",
+    "core/session",
+]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

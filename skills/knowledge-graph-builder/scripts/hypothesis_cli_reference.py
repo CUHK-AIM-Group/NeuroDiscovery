@@ -1,23 +1,23 @@
 """Hypothesis Engine CLI Reference - for agent use.
 
-The executable CLI lives in core/knowledge_graph/hypothesis_cli.py.
+The executable CLI lives in core/knowledge_graph/phase3.py.
 This file documents the usage patterns for agent reference.
 
 Usage (run from project root):
 
     # Batch generate hypotheses across the entire graph
-    python -m core.knowledge_graph.hypothesis_cli batch --output data/hypotheses.json
+    python -m core.knowledge_graph.phase3 batch --output data/hypotheses.json
 
     # Load and re-rank saved hypotheses
-    python -m core.knowledge_graph.hypothesis_cli rank --input data/hypotheses.json --top 20
+    python -m core.knowledge_graph.phase3 rank --input data/hypotheses.json --top 20
 
     # Interactive queries
-    python -m core.knowledge_graph.hypothesis_cli paths "hippocampus" "Alzheimer Disease"
-    python -m core.knowledge_graph.hypothesis_cli bridge "hippocampus" --target-domain disease
-    python -m core.knowledge_graph.hypothesis_cli contradictions --domain disease
-    python -m core.knowledge_graph.hypothesis_cli gaps --domain-a neuroanatomy --domain-b disease
-    python -m core.knowledge_graph.hypothesis_cli explore "hippocampus"
-    python -m core.knowledge_graph.hypothesis_cli stats
+    python -m core.knowledge_graph.phase3 paths "hippocampus" "Alzheimer Disease"
+    python -m core.knowledge_graph.phase3 bridge "hippocampus" --target-domain disease
+    python -m core.knowledge_graph.phase3 contradictions --domain disease
+    python -m core.knowledge_graph.phase3 gaps --domain-a neuroanatomy --domain-b disease
+    python -m core.knowledge_graph.phase3 explore "hippocampus"
+    python -m core.knowledge_graph.phase3 stats
 
 Programmatic usage:
     from core.knowledge_graph import load_graph, HypothesisEngine

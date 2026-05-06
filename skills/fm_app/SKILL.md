@@ -23,7 +23,7 @@ FM-APP is a multi-stage framework for phenotype prediction via fMRI to sMRI know
 In NeuroClaw, this is model-level guidance. Upstream preparation should be delegated to:
 - `fmri-skill` for fMRI preprocessing and ROI extraction
 - `smri-skill` for structural ROI feature extraction
-- `hcp-skill` if HCP download/orchestration is needed
+- `hcpya-skill` if HCP Young Adult download/orchestration is needed
 
 **Research use only.**
 
@@ -166,7 +166,7 @@ FM-APP/
 
 - fMRI preprocessing and ROI extraction: `fmri-skill`
 - sMRI feature extraction: `smri-skill`
-- HCP data orchestration: `hcp-skill`
+- HCP data orchestration: `hcpya-skill` (or `hcpa-skill` / `hcpd-skill` / `hcpep-skill` for other HCP variants)
 - dependency management: `dependency-planner` + `conda-env-manager`
 - command execution: `claw-shell`
 
