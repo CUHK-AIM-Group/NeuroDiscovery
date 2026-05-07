@@ -514,9 +514,9 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 - ✓ Subagent coordination mechanisms
 - ✓ Unified skill metadata format (layer, skill_type, dependencies) with DAG validation
 - ✓ Checkpoint-based recoverable filesystem
-- ☐ Independent subagent execution
-- ☐ Reflection mechanism
-- ☐ Enhanced memory system
+- ✓ Independent subagent execution
+- ✓ Reflection mechanism
+- ✓ Enhanced memory system
 
 ### Dataset Ecosystem
 - ✓ Complete ADNI processing chain

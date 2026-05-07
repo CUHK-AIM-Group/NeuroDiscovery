@@ -3362,8 +3362,18 @@ class AgentSession:
         skills = loader.load_all()
         self.skills = skills
 
-        manager = SessionManager(env=self.env)
-        self._llm = build_llm_client(self.env)
+        # Use set_llm_client to ensure ReflexionAgent is initialized
+        self.set_llm_client(build_llm_client(self.env))
+
+        # Initialize SessionManager with LLM client for semantic summaries
+        # Set compression_mode to "llm_summary" to enable LLM-generated summaries
+        # Default is "stub" for zero-cost compression
+        compression_mode = self.env.get("compression_mode", "stub")  # "stub" or "llm_summary"
+        manager = SessionManager(
+            env=self.env,
+            llm_client=self._llm,
+            compression_mode=compression_mode
+        )
 
         system_prompt = self._build_system_prompt(skills)
         self.history = [{"role": "system", "content": system_prompt}]
@@ -3407,6 +3417,9 @@ class AgentSession:
         if cmd == "/checkpoint":
             return self._checkpoint_command(parts[1:])
 
+        if cmd == "/reflection":
+            return self._reflection_command(parts[1:])
+
         return None  # not recognised — forward to LLM
 
     def _help_text(self) -> str:
@@ -3416,6 +3429,8 @@ class AgentSession:
             "  /checkpoint diff [N]          Show changes since checkpoint N (or last)\n"
             "  /checkpoint rollback N        Restore workspace to checkpoint N\n"
             "  /checkpoint rollback N <file> Restore single file from checkpoint N\n"
+            "  /reflection list              Show recent reflections\n"
+            "  /reflection search <keywords> Search reflections by keywords\n"
             "  /help                         Show this help\n"
         )
 
@@ -3506,6 +3521,73 @@ class AgentSession:
             )
 
         return f"Unknown checkpoint subcommand: {subcmd}"
+
+    def _reflection_command(self, args: list[str]) -> str:
+        """Handle /reflection slash commands."""
+        if self._reflexion_agent is None:
+            return "Reflection system not available (benchmark mode or initialization failed)."
+
+        if not args:
+            return (
+                "Usage:\n"
+                "  /reflection list              Show recent reflections\n"
+                "  /reflection search <keywords> Search reflections by keywords"
+            )
+
+        subcmd = args[0].lower()
+
+        # ── list ──────────────────────────────────────────────────────────────
+        if subcmd == "list":
+            try:
+                reflections = self._reflexion_agent._storage.load_all()
+                if not reflections:
+                    return "No reflections found."
+
+                # Show last 10 reflections
+                lines = ["Recent reflections (last 10):"]
+                for i, r in enumerate(reflections[-10:], 1):
+                    trigger_label = "FAILURE" if r.trigger_type == "tool_failure" else "SUMMARY"
+                    task_preview = r.task_description[:50] + "..." if len(r.task_description) > 50 else r.task_description
+                    lines.append(f"\n{i}. [{trigger_label}] {task_preview}")
+
+                    root_cause_preview = r.root_cause_analysis[:80] + "..." if len(r.root_cause_analysis) > 80 else r.root_cause_analysis
+                    lines.append(f"   Root cause: {root_cause_preview}")
+                    lines.append(f"   Confidence: {r.confidence_score:.2f}")
+                    lines.append(f"   Keywords: {', '.join(r.keywords[:5])}")
+
+                return "\n".join(lines)
+            except Exception as e:
+                return f"Failed to list reflections: {e}"
+
+        # ── search ────────────────────────────────────────────────────────────
+        if subcmd == "search":
+            if len(args) < 2:
+                return "Usage: /reflection search <keywords>"
+
+            try:
+                keywords = args[1:]
+                results = self._reflexion_agent._retriever.retrieve_similar(keywords, top_k=5)
+
+                if not results:
+                    return f"No reflections found matching keywords: {', '.join(keywords)}"
+
+                lines = [f"Found {len(results)} reflection(s) matching: {', '.join(keywords)}\n"]
+                for i, r in enumerate(results, 1):
+                    lines.append(f"{i}. {r.task_description}")
+                    lines.append(f"   Root cause: {r.root_cause_analysis}")
+                    lines.append(f"   Confidence: {r.confidence_score:.2f}")
+
+                    if r.alternative_approaches:
+                        lines.append(f"   Alternatives:")
+                        for alt in r.alternative_approaches[:2]:  # Show first 2
+                            lines.append(f"     - {alt}")
+                    lines.append("")  # Empty line between results
+
+                return "\n".join(lines)
+            except Exception as e:
+                return f"Failed to search reflections: {e}"
+
+        return f"Unknown reflection subcommand: {subcmd}"
 
     def _chat(self) -> str:
         """Send history to LLM and return response text (simplified, no streaming)."""
