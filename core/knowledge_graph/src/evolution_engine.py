@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import math
 import random
+import re
 from typing import Optional
 
 import networkx as nx
@@ -175,6 +176,10 @@ class EvolutionEngine:
 
         for gen in range(1, self.n_generations + 1):
             self._current_population = population
+            # update target/source counts for diversity penalty
+            from collections import Counter
+            self._target_counts = Counter(h.target_name for h in population)
+            self._source_counts = Counter(h.source_name for h in population)
             # score fitness
             for h in population:
                 h.metadata["fitness"] = self._score_fitness(h)
@@ -293,7 +298,7 @@ class EvolutionEngine:
     # ── fitness ────────────────────────────────────────────────────────
 
     def _score_fitness(self, h: Hypothesis) -> float:
-        """fitness = α·confidence + β·evidence + γ·novelty + δ·testability + ε·convergence_bonus."""
+        """fitness = α·confidence + β·evidence + γ·novelty + δ·testability + ε·convergence_bonus - diversity_penalty."""
         c = h.confidence_score
         e = h.evidence_score
         n = h.novelty_score
@@ -307,6 +312,22 @@ class EvolutionEngine:
             max_paths = 10
             bonus = math.log(1 + n_paths) / math.log(1 + max_paths)
             fitness += 0.15 * bonus
+
+        # diversity penalty: penalize over-represented targets AND sources
+        if hasattr(self, '_target_counts') and self._target_counts:
+            count = self._target_counts.get(h.target_name, 0)
+            if count > 5:
+                fitness *= max(0.7, 1.0 - 0.03 * (count - 5))
+        if hasattr(self, '_source_counts') and self._source_counts:
+            count = self._source_counts.get(h.source_name, 0)
+            if count > 5:
+                fitness *= max(0.7, 1.0 - 0.03 * (count - 5))
+
+        # length penalty: exponential penalty for paths > 5 hops
+        path_len = len(h.path)
+        if path_len > 5:
+            # 6 hops: 0.95x, 7 hops: 0.90x, 8 hops: 0.86x
+            fitness *= 0.95 ** (path_len - 5)
 
         return fitness
 
@@ -532,17 +553,26 @@ class EvolutionEngine:
 
         Input:  h points to some target T, population has another h2 → T
         Output: h's path + h2's source as co-biomarker, n_independent_paths=2
+
+        Constraint: Only fuse original hypotheses (not already-fused ones) to avoid
+        long concatenated source names like "A + B + C + D".
         """
         if len(h.path) < 2:
             return None
 
+        # Reject if h is already a fusion result
+        if h.metadata.get("n_independent_paths", 1) > 1:
+            return None
+
         # 1. Find candidate partners with same target, different source
+        # Also reject partners that are already fusion results
         candidates = [
             h2 for h2 in self._current_population
             if h2.target_id == h.target_id
             and h2.id != h.id
             and h2.source_id != h.source_id
             and len(h2.path) >= 2
+            and h2.metadata.get("n_independent_paths", 1) == 1  # only original
         ]
         if not candidates:
             return None
@@ -559,7 +589,7 @@ class EvolutionEngine:
         else:
             base, partner = h2, h
 
-        # 4. Build composite source name
+        # 4. Build composite source name (only 2 sources max now)
         new_source_name = f"{base.source_name} + {partner.source_name}"
 
         # 5. Build child using base's path (structural base preserved)
@@ -949,7 +979,7 @@ class EvolutionEngine:
         return violations
 
     def _validate(self, h: Hypothesis) -> bool:
-        """Validate a hypothesis: all edges exist, no cycles, different domains."""
+        """Validate a hypothesis: all edges exist, no cycles, different domains, no noisy/same-PMID."""
         if not h.path or len(h.path) < 1:
             return False
 
@@ -971,6 +1001,25 @@ class EvolutionEngine:
         # check source and target are different
         if h.source_id == h.target_id:
             return False
+
+        # filter noisy intermediate nodes (short tokens like "Id", "Ca", "RN")
+        for link in h.path:
+            for name in [link.from_name, link.to_name]:
+                if not name or len(name.strip()) < 3:
+                    return False
+                clean = name.strip()
+                if re.match(r"^[A-Z][a-z]?$", clean) or re.match(r"^[A-Z][a-z]{2,4}$", clean) or re.match(r"^\d+$", clean):
+                    return False
+
+        # reject single-PMID bridges (both hops cite the same paper)
+        if len(h.path) >= 2:
+            pmids = set()
+            for link in h.path:
+                pmid = link.source_paper.get("pmid", "") if isinstance(link.source_paper, dict) else ""
+                if pmid:
+                    pmids.add(pmid)
+            if len(pmids) == 1:
+                return False
 
         # filter non-measurable entities (CSF, blood, saliva biomarkers)
         for link in h.path:

@@ -168,6 +168,11 @@ NOISE_PATTERNS = [
 
 # Vague relation types that add little signal
 VAGUE_RELATIONS = {"is_associated_with", "associated_with", "about"}
+DIRECTIONAL_RELATIONS = {
+    "causes", "treats", "increases", "reduces", "modulates",
+    "activates", "inhibits", "is_biomarker_of", "is_risk_factor_for",
+    "predicts", "distinguishes", "mediates"
+}
 
 # domain pairs worth exploring — aligned with NeuroClaw imaging experiments
 # target datasets: UKB (T1w/dMRI/rfMRI/SWI), ADNI (T1w/PET/fMRI/DTI), HCP-YA (T1w/T2w/fMRI/dMRI/MEG)
@@ -515,6 +520,7 @@ class HypothesisEngine:
         min_hops: int = 2,
         filter_vague_relations: bool = True,
         filter_non_measurable: bool = True,
+        max_hops_filter: int = 5,
     ) -> list[Hypothesis]:
         """Filter low-quality hypotheses after generation.
 
@@ -523,6 +529,8 @@ class HypothesisEngine:
         2. 1-hop hypotheses — too simple, just restates existing edges
         3. Vague relations — all links are is_associated_with / associated_with / about
         4. Non-measurable biomarkers — entities not directly measurable from brain imaging
+        5. Pure association chains — no directional predicates (causes/treats/increases/etc.)
+        6. Overly long paths — exceeds max_hops_filter (default 5) to reduce noise accumulation
         """
         before = len(hypotheses)
         filtered = []
@@ -546,6 +554,16 @@ class HypothesisEngine:
                 if relation_types and relation_types <= VAGUE_RELATIONS:
                     continue
 
+            # filter single-PMID bridges (all hops cite the same paper = not a real bridge)
+            if len(h.path) >= 2:
+                pmids = set()
+                for link in h.path:
+                    pmid = link.source_paper.get("pmid", "") if isinstance(link.source_paper, dict) else ""
+                    if pmid:
+                        pmids.add(pmid)
+                if len(pmids) == 1:
+                    continue
+
             # filter non-measurable biomarkers (not testable from imaging)
             if filter_non_measurable:
                 if self._has_non_measurable_entity(h):
@@ -555,11 +573,39 @@ class HypothesisEngine:
             if self._has_implausible_path(h):
                 continue
 
+            # filter paths with weak evidence (target not mentioned in raw_text)
+            if self._has_weak_evidence(h):
+                continue
+
+            # filter paths with no directional predicates (pure association chains)
+            if len(h.path) >= 2:
+                relation_types = {l.relation_type for l in h.path}
+                if not (relation_types & DIRECTIONAL_RELATIONS):
+                    continue
+
+            # filter paths that exceed max hop length (noise accumulation)
+            if len(h.path) > max_hops_filter:
+                continue
+
             filtered.append(h)
 
-        logger.info(f"post_process: {before} -> {len(filtered)} hypotheses "
-                     f"(removed {before - len(filtered)})")
-        return filtered
+        # Deduplicate: for each (source, target) pair, keep top 2 by composite score
+        from collections import defaultdict
+        pair_groups = defaultdict(list)
+        for h in filtered:
+            key = (h.source_id, h.target_id)
+            pair_groups[key].append(h)
+
+        deduplicated = []
+        for key, group in pair_groups.items():
+            # Sort by composite score descending
+            group.sort(key=lambda x: x.composite_score, reverse=True)
+            # Keep top 2 (or 1 if only one exists)
+            deduplicated.extend(group[:2])
+
+        logger.info(f"post_process: {before} -> {len(filtered)} filtered -> {len(deduplicated)} deduplicated "
+                     f"(removed {before - len(deduplicated)} total)")
+        return deduplicated
 
     def _has_non_measurable_entity(self, h: Hypothesis) -> bool:
         """Check if hypothesis involves entities not measurable from brain imaging.
@@ -643,6 +689,36 @@ class HypothesisEngine:
                         return True
 
         return False
+
+    def _has_weak_evidence(self, h: Hypothesis) -> bool:
+        """Check if hypothesis path has weak evidence (target not mentioned in raw_text).
+
+        For hypotheses where the target is a specific brain region, check if any hop's
+        raw_text actually mentions that region. If not, the path is likely spurious
+        (e.g., IL-1β → Internal Capsula where the evidence text talks about "grey matter"
+        but never mentions internal capsule).
+        """
+        target_node = self._index.get(h.target_id)
+        if not target_node or "neuroanatomy" not in target_node.domain_tags:
+            return False
+
+        # Extract key terms from target name (e.g., "Internal Capsula" → ["internal", "capsula"])
+        target_terms = set(re.findall(r'\b\w{4,}\b', h.target_name.lower()))
+        if not target_terms:
+            return False
+
+        # Check if any hop mentions the target region
+        for link in h.path:
+            raw = link.raw_text or link.evidence.get("raw_text", "") if isinstance(link.evidence, dict) else ""
+            if raw:
+                raw_lower = raw.lower()
+                # If any target term appears in raw_text, evidence is OK
+                if any(term in raw_lower for term in target_terms):
+                    return False
+
+        # No hop mentions the target region → weak evidence
+        logger.debug(f"weak evidence: {h.id} target '{h.target_name}' not mentioned in any raw_text")
+        return True
 
     # ── imaging-driven batch generation ──────────────────────────────
 
@@ -948,6 +1024,7 @@ class HypothesisEngine:
                             "input_tool": feat_meta["tool"],
                             "input_region_a": name_a,
                             "input_region_b": name_b,
+                            "input_region": f"{name_a} - {name_b}",
                             "outcome_type": self._classify_outcome(target_node),
                         },
                     )
@@ -1559,27 +1636,23 @@ class HypothesisEngine:
         return max(0.7, 1.0 - 0.03 * age)
 
     def _compute_confidence_score(self, path: list[HypothesisLink]) -> float:
-        """Confidence = geometric_mean(per-link scores).
+        """Confidence = mean(per-link scores) with floor.
 
-        Per-link score = base × study_type_weight × frequency_boost
-                        × temporal_decay × p_value_bonus × sample_size_bonus
+        Per-link score = base × frequency_boost × temporal_decay
+                        + p_value_bonus + sample_size_bonus + replicability_bonus
+
+        Note: study_type weight is NOT applied here because it was already
+        applied in phase4_optimize.apply_evidence_weighting on the edge
+        confidence. Applying it twice would crush review-sourced edges
+        (0.3 × 0.3 = 0.09).
         """
         if not path:
             return 0.0
 
         scores = []
         for link in path:
-            s = link.confidence
+            s = max(link.confidence, 0.05)
 
-            # Study type weight
-            study_weight = STUDY_TYPE_WEIGHTS.get(
-                link.evidence.get("study_type", ""), 0.3
-            )
-
-            # Frequency boost & temporal decay (from claim metadata)
-            claim_meta = link.evidence  # evidence dict has study_type, p_value, etc.
-            # Also try to get the full claim metadata from source_paper
-            # For HypothesisLink, evidence and source_paper are separate dicts
             full_meta = {
                 "evidence": link.evidence,
                 "source_paper": link.source_paper,
@@ -1590,22 +1663,22 @@ class HypothesisEngine:
             freq_boost = self.compute_frequency_boost(full_meta)
             temp_decay = self.compute_temporal_decay(full_meta)
 
-            # Statistical info bonuses
-            p_val_bonus = 1.5 if link.evidence.get("p_value") else 1.0
-            sample_bonus = 1.3 if link.evidence.get("sample_size") else 1.0
+            s = s * freq_boost * temp_decay
 
-            # Combine: base × study_weight × freq × decay × stats
-            s = s * study_weight * freq_boost * temp_decay * p_val_bonus * sample_bonus
+            # Additive bonuses for statistical reporting quality
+            if link.evidence.get("p_value"):
+                s += 0.10
+            if link.evidence.get("sample_size"):
+                s += 0.06
 
-            # Replicability adjustment
             if link.evidence.get("replicability") == "replicated":
-                s = min(s + 0.1, 1.0)
+                s += 0.10
             elif link.evidence.get("replicability") == "controversial":
-                s = max(s - 0.1, 0.0)
+                s -= 0.05
 
-            scores.append(min(s, 1.0))
+            scores.append(max(min(s, 1.0), 0.05))
 
-        return self._geometric_mean(scores)
+        return sum(scores) / len(scores)
 
     def _compute_novelty_score(self, path: list[HypothesisLink]) -> float:
         """Score how novel/surprising a hypothesis is.

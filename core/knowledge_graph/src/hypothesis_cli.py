@@ -313,7 +313,7 @@ def cmd_trending(engine, since_year=2020, direction="strengthening", min_claims=
             print()
 
 
-def cmd_critic(engine, input_path, top_k, output_path, max_rounds, threshold, as_json):
+def cmd_critic(engine, input_path, top_k, output_path, max_rounds, threshold, max_workers, as_json):
     """Run Critic Agent on top-K hypotheses."""
     hypotheses = engine.load_hypotheses(input_path)
     if not hypotheses:
@@ -325,10 +325,10 @@ def cmd_critic(engine, input_path, top_k, output_path, max_rounds, threshold, as
     to_review = ranked[:top_k]
     rest = ranked[top_k:]
 
-    print(f"Reviewing top {len(to_review)} hypotheses (max_rounds={max_rounds}, threshold={threshold})...")
+    print(f"Reviewing top {len(to_review)} hypotheses (max_rounds={max_rounds}, threshold={threshold}, workers={max_workers})...")
 
     critic = CriticAgent(max_rounds=max_rounds, pass_threshold=threshold)
-    results = critic.refine_batch(to_review)
+    results = critic.refine_batch(to_review, max_workers=max_workers)
 
     # Separate passed/failed/revised
     refined = []
@@ -646,6 +646,7 @@ def main():
     p_critic.add_argument("--output", default=None, help="Output file (default: overwrite input)")
     p_critic.add_argument("--max-rounds", type=int, default=3, help="Max refinement rounds")
     p_critic.add_argument("--threshold", type=float, default=0.6, help="Pass threshold (0-1)")
+    p_critic.add_argument("--max-workers", type=int, default=4, help="Parallel workers for batch review")
 
     # novelty
     p_novelty = sub.add_parser("novelty", help="Check hypothesis novelty against literature")
@@ -709,7 +710,7 @@ def main():
     elif args.command == "trending":
         cmd_trending(engine, args.since, args.direction, args.min_claims, args.max_results, as_json)
     elif args.command == "critic":
-        cmd_critic(engine, args.input, args.top, args.output, args.max_rounds, args.threshold, as_json)
+        cmd_critic(engine, args.input, args.top, args.output, args.max_rounds, args.threshold, args.max_workers, as_json)
     elif args.command == "novelty":
         cmd_novelty(engine, args.input, args.top, args.output, args.alpha, args.no_pubmed, args.no_semantic, as_json)
     elif args.command == "evolve":

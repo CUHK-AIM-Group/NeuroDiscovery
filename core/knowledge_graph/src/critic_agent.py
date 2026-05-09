@@ -135,7 +135,19 @@ class CriticAgent:
         workspace: Path | None = None,
         use_independent_agents: bool = False,
     ):
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        # Multi-key round-robin pool support
+        import httpx
+        keys_raw = os.environ.get("OPENAI_API_KEYS", "")
+        keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
+        if not keys and api_key:
+            keys = [api_key]
+
+        self._clients = [
+            OpenAI(base_url=base_url, api_key=k, http_client=httpx.Client(verify=False))
+            for k in keys
+        ]
+        self._client_idx = 0
+        self._client_lock = __import__("threading").Lock()
         self.model = model
         self.max_rounds = max_rounds
         self.pass_threshold = pass_threshold
@@ -146,6 +158,14 @@ class CriticAgent:
 
         if use_independent_agents:
             self._init_persona_agents()
+
+    @property
+    def client(self) -> OpenAI:
+        """Round-robin client selection from key pool (thread-safe)."""
+        with self._client_lock:
+            c = self._clients[self._client_idx % len(self._clients)]
+            self._client_idx += 1
+            return c
 
     def _init_persona_agents(self) -> None:
         """Create independent PersonaAgent instances for each perspective."""
@@ -357,20 +377,31 @@ class CriticAgent:
     def refine_batch(
         self,
         hypotheses: list[Hypothesis],
-        max_workers: int = 2,
+        max_workers: int = 4,
     ) -> list[tuple[Hypothesis, list[CriticResult]]]:
-        """Refine multiple hypotheses. Uses fewer workers due to multi-round LLM calls."""
+        """Refine multiple hypotheses in parallel. Uses ThreadPoolExecutor."""
         results = []
-        for i, h in enumerate(hypotheses):
+
+        def refine_one(i: int, h: Hypothesis):
             logger.info(f"refining {i+1}/{len(hypotheses)}: {h.id}")
             try:
                 final, rounds = self.refine_loop(h)
-                results.append((final, rounds))
+                return (i, final, rounds)
             except Exception as e:
                 logger.error(f"failed to refine {h.id}: {e}")
                 h.critic_score = 0.0
                 h.critic_rounds = 0
-                results.append((h, []))
+                return (i, h, [])
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(refine_one, i, h): i for i, h in enumerate(hypotheses)}
+            completed = []
+            for future in as_completed(futures):
+                completed.append(future.result())
+
+        # Sort by original index to maintain order
+        completed.sort(key=lambda x: x[0])
+        results = [(final, rounds) for _, final, rounds in completed]
         return results
 
     # ── transitivity diagnostics ───────────────────────────────────────
@@ -701,7 +732,11 @@ Output ONLY the JSON object, no other text."""
 
     @staticmethod
     def _extract_json(text: str):
-        """Extract JSON from LLM response (handles code blocks, etc.)."""
+        """Extract JSON from LLM response (handles code blocks, think tags, etc.)."""
+        # Strip <think> and </think> tags but KEEP their content
+        # (reasoning models sometimes emit JSON across think tags incorrectly)
+        text = re.sub(r"</?think>", "", text, flags=re.IGNORECASE).strip()
+
         # Try direct parse
         try:
             return json.loads(text)

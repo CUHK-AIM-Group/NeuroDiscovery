@@ -28,6 +28,14 @@ DEFAULT_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
 DEFAULT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
 
+# Multi-key pool: set OPENAI_API_KEYS env var as comma-separated keys
+# e.g. export OPENAI_API_KEYS="sk-aaa,sk-bbb,sk-ccc"
+# Falls back to OPENAI_API_KEY if not set
+_API_KEYS_RAW = os.environ.get("OPENAI_API_KEYS", "")
+API_KEY_POOL = [k.strip() for k in _API_KEYS_RAW.split(",") if k.strip()] or (
+    [DEFAULT_API_KEY] if DEFAULT_API_KEY else []
+)
+
 EXTRACTION_PROMPT = """Extract ALL scientific claims from this neuroscience paper abstract as JSON array.
 
 Each claim object fields:
@@ -46,7 +54,21 @@ IMPORTANT rules for numeric fields:
 - NEVER output null for these four fields — use "not_reported" instead.
 
 Types: brain_region, disease, gene, neurotransmitter, protein, drug, network, biomarker, cognitive_function
-Predicates: reduces, increases, correlates_with, causes, is_biomarker_of, is_risk_factor_for, treats, modulates, activates, inhibits, predicts, mediates, is_associated_with, distinguishes
+
+Predicates (USE THE MOST SPECIFIC ONE):
+- CAUSAL: causes, treats, inhibits, activates, increases, reduces, modulates
+- PREDICTIVE: is_biomarker_of, is_risk_factor_for, predicts, distinguishes
+- CORRELATIONAL: correlates_with, mediates
+- VAGUE (AVOID): is_associated_with — ONLY use if the abstract text itself is vague (e.g., "X is associated with Y" without specifying direction or mechanism)
+
+CRITICAL: Choose the most precise predicate based on the study design and language:
+- RCT / intervention → "treats" or "causes"
+- Longitudinal / prospective → "is_risk_factor_for" or "predicts"
+- Diagnostic accuracy → "is_biomarker_of" or "distinguishes"
+- Molecular mechanism → "activates", "inhibits", "increases", "reduces"
+- Cross-sectional correlation → "correlates_with"
+- If the abstract says "X increases Y" or "X reduces Y", use "increases" or "reduces", NOT "is_associated_with"
+
 Study types: fMRI, PET, DTI, sMRI, EEG, MEG, lesion, meta_analysis, GWAS, animal_model, clinical_trial, case_control, longitudinal, cross_sectional, review, cohort, narrative_review
 
 Title: {title}
@@ -66,16 +88,43 @@ class ExtractionResult:
 
 
 class ClaimExtractor:
-    """Extract structured claims from paper abstracts using LLM."""
+    """Extract structured claims from paper abstracts using LLM.
+
+    Supports multi-key round-robin to bypass per-key rate limits on proxy APIs.
+    Set OPENAI_API_KEYS env var as comma-separated keys.
+    """
 
     def __init__(
         self,
         base_url: str = DEFAULT_BASE_URL,
         api_key: str = DEFAULT_API_KEY,
         model: str = DEFAULT_MODEL,
+        api_keys: list[str] | None = None,
     ):
-        self.client = OpenAI(base_url=base_url, api_key=api_key, http_client=httpx.Client(verify=False))
         self.model = model
+        self.base_url = base_url
+
+        # Build client pool from explicit keys, env pool, or single key
+        keys = api_keys or API_KEY_POOL or ([api_key] if api_key else [])
+        if not keys:
+            raise ValueError("No API keys provided. Set OPENAI_API_KEYS or OPENAI_API_KEY env var.")
+
+        self._clients: list[OpenAI] = []
+        for k in keys:
+            self._clients.append(
+                OpenAI(base_url=base_url, api_key=k, http_client=httpx.Client(verify=False))
+            )
+        self._client_idx = 0
+        self._client_lock = __import__("threading").Lock()
+        logger.info(f"initialized {len(self._clients)} LLM client(s)")
+
+    @property
+    def client(self) -> OpenAI:
+        """Round-robin client selection (thread-safe)."""
+        with self._client_lock:
+            c = self._clients[self._client_idx % len(self._clients)]
+            self._client_idx += 1
+            return c
 
     def extract_from_abstract(
         self,

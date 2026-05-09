@@ -118,27 +118,36 @@ def refine_predicate(claim: Claim, llm_client: Optional[OpenAI] = None, model: s
 
 def _llm_refine_predicate(claim: Claim, client: OpenAI, model: str) -> Optional[str]:
     """Ask LLM to choose the most precise predicate for an ambiguous claim."""
-    prompt = f"""Refine this vague predicate to the most precise one.
+    prompt = f"""Choose the most precise predicate for this claim. The current predicate `{claim.predicate}` is too vague — you MUST pick a more specific one from the list below.
 
 Subject: {claim.subject_name} (type: {claim.metadata.get('subject_type', 'unknown')})
-Predicate: {claim.predicate}
 Object: {claim.object_name} (type: {claim.metadata.get('object_type', 'unknown')})
 Context: {claim.raw_text[:300]}
 Study type: {claim.evidence.study_type or 'unknown'}
 
-Choose the best predicate from:
-- is_risk_factor_for (longitudinal/prospective risk)
-- is_biomarker_of (diagnostic accuracy)
-- causes (causal evidence from RCT/MR)
-- predicts (prognostic value)
-- treats (therapeutic intervention)
-- inhibits (suppression/blocking)
-- activates (enhancement/stimulation)
-- increases (elevated levels/expression)
-- reduces (decreased levels/expression)
-- modulates (regulatory influence)
-- correlates_with (direction-unknown association)
-- is_associated_with (keep if truly ambiguous)
+Decision rubric (pick ONE):
+- `is_risk_factor_for` — longitudinal/prospective studies showing X increases future risk of Y
+- `is_biomarker_of` — X measurable indicator used for diagnosis/staging of Y
+- `causes` — RCT, Mendelian randomization, or mechanistic evidence of causation
+- `predicts` — X has prognostic value for Y outcome
+- `treats` — therapeutic intervention X for condition Y
+- `inhibits` — X suppresses/blocks/antagonizes Y
+- `activates` — X enhances/stimulates/agonizes Y
+- `increases` — X elevates levels/expression of Y
+- `reduces` — X decreases levels/expression of Y
+- `modulates` — X has regulatory influence on Y (unclear direction)
+- `correlates_with` — cross-sectional direction-unknown association
+- `mediates` — X acts as intermediate step between two things
+- `distinguishes` — X differentiates between groups/conditions
+- `part_of` — X is anatomical/compositional part of Y
+- `co_occurs_with` — X and Y observed together without causal inference
+
+Rules:
+1. Do NOT keep `is_associated_with` or `correlates_with` unless NO other predicate fits.
+2. If the context describes levels/expression, use `increases`/`reduces`.
+3. If the subject is a drug and object is a disease, prefer `treats`.
+4. If the study is longitudinal and talks about future outcomes, prefer `is_risk_factor_for` or `predicts`.
+5. When direction is unclear but both entities co-vary, prefer `correlates_with` over `is_associated_with`.
 
 Output ONLY the predicate name, nothing else."""
 
@@ -153,6 +162,8 @@ Output ONLY the predicate name, nothing else."""
             max_tokens=20,
         )
         pred = response.choices[0].message.content.strip().lower()
+        # Strip any punctuation or quotes
+        pred = re.sub(r"[^a-z_]", "", pred)
         if pred in CLAIM_PREDICATES:
             return pred
     except Exception as e:
@@ -280,13 +291,17 @@ def ingest_claims(
     predicates_refined = 0
 
     # initialize LLM client for predicate refinement if needed
+    # Uses first key from OPENAI_API_KEYS pool, falls back to OPENAI_API_KEY
     llm_client = None
     if refine_vague_predicates:
         base_url = llm_base_url or os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
-        api_key = llm_api_key or os.environ.get("OPENAI_API_KEY", "")
+        keys_raw = os.environ.get("OPENAI_API_KEYS", "")
+        keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
+        api_key = llm_api_key or (keys[0] if keys else os.environ.get("OPENAI_API_KEY", ""))
         model = llm_model or os.environ.get("OPENAI_MODEL", "gpt-5.5")
         if api_key:
-            llm_client = OpenAI(base_url=base_url, api_key=api_key)
+            import httpx
+            llm_client = OpenAI(base_url=base_url, api_key=api_key, http_client=httpx.Client(verify=False))
 
     for result in results:
         if result.error:

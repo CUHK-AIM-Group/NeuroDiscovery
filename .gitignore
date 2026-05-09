@@ -44,3 +44,11 @@ TODO.md
 CHANGELOG.md
 core/knowledge_graph/autoresearch_pipeline.md
 .claude
+phase2_rerun.log
+
+# API keys (never commit!)
+.env
+.env.local
+.env.keys
+*.secret
+api_keys.txt
