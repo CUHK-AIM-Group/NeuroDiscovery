@@ -102,6 +102,116 @@ def merge_duplicate_concepts(kg: KnowledgeGraph) -> int:
     return merges
 
 
+def merge_duplicate_claims(kg: KnowledgeGraph) -> int:
+    """Merge claim nodes that share (subject_id, predicate, object_id).
+
+    The same factual claim ("PSEN1 causes AD") often gets re-extracted
+    from 30+ different papers, producing 30+ distinct CLM:* nodes. This
+    breaks `compute_frequency_boost` which counts PMIDs on the canonical
+    edge — with claims scattered, each claim has 1 PMID.
+
+    After merge:
+    - Canonical = claim with highest metadata.confidence (tie: most
+      complete evidence fields, tie: earliest id alphabetically)
+    - canonical.metadata['supporting_papers'] = [all PMIDs]
+    - canonical.metadata['n_supporting'] = len(supporting_papers)
+    - All 'about' edges redirect to canonical
+    - All semantic edges (subject->object) keep canonical's confidence
+      (highest), but we bump it by freq_boost based on n_supporting
+
+    Returns number of claims merged away.
+    """
+    # Group claim nodes by their SPO signature
+    from collections import defaultdict
+    groups: dict[tuple, list[str]] = defaultdict(list)
+    for cid, node in kg._index.items():
+        if "claim" not in node.domain_tags:
+            continue
+        if node.source_vocab != "claim_extraction":
+            continue
+        md = node.metadata
+        s = md.get("subject_id", "")
+        p = md.get("predicate", "")
+        o = md.get("object_id", "")
+        if not (s and p and o):
+            continue
+        groups[(s, p, o)].append(cid)
+
+    dup_groups = {k: v for k, v in groups.items() if len(v) > 1}
+    logger.info(f"found {len(dup_groups)} claim SPO groups with duplicates "
+                f"({sum(len(v) for v in dup_groups.values())} claim nodes total)")
+
+    merged = 0
+    for (s, p, o), claim_ids in dup_groups.items():
+        # Pick canonical: highest claim.metadata.confidence, tiebreak by id
+        def rank_key(cid):
+            n = kg._index[cid]
+            conf = n.metadata.get("confidence", 0.5)
+            # prefer claims with more evidence fields populated
+            ev = n.metadata.get("evidence", {})
+            richness = sum(1 for k in ("p_value", "sample_size", "effect_size",
+                                        "study_type", "methodology") if ev.get(k))
+            return (-conf, -richness, cid)
+
+        claim_ids.sort(key=rank_key)
+        canonical_id = claim_ids[0]
+        canonical = kg._index[canonical_id]
+        duplicates = claim_ids[1:]
+
+        # Collect supporting PMIDs from all claims in the group
+        # Separate lists: all PMIDs vs primary-only (excluding review types).
+        # compute_frequency_boost expects primary counts to award 1.2× bonus —
+        # counting review PMIDs there would inflate the boost artificially.
+        REVIEW_TYPES = {"review", "narrative_review", "systematic_review"}
+        supporting = []
+        primary_supporting = []
+        seen_pmids = set()
+        seen_primary = set()
+        for cid in claim_ids:
+            node = kg._index[cid]
+            paper = node.metadata.get("source_paper", {})
+            pmid = paper.get("pmid") if isinstance(paper, dict) else None
+            if not pmid:
+                continue
+            if pmid not in seen_pmids:
+                seen_pmids.add(pmid)
+                supporting.append(pmid)
+            study_type = node.metadata.get("evidence", {}).get("study_type", "")
+            if study_type not in REVIEW_TYPES and pmid not in seen_primary:
+                seen_primary.add(pmid)
+                primary_supporting.append(pmid)
+
+        canonical.metadata["supporting_papers"] = supporting
+        canonical.metadata["n_supporting"] = len(supporting)
+        canonical.metadata["primary_supporting_papers"] = primary_supporting
+        canonical.metadata["n_primary_supporting"] = len(primary_supporting)
+
+        # Redirect incoming + outgoing edges from duplicates to canonical,
+        # then remove the duplicate node.
+        for dup_id in duplicates:
+            if dup_id not in kg.G:
+                continue
+            # incoming
+            for source, _, data in list(kg.G.in_edges(dup_id, data=True)):
+                if source == canonical_id:
+                    continue
+                if not kg.G.has_edge(source, canonical_id):
+                    kg.G.add_edge(source, canonical_id, **data)
+            # outgoing
+            for _, target, data in list(kg.G.out_edges(dup_id, data=True)):
+                if target == canonical_id:
+                    continue
+                if not kg.G.has_edge(canonical_id, target):
+                    kg.G.add_edge(canonical_id, target, **data)
+            kg.G.remove_node(dup_id)
+            if dup_id in kg._index:
+                del kg._index[dup_id]
+            merged += 1
+
+    logger.info(f"merged {merged} duplicate claim nodes into canonical claims")
+    return merged
+
+
 # ── 2. Add Bridge Edges ─────────────────────────────────────────────
 
 def add_bridge_edges(kg: KnowledgeGraph) -> int:
@@ -209,20 +319,45 @@ def apply_evidence_weighting(kg: KnowledgeGraph) -> int:
 
     Adjusts edge confidence based on study_type.
     Returns number of edges modified.
+
+    This function is idempotent: it resets edge confidence to the original
+    claim confidence (stored on the claim ConceptNode) before applying the
+    current weight. This ensures that re-running with different weights
+    produces consistent results regardless of prior runs.
+
+    Weight rationale:
+    - Reviews/narrative reviews comprise ~85% of our claims (text-only extraction
+      picks up heavy review literature). The prior weights of 0.3 / 0.2 crushed
+      85% of the knowledge base down to conf<0.05, poisoning path-finding.
+    - Systematic reviews aggregate multiple primary studies and represent GRADE
+      top-tier evidence — they should score HIGHER than individual case-control.
+    - Narrative reviews still encode expert consensus on well-established facts
+      (e.g. "PSEN1 mutations cause AD") — they shouldn't be marginalized.
+    - Primary studies (RCT/longitudinal/cohort) remain highest-weighted so they
+      still dominate when available.
     """
     WEIGHT_MAP = {
+        # primary evidence (unchanged)
         "meta_analysis": 1.0,
+        "systematic_review": 0.95,  # was 0.8 — GRADE A
         "clinical_trial": 0.9,
         "longitudinal": 0.85,
         "cohort": 0.85,
         "case_control": 0.8,
-        "systematic_review": 0.8,
+        # imaging modalities (unchanged)
         "PET": 0.8, "fMRI": 0.8, "EEG": 0.8, "sMRI": 0.8,
+        "MEG": 0.8, "DTI": 0.8,
         "cross_sectional": 0.7,
+        # translational / secondary
         "animal_model": 0.6,
-        "review": 0.3,
-        "narrative_review": 0.2,
+        "lesion": 0.7,
+        "case_report": 0.5,
+        "GWAS": 0.85,  # large-n genetic evidence
+        # reviews (boosted — they encode real consensus, often multi-study)
+        "review": 0.65,             # was 0.3
+        "narrative_review": 0.55,   # was 0.2
     }
+    DEFAULT_WEIGHT = 0.7
 
     modified = 0
     for src, tgt, data in kg.G.edges(data=True):
@@ -235,14 +370,21 @@ def apply_evidence_weighting(kg: KnowledgeGraph) -> int:
             continue
 
         study_type = claim_node.metadata.get("evidence", {}).get("study_type", "")
-        weight = WEIGHT_MAP.get(study_type, 0.7)
+        weight = WEIGHT_MAP.get(study_type, DEFAULT_WEIGHT)
 
-        # Apply weight
-        original_conf = data.get("confidence", 0.5)
-        new_conf = min(original_conf * weight, 1.0)
-        if abs(new_conf - original_conf) > 0.01:
+        # Reset to claim-level confidence, then apply current weight.
+        # This guarantees idempotence: running twice with the same WEIGHT_MAP
+        # gives the same result, and changing the map takes effect on next run
+        # without cumulative multiplication.
+        base_conf = claim_node.metadata.get("confidence", 0.5)
+        current_conf = data.get("confidence", 0.5)
+        new_conf = min(base_conf * weight, 1.0)
+
+        if abs(new_conf - current_conf) > 0.01:
             data["confidence"] = new_conf
-            data["evidence_weight"] = weight
+            meta = data.setdefault("metadata", {})
+            meta["evidence_weight"] = weight
+            data["evidence_weight"] = weight  # also at top level for backward compat
             modified += 1
 
     logger.info(f"applied evidence weighting to {modified} edges")
@@ -268,7 +410,11 @@ def run_phase4():
 
     # Step 1: Merge duplicates
     merges = merge_duplicate_concepts(kg)
-    logger.info(f"After merge: {kg.stats()['n_concepts']} concepts")
+    logger.info(f"After concept merge: {kg.stats()['n_concepts']} concepts")
+
+    # Step 1b: Merge duplicate claim nodes by SPO (enables frequency_boost)
+    claim_merges = merge_duplicate_claims(kg)
+    logger.info(f"After claim merge: {kg.stats()['n_concepts']} concepts")
 
     # Step 2: Remove isolated claims
     removed = remove_isolated_claims(kg)
@@ -296,6 +442,7 @@ def run_phase4():
     logger.info(f"Components: {components_before} -> {components_after}")
     logger.info(f"Isolated: {isolated_before} -> {isolated_after}")
     logger.info(f"Merges: {merges}")
+    logger.info(f"Claim merges: {claim_merges}")
     logger.info(f"Bridges: {bridges}")
     logger.info(f"Weighted: {weighted}")
 

@@ -186,6 +186,21 @@ ENTITY_TYPE_TO_DOMAIN = {
 }
 
 
+# Min length for short-string matches. Below this, only exact (case-insensitive)
+# matches are allowed — otherwise 2-letter aliases like "IC" (Internal Capsula)
+# match any substring containing those letters (e.g. "specific" contains "ic").
+_MIN_SUBSTRING_LEN = 4
+
+
+def _word_boundary_match(short: str, long: str) -> bool:
+    """True if `short` appears in `long` as a whole token.
+
+    Uses \\b word boundaries so "IC" matches "IC lesion" but NOT "specific".
+    Assumes both args are lowercase.
+    """
+    return re.search(r"\b" + re.escape(short) + r"\b", long) is not None
+
+
 def resolve_entity(
     kg: KnowledgeGraph,
     entity_name: str,
@@ -196,9 +211,11 @@ def resolve_entity(
     Strategy:
     1. Exact match on preferred_name
     2. Case-insensitive match
-    3. Alias match
-    4. Fuzzy substring match
-    5. If not found, create a new concept node
+    3. Alias match (exact, case-insensitive)
+    4. Safe fuzzy match: substring only when both strings are long enough,
+       short aliases (<4 chars) require word-boundary match
+    5. If entity_type is given, prefer candidates whose domain matches
+    6. If not found, create a new concept node
     """
     if not entity_name:
         return None
@@ -214,22 +231,41 @@ def resolve_entity(
         if node.preferred_name.lower() == entity_lower:
             return node.id
 
-    # 3. alias match
+    # 3. alias match (exact only — no substring here)
     for node in kg._index.values():
         for alias in node.aliases:
             if alias.lower() == entity_lower:
                 return node.id
 
-    # 4. substring match (entity contained in name or vice versa)
+    # 4. safe fuzzy match
     candidates = []
+    entity_len = len(entity_lower)
     for node in kg._index.values():
         name_lower = node.preferred_name.lower()
-        if entity_lower in name_lower or name_lower in entity_lower:
-            candidates.append(node)
-        for alias in node.aliases:
-            if entity_lower in alias.lower() or alias.lower() in entity_lower:
+        # Substring in preferred_name: both sides must be long enough
+        if entity_len >= _MIN_SUBSTRING_LEN and len(name_lower) >= _MIN_SUBSTRING_LEN:
+            if entity_lower in name_lower or name_lower in entity_lower:
                 candidates.append(node)
-                break
+                continue
+        # Alias substring: short aliases need word-boundary match
+        for alias in node.aliases:
+            alias_lower = alias.lower()
+            if len(alias_lower) < _MIN_SUBSTRING_LEN:
+                # Short alias (e.g. "IC"): require whole-word match in entity
+                if _word_boundary_match(alias_lower, entity_lower):
+                    candidates.append(node)
+                    break
+            else:
+                if entity_lower in alias_lower or alias_lower in entity_lower:
+                    candidates.append(node)
+                    break
+
+    # 5. prefer domain-matching candidate when entity_type is known
+    expected_domain = ENTITY_TYPE_TO_DOMAIN.get(entity_type) if entity_type else None
+    if candidates and expected_domain is not None:
+        typed = [c for c in candidates if expected_domain.value in c.domain_tags]
+        if typed:
+            candidates = typed
 
     if len(candidates) == 1:
         return candidates[0].id
@@ -238,7 +274,7 @@ def resolve_entity(
         candidates.sort(key=lambda n: len(n.preferred_name))
         return candidates[0].id
 
-    # 5. not found — create new concept
+    # 6. not found — create new concept
     domain = ENTITY_TYPE_TO_DOMAIN.get(entity_type, DomainTag.DISEASE)
     new_id = f"CLM_CONCEPT:{entity_name.replace(' ', '_')}"
     kg.add_concept(ConceptNode(
@@ -290,76 +326,115 @@ def ingest_claims(
     errors = 0
     predicates_refined = 0
 
-    # initialize LLM client for predicate refinement if needed
-    # Uses first key from OPENAI_API_KEYS pool, falls back to OPENAI_API_KEY
-    llm_client = None
+    # Initialize LLM client POOL for predicate refinement (all 4 keys, not just 1)
+    # and decide concurrency: refinement is IO-bound (LLM calls), safe to
+    # parallelize with threads. KG mutation stays serial (networkx is not
+    # thread-safe).
+    llm_clients: list[OpenAI] = []
+    refine_workers = 0
     if refine_vague_predicates:
         base_url = llm_base_url or os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
         keys_raw = os.environ.get("OPENAI_API_KEYS", "")
         keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
-        api_key = llm_api_key or (keys[0] if keys else os.environ.get("OPENAI_API_KEY", ""))
+        if not keys and (llm_api_key or os.environ.get("OPENAI_API_KEY")):
+            keys = [llm_api_key or os.environ.get("OPENAI_API_KEY", "")]
         model = llm_model or os.environ.get("OPENAI_MODEL", "gpt-5.5")
-        if api_key:
+        if keys:
             import httpx
-            llm_client = OpenAI(base_url=base_url, api_key=api_key, http_client=httpx.Client(verify=False))
+            llm_clients = [
+                OpenAI(base_url=base_url, api_key=k, http_client=httpx.Client(verify=False))
+                for k in keys
+            ]
+            # One worker per key × 3 so we overlap latency without exceeding
+            # per-key rate limits. 4 keys → 12 workers, same pattern as
+            # extraction/critic phases.
+            refine_workers = max(len(llm_clients) * 3, 1)
 
+    # Gather all claims across results, then optionally pre-refine predicates
+    # in parallel (ingest is serial but refinement is IO-bound).
+    all_claims: list = []
     for result in results:
         if result.error:
             errors += 1
             continue
+        all_claims.extend(result.claims)
 
-        for claim in result.claims:
-            try:
-                # resolve entities
-                claim = resolve_claim_entities(kg, claim)
+    # Parallel rule-based + LLM refinement of vague predicates.
+    # Only claims whose predicate is VAGUE and whose rule-based pass misses
+    # actually hit the LLM, so most claims take <1ms here.
+    if refine_vague_predicates and llm_clients and all_claims:
+        from concurrent.futures import ThreadPoolExecutor
 
-                # refine vague predicates (RELATE)
-                if refine_vague_predicates:
-                    original_pred = claim.predicate
-                    claim.predicate = refine_predicate(claim, llm_client, model)
-                    if claim.predicate != original_pred:
+        def _refine_one(idx_claim):
+            idx, claim = idx_claim
+            # Round-robin client selection (no lock needed — read-only dispatch)
+            client = llm_clients[idx % len(llm_clients)]
+            original = claim.predicate
+            new_pred = refine_predicate(claim, client, model)
+            return idx, claim.id, original, new_pred
+
+        with ThreadPoolExecutor(max_workers=refine_workers) as executor:
+            futures = [
+                executor.submit(_refine_one, (i, c))
+                for i, c in enumerate(all_claims)
+            ]
+            # Collect results; assign back via index so we preserve per-claim
+            # state (claim object reference stays intact).
+            for f in futures:
+                try:
+                    idx, cid, original, new_pred = f.result()
+                    if new_pred != original:
+                        all_claims[idx].predicate = new_pred
                         predicates_refined += 1
+                except Exception as e:
+                    logger.debug(f"refine_predicate worker failed: {e}")
 
-                if not claim.subject_id or not claim.object_id:
-                    logger.warning(f"could not resolve entities for claim {claim.id}")
-                    errors += 1
-                    continue
+    # Serial KG mutation: resolve entities + add concept/edges.
+    for claim in all_claims:
+        try:
+            # resolve entities
+            claim = resolve_claim_entities(kg, claim)
 
-                # add claim node
-                kg.add_concept(ConceptNode(
-                    id=claim.id,
-                    preferred_name=f"{claim.subject_name} {claim.predicate} {claim.object_name}",
-                    domain_tags=["claim"],
-                    source_vocab="claim_extraction",
-                    definition=claim.raw_text,
-                    metadata=claim.to_dict(),
-                ))
-                claims_added += 1
-
-                # add simplified edge
-                edge = claim.to_edge()
-                kg.add_edge(edge)
-                edges_added += 1
-
-                # add about edges (claim → subject, claim → object)
-                kg.add_edge(Edge(
-                    source_id=claim.id,
-                    target_id=claim.subject_id,
-                    relation_type="about",
-                    source="claim_extraction",
-                    confidence=claim.confidence,
-                ))
-                kg.add_edge(Edge(
-                    source_id=claim.id,
-                    target_id=claim.object_id,
-                    relation_type="about",
-                    source="claim_extraction",
-                    confidence=claim.confidence,
-                ))
-
-            except Exception as e:
-                logger.warning(f"failed to ingest claim {claim.id}: {e}")
+            if not claim.subject_id or not claim.object_id:
+                logger.warning(f"could not resolve entities for claim {claim.id}")
                 errors += 1
+                continue
+
+            # add claim node
+            kg.add_concept(ConceptNode(
+                id=claim.id,
+                preferred_name=f"{claim.subject_name} {claim.predicate} {claim.object_name}",
+                domain_tags=["claim"],
+                source_vocab="claim_extraction",
+                definition=claim.raw_text,
+                metadata=claim.to_dict(),
+            ))
+            claims_added += 1
+
+            # add simplified edge
+            edge = claim.to_edge()
+            kg.add_edge(edge)
+            edges_added += 1
+
+            # add about edges (claim → subject, claim → object)
+            kg.add_edge(Edge(
+                source_id=claim.id,
+                target_id=claim.subject_id,
+                relation_type="about",
+                source="claim_extraction",
+                confidence=claim.confidence,
+            ))
+            kg.add_edge(Edge(
+                source_id=claim.id,
+                target_id=claim.object_id,
+                relation_type="about",
+                source="claim_extraction",
+                confidence=claim.confidence,
+            ))
+
+        except Exception as e:
+            logger.warning(f"failed to ingest claim {claim.id}: {e}")
+            errors += 1
 
     summary = {
         "claims_added": claims_added,

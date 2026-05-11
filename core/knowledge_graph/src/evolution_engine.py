@@ -21,6 +21,7 @@ from typing import Optional
 
 import networkx as nx
 
+from .claim_ingestion import _PREDICATE_KEYWORDS
 from .hypothesis_engine import (
     Hypothesis, HypothesisEngine, HypothesisLink,
     _AAL_REGION_KEYWORDS, NON_MEASURABLE_BIOMARKER_TYPES,
@@ -235,6 +236,48 @@ class EvolutionEngine:
             h.evolve_score = h.metadata["fitness"]
             # recompute composite using evolve_score as novelty boost
             h.composite_score = self.engine._composite_score(h)
+
+        # Post-filter evolved variants: drop EVO:* that don't meet quality bar.
+        # Originals (HYP:*) are always kept since they already passed Critic.
+        # This addresses the "Evolution produces 0 winners in top-10" failure mode
+        # by rejecting variants that mutation pushed below their parent's quality.
+        before_filter = len(population)
+        # Precompute hub IDs once (top-50 by non-'about' degree in the KG)
+        from collections import Counter
+        _deg = Counter()
+        for u, v, data in self.G.edges(data=True):
+            if data.get("relation_type") != "about":
+                _deg[u] += 1
+                _deg[v] += 1
+        hub_ids = {cid for cid, _ in _deg.most_common(50)}
+
+        filtered = []
+        for h in population:
+            if not h.id.startswith("EVO:"):
+                filtered.append(h)
+                continue
+            # Quality gates for evolved variants:
+            if h.composite_score < 0.40:
+                continue
+            if any(s.confidence < 0.05 for s in h.path):
+                continue
+            vague_count = sum(1 for s in h.path
+                              if s.relation_type in {"is_associated_with", "correlates_with"})
+            if vague_count >= 2:
+                continue
+            if len(h.path) > 7:
+                continue
+            # New: reject if any step is hub-to-hub (generic category→category edge)
+            if any(s.from_id in hub_ids and s.to_id in hub_ids for s in h.path):
+                continue
+            filtered.append(h)
+        n_dropped = before_filter - len(filtered)
+        if n_dropped > 0:
+            logger.info(
+                f"post-filter dropped {n_dropped} evolved variants "
+                f"(quality gates: composite<0.4, weak edge, dual-vague, len>7, hub-to-hub)"
+            )
+        population = filtered
 
         population.sort(key=lambda h: h.metadata.get("fitness", 0), reverse=True)
 
@@ -563,6 +606,8 @@ class EvolutionEngine:
         # Reject if h is already a fusion result
         if h.metadata.get("n_independent_paths", 1) > 1:
             return None
+        if "+" in h.source_name:
+            return None  # defensive: even if metadata was stripped
 
         # 1. Find candidate partners with same target, different source
         # Also reject partners that are already fusion results
@@ -573,6 +618,10 @@ class EvolutionEngine:
             and h2.source_id != h.source_id
             and len(h2.path) >= 2
             and h2.metadata.get("n_independent_paths", 1) == 1  # only original
+            # Belt-and-suspenders: also reject if the source_name already looks fused.
+            # (Should be covered by n_independent_paths check, but _build_child
+            # previously stripped that metadata, letting fused lineages slip through.)
+            and "+" not in h2.source_name
         ]
         if not candidates:
             return None
@@ -815,7 +864,13 @@ class EvolutionEngine:
         return None
 
     def _make_link(self, src_id: str, tgt_id: str) -> Optional[HypothesisLink]:
-        """Create a HypothesisLink from graph edge data."""
+        """Create a HypothesisLink from graph edge data.
+
+        Refines vague predicates (`is_associated_with`, `correlates_with`)
+        using the rule-based keyword matcher from claim_ingestion. Critic
+        already filters these out; without re-refinement, mutation operators
+        re-introduce them (~30% of evolved path edges in audits).
+        """
         if not self.G.has_edge(src_id, tgt_id):
             return None
         edge_data = self.G.edges[src_id, tgt_id]
@@ -834,12 +889,21 @@ class EvolutionEngine:
             paper = meta.get("source_paper", {})
             raw_text = meta.get("raw_text", "")
 
+        relation_type = edge_data.get("relation_type", "unknown")
+
+        # Rule-based predicate refinement on vague edges
+        if relation_type in _VAGUE_PREDICATES and raw_text:
+            for refined_pred, patterns in _PREDICATE_KEYWORDS.items():
+                if any(p.search(raw_text) for p in patterns):
+                    relation_type = refined_pred
+                    break
+
         return HypothesisLink(
             from_id=src_id,
             from_name=src_node.preferred_name if src_node else src_id,
             to_id=tgt_id,
             to_name=tgt_node.preferred_name if tgt_node else tgt_id,
-            relation_type=edge_data.get("relation_type", "unknown"),
+            relation_type=relation_type,
             confidence=edge_data.get("confidence", 0.5),
             claim_id=claim_id,
             raw_text=raw_text,
@@ -877,7 +941,11 @@ class EvolutionEngine:
         }
         for key in ("dataset", "input_modality", "input_feature", "input_level",
                      "input_tool", "input_region", "input_region_a", "input_region_b",
-                     "outcome_type"):
+                     "outcome_type",
+                     # Preserve fusion lineage so downstream operators don't re-fuse
+                     # already-fused ancestors into multi-plus names ("A + B + C + D")
+                     "n_independent_paths", "co_biomarker_id", "co_biomarker_name",
+                     "fusion_partner_id"):
             if key in parent.metadata:
                 meta[key] = parent.metadata[key]
 
@@ -1002,14 +1070,16 @@ class EvolutionEngine:
         if h.source_id == h.target_id:
             return False
 
-        # filter noisy intermediate nodes (short tokens like "Id", "Ca", "RN")
+        # filter noisy entities (short tokens like "Id"/"Ca"/"RN" AND
+        # nominalized words like "loss"/"Family"/"tissue volumes"). Shares
+        # the full noise-word set from hypothesis_engine._is_noisy_entity.
+        all_names = {h.source_name, h.target_name}
         for link in h.path:
-            for name in [link.from_name, link.to_name]:
-                if not name or len(name.strip()) < 3:
-                    return False
-                clean = name.strip()
-                if re.match(r"^[A-Z][a-z]?$", clean) or re.match(r"^[A-Z][a-z]{2,4}$", clean) or re.match(r"^\d+$", clean):
-                    return False
+            all_names.add(link.from_name)
+            all_names.add(link.to_name)
+        for name in all_names:
+            if self.engine._is_noisy_entity(name):
+                return False
 
         # reject single-PMID bridges (both hops cite the same paper)
         if len(h.path) >= 2:
@@ -1020,6 +1090,11 @@ class EvolutionEngine:
                     pmids.add(pmid)
             if len(pmids) == 1:
                 return False
+
+        # target must be a dataset outcome (diagnosis/cognition/behavior),
+        # not an anatomical structure or molecular entity
+        if not self.engine._is_dataset_outcome(h):
+            return False
 
         # filter non-measurable entities (CSF, blood, saliva biomarkers)
         for link in h.path:

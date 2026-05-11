@@ -413,10 +413,13 @@ def cmd_novelty(engine, input_path, top_k, output_path, alpha, skip_pubmed, skip
     for h in hypotheses:
         if h.id in result_map:
             r = result_map[h.id]
+            # Preserve original structural novelty before overwriting
+            h.metadata["structural_novelty"] = h.novelty_score
             h.novelty_score = r.final_novelty
             h.metadata["lit_novelty"] = r.lit_novelty
             h.metadata["pubmed_hits"] = r.pubmed_hits
             h.metadata["semantic_hits"] = r.semantic_hits
+            h.metadata["final_novelty"] = r.final_novelty
 
     # Re-sort by composite score (novelty changed)
     for h in hypotheses:
@@ -646,7 +649,7 @@ def main():
     p_critic.add_argument("--output", default=None, help="Output file (default: overwrite input)")
     p_critic.add_argument("--max-rounds", type=int, default=3, help="Max refinement rounds")
     p_critic.add_argument("--threshold", type=float, default=0.6, help="Pass threshold (0-1)")
-    p_critic.add_argument("--max-workers", type=int, default=4, help="Parallel workers for batch review")
+    p_critic.add_argument("--max-workers", type=int, default=12, help="Parallel workers for batch review (12 recommended with 4 API keys)")
 
     # novelty
     p_novelty = sub.add_parser("novelty", help="Check hypothesis novelty against literature")

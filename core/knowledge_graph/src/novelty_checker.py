@@ -26,9 +26,13 @@ logger = logging.getLogger(__name__)
 PUBMED_ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 PUBMED_RATE_LIMIT = 0.34  # 3 requests per second without API key
 
-# Semantic Scholar
+# Semantic Scholar — unauthenticated public API is strictly rate-limited
+# (often 429s at even 1 req/s). We use a higher base delay and exponential
+# backoff on 429. Set SEMANTIC_SCHOLAR_API_KEY env var for higher limits
+# (https://www.semanticscholar.org/product/api#api-key-form).
 SEMANTIC_SCHOLAR_SEARCH = "https://api.semanticscholar.org/graph/v1/paper/search"
-SEMANTIC_SCHOLAR_RATE_LIMIT = 1.0  # 1 request per second
+SEMANTIC_SCHOLAR_RATE_LIMIT = 2.0  # seconds between requests (was 1.0)
+SEMANTIC_SCHOLAR_MAX_RETRIES = 3
 
 
 @dataclass
@@ -174,20 +178,46 @@ class NoveltyChecker:
             return 0
 
     def _search_semantic(self, query: str) -> int:
-        """Search Semantic Scholar and return hit count."""
-        try:
-            params = {
-                "query": query,
-                "limit": 1,
-                "fields": "title,year,citationCount",
-            }
-            resp = requests.get(SEMANTIC_SCHOLAR_SEARCH, params=params, timeout=10)
-            resp.raise_for_status()
-            data = resp.json()
-            return data.get("total", 0)
-        except Exception as e:
-            logger.warning(f"Semantic Scholar search failed: {e}")
-            return 0
+        """Search Semantic Scholar and return hit count.
+
+        Handles 429 (rate-limit) with exponential backoff. If a
+        SEMANTIC_SCHOLAR_API_KEY env var is set, use it for higher limits.
+        """
+        import os
+        headers = {}
+        api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "")
+        if api_key:
+            headers["x-api-key"] = api_key
+
+        params = {
+            "query": query,
+            "limit": 1,
+            "fields": "title,year,citationCount",
+        }
+
+        backoff = 2.0
+        for attempt in range(SEMANTIC_SCHOLAR_MAX_RETRIES):
+            try:
+                resp = requests.get(SEMANTIC_SCHOLAR_SEARCH, params=params,
+                                     headers=headers, timeout=15)
+                if resp.status_code == 429:
+                    logger.debug(f"Semantic Scholar 429, backing off {backoff:.1f}s (attempt {attempt+1})")
+                    time.sleep(backoff)
+                    backoff *= 2
+                    continue
+                resp.raise_for_status()
+                data = resp.json()
+                return data.get("total", 0)
+            except requests.exceptions.RequestException as e:
+                logger.debug(f"Semantic Scholar request failed: {e}")
+                time.sleep(backoff)
+                backoff *= 2
+            except Exception as e:
+                logger.warning(f"Semantic Scholar search failed: {e}")
+                return 0
+
+        logger.warning(f"Semantic Scholar: exhausted retries for query '{query[:60]}'")
+        return 0
 
     @staticmethod
     def _hit_count_to_novelty(hit_count: int) -> float:

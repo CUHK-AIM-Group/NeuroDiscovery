@@ -134,30 +134,37 @@ OPPOSING_PREDICATES = {
     ("inhibits", "activates"),
 }
 
-STUDY_TYPE_WEIGHTS = {
-    "meta_analysis": 1.0,
-    "clinical_trial": 0.9,
-    "longitudinal": 0.85,
-    "cohort": 0.85,
-    "case_control": 0.8,
-    "systematic_review": 0.8,
-    "PET": 0.8, "fMRI": 0.8, "EEG": 0.8, "sMRI": 0.8,
-    "cross_sectional": 0.7,
-    "animal_model": 0.6,
-    "review": 0.3,
-    "narrative_review": 0.2,
-}
-
-# Review-only study types (no independent empirical evidence)
+# Review-only study types (no independent empirical evidence).
+# Used by compute_frequency_boost and compute_temporal_decay. Edge-level
+# weighting by study_type lives in phase4_optimize.apply_evidence_weighting.
 _REVIEW_TYPES = {"review", "narrative_review", "systematic_review"}
 
 COMMON_RELATIONS = {"is_a", "part_of", "associated_with", "about", "is_associated_with"}
 
-# Noisy entity name patterns — hypotheses involving these are low quality
+# Noisy entity name patterns — hypotheses involving these are low quality.
+# Two categories:
+#   (a) process-word ≠ entity: nominalized verbs/states ("loss", "progression")
+#       that pop up as bridge nodes but carry no biological content.
+#   (b) generic containers: vague collective terms ("tissue volumes", "Family")
+#       that don't refer to a specific measurable thing.
 _NOISE_WORDS = frozenset({
+    # original set
     "unseen", "risk", "effect", "level", "status", "change", "type",
     "group", "factor", "model", "method", "unknown", "other", "none",
     "miscellaneous", "various", "difference", "increase", "decrease",
+    # nominalized processes/states (category a)
+    "loss", "progression", "reduction", "elevation", "alteration",
+    "disruption", "dysfunction", "impairment", "deterioration",
+    "improvement", "recovery", "response", "onset", "activation",
+    "inhibition", "regulation", "modulation", "stimulation",
+    "expression", "function", "functions",
+    # generic containers (category b)
+    "family", "members", "phenomenon", "phenomena", "processes",
+    "mechanisms", "pathways", "symptoms", "manifestations",
+    "volumes", "volume",
+    # life events / demographics that are not biological entities
+    "stress", "life", "events", "exposure", "outcome", "outcomes",
+    "quality",
 })
 
 NOISE_PATTERNS = [
@@ -177,20 +184,36 @@ DIRECTIONAL_RELATIONS = {
 # domain pairs worth exploring — aligned with NeuroClaw imaging experiments
 # target datasets: UKB (T1w/dMRI/rfMRI/SWI), ADNI (T1w/PET/fMRI/DTI), HCP-YA (T1w/T2w/fMRI/dMRI/MEG)
 # experiment models: BrainGNN, NeuroStorm, SVM, XGBoost on raw images + handcrafted features
+#
+# Design principle: target should be a dataset OUTCOME (what we want to predict),
+# source should be a MEASURABLE feature (what the dataset provides as input).
+# - UKB outcomes: fluid intelligence, neuroticism, dementia diagnosis, motor tests
+# - ADNI outcomes: MCI→AD conversion, CDR-SB, cognitive composite
+# - HCP outcomes: fluid/crystallized IQ, emotion recognition, personality traits
+#
+# Allowed sources (what we can measure): neuroanatomy (MRI regions), connectivity
+# networks, gene, biomarker (CSF/PET), drug (for intervention studies).
+# Allowed targets (what we predict): disease (diagnostic labels), cognitive_function
+# (the OUTCOMES — includes behavior, personality, affect).
 DEFAULT_DOMAIN_PAIRS = [
-    # core: brain region features → disease (volume, thickness, activation, connectivity)
-    ("neuroanatomy", "disease"),
-    ("neuroanatomy", "cognitive_function"),
-    ("cognitive_function", "disease"),
-    ("disease", "disease"),
-    # imaging biomarkers (PET amyloid/tau/FDG, sMRI volumetrics)
-    ("disease", "biomarker"),
-    # genetics → brain structure (UKB 500k WGS + imaging)
+    # core: measurable features → clinical/behavioral OUTCOMES
+    ("neuroanatomy", "disease"),             # MRI → diagnosis
+    ("neuroanatomy", "cognitive_function"),  # MRI → cognition/behavior
+    ("connectivity", "disease"),             # dMRI/fMRI connectivity → diagnosis
+    ("connectivity", "cognitive_function"),  # connectivity → cognition
+    # genetics → outcomes (UKB 500k WGS)
     ("gene", "disease"),
-    ("gene", "neuroanatomy"),
-    # drug effects on brain (limited but testable with PET in ADNI)
-    ("disease", "drug"),
+    ("gene", "cognitive_function"),          # GWAS → behavior/IQ
+    # fluid biomarkers → outcomes (ADNI CSF, blood)
+    ("biomarker", "disease"),
+    ("biomarker", "cognitive_function"),
+    # drug → outcomes (ADNI pharmaceutical arms)
     ("drug", "disease"),
+    ("drug", "cognitive_function"),
+    # cross-outcome (comorbidity, transdiagnostic)
+    ("disease", "disease"),
+    ("cognitive_function", "disease"),       # e.g. anxiety → MS diagnosis risk
+    ("disease", "cognitive_function"),       # e.g. AD → processing speed decline
 ]
 
 # Domains that are NOT directly measurable from brain imaging
@@ -228,6 +251,104 @@ _NON_NEUROLOGICAL_TARGETS = re.compile(
     r"gastrointestinal|cardiac|pulmonary|dermatol|orthopedic|musculoskeletal|"
     r"fracture|sprain|tumor|cancer|carcinoma|leukemia|lymphoma)", re.I
 )
+
+# DATASET-OUTCOME whitelist — covers actual predicted variables in UKB/ADNI/HCP-YA
+# papers (see README "Dataset Outcomes" for references to typical prediction tasks).
+# Target must match one of these patterns to pass the post_process filter.
+# We also auto-accept any concept in the `disease` domain (clinical diagnosis
+# IS the most common outcome) and any MSH/CogAtlas concept in the
+# `cognitive_function` domain (behavior/cognition).
+#
+# Categories cover:
+# - Clinical diagnostic labels (Alzheimer, schizophrenia, MCI, etc.) — all 3 datasets
+# - AD staging / conversion (CN→MCI→AD, ATN) — ADNI
+# - Clinical scales (CDR, MMSE, ADAS-Cog, PHQ-9, MoCA, NPI) — ADNI + UKB
+# - Cognitive abilities (IQ, memory, attention, processing speed) — all 3
+# - Specific cognitive tests (PMAT, flanker, N-back, delay discounting) — HCP
+# - Personality (Big Five) — HCP + UKB
+# - Behavior/affect (anxiety, depression, aggression, risk-taking) — all 3
+# - Motor/sensory (grip strength, gait, reaction time, dexterity) — UKB + HCP
+# - Brain age / neurodegeneration markers — UKB + ADNI
+# - NeuroSTORM-evaluated phenotypes: MND, early psychosis (HCP-EP), ADHD200,
+#   COBRE, UCLA L5c, TCP psychiatric scales, fMRI task state classification
+# - Subject fingerprinting / re-identification
+_OUTCOME_KEYWORDS = re.compile(
+    r"("
+    # cognitive abilities — general
+    r"intelligence|cognition|cognitive\s+(function|ability|performance|deterioration|impairment|dysfunction|decline|test|assessment|composite|score)|"
+    r"memory|attention|executive|processing\s+speed|reasoning|language|"
+    r"fluency|perception|reaction\s+time|fluid\s+intelligence|"
+    r"crystallized\s+intelligence|working\s+memory|episodic\s+memory|"
+    r"semantic\s+memory|verbal\s+(memory|fluency|learning)|visuospatial|"
+    # specific HCP NIH Toolbox / cognitive tasks
+    r"pmat|flanker|card\s+sort|n-?back|list\s+sort|picture\s+sequence|"
+    r"pattern\s+comparison|picture\s+vocabulary|oral\s+reading|"
+    r"delay\s+discounting|risk[- ]taking|go[- ]no[- ]go|"
+    # HCP Penn CNB cognitive battery
+    r"penn\s+(word|matrix|line\s+orientation|continuous\s+performance|progressive\s+matrices|fear|emotion|cnb)|"
+    r"matrix\s+pattern|numeric\s+memory|prospective\s+memory|pairs\s+matching|"
+    r"trail\s+making|symbol\s+digit|boston\s+naming|animal\s+fluency|"
+    r"category\s+fluency|logical\s+memory|clock\s+drawing|ravlt|"
+    # HCP 7 task states (NeuroSTORM state classification)
+    r"emotion\s+task|gambling\s+task|language\s+task|motor\s+task|"
+    r"relational\s+task|social\s+task|working\s+memory\s+task|"
+    # clinical scales (ADNI/UKB/TCP/HCP)
+    r"\b(cdr|cdr-sb|mmse|moca|adas|adas-cog|npi|faq|gds|phq-?9|gad-?7|bai|hdrs|hrsd|hamd|ham-d|"
+    r"bdi|ymrs|panss|sans|saps|audit|asrs|pro|adi|srs|tci|neo-?ffi|asr|abcl|"
+    r"cidi|cidi-sf|eysenck|swemwbs|psqi|ftnd|ssaga|masq|promis|upsit)\b|"
+    r"adult\s+self\s+report|adult\s+behavior\s+checklist|"
+    # personality / affect
+    r"neuroticism|extraversion|agreeableness|conscientiousness|openness|"
+    r"personality|temperament|affect|mood|emotion|anxiety|depression|"
+    r"well-?being|satisfaction|life\s+satisfaction|psychological|stress\s+response|"
+    r"anxiety\s+sensitivity|cautiousness|"
+    r"affect\s+(positive|negative)|emotion\s+recognition|emotional\s+regulation|"
+    r"perceived\s+(stress|rejection|hostility)|anger|fear|sadness|"
+    # social functioning (HCP + UKB)
+    r"loneliness|social\s+(isolation|support|relationship|cognition)|"
+    r"meaning\s+and\s+purpose|instrumental\s+support|emotional\s+support|"
+    r"friendship|"
+    # behavior
+    r"behavior|aggression|impulsivity|addiction|substance|alcohol|smoking|"
+    r"tobacco|cannabis|cocaine|opiate|opioid|hallucinogen|"
+    r"drug\s+use|substance\s+use|sleep\s+quality|insomnia|"
+    # diagnoses / clinical outcomes — added NeuroSTORM-evaluated cohorts and ADNI stages
+    r"alzheimer|parkinson|schizophrenia|autism|adhd|bipolar|epilepsy|"
+    r"mci|mild\s+cognitive|dementia|psychosis|early\s+psychosis|stroke|post[- ]stroke|"
+    r"multiple\s+sclerosis|huntington|frontotemporal|lewy\s+body|"
+    r"motor\s+neuron\s+disease|mnd|als|"
+    r"transdiagnostic|psychiatric\s+disorder|mental\s+health\s+disorder|"
+    r"ocd|ptsd|phobia|panic|agoraphobia|somatoform|eating\s+disorder|"
+    # ADNI-specific diagnostic stages
+    r"\b(cn|smc|emci|lmci|ad\b|preclinical|at\b|atn|alzheimer\s+continuum)\b|"
+    r"significant\s+memory\s+concern|subjective\s+(memory|cognitive)\s+(concern|complaint|decline)|"
+    r"cognitively\s+(normal|unimpaired)|"
+    r"disorder|syndrome|diagnosis|onset|conversion|progression|severity|"
+    r"symptom|manifestation|prognosis|outcome|treatment\s+response|"
+    r"disease\s+(stage|staging|duration|burden)|"
+    # cardiovascular / metabolic diseases (UKB ICD-10)
+    r"myocardial\s+infarction|heart\s+failure|hypertension|atrial\s+fibrillation|"
+    r"coronary|cardiovascular\s+disease|diabetes|type\s*[12]\s+diabetes|"
+    r"chronic\s+kidney|fatty\s+liver|nafld|metabolic\s+syndrome|obesity|"
+    # AD-specific biomarker status
+    r"amyloid\s+(status|positivity|positive|negative|load|burden|suvr)|"
+    r"tau\s+(status|positivity|positive|tangle|pathology|burden|suvr)|"
+    r"atn\s+(profile|stage|classification)|"
+    r"neurodegeneration\s+(stage|status)|"
+    # brain age / aging
+    r"brain\s+age|brain-?age(-?gap)?|aging|age[- ]related|age\s+acceleration|"
+    # motor / sensory
+    r"grip\s+strength|gait|motor\s+coordination|motor\s+function|"
+    r"balance|tremor|dexterity|walking\s+speed|two[- ]minute\s+walk|endurance|"
+    r"visual\s+(acuity|field)|audition|hearing|olfaction|taste|pain|"
+    r"chronic\s+pain|musculoskeletal\s+pain|"
+    # mortality / longevity
+    r"mortality|all-?cause\s+death|survival|life\s+expectancy"
+    r")", re.I
+)
+
+# Target domains considered as valid dataset outcomes
+_OUTCOME_DOMAINS = {"disease", "cognitive_function"}
 
 # NeuroClaw testable modalities and their keywords
 # Aligned with UKB/ADNI/HCP-YA available data + deep learning models
@@ -577,6 +698,18 @@ class HypothesisEngine:
             if self._has_weak_evidence(h):
                 continue
 
+            # filter paths where both ends of any edge are broad hubs
+            # ("Brain Diseases --causes--> Cognitive Dysfunction" is uninformative)
+            if self._has_hub_to_hub_edge(h):
+                continue
+
+            # filter: target must be a dataset outcome (diagnosis/cognition/behavior/
+            # personality/motor). Predicting "White Matter" or "Neurons" is not a
+            # hypothesis UKB/ADNI/HCP can directly test — those are imaging features
+            # used as INPUTS, not outcomes.
+            if not self._is_dataset_outcome(h):
+                continue
+
             # filter paths with no directional predicates (pure association chains)
             if len(h.path) >= 2:
                 relation_types = {l.relation_type for l in h.path}
@@ -687,6 +820,69 @@ class HypothesisEngine:
                     )
                     if not has_disease_intermediate:
                         return True
+
+        return False
+
+    def _has_hub_to_hub_edge(self, h: Hypothesis) -> bool:
+        """Reject paths containing any edge whose endpoints are both broad hubs.
+
+        Example: "Brain Diseases --causes--> Cognitive Dysfunction" — both ends
+        are top-level categories; the edge is too generic to be a mechanistic
+        step in a hypothesis.
+
+        Hub set is the top-N nodes by non-'about' degree, computed once and
+        cached. Uses a low bar (N=50) because hubs are self-evidently generic.
+        """
+        if not hasattr(self, "_hub_id_set"):
+            # Build once per engine instance
+            from collections import Counter
+            degree = Counter()
+            for u, v, data in self.G.edges(data=True):
+                if data.get("relation_type") != "about":
+                    degree[u] += 1
+                    degree[v] += 1
+            top = degree.most_common(50)
+            self._hub_id_set = {cid for cid, _ in top}
+
+        for link in h.path:
+            if link.from_id in self._hub_id_set and link.to_id in self._hub_id_set:
+                return True
+        return False
+
+    def _is_dataset_outcome(self, h: Hypothesis) -> bool:
+        """Check if target is a UKB/ADNI/HCP-testable outcome.
+
+        The goal of our hypotheses is to predict SOMETHING from brain imaging.
+        Valid targets:
+        - Clinical diagnoses (disease domain) — Alzheimer, MCI, schizophrenia, etc.
+        - Cognitive/behavioral/personality measures (cognitive_function domain)
+
+        Invalid targets:
+        - Anatomical structures (neuroanatomy) — White Matter, Cerebrum, Neurons
+          are INPUTS, not outcomes
+        - Molecular entities (gene, biomarker, drug, neurotransmitter) — these
+          may be predictors, not predicted quantities
+        - Overly generic disease categories (Brain Diseases, Mental Disorders) —
+          already filtered by hub-to-hub, but double-check by keyword.
+
+        Accepts target if EITHER:
+          a) target's domain is in _OUTCOME_DOMAINS (disease or cognitive_function), OR
+          b) target name matches _OUTCOME_KEYWORDS regex (as fallback for
+             claim_extraction concepts whose domain may be uncertain)
+        """
+        target = self._index.get(h.target_id)
+        if target is None:
+            return False
+
+        domains = set(target.domain_tags)
+        # Accept: disease or cognitive_function domain
+        if domains & _OUTCOME_DOMAINS:
+            return True
+
+        # Fallback: outcome keyword match (catches claim_extraction concepts
+        # that describe outcomes but have wrong domain tags)
+        if _OUTCOME_KEYWORDS.search(h.target_name):
+            return True
 
         return False
 
@@ -1594,11 +1790,25 @@ class HypothesisEngine:
     # ── scoring ────────────────────────────────────────────────────────
 
     def compute_frequency_boost(self, claim_meta: dict) -> float:
-        """Frequency boost based on independent primary study replication.
+        """Frequency boost based on independent PRIMARY study replication.
 
-        Same (subject, predicate, object) triple appearing in multiple
-        independent primary studies → higher boost.
+        Prefers the merged `primary_supporting_papers` list set by
+        `phase4_optimize.merge_duplicate_claims` (already filtered for
+        non-review study types). Falls back to rebuilding from the
+        pre-merge index, matching the same filter logic.
         """
+        # Fast path: canonical claim carries primary-PMID list
+        primary = claim_meta.get("primary_supporting_papers")
+        if primary is not None and isinstance(primary, list):
+            n = len(primary)
+            if n >= 3:
+                return 1.2
+            elif n >= 1:
+                return 1.0
+            else:
+                return 0.5
+
+        # Fallback: scan all claims with the same SPO, filter reviews
         key = (
             claim_meta.get("subject_id", ""),
             claim_meta.get("predicate", ""),
@@ -1614,11 +1824,11 @@ class HypothesisEngine:
                     primary_pmids.add(pmid)
 
         if len(primary_pmids) >= 3:
-            return 1.2   # multiple independent validations
+            return 1.2
         elif len(primary_pmids) >= 1:
-            return 1.0   # has primary support
+            return 1.0
         else:
-            return 0.5   # review-only, no primary source
+            return 0.5
 
     @staticmethod
     def compute_temporal_decay(claim_meta: dict, reference_year: int = 2026) -> float:
@@ -1636,22 +1846,32 @@ class HypothesisEngine:
         return max(0.7, 1.0 - 0.03 * age)
 
     def _compute_confidence_score(self, path: list[HypothesisLink]) -> float:
-        """Confidence = mean(per-link scores) with floor.
+        """Confidence = geometric mean of per-link scores, with weak-link penalty.
 
-        Per-link score = base × frequency_boost × temporal_decay
-                        + p_value_bonus + sample_size_bonus + replicability_bonus
+        Per-link score = edge.confidence × freq_boost × temporal_decay
+          (edge.confidence already includes study_type weighting from
+          phase4_optimize.apply_evidence_weighting and the claim-level
+          statistical quality signals from claim_extractor._estimate_confidence)
 
-        Note: study_type weight is NOT applied here because it was already
-        applied in phase4_optimize.apply_evidence_weighting on the edge
-        confidence. Applying it twice would crush review-sourced edges
-        (0.3 × 0.3 = 0.09).
+        Aggregate: geometric mean (one weak link crushes the path)
+          + weakest-link penalty (×0.7 when min_edge < 0.1)
+
+        Single source of truth for each multiplier:
+        - study_type → phase4_optimize.WEIGHT_MAP (canonical, idempotent)
+        - p_value/sample_size/replicability → claim_extractor._estimate_confidence
+        - freq across primary PMIDs → compute_frequency_boost
+        - publication recency → compute_temporal_decay
         """
         if not path:
             return 0.0
 
+        import math
+
         scores = []
+        min_conf = float("inf")
         for link in path:
-            s = max(link.confidence, 0.05)
+            raw = max(link.confidence, 1e-3)  # tiny floor for log()
+            min_conf = min(min_conf, raw)
 
             full_meta = {
                 "evidence": link.evidence,
@@ -1663,22 +1883,16 @@ class HypothesisEngine:
             freq_boost = self.compute_frequency_boost(full_meta)
             temp_decay = self.compute_temporal_decay(full_meta)
 
-            s = s * freq_boost * temp_decay
+            s = raw * freq_boost * temp_decay
+            scores.append(min(s, 1.0))
 
-            # Additive bonuses for statistical reporting quality
-            if link.evidence.get("p_value"):
-                s += 0.10
-            if link.evidence.get("sample_size"):
-                s += 0.06
+        log_sum = sum(math.log(max(s, 1e-6)) for s in scores)
+        gm = math.exp(log_sum / len(scores))
 
-            if link.evidence.get("replicability") == "replicated":
-                s += 0.10
-            elif link.evidence.get("replicability") == "controversial":
-                s -= 0.05
+        if min_conf < 0.1:
+            gm *= 0.7
 
-            scores.append(max(min(s, 1.0), 0.05))
-
-        return sum(scores) / len(scores)
+        return max(min(gm, 1.0), 0.0)
 
     def _compute_novelty_score(self, path: list[HypothesisLink]) -> float:
         """Score how novel/surprising a hypothesis is.
@@ -1721,45 +1935,31 @@ class HypothesisEngine:
         return min(score, 1.0)
 
     def _compute_evidence_score(self, path: list[HypothesisLink]) -> float:
-        """Score evidence quality. Uses both structured metadata and text availability."""
+        """Score evidence quality: traceability and text availability.
+
+        DOES NOT use p_value/sample_size/effect_size — those signals already
+        flow into edge.confidence via claim_extractor._estimate_confidence
+        and are aggregated by _compute_confidence_score. Counting them again
+        here was double-dipping.
+
+        This score asks a different question: "How well-anchored is the
+        evidence in source documents?" — which complements confidence's
+        "How statistically strong is the evidence?". Path-level: most
+        well-extracted edges score 0.6-0.8; we reserve >0.9 for paths whose
+        every step has rich provenance.
+        """
         scores = []
         for link in path:
-            ev = link.evidence
-            s = 0.3  # lower baseline — most claims lack structured stats
+            s = 0.3  # baseline
 
-            # structured statistical evidence
-            p = ev.get("p_value")
-            if p is not None:
-                if p < 0.001:
-                    s += 0.25
-                elif p < 0.01:
-                    s += 0.20
-                elif p < 0.05:
-                    s += 0.15
-
-            n = ev.get("sample_size")
-            if n is not None:
-                if n > 1000:
-                    s += 0.15
-                elif n > 100:
-                    s += 0.10
-                elif n > 30:
-                    s += 0.05
-
-            if ev.get("effect_size") is not None:
-                s += 0.10
-
-            # text-based evidence: having a raw sentence = better than nothing
             if link.raw_text and len(link.raw_text) > 20:
-                s += 0.10
-
-            # claim-backed: link was extracted from a structured claim
+                s += 0.20
             if link.claim_id:
-                s += 0.05
-
-            # PMID presence: traceable source
+                s += 0.15
             if link.source_paper.get("pmid"):
-                s += 0.05
+                s += 0.15
+            if link.evidence.get("study_type"):
+                s += 0.10
 
             scores.append(min(s, 1.0))
 
@@ -1848,12 +2048,19 @@ class HypothesisEngine:
         return min(score, 1.0), reason
 
     def _composite_score(self, h: Hypothesis) -> float:
+        """Weighted geometric mean of the 4 score components.
+
+        Geometric: a hypothesis is only as good as its weakest dimension.
+        A path with great evidence but 0 testability is worthless to us.
+
+        Matches the linear fitness in evolution_engine._score_fitness
+        (same weights, different aggregation — fitness adds convergence /
+        diversity / length modifiers not relevant here).
+        """
         c = max(h.confidence_score, 0.01)
         e = max(h.evidence_score, 0.01)
         n = max(h.novelty_score, 0.01)
         t = max(h.testability_score, 0.01)
-        # testability weighted highest — hypotheses must be experimentally verifiable
-        # with NeuroClaw imaging pipeline (sMRI/fMRI/dMRI/PET + BrainGNN/NeuroStorm)
         return (c ** 0.20) * (e ** 0.20) * (n ** 0.25) * (t ** 0.35)
 
     def _check_contradiction(self, m1: dict, m2: dict) -> float:
