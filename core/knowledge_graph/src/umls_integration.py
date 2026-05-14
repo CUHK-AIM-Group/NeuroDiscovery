@@ -141,10 +141,15 @@ def align_graph_to_umls(
     matches = _parse_mrconso_streaming(mrconso_path, graph_names)
 
     # Step 3: apply matches to graph
+    from .ingestion.experiment_infra import should_skip_umls_alignment
     matched = 0
     unmatched = 0
+    skipped = 0
     for nid, node in kg._index.items():
         if "claim" in node.domain_tags:
+            continue
+        if should_skip_umls_alignment(node):
+            skipped += 1
             continue
         if nid in matches:
             node.metadata["umls_cui"] = matches[nid]["cui"]
@@ -153,7 +158,10 @@ def align_graph_to_umls(
             unmatched += 1
 
     total = matched + unmatched
-    logger.info(f"UMLS alignment: {matched}/{total} concepts matched ({100*matched/total:.1f}%)")
+    logger.info(
+        f"UMLS alignment: {matched}/{total} concepts matched "
+        f"({100*matched/total:.1f}%); {skipped} experiment-infra nodes skipped"
+    )
 
     # Step 4: optionally save results
     if save_path:

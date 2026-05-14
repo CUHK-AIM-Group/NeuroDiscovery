@@ -8,6 +8,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-81-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
+[![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroClaw/)
+[![NeuroMap](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroMap-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/neuroclaw-kg-explorer)
 
 [中文版 README](README_zh.md)
 

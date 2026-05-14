@@ -212,6 +212,84 @@ def merge_duplicate_claims(kg: KnowledgeGraph) -> int:
     return merged
 
 
+def dedupe_same_pmid_claims(kg: KnowledgeGraph) -> int:
+    """Drop cross-predicate duplicates that share (subject_id, object_id, pmid).
+
+    Phase 2.4 predicate refinement can produce two claims from the same
+    sentence: one keeps the original vague predicate (e.g. is_associated_with
+    / review) and another is the refined precise predicate (e.g. modulates /
+    narrative_review). Same source PMID, same node pair, different predicate.
+    `merge_duplicate_claims` only groups by (s, p, o) so it does not catch
+    these cross-predicate siblings.
+
+    This function groups claims by (subject_id, object_id, pmid) and keeps
+    ONE canonical claim per group, deleting the rest.
+
+    Priority for picking the canonical:
+    1. Precise predicate (anything NOT in _VAGUE_PREDICATES) wins over vague.
+    2. Higher confidence wins.
+    3. Richer evidence wins (more populated fields).
+    4. Lexicographically smallest claim id (tiebreak).
+
+    Returns number of claims deleted.
+    """
+    from collections import defaultdict
+
+    _VAGUE_PREDICATES = {"is_associated_with", "correlates_with"}
+
+    # Group claim nodes by (subject_id, object_id, pmid)
+    groups: dict[tuple, list[str]] = defaultdict(list)
+    for cid, node in kg._index.items():
+        if "claim" not in node.domain_tags:
+            continue
+        if node.source_vocab != "claim_extraction":
+            continue
+        md = node.metadata
+        s = md.get("subject_id", "")
+        o = md.get("object_id", "")
+        paper = md.get("source_paper", {})
+        pmid = paper.get("pmid") if isinstance(paper, dict) else None
+        if not (s and o and pmid):
+            continue
+        groups[(s, o, pmid)].append(cid)
+
+    dup_groups = {k: v for k, v in groups.items() if len(v) > 1}
+    logger.info(f"found {len(dup_groups)} (subject, object, pmid) groups "
+                f"with cross-predicate duplicates "
+                f"({sum(len(v) for v in dup_groups.values())} claims total)")
+
+    deleted = 0
+    for (s, o, pmid), claim_ids in dup_groups.items():
+        def rank_key(cid):
+            n = kg._index[cid]
+            pred = n.metadata.get("predicate", "")
+            is_vague = pred in _VAGUE_PREDICATES
+            conf = n.metadata.get("confidence", 0.5)
+            ev = n.metadata.get("evidence", {})
+            richness = sum(1 for k in ("p_value", "sample_size", "effect_size",
+                                        "study_type", "methodology") if ev.get(k))
+            # sort ascending: (vague?, -conf, -richness, id)
+            return (is_vague, -conf, -richness, cid)
+
+        claim_ids.sort(key=rank_key)
+        keep_id = claim_ids[0]
+        drop_ids = claim_ids[1:]
+
+        for dup_id in drop_ids:
+            if dup_id not in kg.G:
+                continue
+            # Simply remove — these are genuine duplicates from the same source
+            # so we do NOT redirect edges (the canonical already has the right
+            # ones from its own extraction). Just drop the node + its edges.
+            kg.G.remove_node(dup_id)
+            if dup_id in kg._index:
+                del kg._index[dup_id]
+            deleted += 1
+
+    logger.info(f"deleted {deleted} cross-predicate same-PMID duplicate claims")
+    return deleted
+
+
 # ── 2. Add Bridge Edges ─────────────────────────────────────────────
 
 def add_bridge_edges(kg: KnowledgeGraph) -> int:
@@ -393,14 +471,14 @@ def apply_evidence_weighting(kg: KnowledgeGraph) -> int:
 
 # ── Main ─────────────────────────────────────────────────────────────
 
-def run_phase4():
+def run_phase4(graph_file: Path = GRAPH_FILE):
     """Run full Phase 4 optimization pipeline."""
     logger.info("=" * 60)
     logger.info("PHASE 4: QUALITY OPTIMIZATION")
     logger.info("=" * 60)
 
     # Load graph
-    kg = load_graph(GRAPH_FILE)
+    kg = load_graph(graph_file)
     stats_before = kg.stats()
     components_before = len(list(nx.weakly_connected_components(kg.G)))
     isolated_before = len([n for n in kg.G.nodes() if kg.G.degree(n) == 0])
@@ -411,6 +489,12 @@ def run_phase4():
     # Step 1: Merge duplicates
     merges = merge_duplicate_concepts(kg)
     logger.info(f"After concept merge: {kg.stats()['n_concepts']} concepts")
+
+    # Step 1a: Drop cross-predicate duplicates with same (subject, object, pmid).
+    # Phase 2.4 refinement can produce `is_associated_with` + `modulates` pair
+    # from the same sentence in the same paper; those are not real co-evidence.
+    pmid_dedupes = dedupe_same_pmid_claims(kg)
+    logger.info(f"After same-PMID dedupe: {kg.stats()['n_concepts']} concepts")
 
     # Step 1b: Merge duplicate claim nodes by SPO (enables frequency_boost)
     claim_merges = merge_duplicate_claims(kg)
@@ -428,7 +512,7 @@ def run_phase4():
     weighted = apply_evidence_weighting(kg)
 
     # Save
-    save_graph(kg, GRAPH_FILE)
+    save_graph(kg, graph_file)
     stats_after = kg.stats()
     components_after = len(list(nx.weakly_connected_components(kg.G)))
     isolated_after = len([n for n in kg.G.nodes() if kg.G.degree(n) == 0])
@@ -443,6 +527,7 @@ def run_phase4():
     logger.info(f"Isolated: {isolated_before} -> {isolated_after}")
     logger.info(f"Merges: {merges}")
     logger.info(f"Claim merges: {claim_merges}")
+    logger.info(f"Same-PMID dedupes: {pmid_dedupes}")
     logger.info(f"Bridges: {bridges}")
     logger.info(f"Weighted: {weighted}")
 
@@ -456,15 +541,22 @@ def run_phase4():
         "isolated_before": isolated_before,
         "isolated_after": isolated_after,
         "merges": merges,
+        "claim_merges": claim_merges,
+        "pmid_dedupes": pmid_dedupes,
         "bridges": bridges,
         "weighted": weighted,
     }
 
 
 if __name__ == "__main__":
+    import argparse
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
         datefmt="%H:%M:%S",
     )
-    run_phase4()
+    parser = argparse.ArgumentParser(description="Phase 4: KG quality optimization")
+    parser.add_argument("--graph", type=Path, default=GRAPH_FILE,
+                        help="Path to knowledge_graph.json (default: core/knowledge_graph/data/knowledge_graph.json)")
+    args = parser.parse_args()
+    run_phase4(args.graph)

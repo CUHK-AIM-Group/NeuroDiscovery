@@ -21,6 +21,18 @@ class DomainTag(str, Enum):
     CONNECTIVITY = "connectivity"  # functional/structural connections
     IMAGING_FEATURE = "imaging_feature"  # cortical thickness, volume, FA, FC, SUVR, etc.
     DATASET_VARIABLE = "dataset_variable"  # genetics, environment, medication, etc.
+    # Phase 1.5 Experiment infrastructure (atlas/modality/dataset/ml_model)
+    # + reserved RECIPE tag (former Phase 4.3, removed 2026-05-13 but kept
+    # in UMLS-skip set for forward compat).
+    RECIPE = "recipe"          # reserved
+    ATLAS = "atlas"            # brain parcellation (ATLAS:*)
+    MODALITY = "modality"      # imaging/data modality (MODALITY:*)
+    DATASET = "dataset"        # research dataset (DATASET:*)
+    ML_MODEL = "ml_model"      # ML architecture (MODEL:*)
+    # Brain decoding stimuli & psychological-state targets
+    VISUAL_STIMULUS = "visual_stimulus"  # image/video stimulus (NSD/BOLD5000/SEED-DV)
+    EMOTION = "emotion"                  # affective state label (SEED family)
+    VIGILANCE = "vigilance"              # alertness/drowsiness label (SEED-VIG)
 
 
 class SemanticType(str, Enum):
@@ -108,6 +120,24 @@ RELATION_TYPES = {
     "mediates",
     "inhibits",
     "distinguishes",
+    # Deprecated Phase 4.3 Input Recipe edges — reserved, unused after
+    # 2026-05-13 removal of input_recipe/recipe_kg_ingest modules.
+    "tests_hypothesis",   # (deprecated) Recipe → Hypothesis
+    "predicts_outcome",   # (deprecated) Recipe → target ConceptNode
+    "uses_biomarker",     # (deprecated) Recipe → Biomarker atom
+    "uses_atlas",         # (deprecated) Recipe → Atlas
+    "uses_modality",      # (deprecated) Recipe → Modality
+    "uses_model",         # (deprecated) Recipe → Model
+    "evaluated_on",       # (deprecated) Recipe → Dataset
+    "measured_in",        # (deprecated) Biomarker → Neuroanatomy ROI
+    "measured_by",        # (deprecated) Biomarker → Modality
+    # Phase 1.5 Experiment infrastructure edges
+    "supports_modality",  # Model → Modality (compat declaration)
+    "provides_modality",  # Dataset → Modality (what the dataset contains)
+    # Brain decoding edges (NSD/BOLD5000/SEED-DV/SEED family)
+    "evokes",             # visual_stimulus → neuroanatomy (encoding direction)
+    "decoded_from",       # visual_stimulus ← neuroanatomy (decoding direction)
+    "elicits",            # stimulus → emotion/vigilance (behavioral label)
 }
 
 # Claim-specific predicates (extracted from papers)

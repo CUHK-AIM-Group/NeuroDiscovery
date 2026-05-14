@@ -15,160 +15,160 @@ BrainGNN is an interpretable graph neural network for fMRI analysis and phenotyp
 
 - Paper: Li et al., 2020, BrainGNN
 - Official code: https://github.com/xxlya/BrainGNN_Pytorch/tree/main
-- Primary input: ROI-level fMRI data (timeseries/connectivity)
-- Primary output: phenotype prediction (classification/regression, task-dependent)
-
-In NeuroClaw, this document is model-level guidance. Upstream data preparation should be delegated to:
-- `fmri-skill` for fMRI preprocessing and ROI extraction
-- `hcpya-skill` when HCP Young Adult dataset download/orchestration is needed
+- NeuroClaw reimplementation: `models/braingnn/` (Windows-compatible, 无需 torch_sparse)
+- Primary input: ROI-level fMRI connectivity matrices (per-subject .pt files)
+- Primary output: phenotype prediction (classification/regression) + interpretable pooling scores
 
 **Research use only.**
 
 ---
 
-## Quick Start (From git clone)
+## NeuroClaw 实现要点
 
-### 1) Clone repository
+NeuroClaw 版本对原始 BrainGNN 做了以下关键改动：
+
+1. **去除 torch_sparse 依赖**：`augment_adj` 不再使用 `spspmm` 做邻接矩阵平方，改用 `add_self_loops + remove_self_loops`，在 Windows 上可直接运行。
+2. **全连接输入图**：data_adapter 构建 FULL graph（所有 i!=j 对），edge_attr = |Pearson r|。TopKPooling 负责选择，不在输入端做稀疏化。
+3. **Fisher-z 反变换**：存储的 fc_matrix 是 Fisher-z，加载时用 `torch.tanh()` 还原为 Pearson r，对角线置零。
+4. **支持 classification + regression 双任务**：通过 `--task` 参数切换，regression 时 nclass=1，输出 raw scalar，用 MSELoss。
+5. **PyG >=2.3 兼容**：TopKPooling.weight 可能在 `pool.select.weight`，forward 中做了兼容处理。
+6. **可选 T1 GM volume 融合**：`--include-t1` 将 z-scored GM volume 作为额外 1 维 node feature 拼接。
+
+---
+
+## Quick Start (NeuroClaw 内部)
+
+### 前置条件
+- conda env: `neuroclaw` (Python 3.11)
+- 已有 `data/braingnn_input/<atlas>/sub-*.pt` 文件（由 fmri-skill 生成）
+- 可选：`data/t1_volume/<atlas>/sub-*.npz`（GM volume）
+
+### 训练（分类）
 ```bash
-git clone https://github.com/xxlya/BrainGNN_Pytorch.git
-cd BrainGNN_Pytorch
+python models/braingnn/scripts/train.py \
+    --atlas schaefer_100_7net \
+    --labels-csv data/hcp_gender_labels.csv \
+    --subjects-file data/ready_subjects.txt \
+    --fold 0 --kfold 5 \
+    --n-epochs 50 --batch-size 16 --lr 0.005 \
+    --include-t1
 ```
 
-### 2) Create environment and install dependencies
+### 训练（回归）
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+python models/braingnn/scripts/train.py \
+    --atlas aal_116 \
+    --labels-csv data/hcp_age_labels.csv \
+    --subject-col subject_id --label-col age \
+    --task regression --label-scaling standardization \
+    --fold 0 --n-epochs 50
 ```
 
-If using GPU, install version-matched PyTorch/PyG builds first, then install remaining requirements.
-
-### 3) Prepare data (ROI first)
-Use `fmri-skill` to prepare ROI timeseries and metadata, then arrange files under:
-- `data/{dataset_name}-rest.csv`
-- `data/{dataset_name}_roi/`
-
-### 4) Run 3-phase pipeline
+### Atlas Sweep（快速对比）
 ```bash
-# Phase 1: build connectivity matrices
-python 01-fetch_data.py --atlas aal3 --dataset_name adhd200 --dataset_dir data
-
-# Phase 2: convert to graph samples
-python 02-process_data.py --atlas aal3 --dataset_name adhd200 --dataset_dir data --nclass 2 --score DX
-
-# Phase 3: train/evaluate BrainGNN
-CUDA_VISIBLE_DEVICES=0 python 03-main.py \
-  --atlas aal3 --dataset_name adhd200 --dataset_dir data \
-  --indim 166 --nroi 166 --nclass 2 --fold 0
+python models/braingnn/scripts/sweep_atlases.py
 ```
+对所有可用 atlas 跑 fold 0，输出 CSV 对比表。
 
----
-
-## Pipeline Definition
-
-### Phase 1: Connectivity Generation (`01-fetch_data.py`)
-Purpose: convert ROI timeseries to connectivity features.
-
-Outputs:
-- `data/{dataset_name}_roi/braingnn_{atlas}/*.mat`
-- `data/{dataset_name}_roi/braingnn_{atlas}/valid_subject_list.pkl`
-
-Key args:
-- `--atlas`: `aal3`, `dk`, `cc200`, `ho`
-- `--dataset_name`: `adhd200`, `cobre`, `UCLA`, `hcp-d`, `hcp-ep`, `ABCD`
-- `--dataset_dir`: root data dir, default `data`
-
-### Phase 2: Graph Construction (`02-process_data.py`)
-Purpose: convert connectivity matrices into per-subject graph files.
-
-Outputs:
-- `data/{dataset_name}_roi/braingnn_{atlas}/raw/{subject_id}.h5`
-
-Common args:
-- `--nclass`: class count
-- `--score`: label key (`DX`, `Gender`, `Age`)
-- `--seed`: random seed
-
-### Phase 3: Training and Evaluation (`03-main.py`)
-Purpose: train BrainGNN with fold-wise evaluation and checkpointing.
-
-Outputs:
-- `model/{fold}.pth`
-- `model/log/{fold}/` (TensorBoard)
-
-Core model options:
-- `--indim`, `--nroi`: must match atlas ROI count
-- `--nclass`: output classes
-- `--fold`: CV fold index
-- `--n_epochs`, `--batchSize`, `--lr`, `--weightdecay`
-
----
-
-## Input / Output Contract
-
-### Required inputs
-- ROI timeseries per subject
-- Subject metadata CSV with labels
-- Dataset name and atlas selection
-
-### Produced outputs
-- Connectivity matrices and graph files
-- Trained checkpoint(s)
-- Evaluation logs and metrics
-
----
-
-## Atlas and Dimension Mapping
-
-| Atlas | Typical ROI count | Required flags |
-|---|---:|---|
-| `aal3` | 166 | `--indim 166 --nroi 166` |
-| `cc200` | 200 | `--indim 200 --nroi 200` |
-| `dk` | atlas-dependent | set both flags to actual ROI count |
-| `ho` | atlas-dependent | set both flags to actual ROI count |
-
-If `--indim` or `--nroi` does not match the real ROI count, training will fail.
-
----
-
-## Recommended Directory Layout
-
-```text
-BrainGNN_Pytorch/
-  data/
-    {dataset_name}-rest.csv
-    {dataset_name}_roi/
-      braingnn_{atlas}/
-        *.mat
-        valid_subject_list.pkl
-        raw/*.h5
-  model/
-    {fold}.pth
-    log/{fold}/
-```
-
----
-
-## NeuroClaw Delegation Rules
-
-- ROI generation and preprocessing: delegate to `fmri-skill`
-- HCP download/orchestration (if needed): delegate to `hcpya-skill` (or `hcpa-skill` / `hcpd-skill` / `hcpep-skill` for other HCP variants)
-- Dependency checks: `dependency-planner` + `conda-env-manager`
-- Execution routing: `claw-shell`
-
-No execution before explicit plan confirmation.
-
----
-
-## Limitations and Notes
-
-- This workflow assumes ROI data already exists before Phase 1.
-- GPU is strongly recommended for training speed.
-- Cross-validation is controlled by running Phase 3 repeatedly with different `--fold` values.
-- TensorBoard command:
+### Dry Run（验证数据加载）
 ```bash
-tensorboard --logdir ./model/log/
+python models/braingnn/scripts/train.py --atlas aal_116 --dry-run
 ```
+
+---
+
+## 核心文件
+
+| 文件 | 作用 |
+|---|---|
+| `models/braingnn/net/braingnn.py` | 模型定义：MyNNConv + TopKPooling + FC head + loss functions |
+| `models/braingnn/scripts/data_adapter.py` | 数据加载：NeuroClaw .pt -> PyG InMemoryDataset |
+| `models/braingnn/scripts/train.py` | 训练入口：K-fold CV, classification/regression |
+| `models/braingnn/scripts/sweep_atlases.py` | Atlas 对比扫描脚本 |
+
+---
+
+## 数据格式约定
+
+### 输入文件 (`data/braingnn_input/<atlas>/sub-<id>.pt`)
+```python
+{
+    "subject_id": str,
+    "atlas": str,
+    "n_rois": int,
+    "time_series": Tensor[T, n_roi],
+    "fc_matrix": Tensor[n_roi, n_roi],   # Fisher-z transformed
+    "node_features": Tensor[n_roi, n_roi],
+    "edge_index": Tensor[2, n_edge],
+    "edge_attr": Tensor[n_edge, 1],
+    "roi_names": list[str],
+}
+```
+
+### 可选 T1 文件 (`data/t1_volume/<atlas>/sub-<id>.npz`)
+```python
+{
+    "subject_id": str,
+    "atlas": str,
+    "n_rois": int,
+    "roi_names": list[str],
+    "gm_volume_mm3": ndarray[n_roi],
+    "gm_fraction": ndarray[n_roi],
+}
+```
+
+### 输出 checkpoint (`models/braingnn/checkpoints/<atlas>/fold<N>.pt`)
+```python
+{
+    "state_dict": OrderedDict,
+    "args": dict,
+    "best_val_acc": float,  # classification
+    "test_acc": float,
+    "n_roi": int,
+    "indim": int,
+}
+```
+
+---
+
+## 关键训练参数
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `--atlas` | (必填) | atlas 名，需匹配 data/braingnn_input/ 下子目录 |
+| `--fold` | 0 | CV fold index |
+| `--kfold` | 5 | 总 fold 数（自动根据最小类别数调整） |
+| `--n-epochs` | 50 | 训练轮数 |
+| `--batch-size` | 16 | batch size |
+| `--lr` | 0.01 | 学习率 |
+| `--ratio` | 0.5 | TopKPooling 保留比例 |
+| `--n-communities` | 8 | MyNNConv 中间层 community 数 |
+| `--include-t1` | False | 是否融合 T1 GM volume |
+| `--task` | classification | classification / regression |
+| `--lamb3/4/5` | 0.1 | topk_loss 和 consist_loss 权重 |
+
+---
+
+## 调试经验与注意事项
+
+1. **indim/nroi 自动推断**：train.py 从第一个样本自动获取 `n_roi` 和 `indim`，无需手动指定。
+2. **PyG cache 问题**：修改数据后需删除 `data/braingnn_cache/<atlas>/` 目录，否则会加载旧缓存。sweep_atlases.py 已自动处理。
+3. **edge_attr 维度**：augment_adj 后 edge_attr 可能变为 1D，pool 层需要 squeeze 处理（已在 forward 中处理）。
+4. **小样本 kfold 自动调整**：当最小类别样本数 < kfold 时，自动降低 kfold 避免 StratifiedKFold 报错。
+5. **regression 标签标准化**：默认对 y 做 z-score（基于训练集统计），评估时反变换回原始尺度。
+6. **softmax 在 message 中**：MyNNConv 对 edge_weight 做 softmax attention，因此输入 edge_attr 必须为非负值（|Pearson r|）。
+7. **ROI mask 支持**：data_adapter 支持 `roi_mask` 参数做子图选择，用于消融实验。
+
+---
+
+## NeuroClaw 委托规则
+
+- ROI 生成和预处理：委托 `fmri-skill`
+- HCP 数据下载/编排：委托 `hcpya-skill` / `hcpa-skill` / `hcpd-skill` / `hcpep-skill`
+- 依赖检查：`dependency-planner` + `conda-env-manager`
+- 执行路由：`claw-shell`
+
+执行前需明确计划确认。
 
 ---
 
@@ -179,5 +179,5 @@ tensorboard --logdir ./model/log/
 - PyG installation notes: https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html
 
 Created At: 2026-03-28 19:53 HKT
-Last Updated At: 2026-03-28 19:53 HKT
+Last Updated At: 2026-05-15 22:50 HKT
 Author: chengwang96

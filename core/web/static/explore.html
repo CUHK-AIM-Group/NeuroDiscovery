@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroClaw · Knowledge Graph Explorer</title>
+<script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sigma@3.0.0/dist/sigma.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/graphology-layout-forceatlas2@0.10.1/worker.min.js"></script>
+<style>
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --header-h: 60px;
+  --sidebar-w: 340px;
+  --detail-w: 420px;
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ease: 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ui-font-size: 22px;
+  --graph-label-size: 32px;
+}
+html[data-theme="light"] {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-soft: #f1f4f9;
+  --surface-elev: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.1);
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --success: #10b981;
+}
+html[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #111a2c;
+  --surface-soft: #0e1626;
+  --surface-elev: #152037;
+  --border: #1f2d45;
+  --border-strong: #2b3d5c;
+  --accent: #58a6ff;
+  --accent-soft: rgba(88, 166, 255, 0.15);
+  --text: #e2e8f0;
+  --text-muted: #8da0b4;
+  --text-subtle: #64748b;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: var(--ui-font-size);
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.header {
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  gap: 18px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-weight: 600;
+  font-size: 16px;
+}
+.header-brand .logo-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a84ff, #8b5cf6);
+}
+.header-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border);
+  padding-left: 18px;
+}
+.stats-line {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.stats-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+}
+.icon-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12.5px;
+  transition: all var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lang-toggle { font-weight: 600; letter-spacing: 0.04em; }
+.back-btn {
+  padding: 5px 11px;
+  font-size: 12.5px;
+}
+.back-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--text-subtle);
+}
+.back-btn:disabled:hover {
+  border-color: var(--border);
+  color: var(--text-subtle);
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--detail-w);
+  height: calc(100vh - var(--header-h));
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.search-box {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.search-input {
+  width: 100%;
+  padding: 10px 13px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: all var(--ease);
+}
+.search-input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.domain-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+.chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--ease);
+  user-select: none;
+}
+.chip:hover { border-color: var(--border-strong); }
+.chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pill {
+  padding: 3px 9px;
+  border-radius: 11px;
+  font-size: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--ease);
+}
+.pill:hover { border-color: var(--border-strong); color: var(--text); }
+.pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.results-hint {
+  padding: 18px 20px;
+  color: var(--text-subtle);
+  font-size: 12.5px;
+  text-align: center;
+}
+.result-item {
+  padding: 11px 15px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all var(--ease);
+}
+.result-item:hover { background: var(--surface-soft); }
+.result-item.active {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+.result-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.result-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.result-meta .badge {
+  background: var(--surface-soft);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+}
+.result-meta .domain-tag {
+  background: var(--surface-soft);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  color: #fff;
+  border-color: transparent;
+}
+.result-item.is-noise .result-name { color: var(--text-muted); }
+.noise-mini {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: var(--warning);
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+/* ── Graph ──────────────────────────────────────────────────────────── */
+.graph-pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+  position: relative;
+}
+.graph-controls {
+  display: flex;
+  gap: 12px;
+  padding: 11px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.graph-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.graph-controls select {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+.graph-info {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-subtle);
+}
+.graph-canvas {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+#sigma-container {
+  position: absolute;
+  inset: 0;
+}
+.graph-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-subtle);
+  font-size: 14px;
+  text-align: center;
+  padding: 40px;
+}
+.legend {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  font-size: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 1100px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: translateY(0);
+}
+.legend.collapsed {
+  transform: translateY(calc(100% + 14px));
+  opacity: 0;
+  pointer-events: none;
+}
+.legend-toggle {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.legend-toggle.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.legend-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.legend-row-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 6px;
+  min-width: 90px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 20px;
+}
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.legend-line {
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+}
+.hover-hint {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 18px;
+  color: var(--text-muted);
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+
+/* ── Detail Pane ────────────────────────────────────────────────────── */
+.detail-pane {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 0;
+}
+.detail-empty {
+  padding: 55px 22px;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 13.5px;
+}
+.detail-section {
+  padding: 17px 19px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-section h3 {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-section h3 .count {
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.detail-aliases {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  margin-bottom: 8px;
+}
+.detail-definition {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-top: 9px;
+}
+.badge-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  transition: all var(--ease);
+}
+.badge.link {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+  cursor: pointer;
+}
+.badge.link:hover { filter: brightness(1.05); text-decoration: underline; }
+.badge.domain { color: #fff; border-color: transparent; }
+.noise-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(217, 119, 6, 0.12);
+  color: var(--warning);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 6px;
+  cursor: help;
+  border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+.item-card {
+  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  margin-bottom: 9px;
+  font-size: 13px;
+  border: 1px solid transparent;
+  transition: all var(--ease);
+}
+.item-card:hover { border-color: var(--border); }
+.item-card .item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.item-card .predicate {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.item-card .conf {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.item-card .triple {
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.item-card .triple .arrow {
+  color: var(--text-subtle);
+  margin: 0 5px;
+}
+.item-card .raw-text {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin-bottom: 7px;
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item-card .evidence-row {
+  display: flex;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+.item-card .evidence-row span {
+  background: var(--surface);
+  padding: 1px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+.item-card .paper-row {
+  margin-top: 7px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.item-card .score-grid {
+  display: flex;
+  gap: 11px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.item-card .score-grid b {
+  color: var(--text);
+  font-weight: 500;
+}
+.path-list {
+  margin-top: 9px;
+  border-left: 2px solid var(--border);
+  padding-left: 11px;
+}
+.path-step {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.path-step b { color: var(--text); }
+.path-step .rel {
+  background: var(--surface);
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+.recipe-pill {
+  display: inline-block;
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+.loading {
+  padding: 18px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.loading .spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.cold-start-banner {
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 11px 18px;
+  font-size: 13px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.detail-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+  margin-top: 11px;
+}
+.detail-meta-grid .kv {
+  background: var(--surface-soft);
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+}
+.detail-meta-grid .kv span {
+  color: var(--text-subtle);
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 10.5px;
+  margin-bottom: 2px;
+}
+.detail-meta-grid .kv code {
+  color: var(--text);
+  font-size: 11.5px;
+  word-break: break-all;
+}
+.tab-row {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 11px 12px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--ease);
+  font-weight: 500;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab-btn .count {
+  background: var(--surface-soft);
+  padding: 1px 7px;
+  border-radius: 9px;
+  font-size: 10.5px;
+  margin-left: 4px;
+}
+.recipe-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 19px;
+  background: var(--surface-soft);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.recipe-filter-row input { accent-color: var(--accent); cursor: pointer; }
+.focus-banner {
+  padding: 10px 19px;
+  background: linear-gradient(to right, rgba(10,132,255,0.08), transparent);
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.focus-banner b { color: var(--text); font-weight: 500; }
+.focus-banner .close-x {
+  cursor: pointer;
+  color: var(--text-subtle);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.focus-banner .close-x:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <span class="logo-dot"></span>
+    NeuroClaw
+  </div>
+  <div class="header-sub" data-i18n="header_sub">Knowledge Graph Explorer</div>
+  <div class="stats-line" id="statsLine">
+    <span class="spinner" style="display:inline-block;width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></span>
+    <span data-i18n="loading">Loading…</span>
+  </div>
+  <button class="icon-btn lang-toggle" id="langBtn" title="Switch language">EN</button>
+  <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
+</header>
+
+<div id="coldStartBanner" class="cold-start-banner" style="display:none;" data-i18n="cold_start">
+  First load reads the 180MB knowledge graph (takes ~30–60s)…
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="search-box">
+      <input type="text" class="search-input" id="searchInput"
+             data-i18n-ph="search_placeholder"
+             placeholder="Search biomarker / outcome / concept (≥2 chars)" autocomplete="off">
+      <div class="domain-chips" id="domainChips">
+        <span class="chip active" data-domain="" data-i18n="domain_all">All</span>
+        <span class="chip" data-domain="biomarker">biomarker</span>
+        <span class="chip" data-domain="imaging_feature">imaging</span>
+        <span class="chip" data-domain="cognitive_function">cognitive</span>
+        <span class="chip" data-domain="disease">disease</span>
+        <span class="chip" data-domain="gene">gene</span>
+        <span class="chip" data-domain="neuroanatomy">brain</span>
+      </div>
+    </div>
+    <div class="results" id="results">
+      <div class="results-hint" data-i18n="search_hint">Enter a keyword to search concepts</div>
+    </div>
+  </aside>
+
+  <main class="graph-pane">
+    <div class="graph-controls">
+      <button class="icon-btn back-btn" id="backBtn" disabled title="Back to previous node">
+        <span style="font-size:15px;line-height:1;">‹</span>
+        <span data-i18n="back">Back</span>
+      </button>
+      <label><span data-i18n="depth">Depth</span>
+        <select id="depthSelect">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+        </select>
+      </label>
+      <label><span data-i18n="neighbors">Neighbors</span>
+        <input type="number" id="limitInput" value="30" min="5" max="200" step="5"
+               style="width:64px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:inherit;">
+      </label>
+      <label><span data-i18n="edge_type">Edge type</span>
+        <select id="edgeTypeSelect">
+          <option value="all" selected data-i18n="all">All</option>
+          <option value="is_biomarker_of">is_biomarker_of</option>
+          <option value="correlates_with">correlates_with</option>
+          <option value="predicts">predicts</option>
+          <option value="causes">causes</option>
+          <option value="associated_with,is_associated_with">associated_with</option>
+          <option value="treats">treats</option>
+          <option value="modulates">modulates</option>
+          <option value="reduces,increases">reduces / increases</option>
+        </select>
+      </label>
+      <label><span data-i18n="font">Font</span>
+        <select id="fontSelect">
+          <option value="22">S</option>
+          <option value="26">M</option>
+          <option value="32" selected>L</option>
+          <option value="38">XL</option>
+          <option value="44">XXL</option>
+        </select>
+      </label>
+      <label><span>Layout</span>
+        <select id="layoutSelect">
+          <option value="ring" selected>Ring</option>
+          <option value="force">Force</option>
+        </select>
+      </label>
+      <span class="graph-info" id="graphInfo" data-i18n="hint_select">Select a node to start exploring</span>
+    </div>
+    <div class="graph-canvas">
+      <div id="sigma-container"></div>
+      <div class="graph-empty" id="graphEmpty">
+        <div>
+          <div style="font-size:34px;margin-bottom:11px;opacity:0.3;">◯</div>
+          <div data-i18n="empty_main">Search a concept in the left panel and click it</div>
+          <div style="font-size:12px;margin-top:7px;opacity:0.7;" data-i18n="empty_sub">
+            Hover to reveal edges · double-click to change query · wheel to zoom
+          </div>
+        </div>
+      </div>
+      <div class="hover-hint" id="hoverHint" style="display:none;"></div>
+      <div class="legend" id="legend" style="display:none;"></div>
+      <div class="legend-toggle" id="legendToggle">Legend ▲</div>
+    </div>
+  </main>
+
+  <aside class="detail-pane" id="detailPane">
+    <div class="detail-empty">
+      <div style="font-size:30px;margin-bottom:11px;opacity:0.3;">◇</div>
+      <div data-i18n="detail_empty_title">No node selected</div>
+      <span style="font-size:12.5px;" data-i18n="detail_empty_sub">Click a result or a node to view details</span>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+const state = {
+  currentNode: null,
+  focusEdge: null,    // {source, target} — a single-click edge inspection
+  domainFilter: "",
+  depth: 1,
+  limit: 30,
+  edgeTypes: "all",
+  sigma: null,
+  graph: null,
+  layoutWorker: null,
+  kgLoaded: false,
+  hasRecipes: false,
+  recipeOnly: false,
+  activeTab: "hypotheses",
+  quality: "clean",
+  hoveredNode: null,
+  pinnedNode: null,    // persistent single-click selection (non-query)
+  showAllInitial: false,  // 2s preview: all colors+labels before dimming
+  lang: "en",
+  fontSize: 32,
+  layoutMode: "ring",  // "ring" = concentric rings, "force" = FA2 random
+  cachedNeighborhood: null,
+  history: [],          // stack of previous node IDs for Back navigation
+  transitioning: false, // guard to prevent overlapping zoom animations
+};
+
+const DOMAIN_COLORS = {
+  biomarker: "#10b981",
+  imaging_feature: "#3b82f6",
+  cognitive_function: "#8b5cf6",
+  disease: "#ef4444",
+  gene: "#f59e0b",
+  neuroanatomy: "#06b6d4",
+  drug: "#ec4899",
+  neurotransmitter: "#f97316",
+  cell_type: "#14b8a6",
+  paradigm: "#a855f7",
+  connectivity: "#0ea5e9",
+  dataset_variable: "#84cc16",
+  claim: "#94a3b8",
+};
+const GRAY = "#d1d5db";
+const GRAY_DARK = "#64748b";
+const DIM_EDGE = "#e5e7eb";
+
+// ── i18n ─────────────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    header_sub: "Knowledge Graph Explorer",
+    loading: "Loading…",
+    cold_start: "First load reads the 180MB knowledge graph (takes ~30–60s)…",
+    search_placeholder: "Search biomarker / outcome / concept (≥2 chars)",
+    search_hint: "Enter a keyword to search concepts",
+    domain_all: "All",
+    back: "Back",
+    depth: "Depth",
+    neighbors: "Neighbors",
+    edge_type: "Edge type",
+    font: "Font",
+    all: "All",
+    hint_select: "Select a node to start exploring",
+    empty_main: "Search a concept in the left panel and click it",
+    empty_sub: "Hover to reveal edges · double-click to change query · wheel to zoom",
+    detail_empty_title: "No node selected",
+    detail_empty_sub: "Click a result or a node to view details",
+    stats_concepts: "concepts",
+    stats_edges: "edges",
+    stats_claims: "verified claims",
+    stats_hyps: "new hypotheses",
+    stats_recipes: "with recipe",
+    tab_hypotheses: "Hypotheses",
+    tab_claims: "Verified Claims",
+    tab_meta: "Metadata",
+    filter_recipe: "Show only recipe-matched hypotheses",
+    no_hypotheses: "No hypotheses for this concept",
+    no_claims: "No verified claims for this concept",
+    no_match: "No match found",
+    external_ids: "External IDs",
+    no_external: "No external IDs",
+    source: "Source vocab",
+    semantic_types: "Semantic types",
+    atlas_mapping: "Atlas mapping",
+    aliases: "Aliases",
+    nodes_edges: (n, e, t) => `${n} nodes · ${e} edges${t ? " · sampled" : ""}`,
+    sampling: "sampled",
+    low_quality: "⚠ low quality",
+    hover_show: "Hover a node to reveal colors and relationships",
+    preview_all: "Showing all colors · will dim in 2s",
+    hover_all: "Hovering query node · showing all colors",
+    hover_explain: (l) => `Hovering: ${l}`,
+    showing_edge: "Sources for this relationship",
+    between: "between",
+    and: "and",
+    close: "×",
+    no_sources: "No direct sources linking these two concepts",
+    curated_edges: "Curated edges",
+    supporting_claims: "Supporting claims",
+    pubmed: "PMID",
+    doi: "DOI",
+    year: "Year",
+    composite: "composite",
+    novelty: "novelty",
+    evidence: "evidence",
+    testability: "testability",
+    critic: "critic",
+    predicate_filter: (p) => `Filter: predicate = ${p}`,
+    node_type: "Node type",
+    edge_type_legend: "Edge type",
+    more_steps: (n) => `+ ${n} more steps`,
+  },
+  zh: {
+    header_sub: "知识图谱浏览器",
+    loading: "载入中…",
+    cold_start: "首次打开需要加载 180MB 知识图谱（约 30–60 秒）…",
+    search_placeholder: "搜索 biomarker / outcome / 概念（≥2 字符）",
+    search_hint: "输入关键词，快速检索概念",
+    domain_all: "全部",
+    back: "返回",
+    depth: "深度",
+    neighbors: "邻域",
+    edge_type: "边类型",
+    font: "字号",
+    all: "全部",
+    hint_select: "选中节点开始探索",
+    empty_main: "在左侧搜索并点击一个概念",
+    empty_sub: "悬浮显示边 · 双击切换 query · 滚轮缩放",
+    detail_empty_title: "未选中节点",
+    detail_empty_sub: "点击搜索结果或图中节点查看详情",
+    stats_concepts: "概念",
+    stats_edges: "边",
+    stats_claims: "已证实 Claims",
+    stats_hyps: "新假设",
+    stats_recipes: "带 recipe",
+    tab_hypotheses: "新假设",
+    tab_claims: "已证实 Claims",
+    tab_meta: "元数据",
+    filter_recipe: "仅显示已匹配 recipe 的假设",
+    no_hypotheses: "此概念暂无新假设",
+    no_claims: "此概念暂无已证实的 Claims",
+    no_match: "未找到匹配",
+    external_ids: "外部 ID",
+    no_external: "无外部 ID",
+    source: "来源词表",
+    semantic_types: "语义类型",
+    atlas_mapping: "Atlas 映射",
+    aliases: "别名",
+    nodes_edges: (n, e, t) => `${n} 节点 · ${e} 边${t ? " · 已采样" : ""}`,
+    sampling: "已采样",
+    low_quality: "⚠ 低质量",
+    hover_show: "悬浮节点可显示颜色与关系",
+    preview_all: "正显示全部颜色 · 2 秒后变灰",
+    hover_all: "正悬浮于 query 节点 · 显示全部颜色",
+    hover_explain: (l) => `悬浮：${l}`,
+    showing_edge: "这两个概念之间关系的来源",
+    between: "",
+    and: " 与 ",
+    close: "×",
+    no_sources: "这两个概念没有直接关联来源",
+    curated_edges: "Curated 边",
+    supporting_claims: "证据 Claims",
+    pubmed: "PMID",
+    doi: "DOI",
+    year: "年份",
+    composite: "composite",
+    novelty: "novelty",
+    evidence: "evidence",
+    testability: "testability",
+    critic: "critic",
+    predicate_filter: (p) => `过滤：谓词 = ${p}`,
+    node_type: "节点类型",
+    edge_type_legend: "关系类型",
+    more_steps: (n) => `+ 还有 ${n} 步`,
+  },
+};
+const t = (key, ...args) => {
+  const v = I18N[state.lang]?.[key] ?? I18N.en[key] ?? key;
+  return typeof v === "function" ? v(...args) : v;
+};
+
+// ── DOM helpers ──────────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, children = []) => {
+  const node = document.createElement(tag);
+  Object.entries(attrs).forEach(([k, v]) => {
+    if (k === "className") node.className = v;
+    else if (k === "textContent") node.textContent = v;
+    else if (k === "html") node.innerHTML = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  });
+  (Array.isArray(children) ? children : [children]).forEach((c) => {
+    if (c == null) return;
+    if (typeof c === "string") node.appendChild(document.createTextNode(c));
+    else node.appendChild(c);
+  });
+  return node;
+};
+const escapeHtml = (s) => (s || "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[c]));
+const fmt = (n, digits = 2) => (n == null || isNaN(n)) ? "—" : Number(n).toFixed(digits);
+
+function mixHex(a, b, ratio) {
+  const pa = a.startsWith("#") ? a.slice(1) : a;
+  const pb = b.startsWith("#") ? b.slice(1) : b;
+  const ar = parseInt(pa.slice(0, 2), 16), ag = parseInt(pa.slice(2, 4), 16), ab = parseInt(pa.slice(4, 6), 16);
+  const br = parseInt(pb.slice(0, 2), 16), bg = parseInt(pb.slice(2, 4), 16), bb = parseInt(pb.slice(4, 6), 16);
+  const r = Math.round(ar + (br - ar) * ratio);
+  const g = Math.round(ag + (bg - ag) * ratio);
+  const bl = Math.round(ab + (bb - ab) * ratio);
+  return "#" + [r, g, bl].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+
+// ── Physics-style easings ────────────────────────────────────────────
+// Silky out: strong initial velocity, very long gentle tail. No overshoot.
+const easeOutQuint = (t) => 1 - Math.pow(1 - t, 5);
+// Smooth in-out for bidirectional transitions (both ends decelerate).
+const easeInOutQuint = (t) =>
+  t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+// Cubic in-out kept for very short pulls (Back phase 1).
+const easeInOutCubic = (t) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+// Animate the sigma camera with a custom easing. Returns a Promise.
+function animateCamera(target, { duration = 700, easing = easeInOutQuint } = {}) {
+  return new Promise((resolve) => {
+    if (!state.sigma) { resolve(); return; }
+    const camera = state.sigma.getCamera();
+    const start = { x: camera.x, y: camera.y, ratio: camera.ratio, angle: camera.angle || 0 };
+    const end = {
+      x: target.x != null ? target.x : start.x,
+      y: target.y != null ? target.y : start.y,
+      ratio: target.ratio != null ? target.ratio : start.ratio,
+      angle: start.angle,
+    };
+    const t0 = performance.now();
+    function frame(now) {
+      const t = Math.min(1, (now - t0) / duration);
+      const e = easing(t);
+      camera.setState({
+        x: start.x + (end.x - start.x) * e,
+        y: start.y + (end.y - start.y) * e,
+        ratio: start.ratio + (end.ratio - start.ratio) * e,
+        angle: start.angle,
+      });
+      if (t < 1) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+// Animate the camera toward a SPECIFIC node, re-reading the node's display
+// coordinates every frame. Sigma's camera uses a bbox-normalized coord
+// system, not graph coords — and while FA2 is still running the bbox keeps
+// drifting, so the display position of the node (even a pinned one) moves.
+// Re-reading per-frame guarantees we actually land on the node at the end.
+function animateCameraToNode(nodeId, { duration = 900, easing = easeInOutQuint, startRatio, endRatio = 1.0 } = {}) {
+  return new Promise((resolve) => {
+    if (!state.sigma || !state.graph || !state.graph.hasNode(nodeId)) { resolve(); return; }
+    const camera = state.sigma.getCamera();
+    const startState = { x: camera.x, y: camera.y, ratio: camera.ratio };
+    const fromRatio = startRatio != null ? startRatio : startState.ratio;
+    if (startRatio != null) camera.setState({ x: startState.x, y: startState.y, ratio: fromRatio, angle: 0 });
+    const t0 = performance.now();
+    function frame(now) {
+      const t = Math.min(1, (now - t0) / duration);
+      const e = easing(t);
+      // Read the node's CURRENT display coords — these drift as FA2 resizes bbox.
+      let tx = 0, ty = 0;
+      try {
+        const d = state.sigma.getNodeDisplayData(nodeId);
+        if (d) { tx = d.x; ty = d.y; }
+      } catch (err) {}
+      camera.setState({
+        x: startState.x + (tx - startState.x) * e,
+        y: startState.y + (ty - startState.y) * e,
+        ratio: fromRatio + (endRatio - fromRatio) * e,
+        angle: 0,
+      });
+      if (t < 1) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+// Snap camera dead-center on a node, using sigma's current bbox normalization.
+function centerCameraOn(nodeId, ratio) {
+  if (!state.sigma || !state.graph || !state.graph.hasNode(nodeId)) return;
+  try {
+    const d = state.sigma.getNodeDisplayData(nodeId);
+    if (!d) return;
+    const cam = state.sigma.getCamera();
+    const st = cam.getState();
+    cam.setState({
+      x: d.x,
+      y: d.y,
+      ratio: ratio != null ? ratio : st.ratio,
+      angle: 0,
+    });
+  } catch (e) {}
+}
+
+// ── Theme ────────────────────────────────────────────────────────────
+(function initTheme() {
+  const saved = localStorage.getItem("neuroclaw-theme");
+  const theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.dataset.theme = theme;
+  $("themeBtn").textContent = theme === "dark" ? "☀" : "☾";
+})();
+$("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = cur;
+  localStorage.setItem("neuroclaw-theme", cur);
+  $("themeBtn").textContent = cur === "dark" ? "☀" : "☾";
+  // re-render graph label colors for theme change
+  if (state.sigma) state.sigma.refresh();
+});
+
+// ── Language ─────────────────────────────────────────────────────────
+(function initLang() {
+  const saved = localStorage.getItem("neuroclaw-lang");
+  state.lang = saved === "zh" ? "zh" : "en";
+  document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
+  applyI18n();
+  $("langBtn").textContent = state.lang === "zh" ? "中" : "EN";
+})();
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((n) => {
+    const key = n.getAttribute("data-i18n");
+    const v = t(key);
+    if (typeof v === "string") n.textContent = v;
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach((n) => {
+    const key = n.getAttribute("data-i18n-ph");
+    const v = t(key);
+    if (typeof v === "string") n.setAttribute("placeholder", v);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((n) => {
+    const key = n.getAttribute("data-i18n-title");
+    const v = t(key);
+    if (typeof v === "string") n.setAttribute("title", v);
+  });
+}
+$("langBtn").addEventListener("click", () => {
+  state.lang = state.lang === "en" ? "zh" : "en";
+  localStorage.setItem("neuroclaw-lang", state.lang);
+  document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
+  $("langBtn").textContent = state.lang === "zh" ? "中" : "EN";
+  applyI18n();
+  // re-render detail pane and stats with new lang
+  pollStatsRender();
+  if (state.currentNode) {
+    if (state.focusEdge) loadEdgeSources(state.focusEdge.source, state.focusEdge.target);
+    else loadDetail(state.currentNode);
+  }
+});
+
+// ── Font-size control ────────────────────────────────────────────────
+(function initFont() {
+  const saved = parseInt(localStorage.getItem("neuroclaw-font") || "18", 10);
+  if (!isNaN(saved)) {
+    state.fontSize = saved;
+    $("fontSelect").value = String(saved);
+    applyFontSize(saved);
+  }
+})();
+function applyFontSize(px) {
+  state.fontSize = px;
+  document.documentElement.style.setProperty("--ui-font-size", px + "px");
+  document.documentElement.style.setProperty("--graph-label-size", (px + 0) + "px");
+  localStorage.setItem("neuroclaw-font", String(px));
+  if (state.sigma) {
+    state.sigma.setSetting("labelSize", px);
+    state.sigma.refresh();
+  }
+}
+$("fontSelect").addEventListener("change", (e) => {
+  applyFontSize(parseInt(e.target.value, 10));
+});
+
+// ── KG status polling ────────────────────────────────────────────────
+let _lastStats = null;
+async function pollStats() {
+  try {
+    const r = await fetch("/api/kg/stats").then((r) => r.json());
+    if (r.loaded) {
+      const wasLoaded = state.kgLoaded;
+      state.kgLoaded = true;
+      _lastStats = r;
+      $("coldStartBanner").style.display = "none";
+      pollStatsRender();
+      state.hasRecipes = (r.n_recipes || 0) > 0;
+      if (!wasLoaded) {
+        // First transition to loaded: show default top list
+        loadDefaultList();
+      }
+      return;
+    }
+    $("coldStartBanner").style.display = "block";
+    if (!r.loading) {
+      fetch("/api/kg/load", { method: "POST" }).catch(() => {});
+    }
+    setTimeout(pollStats, 2500);
+  } catch (e) {
+    $("statsLine").innerHTML = '<span style="color:var(--danger);">Load failed</span>';
+  }
+}
+function pollStatsRender() {
+  if (!_lastStats) return;
+  const r = _lastStats;
+  $("statsLine").innerHTML = `
+    <span>${(r.n_concepts||0).toLocaleString()} ${t("stats_concepts")}</span>
+    <span class="stats-dot"></span>
+    <span>${(r.n_edges||0).toLocaleString()} ${t("stats_edges")}</span>
+    <span class="stats-dot"></span>
+    <span>${(r.n_claims||0).toLocaleString()} ${t("stats_claims")}</span>
+    <span class="stats-dot"></span>
+    <span>${(r.n_hypotheses||0).toLocaleString()} ${t("stats_hyps")}</span>
+    ${r.n_recipes ? `<span class="stats-dot"></span><span>${r.n_recipes} ${t("stats_recipes")}</span>` : ""}
+  `;
+}
+pollStats();
+
+// ── Search ───────────────────────────────────────────────────────────
+let searchTimer = null;
+$("searchInput").addEventListener("input", (e) => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  if (q.length < 2) {
+    // Empty/short query: load the domain-scoped default list
+    loadDefaultList();
+    return;
+  }
+  searchTimer = setTimeout(() => runSearch(q), 300);
+});
+$("domainChips").addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+  [...$("domainChips").children].forEach((c) => c.classList.remove("active"));
+  chip.classList.add("active");
+  state.domainFilter = chip.dataset.domain || "";
+  const q = $("searchInput").value.trim();
+  if (q.length >= 2) runSearch(q);
+  else loadDefaultList();
+});
+
+
+async function loadDefaultList() {
+  if (!state.kgLoaded) return;
+  const container = $("results");
+  container.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
+  try {
+    const url = new URL("/api/kg/search", location.origin);
+    url.searchParams.set("q", "");
+    if (state.domainFilter) url.searchParams.set("domain", state.domainFilter);
+    url.searchParams.set("quality", state.quality);
+    url.searchParams.set("limit", "50");
+    const r = await fetch(url).then((r) => r.json());
+    renderResults(r.results || []);
+  } catch (e) {
+    container.innerHTML = `<div class="results-hint" style="color:var(--danger);">load failed</div>`;
+  }
+}
+
+async function runSearch(q) {
+  if (!state.kgLoaded) {
+    $("results").innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
+    return;
+  }
+  $("results").innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
+  try {
+    const url = new URL("/api/kg/search", location.origin);
+    url.searchParams.set("q", q);
+    if (state.domainFilter) url.searchParams.set("domain", state.domainFilter);
+    url.searchParams.set("quality", state.quality);
+    url.searchParams.set("limit", "30");
+    const r = await fetch(url).then((r) => r.json());
+    renderResults(r.results || []);
+  } catch (e) {
+    $("results").innerHTML = `<div class="results-hint" style="color:var(--danger);">${t("loading")}</div>`;
+  }
+}
+function renderResults(items) {
+  const container = $("results");
+  container.innerHTML = "";
+  if (!items.length) {
+    container.innerHTML = `<div class="results-hint">${t("no_match")}</div>`;
+    return;
+  }
+  items.forEach((it) => {
+    const primaryDomain = (it.domain_tags || []).find((d) => d !== "claim") || (it.domain_tags || [])[0] || "";
+    const domainBadge = primaryDomain
+      ? `<span class="domain-tag" title="${escapeHtml((it.domain_tags || []).join(', '))}" style="background:${DOMAIN_COLORS[primaryDomain] || "#94a3b8"};">${escapeHtml(primaryDomain)}</span>`
+      : "";
+    const noiseMark = it.is_noise ? '<span class="noise-mini" title="possible noise"></span>' : "";
+    const node = el("div", {
+      className: "result-item" + (it.is_noise ? " is-noise" : ""),
+      "data-id": it.id,
+    }, [
+      el("div", { className: "result-name", html: escapeHtml(it.name) + noiseMark }),
+      el("div", { className: "result-meta", html: `
+        ${domainBadge}
+        <span class="badge">${(it.n_claims || 0).toLocaleString()} claims</span>
+        <span class="badge">${it.n_hypotheses || 0} hyps</span>
+      `}),
+    ]);
+    node.addEventListener("click", () => selectNode(it.id));
+    container.appendChild(node);
+  });
+}
+
+// ── Node selection (from results list) ───────────────────────────────
+async function selectNode(nodeId, opts = {}) {
+  const { pushHistory = true, animateIn = false } = opts;
+  if (pushHistory && state.currentNode && state.currentNode !== nodeId) {
+    state.history.push(state.currentNode);
+    updateBackBtn();
+  }
+  state.currentNode = nodeId;
+  state.focusEdge = null;
+  state.pinnedNode = null;
+  [...document.querySelectorAll(".result-item")].forEach((r) => {
+    r.classList.toggle("active", r.dataset.id === nodeId);
+  });
+  await Promise.all([loadNeighborhood(nodeId), loadDetail(nodeId)]);
+  if (animateIn && state.sigma && state.graph && state.graph.hasNode(nodeId)) {
+    // Fresh render: start slightly zoomed-in centered on the node, ease out.
+    // animateCameraToNode re-reads display coords each frame so bbox drift
+    // (FA2 still running) can't pull us off-target.
+    await animateCameraToNode(nodeId, {
+      duration: 1000,
+      easing: easeOutQuint,
+      startRatio: 0.6,
+      endRatio: 1.0,
+    });
+    centerCameraOn(nodeId, 1.0);
+    state.sigma.refresh();
+  }
+}
+
+function updateBackBtn() {
+  const btn = $("backBtn");
+  if (!btn) return;
+  btn.disabled = state.history.length === 0;
+}
+
+// Dive into a node: zoom camera onto it smoothly, then swap graph and settle.
+async function navigateIntoNode(nodeId) {
+  if (!state.sigma || !state.graph || !state.graph.hasNode(nodeId) || state.transitioning) return;
+  state.transitioning = true;
+  try {
+    // Phase 1 — glide the camera onto the clicked node (in display coords
+    // of the CURRENT graph). Re-read each frame so FA2 drift is tracked.
+    await animateCameraToNode(nodeId, {
+      duration: 900,
+      easing: easeInOutQuint,
+      endRatio: 0.28,
+    });
+    // Phase 2 — replace the graph rooted at that node (new sigma instance).
+    await selectNode(nodeId, { pushHistory: true, animateIn: false });
+    // Phase 3 — settle out to ratio 1.0 while keeping the camera glued to
+    // the new center node. centerCameraOn + animateCameraToNode read the
+    // node's display coords fresh every frame, so bbox drift in the new
+    // FA2 run can't pull us to a corner.
+    if (state.sigma) {
+      centerCameraOn(nodeId, 0.42);
+      await animateCameraToNode(nodeId, {
+        duration: 1100,
+        easing: easeOutQuint,
+        endRatio: 1.0,
+      });
+      centerCameraOn(nodeId, 1.0);
+      state.sigma.refresh();
+    }
+  } finally {
+    state.transitioning = false;
+  }
+}
+
+// Back to previous node: zoom out first, then swap graph and settle.
+async function navigateBack() {
+  if (state.history.length === 0 || state.transitioning) return;
+  const prevId = state.history.pop();
+  updateBackBtn();
+  state.transitioning = true;
+  try {
+    if (state.sigma) {
+      // Phase 1 — pull back with a smooth in-out.
+      await animateCamera({ ratio: 2.0 }, { duration: 520, easing: easeInOutCubic });
+    }
+    // Phase 2 — load previous neighborhood (no history push; we're going back).
+    await selectNode(prevId, { pushHistory: false, animateIn: false });
+    // Phase 3 — settle from a wide view down to 1.0, centered on the prev node.
+    if (state.sigma) {
+      centerCameraOn(prevId, 1.8);
+      await animateCameraToNode(prevId, {
+        duration: 1000,
+        easing: easeOutQuint,
+        endRatio: 1.0,
+      });
+      centerCameraOn(prevId, 1.0);
+      state.sigma.refresh();
+    }
+  } finally {
+    state.transitioning = false;
+  }
+}
+
+$("backBtn").addEventListener("click", () => navigateBack());
+
+async function loadNeighborhood(nodeId) {
+  const url = new URL(`/api/kg/node/${encodeURIComponent(nodeId)}/neighborhood`, location.origin);
+  url.searchParams.set("depth", state.depth);
+  url.searchParams.set("limit", state.limit);
+  if (state.edgeTypes && state.edgeTypes !== "all") {
+    url.searchParams.set("edge_types", state.edgeTypes);
+  }
+  try {
+    const r = await fetch(url).then((r) => r.json());
+    state.cachedNeighborhood = r;
+    renderGraph(r);
+  } catch (e) {
+    $("graphInfo").textContent = "neighborhood load failed";
+  }
+}
+
+// ── Graph render with hover reducers ─────────────────────────────────
+function renderGraph(data) {
+  $("graphEmpty").style.display = "none";
+  $("legend").style.display = "flex";
+  $("hoverHint").style.display = "block";
+  // 2-second "preview": show every color + label before dimming to gray.
+  // The flag is read by node/edge reducers each frame; flipping it at 2s
+  // + refresh transitions the graph to the usual hover-to-reveal mode.
+  state.showAllInitial = true;
+  $("hoverHint").textContent = t("preview_all");
+  const { nodes, edges, truncated } = data;
+  $("graphInfo").textContent = t("nodes_edges", nodes.length, edges.length, truncated);
+
+  // Kill previous sigma + worker
+  if (state.layoutWorker) { try { state.layoutWorker.kill(); } catch (e) {} state.layoutWorker = null; }
+  if (state.sigma) { state.sigma.kill(); state.sigma = null; }
+
+  const Graph = graphology.Graph;
+  const graph = new Graph({ type: "directed", multi: false, allowSelfLoops: true });
+
+  nodes.forEach((n, i) => {
+    const nodeDepth = n.depth || 0;
+    const base = n.is_claim ? 14 : 22;
+    const size = n.is_noise && !n.is_center ? Math.max(8, Math.round(base * 0.65)) : base;
+    let x = 0, y = 0;
+    if (!n.is_center) {
+      if (state.layoutMode === "ring") {
+        const sameDepth = nodes.filter(nd => (nd.depth || 0) === nodeDepth && !nd.is_center);
+        const idx = sameDepth.indexOf(n);
+        const count = sameDepth.length;
+        const ang = (idx / count) * 2 * Math.PI + (nodeDepth * 0.3);
+        const r = nodeDepth === 1 ? 1.5 : 3.5;
+        x = Math.cos(ang) * r;
+        y = Math.sin(ang) * r;
+      } else {
+        const ang = (i / nodes.length) * 2 * Math.PI;
+        const r = nodeDepth >= 2 ? 2.5 + Math.random() * 1.0 : 0.8 + Math.random() * 1.0;
+        x = Math.cos(ang) * r;
+        y = Math.sin(ang) * r;
+      }
+    }
+    graph.addNode(n.id, {
+      label: n.label,
+      originalLabel: n.label,
+      size,
+      baseSize: size,
+      color: n.color,
+      baseColor: n.color,
+      x,
+      y,
+      fixed: !!n.is_center,
+      domain: n.domain,
+      is_center: n.is_center,
+      is_claim: n.is_claim,
+      is_noise: !!n.is_noise,
+      depth: nodeDepth,
+    });
+  });
+  // When depth>=2, only show edges that touch a depth-2 node (hide center↔depth-1 clutter)
+  const depthMap = data.depth_map || {};
+  const isDepth2Mode = state.depth >= 2;
+  edges.forEach((e) => {
+    if (!graph.hasNode(e.source) || !graph.hasNode(e.target)) return;
+    if (graph.hasEdge(e.source, e.target)) return;
+    if (isDepth2Mode) {
+      const sd = depthMap[e.source] ?? 0;
+      const td = depthMap[e.target] ?? 0;
+      if (sd < 2 && td < 2) return;
+    }
+    graph.addEdge(e.source, e.target, {
+      label: e.label,
+      color: e.color,
+      baseColor: e.color,
+      size: 1.5,
+      relation: e.label,
+      relations_fwd: e.relations_fwd || [],
+      relations_rev: e.relations_rev || [],
+      bidirectional: !!e.bidirectional,
+      curvature: 0.2,
+    });
+  });
+
+  state.graph = graph;
+  const container = $("sigma-container");
+  const curveProgram = Sigma.rendering && Sigma.rendering.EdgeCurveProgram;
+  const edgeSettings = curveProgram
+    ? { defaultEdgeType: "curved", edgeProgramClasses: { curved: curveProgram } }
+    : { defaultEdgeType: "arrow" };
+  state.sigma = new Sigma(graph, container, {
+    ...edgeSettings,
+    padding: 100,
+    renderEdgeLabels: false,
+    labelSize: state.fontSize,
+    labelWeight: "600",
+    labelColor: { color: getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#0f172a" },
+    labelRenderedSizeThreshold: 4,
+    // node/edge reducers run per-frame and let us recolor based on state
+    nodeReducer(nid, data) {
+      const res = { ...data };
+      // Initial 2-second preview: everything in full color + labels.
+      if (state.showAllInitial) {
+        res.color = data.baseColor;
+        res.label = data.originalLabel;
+        if (data.is_center) res.size = data.baseSize;
+        return res;
+      }
+      const hover = state.hoveredNode;
+      const pin = state.pinnedNode;
+      // Query node always stays colored
+      if (data.is_center) {
+        res.color = data.baseColor;
+        res.size = data.baseSize * (nid === hover ? 1.1 : 1.0);
+        res.label = data.originalLabel;
+        return res;
+      }
+      // Active node set: union of hover + pin
+      // - If hovering query: show everything (all neighbors lit)
+      // - If hovering a specific node: that node + its neighbors
+      // - If a node is pinned (persistent): that node + its neighbors stay lit
+      let lightAll = false;
+      const active = new Set();
+      if (hover === state.currentNode) lightAll = true;
+      if (hover && hover !== state.currentNode) {
+        active.add(hover);
+        state.graph && state.graph.forEachNeighbor(hover, (nb) => active.add(nb));
+      }
+      if (pin) {
+        active.add(pin);
+        state.graph && state.graph.forEachNeighbor(pin, (nb) => active.add(nb));
+      }
+      if (lightAll || active.has(nid)) {
+        res.color = data.baseColor;
+        res.label = data.originalLabel;
+        // Emphasis: hovered > pinned > other
+        if (nid === hover) res.size = data.baseSize * 1.2;
+        else if (nid === pin) res.size = data.baseSize * 1.12;
+      } else {
+        res.color = GRAY;
+        res.label = "";
+      }
+      // Pinned node gets a subtle ring via increased size even without hover
+      return res;
+    },
+    edgeReducer(eid, data) {
+      const res = { ...data };
+      // Initial 2-second preview: all edges colored + labeled.
+      if (state.showAllInitial) {
+        res.color = data.baseColor;
+        res.label = data.relation;
+        res.size = 2;
+        return res;
+      }
+      const src = state.graph.source(eid);
+      const tgt = state.graph.target(eid);
+      const hover = state.hoveredNode;
+      const pin = state.pinnedNode;
+      const lightAll = hover === state.currentNode;
+      // Edge is "active" if it's incident to hoveredNode or pinnedNode,
+      // or if we're hovering the center (lightAll)
+      const hoverIncident = hover && hover !== state.currentNode
+        && (src === hover || tgt === hover);
+      const pinIncident = pin && (src === pin || tgt === pin);
+      if (lightAll || hoverIncident || pinIncident) {
+        res.color = data.baseColor;
+        res.label = data.relation;
+        // Hover takes visual priority
+        if (hoverIncident) res.size = 2.5;
+        else if (pinIncident) res.size = 2.2;
+        else res.size = 2;
+      } else {
+        res.color = DIM_EDGE;
+        res.label = "";
+        res.size = 1;
+      }
+      return res;
+    },
+  });
+  state.sigma.setSetting("renderEdgeLabels", false);
+
+  try {
+    const settings = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
+    if (state.layoutMode === "ring") {
+      settings.gravity = 0.5;
+      settings.scalingRatio = 3;
+      settings.strongGravityMode = true;
+    }
+    state.layoutWorker = new graphologyLibrary.FA2Layout(graph, { settings });
+    state.layoutWorker.start();
+    const centerId = state.currentNode;
+
+    const pinInterval = setInterval(() => {
+      if (!state.graph || !centerId) return;
+      if (state.graph.hasNode(centerId)) {
+        state.graph.setNodeAttribute(centerId, "x", 0);
+        state.graph.setNodeAttribute(centerId, "y", 0);
+      }
+      if (!state.transitioning) {
+        centerCameraOn(centerId, 2.0);
+      }
+    }, 60);
+    const layoutDuration = state.layoutMode === "ring" ? 1200 : 2500;
+    setTimeout(() => {
+      try { state.layoutWorker && state.layoutWorker.stop(); } catch (e) {}
+      clearInterval(pinInterval);
+      if (state.graph && centerId && state.graph.hasNode(centerId)) {
+        state.graph.setNodeAttribute(centerId, "x", 0);
+        state.graph.setNodeAttribute(centerId, "y", 0);
+      }
+      if (!state.transitioning) centerCameraOn(centerId, 2.0);
+      if (state.sigma) state.sigma.refresh();
+    }, layoutDuration);
+
+    // Initial snap so the first render already targets the node.
+    centerCameraOn(centerId, 2.0);
+  } catch (e) {
+    console.warn("layout failed:", e);
+  }
+
+  // Hover events — update state + refresh sigma for reducers to re-run
+  state.sigma.on("enterNode", ({ node }) => {
+    state.hoveredNode = node;
+    container.style.cursor = "pointer";
+    const nodeData = state.graph.getNodeAttributes(node);
+    const label = nodeData.originalLabel || node;
+    $("hoverHint").textContent = node === state.currentNode ? t("hover_all") : t("hover_explain", label);
+    state.sigma.refresh();
+  });
+  state.sigma.on("leaveNode", () => {
+    state.hoveredNode = null;
+    container.style.cursor = "grab";
+    $("hoverHint").textContent = t("hover_show");
+    state.sigma.refresh();
+  });
+
+  // Click vs double-click: we detect a double-click via timer
+  let singleClickTimer = null;
+  state.sigma.on("clickNode", ({ node }) => {
+    if (singleClickTimer) { clearTimeout(singleClickTimer); singleClickTimer = null; return; }
+    singleClickTimer = setTimeout(() => {
+      singleClickTimer = null;
+      if (node === state.currentNode) {
+        // Clicking the query node: clear any pin and show node detail
+        state.pinnedNode = null;
+        state.focusEdge = null;
+        loadDetail(node);
+        state.sigma.refresh();
+      } else if (state.pinnedNode === node) {
+        // Same pinned node clicked again → toggle off (back to default gray)
+        state.pinnedNode = null;
+        state.focusEdge = null;
+        loadDetail(state.currentNode);
+        state.sigma.refresh();
+      } else {
+        // Pin this node and show edge sources (unpins any previous)
+        state.pinnedNode = node;
+        loadEdgeSources(state.currentNode, node);
+        state.sigma.refresh();
+      }
+    }, 260);
+  });
+  state.sigma.on("doubleClickNode", (e) => {
+    const { node } = e;
+    if (e.preventSigmaDefault) e.preventSigmaDefault();
+    if (e.event?.original?.preventDefault) e.event.original.preventDefault();
+    if (singleClickTimer) { clearTimeout(singleClickTimer); singleClickTimer = null; }
+    if (state.transitioning) return;
+    navigateIntoNode(node);
+  });
+  // Clicking empty canvas → clear pin and go back to node detail
+  state.sigma.on("clickStage", () => {
+    if (state.pinnedNode) {
+      state.pinnedNode = null;
+      state.focusEdge = null;
+      if (state.currentNode) loadDetail(state.currentNode);
+      state.sigma.refresh();
+    }
+  });
+
+  renderLegend();
+
+  // End the 2-second full-color preview. Flip the flag, update the hint to
+  // invite hover interaction, and trigger a refresh so reducers re-run in
+  // the normal dim-except-center mode.
+  setTimeout(() => {
+    state.showAllInitial = false;
+    if (!state.hoveredNode) $("hoverHint").textContent = t("hover_show");
+    if (state.sigma) state.sigma.refresh();
+  }, 2000);
+}
+
+function _hoverActiveSet() {
+  const s = new Set();
+  if (!state.hoveredNode || !state.graph) return s;
+  s.add(state.hoveredNode);
+  state.graph.forEachNeighbor(state.hoveredNode, (nb) => s.add(nb));
+  return s;
+}
+
+function renderLegend() {
+  if (!state.graph) return;
+  const domains = new Set();
+  state.graph.forEachNode((_, d) => d.domain && domains.add(d.domain));
+  // Collect unique relation types across both directions, preserving first-color seen
+  const relColors = new Map();
+  state.graph.forEachEdge((_, d) => {
+    const rels = [...(d.relations_fwd || []), ...(d.relations_rev || [])];
+    rels.forEach((r) => { if (!relColors.has(r)) relColors.set(r, d.baseColor); });
+  });
+  const domHtml = [...domains].map((d) =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${DOMAIN_COLORS[d] || "#94a3b8"}"></span>${d}</span>`
+  ).join("");
+  const edgeHtml = [...relColors.entries()].slice(0, 8).map(([rel, c]) =>
+    `<span class="legend-item"><span class="legend-line" style="background:${c}"></span>${escapeHtml(rel)}</span>`
+  ).join("");
+  const nodeRow = `<div class="legend-row"><span class="legend-row-label">${t("node_type")}</span>${domHtml || '<span class="legend-item" style="opacity:0.5;">—</span>'}</div>`;
+  const edgeRow = edgeHtml
+    ? `<div class="legend-row"><span class="legend-row-label">${t("edge_type_legend")}</span>${edgeHtml}</div>`
+    : "";
+  $("legend").innerHTML = `<span class="legend-close" id="legendClose" style="position:absolute;top:6px;right:10px;cursor:pointer;font-size:18px;color:var(--text-muted);">✕</span>` + nodeRow + edgeRow;
+  $("legendClose").addEventListener("click", () => {
+    $("legend").classList.add("collapsed");
+    $("legendToggle").classList.add("visible");
+  });
+}
+
+// ── Detail pane: node ────────────────────────────────────────────────
+async function loadDetail(nodeId) {
+  const pane = $("detailPane");
+  pane.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
+  try {
+    const predParam = state.edgeTypes && state.edgeTypes !== "all" ? `&predicate=${encodeURIComponent(state.edgeTypes)}` : "";
+    const [concept, claims, hyps] = await Promise.all([
+      fetch(`/api/kg/node/${encodeURIComponent(nodeId)}`).then((r) => r.json()),
+      fetch(`/api/kg/node/${encodeURIComponent(nodeId)}/claims?limit=80${predParam}`).then((r) => r.json()),
+      fetch(`/api/kg/node/${encodeURIComponent(nodeId)}/hypotheses?limit=30${state.recipeOnly ? "&recipe_only=true" : ""}`).then((r) => r.json()),
+    ]);
+    renderDetail(concept, claims, hyps);
+  } catch (e) {
+    pane.innerHTML = `<div class="detail-empty" style="color:var(--danger);">load failed</div>`;
+  }
+}
+
+function renderDetail(concept, claimsResp, hypsResp) {
+  const pane = $("detailPane");
+  const claims = claimsResp.claims || [];
+  const hyps = hypsResp.hypotheses || [];
+  state.hasRecipes = hypsResp.has_recipes;
+
+  const domainsHtml = (concept.domain_tags || []).map((d) =>
+    `<span class="badge domain" style="background:${DOMAIN_COLORS[d] || "#94a3b8"};">${d}</span>`
+  ).join("");
+  const externalHtml = (concept.external_links || []).map((l) =>
+    l.url
+      ? `<a class="badge link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.label)} ↗</a>`
+      : `<span class="badge">${escapeHtml(l.label)}</span>`
+  ).join("");
+  const aliasesHtml = (concept.aliases || []).length
+    ? `${t("aliases")}: ${(concept.aliases || []).slice(0, 6).map(escapeHtml).join(" · ")}`
+    : "";
+  const noiseBadge = concept.is_noise
+    ? `<span class="noise-badge" title="${escapeHtml((concept.noise_reasons || []).join(' | ') || 'low quality')}">${t("low_quality")} ${concept.noise_score != null ? "(" + fmt(concept.noise_score, 2) + ")" : ""}</span>`
+    : "";
+
+  const predInfo = (state.edgeTypes && state.edgeTypes !== "all")
+    ? `<div class="focus-banner" style="background:rgba(217,119,6,0.08);"><span>${t("predicate_filter", state.edgeTypes)}</span></div>` : "";
+
+  pane.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-title">${escapeHtml(concept.name)}${noiseBadge}</div>
+      ${aliasesHtml ? `<div class="detail-aliases">${aliasesHtml}</div>` : ""}
+      <div class="badge-row">
+        ${domainsHtml}
+        <span class="badge" style="font-family:ui-monospace,monospace;">${escapeHtml(concept.id)}</span>
+      </div>
+      ${concept.definition ? `<div class="detail-definition">${escapeHtml(concept.definition)}</div>` : ""}
+      ${externalHtml ? `<div class="badge-row" style="margin-top:12px;">${externalHtml}</div>` : ""}
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn ${state.activeTab === "hypotheses" ? "active" : ""}" data-tab="hypotheses">
+        ${t("tab_hypotheses")}<span class="count">${hypsResp.total || 0}</span>
+      </button>
+      <button class="tab-btn ${state.activeTab === "claims" ? "active" : ""}" data-tab="claims">
+        ${t("tab_claims")}<span class="count">${claimsResp.total || 0}</span>
+      </button>
+      <button class="tab-btn ${state.activeTab === "meta" ? "active" : ""}" data-tab="meta">
+        ${t("tab_meta")}
+      </button>
+    </div>
+    ${predInfo}
+    ${state.hasRecipes ? `
+    <div class="recipe-filter-row">
+      <input type="checkbox" id="recipeOnlyToggle" ${state.recipeOnly ? "checked" : ""}>
+      <label for="recipeOnlyToggle">${t("filter_recipe")}</label>
+    </div>` : ""}
+    <div id="tabBody"></div>
+  `;
+
+  pane.querySelectorAll(".tab-btn").forEach((b) => {
+    b.addEventListener("click", () => {
+      state.activeTab = b.dataset.tab;
+      pane.querySelectorAll(".tab-btn").forEach((x) => x.classList.toggle("active", x === b));
+      renderTabBody(concept, claims, hyps);
+    });
+  });
+  const recipeToggle = $("recipeOnlyToggle");
+  if (recipeToggle) {
+    recipeToggle.addEventListener("change", (e) => {
+      state.recipeOnly = e.target.checked;
+      loadDetail(concept.id);
+    });
+  }
+  renderTabBody(concept, claims, hyps);
+}
+
+function renderTabBody(concept, claims, hyps) {
+  const body = $("tabBody");
+  if (!body) return;
+  if (state.activeTab === "hypotheses") body.innerHTML = renderHypothesesList(hyps);
+  else if (state.activeTab === "claims") body.innerHTML = renderClaimsList(claims);
+  else body.innerHTML = renderMetaPanel(concept);
+}
+
+function renderHypothesesList(hyps) {
+  if (!hyps.length) return `<div class="detail-section"><div class="results-hint">${t("no_hypotheses")}</div></div>`;
+  const cards = hyps.map((h) => {
+    const pathHtml = (h.path || []).slice(0, 4).map((p) => {
+      const pmid = p.paper?.pmid;
+      const pmidTag = pmid ? `<a class="badge link" href="${p.paper.pubmed_url}" target="_blank" rel="noopener">${t("pubmed")} ${pmid}</a>` : "";
+      return `
+        <div class="path-step">
+          <b>${escapeHtml(p.from_name)}</b>
+          <span class="rel">${escapeHtml(p.relation_type)}</span>
+          <b>${escapeHtml(p.to_name)}</b>
+          ${pmidTag}
+        </div>`;
+    }).join("");
+    const recipeBadge = h.has_recipe ? `<span class="recipe-pill">recipe ✓</span>` : "";
+    const recipeDetail = h.recipe ? `
+      <div class="evidence-row" style="margin-top:8px;">
+        <span>dataset: <b>${escapeHtml(h.recipe.dataset || "?")}</b></span>
+        <span>model: ${escapeHtml(h.recipe.model_arch || "?")}</span>
+        <span>atlas: ${escapeHtml(h.recipe.atlas || "?")}</span>
+        <span>target: ${escapeHtml(h.recipe.target_outcome || "?")}</span>
+      </div>` : "";
+    return `
+      <div class="item-card">
+        <div class="item-head">
+          <div class="triple">
+            ${escapeHtml(h.source_name)}
+            <span class="arrow">→</span>
+            ${escapeHtml(h.target_name)}
+            ${recipeBadge}
+          </div>
+          <div class="conf">${fmt(h.composite_score, 3)}</div>
+        </div>
+        <div class="score-grid">
+          <span>${t("composite")} <b>${fmt(h.composite_score, 3)}</b></span>
+          <span>${t("novelty")} <b>${fmt(h.novelty_score, 2)}</b></span>
+          <span>${t("evidence")} <b>${fmt(h.evidence_score, 2)}</b></span>
+          <span>${t("testability")} <b>${fmt(h.testability_score, 2)}</b></span>
+          ${h.critic_score > 0 ? `<span>${t("critic")} <b>${fmt(h.critic_score, 2)}</b></span>` : ""}
+        </div>
+        ${h.testability_reason ? `<div class="raw-text" style="margin-top:6px;">${escapeHtml(h.testability_reason)}</div>` : ""}
+        ${pathHtml ? `<div class="path-list">${pathHtml}</div>` : ""}
+        ${recipeDetail}
+        ${(h.path || []).length > 4 ? `<div class="evidence-row"><span>${t("more_steps", h.path.length - 4)}</span></div>` : ""}
+      </div>`;
+  }).join("");
+  return `<div class="detail-section">${cards}</div>`;
+}
+
+function renderClaimsList(claims) {
+  if (!claims.length) return `<div class="detail-section"><div class="results-hint">${t("no_claims")}</div></div>`;
+  const cards = claims.map((c) => {
+    const pmid = c.paper?.pmid;
+    const doi = c.paper?.doi;
+    const year = c.paper?.year;
+    const paperLinks = [
+      pmid ? `<a class="badge link" href="${c.paper.pubmed_url}" target="_blank" rel="noopener">${t("pubmed")} ${pmid} ↗</a>` : null,
+      doi ? `<a class="badge link" href="${c.paper.doi_url}" target="_blank" rel="noopener">${t("doi")} ↗</a>` : null,
+      year ? `<span class="badge">${year}</span>` : null,
+      c.paper?.journal ? `<span class="badge" title="${escapeHtml(c.paper.journal)}">${escapeHtml((c.paper.journal || "").slice(0, 24))}</span>` : null,
+    ].filter(Boolean).join("");
+    const evRow = [
+      c.evidence?.study_type ? `<span>${escapeHtml(c.evidence.study_type)}</span>` : null,
+      c.evidence?.p_value != null ? `<span>p=${c.evidence.p_value}</span>` : null,
+      c.evidence?.effect_size != null ? `<span>${escapeHtml(c.evidence.effect_metric || "effect")}=${c.evidence.effect_size}</span>` : null,
+      c.evidence?.sample_size ? `<span>n=${c.evidence.sample_size}</span>` : null,
+      c.evidence?.replicability ? `<span>${escapeHtml(c.evidence.replicability)}</span>` : null,
+    ].filter(Boolean).join("");
+    return `
+      <div class="item-card">
+        <div class="item-head">
+          <span class="predicate">${escapeHtml(c.predicate || "?")}</span>
+          <span class="conf">conf ${fmt(c.confidence, 2)}</span>
+        </div>
+        <div class="triple">
+          <b>${escapeHtml(c.subject_name)}</b>
+          <span class="arrow">→</span>
+          <b>${escapeHtml(c.object_name)}</b>
+          ${c.negated ? '<span class="badge" style="color:var(--danger);">NEG</span>' : ""}
+        </div>
+        ${c.raw_text ? `<div class="raw-text">${escapeHtml(c.raw_text)}</div>` : ""}
+        ${evRow ? `<div class="evidence-row">${evRow}</div>` : ""}
+        ${paperLinks ? `<div class="paper-row">${paperLinks}</div>` : ""}
+      </div>`;
+  }).join("");
+  return `<div class="detail-section">${cards}</div>`;
+}
+
+function renderMetaPanel(concept) {
+  const kvRows = Object.entries(concept.external_ids || {}).map(([k, v]) => `
+    <div class="kv"><span>${escapeHtml(k)}</span><code>${escapeHtml(String(v))}</code></div>
+  `).join("");
+  const atlas = concept.atlas_mapping
+    ? `<div class="detail-section"><h3>${t("atlas_mapping")}</h3><pre style="font-size:11.5px;color:var(--text-muted);white-space:pre-wrap;">${escapeHtml(JSON.stringify(concept.atlas_mapping, null, 2))}</pre></div>` : "";
+  const semantic = (concept.semantic_types || []).length
+    ? `<div class="detail-section"><h3>${t("semantic_types")}</h3><div class="badge-row">${concept.semantic_types.map((x) => `<span class="badge">${escapeHtml(x)}</span>`).join("")}</div></div>` : "";
+  return `
+    <div class="detail-section">
+      <h3>${t("external_ids")}</h3>
+      ${kvRows ? `<div class="detail-meta-grid">${kvRows}</div>` : `<div class="results-hint">${t("no_external")}</div>`}
+      ${concept.source_vocab ? `<div style="margin-top:10px;font-size:12.5px;color:var(--text-muted);">${t("source")}: <code>${escapeHtml(concept.source_vocab)}</code></div>` : ""}
+    </div>
+    ${semantic}
+    ${atlas}
+  `;
+}
+
+// ── Edge sources (single-click target) ───────────────────────────────
+async function loadEdgeSources(source, target) {
+  state.focusEdge = { source, target };
+  const pane = $("detailPane");
+  pane.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
+  try {
+    const url = new URL("/api/kg/edge-sources", location.origin);
+    url.searchParams.set("source", source);
+    url.searchParams.set("target", target);
+    url.searchParams.set("limit", "80");
+    const r = await fetch(url).then((r) => r.json());
+    renderEdgeSources(r);
+  } catch (e) {
+    pane.innerHTML = `<div class="detail-empty" style="color:var(--danger);">load failed</div>`;
+  }
+}
+
+function renderEdgeSources(data) {
+  const pane = $("detailPane");
+  const srcName = data.source?.name || data.source?.id || "?";
+  const tgtName = data.target?.name || data.target?.id || "?";
+  const curated = data.curated_edges || [];
+  const claims = data.claims || [];
+  const hasNothing = curated.length === 0 && claims.length === 0;
+
+  const curatedHtml = curated.length ? `
+    <div class="detail-section">
+      <h3>${t("curated_edges")}<span class="count">${curated.length}</span></h3>
+      ${curated.map((e) => `
+        <div class="item-card">
+          <div class="item-head">
+            <span class="predicate">${escapeHtml(e.relation_type || "?")}</span>
+            <span class="conf">conf ${fmt(e.confidence, 2)}</span>
+          </div>
+          <div class="triple">
+            <b>${escapeHtml(e.from_name)}</b>
+            <span class="arrow">→</span>
+            <b>${escapeHtml(e.to_name)}</b>
+          </div>
+          <div class="evidence-row">
+            <span>vocab: ${escapeHtml(e.source_vocab)}</span>
+            ${e.evidence_ref ? `<span>${escapeHtml(e.evidence_ref.slice(0, 60))}</span>` : ""}
+          </div>
+        </div>`).join("")}
+    </div>` : "";
+
+  const claimsHtml = claims.length ? `
+    <div class="detail-section">
+      <h3>${t("supporting_claims")}<span class="count">${data.total_claims || 0}</span></h3>
+      ${claims.map((c) => {
+        const pmid = c.paper?.pmid;
+        const doi = c.paper?.doi;
+        const year = c.paper?.year;
+        const paperLinks = [
+          pmid ? `<a class="badge link" href="${c.paper.pubmed_url}" target="_blank" rel="noopener">${t("pubmed")} ${pmid} ↗</a>` : null,
+          doi ? `<a class="badge link" href="${c.paper.doi_url}" target="_blank" rel="noopener">${t("doi")} ↗</a>` : null,
+          year ? `<span class="badge">${year}</span>` : null,
+          c.paper?.journal ? `<span class="badge" title="${escapeHtml(c.paper.journal)}">${escapeHtml((c.paper.journal || "").slice(0, 26))}</span>` : null,
+        ].filter(Boolean).join("");
+        const evRow = [
+          c.evidence?.study_type ? `<span>${escapeHtml(c.evidence.study_type)}</span>` : null,
+          c.evidence?.p_value != null ? `<span>p=${c.evidence.p_value}</span>` : null,
+          c.evidence?.sample_size ? `<span>n=${c.evidence.sample_size}</span>` : null,
+        ].filter(Boolean).join("");
+        return `
+          <div class="item-card">
+            <div class="item-head">
+              <span class="predicate">${escapeHtml(c.predicate || "?")}</span>
+              <span class="conf">conf ${fmt(c.confidence, 2)}</span>
+            </div>
+            <div class="triple">
+              <b>${escapeHtml(c.subject_name)}</b>
+              <span class="arrow">→</span>
+              <b>${escapeHtml(c.object_name)}</b>
+            </div>
+            ${c.raw_text ? `<div class="raw-text">${escapeHtml(c.raw_text)}</div>` : ""}
+            ${evRow ? `<div class="evidence-row">${evRow}</div>` : ""}
+            ${paperLinks ? `<div class="paper-row">${paperLinks}</div>` : ""}
+          </div>`;
+      }).join("")}
+    </div>` : "";
+
+  pane.innerHTML = `
+    <div class="focus-banner">
+      <span>${t("showing_edge")}: <b>${escapeHtml(srcName)}</b>${t("and")}<b>${escapeHtml(tgtName)}</b></span>
+      <span class="close-x" id="closeFocusBtn" title="Back to node detail">×</span>
+    </div>
+    ${hasNothing ? `<div class="detail-section"><div class="results-hint">${t("no_sources")}</div></div>` : ""}
+    ${curatedHtml}
+    ${claimsHtml}
+  `;
+
+  $("closeFocusBtn")?.addEventListener("click", () => {
+    state.focusEdge = null;
+    state.pinnedNode = null;
+    if (state.sigma) state.sigma.refresh();
+    if (state.currentNode) loadDetail(state.currentNode);
+  });
+}
+
+// ── Graph controls ───────────────────────────────────────────────────
+$("depthSelect").addEventListener("change", (e) => {
+  state.depth = parseInt(e.target.value, 10);
+  if (state.currentNode) loadNeighborhood(state.currentNode);
+});
+$("limitInput").addEventListener("change", (e) => {
+  state.limit = Math.max(5, Math.min(200, parseInt(e.target.value, 10) || 60));
+  e.target.value = state.limit;
+  if (state.currentNode) loadNeighborhood(state.currentNode);
+});
+$("edgeTypeSelect").addEventListener("change", (e) => {
+  state.edgeTypes = e.target.value;
+  if (state.currentNode) {
+    loadNeighborhood(state.currentNode);
+    if (state.focusEdge) loadEdgeSources(state.focusEdge.source, state.focusEdge.target);
+    else loadDetail(state.currentNode);
+  }
+});
+$("layoutSelect").addEventListener("change", (e) => {
+  state.layoutMode = e.target.value;
+  if (state.currentNode) loadNeighborhood(state.currentNode);
+});
+$("legendToggle").addEventListener("click", () => {
+  $("legend").classList.remove("collapsed");
+  $("legendToggle").classList.remove("visible");
+});
+</script>
+
+</body>
+</html>

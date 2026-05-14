@@ -173,12 +173,117 @@ NOISE_PATTERNS = [
     re.compile(r"^\d+$"),                                           # Pure numbers
 ]
 
+# (C-1) Generic-phrase patterns for INTERMEDIATE nodes. The token-based
+# `_NOISE_WORDS` filter misses phrases like "functional connectivity" or
+# "neural activity" because no individual word is in the noise list, but
+# the WHOLE phrase carries no measurable content. We only block these when
+# they appear as INTERMEDIATE nodes (paths can legitimately end in
+# "functional connectivity" as an outcome metric).
+_GENERIC_INTERMEDIATE_PATTERNS = [
+    re.compile(r"^(abnormal|altered|impaired|reduced|increased|disrupted|aberrant)?\s*"
+               r"(brain|neural|neuronal|cortical|cerebral)\s+"
+               r"(activity|activation|function|functioning|connectivity|"
+               r"network|networks|signaling|metabolism|response|responses)$",
+               re.I),
+    re.compile(r"^(functional|structural|anatomical|effective)\s+"
+               r"(connectivity|network|networks|integrity|abnormalit(y|ies))$", re.I),
+    re.compile(r"^(disease|symptom|clinical|treatment|therapeutic)\s+"
+               r"(progression|outcome|outcomes|response|severity|burden|stage|staging)$", re.I),
+    re.compile(r"^(common|typical|specific|various|different)\s+"
+               r"(features|patterns|mechanisms|processes)$", re.I),
+    re.compile(r"^(neuro)?(degeneration|inflammation|protection|plasticity|genesis|imaging)$",
+               re.I),
+    re.compile(r"^(grey|gray|white)\s+matter$", re.I),
+    re.compile(r"^(cognitive|behavioral|emotional|motor|sensory)\s+"
+               r"(deficit|deficits|dysfunction|impairment|abnormalit(y|ies))$", re.I),
+]
+
+# (C-3) Target-name patterns that LOOK like outcomes (so they pass
+# _is_dataset_outcome's keyword fallback) but are actually too broad to
+# drive a DL experiment. We block these even if their domain says
+# disease/cognitive_function.
+_TARGET_TOO_BROAD_PATTERNS = [
+    # bare umbrella nouns (single token)
+    re.compile(r"^(skill|skills|ability|abilities|outcome|outcomes|"
+               r"symptom|symptoms|manifestation|manifestations|"
+               r"phenomenon|phenomena|finding|findings|"
+               r"deficit|deficits|impairment|impairments|"
+               r"function|functions|functioning|behavior|behaviors|"
+               r"capability|capabilities|condition|conditions|"
+               r"disease|diseases|disorder|disorders|syndrome|syndromes|"
+               r"focus|integration|balance|knowledge|autonomy|"
+               r"performance|adaptation|resilience|vulnerability|"
+               r"recovery|progression|mechanism|process)$", re.I),
+    # broad-category disease umbrellas (when these are the literal target,
+    # they're too generic — but specific subtypes like "Alzheimer Disease"
+    # don't match these patterns)
+    re.compile(r"^(neurological|psychiatric|mental|cognitive|behavioral|"
+               r"neurodegenerative|cardiovascular)\s+"
+               r"(disease|diseases|disorder|disorders|condition|conditions)$", re.I),
+    re.compile(r"^(human\s+)?(disease|diseases|disorder|disorders)$", re.I),
+    re.compile(r"^(brain|mental|psychiatric|psychological)\s+health$", re.I),
+    re.compile(r"^clinical\s+(features|outcome|outcomes|presentation|status)$", re.I),
+    # "X deficits/impairments" patterns (too vague as targets)
+    re.compile(r"^(motor|cognitive|neurocognitive|functional|social|"
+               r"verbal|visual|sensory|emotional|behavioral)\s+"
+               r"(deficit|deficits|impairment|impairments|dysfunction|"
+               r"disability|decline|deterioration)$", re.I),
+]
+
 # Vague relation types that add little signal
 VAGUE_RELATIONS = {"is_associated_with", "associated_with", "about"}
+
+# CognitiveAtlas / MeSH concept ids that are top-degree generic hubs
+# in the KG. The audit found these at degrees 700-9000+, with names that
+# are real English words (not caught by _NOISE_WORDS) but referring to
+# extremely abstract umbrella concepts:
+#
+#   COGAT trm_4a3fd79d0a891  "memory"      degree 2248
+#   COGAT trm_4a3fd79d0a80f  "logic"       degree 2052
+#   COGAT trm_5159c80c1dd24  "loss"        degree 1034
+#   COGAT trm_4a3fd79d09741  "activation"  degree  840
+#   COGAT trm_4a3fd79d0afcf  "risk"        degree  722
+#   COGAT trm_4a3fd79d0b2a8  "stress"      degree  139
+#   MSH:D001921              "Brain"       degree 9157
+#   MSH:D009474              "Neurons"     degree 1354
+#
+# Hypotheses with these as intermediate nodes or endpoints are too vague
+# to drive a downstream DL experiment ("FPN -> memory" is not testable
+# because we don't know which memory subsystem). Filtered in post_process.
+PATH_IGNORE_NODE_IDS = frozenset({
+    "COGAT_CONCEPT:trm_4a3fd79d0a891",   # memory
+    "COGAT_CONCEPT:trm_4a3fd79d0a80f",   # logic
+    "COGAT_CONCEPT:trm_5159c80c1dd24",   # loss
+    "COGAT_CONCEPT:trm_4a3fd79d09741",   # activation
+    "COGAT_CONCEPT:trm_4a3fd79d0afcf",   # risk
+    "COGAT_CONCEPT:trm_4a3fd79d0b2a8",   # stress
+    "MSH:D001921",                        # Brain (umbrella)
+    "MSH:D009474",                        # Neurons (umbrella)
+})
+
+# Disease/category mega-hubs that are valid as hypothesis endpoints
+# ("predict Alzheimer" is fine) but NOT as intermediate transit nodes
+# ("A → Alzheimer → B" is just "A relates to AD, AD relates to B" — no
+# discovery value). Audit found 37.8% of hypotheses transit through these.
+INTERMEDIATE_ONLY_IGNORE_IDS = frozenset({
+    "COGAT_DISORDER:dso_5419",            # schizophrenia (degree 1005)
+    "MSH:D009103",                         # Multiple Sclerosis (816)
+    "COGAT_DISORDER:dso_3312",            # bipolar disorder (703)
+    "MSH:D000544",                         # Alzheimer Disease (746)
+    "MSH:D004827",                         # Epilepsy (750)
+    "MSH:D010300",                         # Parkinson Disease (709)
+    "COGAT_DISORDER:dso_0060041",         # autism spectrum disorder (613)
+    "MSH:D001289",                         # ADHD (601)
+    "MSH:D003863",                         # Depression (577)
+    "MSH:D001523",                         # Mental Disorders (489)
+})
+
 DIRECTIONAL_RELATIONS = {
     "causes", "treats", "increases", "reduces", "modulates",
     "activates", "inhibits", "is_biomarker_of", "is_risk_factor_for",
-    "predicts", "distinguishes", "mediates"
+    "predicts", "distinguishes", "mediates",
+    # Brain decoding directional predicates
+    "evokes", "decoded_from", "elicits",
 }
 
 # domain pairs worth exploring — aligned with NeuroClaw imaging experiments
@@ -427,6 +532,103 @@ DATASET_FEATURES = {
         "dmri_sc":   {"modality": "dMRI", "tool": "HARDI",    "level": "connectivity"},
         "meg":       {"modality": "MEG",  "tool": "MEG",      "level": "connectivity"},
     },
+    # NAS-available patient cohorts with preprocessed ROI time series.
+    # Phenotype CSVs live under Z:\Dataset\fMRI\phenotype and the dataset-
+    # specific rest csvs. All supply rfMRI volumes or ROI series; structural
+    # T1 is available for HCP-EP and HCP-Aging (the other four are rfMRI-only
+    # public releases).
+    "ABIDE": {
+        "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
+        "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
+    },
+    "ADHD200": {
+        "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
+        "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
+    },
+    "COBRE": {
+        "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
+        "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
+    },
+    "UCLA": {
+        # UCLA CNP — rest + 6 task contrasts, cross-diagnosis cohort.
+        "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
+        "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
+        "tfmri_task":   {"modality": "fMRI", "tool": "task fMRI",   "level": "activation"},
+    },
+    "HCP_EP": {
+        # HCP Early Psychosis — patient cohort, T1w + rfMRI cleaned.
+        "smri_cortical_thickness": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "smri_subcortical_volume": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
+        "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
+    },
+    "HCP_AGING": {
+        # HCP-Aging — T1w + rfMRI REST1/REST2 + 3 task contrasts.
+        "smri_cortical_thickness": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "smri_subcortical_volume": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "smri_myelin":             {"modality": "sMRI", "tool": "T1w/T2w",    "level": "ROI"},
+        "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
+        "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
+        "tfmri_task":   {"modality": "fMRI", "tool": "task fMRI",   "level": "activation"},
+    },
+    # ── Visual decoding (fMRI) ──────────────────────────────────────────
+    # NSD & BOLD5000: image-stimulus visual task fMRI, no rest.
+    "NSD": {
+        "smri_cortical_thickness": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "tfmri_visual_voxel":      {"modality": "fMRI", "tool": "task fMRI",
+                                     "level": "voxel", "stimulus": "natural_image"},
+        "tfmri_visual_roi":        {"modality": "fMRI", "tool": "task fMRI",
+                                     "level": "ROI",   "stimulus": "natural_image"},
+    },
+    "BOLD5000": {
+        "smri_cortical_thickness": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "tfmri_visual_voxel":      {"modality": "fMRI", "tool": "task fMRI",
+                                     "level": "voxel", "stimulus": "ImageNet_COCO_Scene"},
+        "tfmri_visual_roi":        {"modality": "fMRI", "tool": "task fMRI",
+                                     "level": "ROI",   "stimulus": "ImageNet_COCO_Scene"},
+    },
+    # ── Visual decoding (EEG) ───────────────────────────────────────────
+    "SEED_DV": {
+        "eeg_psd": {"modality": "EEG", "tool": "PSD", "level": "channel"},
+        "eeg_de":  {"modality": "EEG", "tool": "DE",  "level": "channel"},
+    },
+    # ── Emotion decoding (EEG + eye tracking) ───────────────────────────
+    "SEED": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eeg_psd":      {"modality": "EEG", "tool": "PSD", "level": "channel"},
+    },
+    "SEED_IV": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eye_movement": {"modality": "eye_tracking", "tool": "saccade/fixation",
+                         "level": "variable"},
+    },
+    "SEED_V": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eye_movement": {"modality": "eye_tracking", "tool": "saccade/fixation",
+                         "level": "variable"},
+    },
+    "SEED_VII": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eye_movement": {"modality": "eye_tracking", "tool": "saccade/fixation",
+                         "level": "variable"},
+    },
+    "SEED_GER": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eye_movement": {"modality": "eye_tracking", "tool": "saccade/fixation",
+                         "level": "variable"},
+    },
+    "SEED_FRA": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eye_movement": {"modality": "eye_tracking", "tool": "saccade/fixation",
+                         "level": "variable"},
+    },
+    # ── Vigilance decoding (EEG) ────────────────────────────────────────
+    "SEED_VIG": {
+        "eeg_de":       {"modality": "EEG", "tool": "DE",  "level": "channel"},
+        "eog":          {"modality": "EOG", "tool": "EOG", "level": "channel"},
+        "eye_movement": {"modality": "eye_tracking", "tool": "gaze/blink",
+                         "level": "variable"},
+    },
 }
 
 DATASET_OUTCOMES = {
@@ -447,6 +649,67 @@ DATASET_OUTCOMES = {
         "cognitive_task",      # task fMRI performance
         "personality",         # NEO-FFI
     ],
+    # ABIDE — ASD vs controls, rest only.
+    "ABIDE": [
+        "diagnosis",           # ASD vs TD
+        "symptom_severity",    # ADOS, ADI-R, SRS
+        "cognitive_score",     # FIQ/VIQ/PIQ
+    ],
+    # ADHD200 — ADHD subtype vs TDC.
+    "ADHD200": [
+        "diagnosis",           # ADHD (combined/inattentive/hyperactive) vs TDC
+        "symptom_severity",    # ADHD-RS, Conners
+        "cognitive_score",     # WASI/WISC
+    ],
+    # COBRE — schizophrenia vs controls.
+    "COBRE": [
+        "diagnosis",           # schizophrenia vs HC
+        "symptom_severity",    # PANSS positive/negative/general
+        "cognitive_score",     # WAIS
+    ],
+    # UCLA CNP — schizophrenia/bipolar/ADHD vs controls.
+    "UCLA": [
+        "diagnosis",           # SCZ / BP / ADHD / HC
+        "symptom_severity",    # HAM-D, YMRS, ADHD-RS
+        "cognitive_task",      # 6 task contrasts
+    ],
+    # HCP-EP — early psychosis (FES + AR) vs HC.
+    "HCP_EP": [
+        "diagnosis",           # affective/non-affective psychosis vs HC
+        "symptom_severity",    # PANSS, SANS, YMRS
+        "cognitive_score",     # MATRICS Consensus Cognitive Battery
+    ],
+    # HCP-Aging — lifespan 36-100 yrs, healthy aging.
+    "HCP_AGING": [
+        "cognitive_decline",   # NIH Toolbox across age
+        "behavioral_score",    # same battery as HCP-YA
+        "cognitive_task",      # CARIT/FACENAME/VISMOTOR
+    ],
+    # ── Visual decoding outcomes ────────────────────────────────────────
+    "NSD": [
+        "image_category",         # COCO 80-class
+        "image_semantic",         # CLIP / language-model embedding
+        "stimulus_reconstruction",# pixel / latent reconstruction
+    ],
+    "BOLD5000": [
+        "image_category",         # ImageNet 1000-class / COCO / Scene
+        "scene_type",             # Scene 365-class
+        "image_semantic",
+    ],
+    "SEED_DV": [
+        "video_class",            # discrete video categories
+        "video_semantic",
+        "video_reconstruction",
+    ],
+    # ── Emotion decoding outcomes ───────────────────────────────────────
+    "SEED":     ["emotion_3class"],            # positive/neutral/negative
+    "SEED_IV":  ["emotion_4class"],            # happy/sad/fear/neutral
+    "SEED_V":   ["emotion_5class"],            # +disgust
+    "SEED_VII": ["emotion_7class", "emotion_continuous"],
+    "SEED_GER": ["emotion_3class"],
+    "SEED_FRA": ["emotion_3class"],
+    # ── Vigilance decoding outcomes ─────────────────────────────────────
+    "SEED_VIG": ["vigilance_continuous", "perclos"],
 }
 
 # Imaging feature templates — dynamically combined with AAL atlas regions
@@ -454,13 +717,13 @@ DATASET_OUTCOMES = {
 IMAGING_FEATURE_TEMPLATES = {
     # sMRI FreeSurfer ROI features
     "cortical thickness of {region}":   {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI",
-                                          "datasets": ["UKB", "ADNI", "HCP_YA"]},
+                                          "datasets": ["UKB", "ADNI", "HCP_YA", "HCP_EP", "HCP_AGING"]},
     "gray matter volume of {region}":   {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI",
-                                          "datasets": ["UKB", "ADNI", "HCP_YA"]},
+                                          "datasets": ["UKB", "ADNI", "HCP_YA", "HCP_EP", "HCP_AGING"]},
     "subcortical volume of {region}":   {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI",
-                                          "datasets": ["UKB", "ADNI", "HCP_YA"]},
+                                          "datasets": ["UKB", "ADNI", "HCP_YA", "HCP_EP", "HCP_AGING"]},
     "cortical area of {region}":        {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI",
-                                          "datasets": ["UKB", "HCP_YA"]},
+                                          "datasets": ["UKB", "HCP_YA", "HCP_AGING"]},
     # dMRI tract features
     "fractional anisotropy of {region}": {"modality": "dMRI", "tool": "TBSS", "level": "tract",
                                            "datasets": ["UKB", "HCP_YA"]},
@@ -482,10 +745,13 @@ IMAGING_FEATURE_TEMPLATES = {
 CONNECTIVITY_FEATURE_TEMPLATES = {
     "functional connectivity between {a} and {b}":    {"modality": "fMRI", "tool": "rfMRI",
                                                         "level": "connectivity",
-                                                        "datasets": ["UKB", "ADNI", "HCP_YA"]},
+                                                        "datasets": ["UKB", "ADNI", "HCP_YA",
+                                                                     "ABIDE", "ADHD200", "COBRE",
+                                                                     "UCLA", "HCP_EP", "HCP_AGING"]},
     "effective connectivity from {a} to {b}":         {"modality": "fMRI", "tool": "DCM/GC",
                                                         "level": "connectivity",
-                                                        "datasets": ["ADNI", "HCP_YA"]},
+                                                        "datasets": ["ADNI", "HCP_YA",
+                                                                     "UCLA", "HCP_EP", "HCP_AGING"]},
     "structural connectivity between {a} and {b}":    {"modality": "dMRI", "tool": "tractography",
                                                         "level": "connectivity",
                                                         "datasets": ["UKB", "HCP_YA"]},
@@ -504,6 +770,26 @@ IMAGING_DOMAIN_PAIRS = [
     ("gene", "neuroanatomy"),
     # disease → drug (ADNI)
     ("disease", "drug"),
+]
+
+# Brain decoding domain pairs (NSD / BOLD5000 / SEED family).
+# These are SEPARATE from IMAGING_DOMAIN_PAIRS because decoding hypotheses
+# reverse the usual direction: instead of "brain feature → clinical outcome",
+# they go "stimulus ↔ brain" or "brain → psychological-state label".
+DECODING_DOMAIN_PAIRS = [
+    # Encoding: stimulus drives brain response
+    ("visual_stimulus", "neuroanatomy"),
+    ("visual_stimulus", "imaging_feature"),
+    ("visual_stimulus", "connectivity"),
+    # Decoding: brain predicts stimulus identity
+    ("neuroanatomy",    "visual_stimulus"),
+    ("imaging_feature", "visual_stimulus"),
+    # EEG → emotion (SEED/SEED-IV/SEED-V/SEED-VII/SEED-GER/SEED-FRA)
+    ("imaging_feature", "emotion"),
+    ("neuroanatomy",    "emotion"),
+    # EEG → vigilance (SEED-VIG)
+    ("imaging_feature", "vigilance"),
+    ("neuroanatomy",    "vigilance"),
 ]
 
 # AAL atlas regions used for imaging feature generation
@@ -566,6 +852,7 @@ class HypothesisEngine:
                 nid for nid, data in self.G.nodes(data=True)
                 if dom_b in data.get("domain_tags", [])
                 and "claim" not in data.get("domain_tags", [])
+                and nid not in PATH_IGNORE_NODE_IDS
             }
 
             for seed_id in seeds_a:
@@ -703,11 +990,43 @@ class HypothesisEngine:
             if self._has_hub_to_hub_edge(h):
                 continue
 
+            # filter paths touching any vague COGAT/MeSH umbrella hub
+            # (memory/logic/loss/activation/risk/stress/Brain/Neurons).
+            # These nodes are too abstract to drive a DL experiment whether
+            # they appear as source, target, or intermediate.
+            if self._touches_path_ignore_node(h):
+                continue
+
+            # filter paths that transit through disease mega-hubs as
+            # intermediate nodes (A → Disease → B is uninformative).
+            # These nodes are still valid as source/target endpoints.
+            if self._transits_intermediate_only_hub(h):
+                continue
+
+            # (C-1) filter paths whose INTERMEDIATE node is a generic
+            # phrase ("neural activity", "disease progression", "grey
+            # matter", ...). Endpoints are not checked here.
+            if self._has_intermediate_generic_phrase(h):
+                continue
+
+            # (C-2) filter paths whose directional density is too thin
+            # (3+ hops with < 50% directional relations = too vague to
+            # be a mechanism hypothesis).
+            if self._has_thin_directional_density(h):
+                continue
+
             # filter: target must be a dataset outcome (diagnosis/cognition/behavior/
             # personality/motor). Predicting "White Matter" or "Neurons" is not a
             # hypothesis UKB/ADNI/HCP can directly test — those are imaging features
             # used as INPUTS, not outcomes.
             if not self._is_dataset_outcome(h):
+                continue
+
+            # (C-3) filter: target name is an umbrella concept ("skill",
+            # "disease", "neurological disorder", "clinical features")
+            # even though it passes the outcome keyword check. These
+            # can't anchor a concrete DL label.
+            if self._is_too_broad_target(h.target_name):
                 continue
 
             # filter paths with no directional predicates (pure association chains)
@@ -783,6 +1102,83 @@ class HypothesisEngine:
             return True
         return False
 
+    @staticmethod
+    def _is_generic_intermediate(name: str) -> bool:
+        """(C-1) Phrase-level filter for intermediate node names that pass
+        token-level `_NOISE_WORDS` but are still too vague.
+
+        Examples that get blocked:
+          - "neural activity"  (no individual noise token)
+          - "functional connectivity" (legit metric but not a mechanism)
+          - "disease progression"
+          - "grey matter"  (umbrella)
+          - "cognitive deficit"
+
+        Only call on intermediate nodes — these phrases can be valid as
+        endpoints (e.g. "functional connectivity" as a target metric).
+        """
+        if not name:
+            return True
+        s = name.strip()
+        for pattern in _GENERIC_INTERMEDIATE_PATTERNS:
+            if pattern.match(s):
+                return True
+        return False
+
+    @staticmethod
+    def _is_too_broad_target(name: str) -> bool:
+        """(C-3) Block target names that pass the outcome keyword regex but
+        are umbrella concepts ("disease", "skill", "neurological disorder",
+        "clinical features"). A DL experiment can't be designed against
+        these — you don't know which subtype to label.
+        """
+        if not name:
+            return True
+        s = name.strip()
+        for pattern in _TARGET_TOO_BROAD_PATTERNS:
+            if pattern.match(s):
+                return True
+        return False
+
+    def _has_intermediate_generic_phrase(self, h: Hypothesis) -> bool:
+        """(C-1) Reject paths whose intermediate node is a generic phrase
+        like "neural activity" or "disease progression". Endpoints are
+        excluded from this check because some metrics (e.g. "functional
+        connectivity") legitimately appear as outcomes.
+        """
+        if len(h.path) < 2:
+            return False
+        intermediate_names: list[str] = []
+        for i, link in enumerate(h.path):
+            # link.from_name is intermediate when i >= 1
+            # link.to_name   is intermediate when i <  len(path) - 1
+            if i >= 1:
+                intermediate_names.append(link.from_name or "")
+            if i < len(h.path) - 1:
+                intermediate_names.append(link.to_name or "")
+        for name in intermediate_names:
+            if self._is_generic_intermediate(name):
+                return True
+        return False
+
+    def _has_thin_directional_density(self, h: Hypothesis) -> bool:
+        """(C-2) Reject paths where directional relations are too sparse.
+
+        Current rule (older): >= 1 directional anywhere = pass.
+        Problem: a 4-hop path with 1 directional + 3 vague edges still
+        looks like a real chain to scoring but is essentially a vague
+        association narrative.
+
+        New rule:
+          - 1-2 hop path: at least 1 directional (unchanged)
+          - 3+ hop path: at least half of the edges must be directional
+        """
+        n = len(h.path)
+        if n < 3:
+            return False
+        directional = sum(1 for l in h.path if l.relation_type in DIRECTIONAL_RELATIONS)
+        return directional * 2 < n   # < 50% directional
+
     def _has_implausible_path(self, h: Hypothesis) -> bool:
         """Check if hypothesis path has biologically implausible connections.
 
@@ -849,6 +1245,43 @@ class HypothesisEngine:
                 return True
         return False
 
+    def _touches_path_ignore_node(self, h: Hypothesis) -> bool:
+        """Reject paths whose source, target, or any intermediate node is in
+        PATH_IGNORE_NODE_IDS (vague COGAT/MeSH umbrella hubs).
+
+        Catches concepts the token-based _is_noisy_entity misses because
+        the names ("memory", "logic", "Brain", "Neurons") are legitimate
+        English words but the KG concept id refers to an over-general
+        umbrella that's not testable.
+        """
+        if h.source_id in PATH_IGNORE_NODE_IDS:
+            return True
+        if h.target_id in PATH_IGNORE_NODE_IDS:
+            return True
+        for link in h.path:
+            if link.from_id in PATH_IGNORE_NODE_IDS:
+                return True
+            if link.to_id in PATH_IGNORE_NODE_IDS:
+                return True
+        return False
+
+    @staticmethod
+    def _transits_intermediate_only_hub(h: Hypothesis) -> bool:
+        """Reject paths that use disease mega-hubs as intermediate transit.
+
+        INTERMEDIATE_ONLY_IGNORE_IDS nodes are valid as source/target
+        (predicting Alzheimer is a real hypothesis) but not as middle
+        hops (A → Alzheimer → B is just "both relate to AD").
+        """
+        if len(h.path) < 2:
+            return False
+        for i, link in enumerate(h.path):
+            if i >= 1 and link.from_id in INTERMEDIATE_ONLY_IGNORE_IDS:
+                return True
+            if i < len(h.path) - 1 and link.to_id in INTERMEDIATE_ONLY_IGNORE_IDS:
+                return True
+        return False
+
     def _is_dataset_outcome(self, h: Hypothesis) -> bool:
         """Check if target is a UKB/ADNI/HCP-testable outcome.
 
@@ -856,17 +1289,20 @@ class HypothesisEngine:
         Valid targets:
         - Clinical diagnoses (disease domain) — Alzheimer, MCI, schizophrenia, etc.
         - Cognitive/behavioral/personality measures (cognitive_function domain)
+        - Brain decoding targets:
+            * neuroanatomy (for encoding: stimulus → brain activation)
+            * visual_stimulus (for decoding: brain → stimulus category)
+            * emotion (SEED family: EEG → affect label)
+            * vigilance (SEED-VIG: EEG → alertness)
 
         Invalid targets:
-        - Anatomical structures (neuroanatomy) — White Matter, Cerebrum, Neurons
-          are INPUTS, not outcomes
         - Molecular entities (gene, biomarker, drug, neurotransmitter) — these
           may be predictors, not predicted quantities
         - Overly generic disease categories (Brain Diseases, Mental Disorders) —
           already filtered by hub-to-hub, but double-check by keyword.
 
         Accepts target if EITHER:
-          a) target's domain is in _OUTCOME_DOMAINS (disease or cognitive_function), OR
+          a) target's domain is in _OUTCOME_DOMAINS ∪ decoding domains, OR
           b) target name matches _OUTCOME_KEYWORDS regex (as fallback for
              claim_extraction concepts whose domain may be uncertain)
         """
@@ -875,9 +1311,20 @@ class HypothesisEngine:
             return False
 
         domains = set(target.domain_tags)
-        # Accept: disease or cognitive_function domain
-        if domains & _OUTCOME_DOMAINS:
+        # Accept: disease, cognitive_function, or decoding-target domains
+        outcome_domains = _OUTCOME_DOMAINS | {"visual_stimulus", "emotion", "vigilance"}
+        if domains & outcome_domains:
             return True
+
+        # Accept: neuroanatomy targets when the hypothesis is a brain-decoding
+        # encoding path (stimulus → brain region). Excludes the clinical-
+        # prediction case where a target of 'White Matter' would be an input.
+        if "neuroanatomy" in domains:
+            source = self._index.get(h.source_id)
+            if source:
+                source_domains = set(source.domain_tags)
+                if source_domains & {"visual_stimulus", "emotion", "vigilance"}:
+                    return True
 
         # Fallback: outcome keyword match (catches claim_extraction concepts
         # that describe outcomes but have wrong domain tags)
@@ -893,9 +1340,24 @@ class HypothesisEngine:
         raw_text actually mentions that region. If not, the path is likely spurious
         (e.g., IL-1β → Internal Capsula where the evidence text talks about "grey matter"
         but never mentions internal capsule).
+
+        Exception: paths anchored by curated functional facts (e.g. `evokes` from
+        visual_stimulus to a functional ROI) carry programmatic confidence, not
+        paper evidence — skip the raw_text requirement for them.
         """
         target_node = self._index.get(h.target_id)
         if not target_node or "neuroanatomy" not in target_node.domain_tags:
+            return False
+
+        # Skip paths whose source is a visual_stimulus / emotion / vigilance node, or
+        # which contain at least one curated functional edge (evokes / decoded_from /
+        # elicits). These are seeded from neuroscience textbooks, not paper claims.
+        source_node = self._index.get(h.source_id)
+        if source_node:
+            decoding_domains = {"visual_stimulus", "emotion", "vigilance"}
+            if any(t in decoding_domains for t in source_node.domain_tags):
+                return False
+        if any(l.relation_type in {"evokes", "decoded_from", "elicits"} for l in h.path):
             return False
 
         # Extract key terms from target name (e.g., "Internal Capsula" → ["internal", "capsula"])
@@ -1093,6 +1555,8 @@ class HypothesisEngine:
         for nid, data in self.G.nodes(data=True):
             domains = set(data.get("domain_tags", []))
             if "claim" in domains:
+                continue
+            if nid in PATH_IGNORE_NODE_IDS:
                 continue
             if domains & {"disease", "cognitive_function"}:
                 outcome_ids.add(nid)
@@ -1310,6 +1774,10 @@ class HypothesisEngine:
 
         claim_nodes = {nid for nid, n in self._index.items() if "claim" in n.domain_tags}
         intermediate_exclude = claim_nodes - {source_id, target_id}
+        # Also strip vague umbrella hubs from the search subgraph so paths
+        # never include them as intermediates. Endpoints are excluded from
+        # the strip so a caller can still query them directly.
+        intermediate_exclude |= (PATH_IGNORE_NODE_IDS - {source_id, target_id})
 
         subgraph = self.G.copy()
         subgraph.remove_nodes_from(intermediate_exclude)
@@ -1705,6 +2173,7 @@ class HypothesisEngine:
             nid for nid, data in self.G.nodes(data=True)
             if domain in data.get("domain_tags", [])
             and "claim" not in data.get("domain_tags", [])
+            and nid not in PATH_IGNORE_NODE_IDS
         ]
         # sort by degree (more connected = more useful as seed)
         nodes.sort(key=lambda n: self.G.degree(n), reverse=True)
@@ -1948,9 +2417,11 @@ class HypothesisEngine:
         well-extracted edges score 0.6-0.8; we reserve >0.9 for paths whose
         every step has rich provenance.
         """
+        _REVIEW_TYPES = {"narrative_review", "review"}
         scores = []
         for link in path:
-            s = 0.3  # baseline
+            study_type = (link.evidence.get("study_type") or "").lower()
+            s = 0.2 if study_type in _REVIEW_TYPES else 0.3
 
             if link.raw_text and len(link.raw_text) > 20:
                 s += 0.20
@@ -2061,7 +2532,24 @@ class HypothesisEngine:
         e = max(h.evidence_score, 0.01)
         n = max(h.novelty_score, 0.01)
         t = max(h.testability_score, 0.01)
-        return (c ** 0.20) * (e ** 0.20) * (n ** 0.25) * (t ** 0.35)
+        score = (c ** 0.20) * (e ** 0.20) * (n ** 0.25) * (t ** 0.35)
+
+        if self._has_only_review_evidence(h):
+            score *= 0.7
+
+        return score
+
+    @staticmethod
+    def _has_only_review_evidence(h: Hypothesis) -> bool:
+        """True if every link in the path comes from a review/narrative_review."""
+        _REVIEW_TYPES = {"narrative_review", "review"}
+        if not h.path:
+            return False
+        for link in h.path:
+            study_type = (link.evidence.get("study_type") or "").lower()
+            if study_type and study_type not in _REVIEW_TYPES:
+                return False
+        return True
 
     def _check_contradiction(self, m1: dict, m2: dict) -> float:
         """Check if two claims contradict each other. Returns severity 0-1."""

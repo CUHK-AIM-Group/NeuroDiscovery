@@ -19,8 +19,11 @@ from .graph_manager import KnowledgeGraph
 from .ingestion.brainmap import ingest_brainmap
 from .ingestion.cognitive_atlas import ingest_cognitive_atlas
 from .ingestion.disgenet import ingest_disgenet
+from .ingestion.experiment_infra import ingest_experiment_infrastructure
 from .ingestion.mesh import ingest_mesh
 from .ingestion.neuronames import ingest_neuronames
+from .ingestion.visual_functional_roi import ingest_visual_functional_roi
+from .ingestion.visual_stimulus import ingest_visual_stimuli
 from .storage import save_graph
 
 logger = logging.getLogger(__name__)
@@ -46,7 +49,8 @@ def run_full_ingestion(
     kg = KnowledgeGraph()
     results = {}
 
-    all_sources = ["neuronames", "mesh", "disgenet", "brainmap", "cognitive_atlas"]
+    all_sources = ["neuronames", "mesh", "disgenet", "brainmap", "cognitive_atlas",
+                   "experiment_infra", "visual_functional_roi", "visual_stimulus"]
     if sources is None:
         sources = all_sources
 
@@ -75,6 +79,18 @@ def run_full_ingestion(
         results["cognitive_atlas"] = ingest_cognitive_atlas(
             kg, data_dir, download=True,
         )
+
+    if "experiment_infra" in sources:
+        logger.info("=== Ingesting Experiment Infrastructure (atlases/modalities/models/datasets) ===")
+        results["experiment_infra"] = ingest_experiment_infrastructure(kg)
+
+    if "visual_functional_roi" in sources:
+        logger.info("=== Ingesting Visual Functional ROIs (FFA/PPA/EBA/VWFA/LOC/MT+/V3/V4) ===")
+        results["visual_functional_roi"] = ingest_visual_functional_roi(kg)
+
+    if "visual_stimulus" in sources:
+        logger.info("=== Ingesting Visual Stimulus Taxonomy (COCO/Places/SEED-DV) ===")
+        results["visual_stimulus"] = ingest_visual_stimuli(kg)
 
     stats = kg.stats()
     logger.info(f"\n{'='*50}")
@@ -113,7 +129,8 @@ def main():
     parser.add_argument(
         "--sources",
         nargs="+",
-        choices=["neuronames", "mesh", "disgenet", "brainmap", "cognitive_atlas"],
+        choices=["neuronames", "mesh", "disgenet", "brainmap", "cognitive_atlas",
+                 "experiment_infra", "visual_functional_roi", "visual_stimulus"],
         default=None,
         help="Which sources to ingest (default: all available)",
     )

@@ -345,6 +345,8 @@ def run_batch_extraction(
     broad: bool = False,
     max_workers: int = 8,
     data_dir: Optional[Path] = None,
+    keep_noise: bool = False,
+    strict_phase1: bool = False,
 ) -> dict:
     """Run batch claim extraction across multiple diseases and years.
 
@@ -407,8 +409,10 @@ def run_batch_extraction(
     total_claims = checkpoint.get("total_claims", 0)
     start_time = time.time()
 
+    expected_years = set(range(year_start, year_end + 1))
     for disease in diseases:
-        if disease in checkpoint.get("completed_diseases", []):
+        done_years = set(completed_years.get(disease, []))
+        if disease in checkpoint.get("completed_diseases", []) and expected_years.issubset(done_years):
             logger.info(f"skipping {disease} (already completed)")
             continue
 
@@ -455,7 +459,8 @@ def run_batch_extraction(
                 if result.claims:
                     batch_claims += len(result.claims)
 
-            ingest_claims(kg, results)
+            ingest_claims(kg, results, keep_noise=keep_noise,
+                          strict_phase1=strict_phase1)
 
             # save paper metadata to CSV
             papers_meta = []
@@ -496,9 +501,11 @@ def run_batch_extraction(
             # rate limiting
             time.sleep(0.5)
 
-        # mark disease as complete
-        checkpoint.setdefault("completed_diseases", []).append(disease)
-        _save_checkpoint(checkpoint, checkpoint_file)
+        # mark disease as complete only if all target years landed in checkpoint
+        if expected_years.issubset(set(completed_years.get(disease, []))):
+            if disease not in checkpoint.get("completed_diseases", []):
+                checkpoint.setdefault("completed_diseases", []).append(disease)
+            _save_checkpoint(checkpoint, checkpoint_file)
 
         # save graph after each disease
         save_graph(kg, graph_file)
@@ -559,6 +566,15 @@ def main():
                         help="Output directory for KG/checkpoint/CSV/JSONL. Use a unique "
                              "path to run isolated streams in parallel (quick vs full).")
     parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("--keep-noise", action="store_true",
+                        help="Disable build-time noise filter; keep all auto-minted "
+                             "CLM_CONCEPT entities (debug only)")
+    parser.add_argument("--strict-phase1", action="store_true",
+                        help="Do NOT mint any new CLM_CONCEPT nodes from Phase 2. "
+                             "Claims whose subject/object cannot resolve to a "
+                             "Phase-1-curated node are dropped. Use when Phase 1 "
+                             "(NeuroNames/MeSH/DisGeNET/CognitiveAtlas + UMLS) is "
+                             "already considered comprehensive.")
     args = parser.parse_args()
 
     level = logging.DEBUG if args.verbose else logging.INFO
@@ -577,6 +593,8 @@ def main():
         broad=args.broad,
         max_workers=args.max_workers,
         data_dir=args.data_dir,
+        keep_noise=args.keep_noise,
+        strict_phase1=args.strict_phase1,
     )
 
 

@@ -153,33 +153,43 @@ class ClaimExtractor:
             journal=paper.journal or "unknown",
         )
 
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a precise neuroscience data extraction system. Output only valid JSON."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.1,
-                max_tokens=8192,
-            )
+        backoff = 5.0
+        for attempt in range(4):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a precise neuroscience data extraction system. Output only valid JSON."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.1,
+                    max_tokens=8192,
+                )
 
-            raw_text = response.choices[0].message.content.strip()
-            claims = self._parse_response(raw_text, paper)
+                raw_text = response.choices[0].message.content.strip()
+                claims = self._parse_response(raw_text, paper)
 
-            return ExtractionResult(
-                paper=paper,
-                claims=claims,
-                raw_response=raw_text,
-            )
+                return ExtractionResult(
+                    paper=paper,
+                    claims=claims,
+                    raw_response=raw_text,
+                )
 
-        except Exception as e:
-            logger.error(f"extraction failed for PMID {paper.pmid}: {e}")
-            return ExtractionResult(
-                paper=paper,
-                claims=[],
-                error=str(e),
-            )
+            except Exception as e:
+                err_str = str(e)
+                if ("429" in err_str or "rate" in err_str.lower() or "forbidden" in err_str.lower()) and attempt < 3:
+                    import time as _time
+                    logger.warning(f"rate limited PMID {paper.pmid} (attempt {attempt+1}), backing off {backoff:.0f}s")
+                    _time.sleep(backoff)
+                    backoff *= 2
+                    continue
+                logger.error(f"extraction failed for PMID {paper.pmid}: {e}")
+                return ExtractionResult(
+                    paper=paper,
+                    claims=[],
+                    error=str(e),
+                )
+        return ExtractionResult(paper=paper, claims=[], error="max retries exceeded")
 
     def extract_batch(
         self,

@@ -46,6 +46,7 @@ This skill does not hardcode detailed install/run commands for each model. Those
 | Model | Paper | Code | Input | Output | Model Doc |
 |---|---|---|---|---|---|
 | BrainGNN | Li et al., 2020, *Braingnn: Interpretable brain graph neural network for fmri analysis* | https://github.com/xxlya/BrainGNN_Pytorch/tree/main | fMRI ROI features (graph/node-level ROI representation) | Phenotype prediction (classification/regression) + interpretable graph indicators | `skills/brain_gnn/SKILL.md` |
+| BNT | Kan et al., 2022, *BrainNetworkTransformer* | https://github.com/Wayfear/BrainNetworkTransformer | fMRI ROI FC matrix (dense [N, N], no PyG) | Phenotype prediction (classification/regression) + attention weights + DEC cluster assignments | `skills/bnt/SKILL.md` |
 | FM-APP | He et al., 2024, *FM-APP: Foundation model for any phenotype prediction via fMRI to sMRI knowledge transfer* | https://github.com/ZhibinHe/FM-APP | fMRI ROI features + sMRI features | Phenotype prediction (any-phenotype setting) | `skills/fm_app/SKILL.md` |
 | NeuroStorm | NeuroClaw model entry for storm-related phenotype prediction workflows | see `skills/neurostorm/SKILL.md` | Multi-modal neuroimaging features as specified in the model doc | Phenotype prediction / downstream inference as specified in the model doc | `skills/neurostorm/SKILL.md` |
 | GLM | Classical first-level and second-level task-fMRI general linear model | Nilearn / SPM-style implementation route | Preprocessed task fMRI, events, optional confounds, and optional subject-level contrast maps for group inference | Task activation contrasts, group z maps, and statistical inference outputs | `skills/glm/SKILL.md` |
@@ -61,6 +62,8 @@ This skill does not hardcode detailed install/run commands for each model. Those
 ### Citation Notes
 - BrainGNN:
 	- Li X, Zhou Y, Dvornek N, Zhang M, Gao S, Zhuang J, Scheinost D, Staib L, Ventola P, Duncan J. 2020.
+- BNT:
+	- Kan X, Dai W, Cui H, Zhang Z, Guo Y, He L. 2022. BrainNetworkTransformer. NeurIPS.
 - FM-APP:
 	- He Z, Li W, Liu Y, et al. FM-APP. IEEE TMI, 2024, 44(10): 4010-4022.
 - NeuroStorm:
@@ -210,6 +213,10 @@ Each model must include a model card in `skills/{model_name}/SKILL.md` documenti
 - Required modality preprocessing: `fmri-skill`
 - Typical upstream outputs expected: ROI matrices/time-series converted to model-required feature tensors
 
+### BNT Route
+- Required modality preprocessing: `fmri-skill`
+- Typical upstream outputs expected: Same ROI .pt files as BrainGNN (shared data source under `data/braingnn_input/`)
+
 ### FM-APP Route
 - Required modality preprocessing: `fmri-skill` + `smri-skill`
 - Typical upstream outputs expected: fMRI ROI features plus structural MRI-derived features
@@ -294,7 +301,7 @@ Each model must include a model card in `skills/{model_name}/SKILL.md` documenti
 ## Input and Output Contract (Entry-Level)
 
 ### Inputs expected by this skill
-- Model selection (`brain_gnn`, `fm_app`, `neurostorm`, `glm`, `ica`, `dictlearning`, `svm`, `spacenet`, `kmeans`, `hierarchical`, `filtering`, or `detrending`)
+- Model selection (`brain_gnn`, `bnt`, `fm_app`, `neurostorm`, `glm`, `ica`, `dictlearning`, `svm`, `spacenet`, `kmeans`, `hierarchical`, `filtering`, or `detrending`)
 - Data split / subject list
 - Phenotype target definition
 - Optional compute constraints (GPU/CPU, memory, batch size)
@@ -363,6 +370,7 @@ All model-running artifacts should be managed under `./run_models_output/`:
 	- `fmri/` (from `fmri-skill`)
 	- `smri/` (from `smri-skill`, if required)
 - `run_models_output/brain_gnn/`
+- `run_models_output/bnt/`
 - `run_models_output/fm_app/`
 - `run_models_output/neurostorm/`
 - `run_models_output/glm/`
@@ -389,6 +397,7 @@ All model-running artifacts should be managed under `./run_models_output/`:
 
 ## When to Call This Skill
 - User asks to run BrainGNN or FM-APP.
+- User asks to run BNT (BrainNetworkTransformer).
 - User asks to run NeuroStorm.
 - User asks to run classical task activation analysis with GLM.
 - User asks to run group-level inference with second-level GLM.

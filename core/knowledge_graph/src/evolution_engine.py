@@ -270,12 +270,47 @@ class EvolutionEngine:
             # New: reject if any step is hub-to-hub (generic category→category edge)
             if any(s.from_id in hub_ids and s.to_id in hub_ids for s in h.path):
                 continue
+            # Also reject if any node in the path is in the explicit blacklist
+            # of vague COGAT/MeSH umbrella hubs (memory/logic/loss/Brain/etc.).
+            # Mirrors hypothesis_engine.post_process so evolved variants
+            # cannot smuggle these in by direct graph sampling.
+            from .hypothesis_engine import (
+                PATH_IGNORE_NODE_IDS, INTERMEDIATE_ONLY_IGNORE_IDS,
+                HypothesisEngine, DIRECTIONAL_RELATIONS,
+            )
+            if h.source_id in PATH_IGNORE_NODE_IDS or h.target_id in PATH_IGNORE_NODE_IDS:
+                continue
+            if any(s.from_id in PATH_IGNORE_NODE_IDS or s.to_id in PATH_IGNORE_NODE_IDS
+                   for s in h.path):
+                continue
+            # Reject paths transiting through disease mega-hubs
+            if HypothesisEngine._transits_intermediate_only_hub(h):
+                continue
+            # (C-1/2/3) mirror the phrase-level, directional-density, and
+            # too-broad-target gates from hypothesis_engine.post_process so
+            # evolved variants cannot slip generic phrases past us by
+            # construction (e.g. mutating into "neural activity" as hop).
+            intermediate_names: list[str] = []
+            for i, link in enumerate(h.path):
+                if i >= 1:
+                    intermediate_names.append(link.from_name or "")
+                if i < len(h.path) - 1:
+                    intermediate_names.append(link.to_name or "")
+            if any(HypothesisEngine._is_generic_intermediate(n) for n in intermediate_names):
+                continue
+            if len(h.path) >= 3:
+                directional = sum(1 for s in h.path if s.relation_type in DIRECTIONAL_RELATIONS)
+                if directional * 2 < len(h.path):
+                    continue
+            if HypothesisEngine._is_too_broad_target(h.target_name):
+                continue
             filtered.append(h)
         n_dropped = before_filter - len(filtered)
         if n_dropped > 0:
             logger.info(
                 f"post-filter dropped {n_dropped} evolved variants "
-                f"(quality gates: composite<0.4, weak edge, dual-vague, len>7, hub-to-hub)"
+                f"(quality gates: composite<0.4, weak edge, dual-vague, len>7, "
+                f"hub-to-hub, vague-umbrella-hub)"
             )
         population = filtered
 

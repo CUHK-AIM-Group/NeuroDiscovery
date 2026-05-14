@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | NeuroMap 知识图谱</title>
+    <meta
+      name="description"
+      content="NeuroMap — 交互式神经科学知识图谱浏览器，涵盖概念、文献声明与机器生成假说。"
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://zxcvb20001-neuroclaw-kg-explorer.hf.space" />
+    <link rel="dns-prefetch" href="https://zxcvb20001-neuroclaw-kg-explorer.hf.space" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      main {
+        width: 95% !important;
+        max-width: 95vw !important;
+        margin: 32px auto 80px;
+        padding: 1.5rem 0 0;
+      }
+      .map-hero { padding-bottom: 1rem; text-align: center; }
+      .map-hero h1 { font-size: 2rem; margin-bottom: 0.4rem; }
+      .map-hero .lead { font-size: 1.05rem; opacity: 0.8; max-width: 900px; margin: 0 auto; }
+      .map-actions { margin-top: 1rem; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+      .map-container {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 120px);
+        min-height: 600px;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      }
+      .map-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+      .pipeline-section {
+        margin-top: 3rem;
+        padding: 2.5rem 2rem;
+        max-width: 1120px;
+        margin-left: auto;
+        margin-right: auto;
+        background: var(--panel);
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+      .pipeline-section h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1.2rem;
+        color: var(--accent);
+      }
+      .pipeline-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+      }
+      @media (max-width: 768px) {
+        .pipeline-grid { grid-template-columns: 1fr; }
+      }
+      .phase-card {
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+      }
+      .phase-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.6rem;
+        color: var(--ink);
+      }
+      .phase-card p {
+        font-size: 0.92rem;
+        color: var(--muted);
+        line-height: 1.7;
+        margin: 0;
+      }
+      .phase-tag {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: rgba(15, 92, 87, 0.1);
+        color: var(--accent);
+        margin-bottom: 0.6rem;
+      }
+      .narrow-warning {
+        display: none;
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--muted);
+      }
+      .narrow-warning h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.8rem;
+        color: var(--ink);
+      }
+      .narrow-warning p { font-size: 0.95rem; max-width: 400px; margin: 0 auto; }
+      @media (max-width: 768px) {
+        .map-container { display: none; }
+        .narrow-warning { display: block; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index-zh.html">首页</a>
+        <a href="neurobench-zh.html">NeuroBench</a>
+        <a href="neuromap-zh.html">NeuroMap</a>
+        <a href="faq-zh.html">常见问题</a>
+        <a href="get-started-zh.html">快速开始</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="neuromap.html" aria-label="Switch to English">EN</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">联系我们</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="map-hero reveal">
+        <h1>NeuroMap 知识图谱</h1>
+        <p class="lead">
+          交互式神经科学知识图谱，包含 86,000+ 概念、154,000+ 关系边、53,000+ 文献声明、667 条机器生成假说。
+        </p>
+        <div class="map-actions">
+          <a class="btn" href="https://huggingface.co/spaces/zxcvb20001/neuroclaw-kg-explorer" target="_blank" rel="noreferrer">在 HuggingFace Spaces 中打开</a>
+        </div>
+      </section>
+
+      <div class="map-container">
+        <iframe
+          src="https://zxcvb20001-neuroclaw-kg-explorer.hf.space/explore"
+          allow="fullscreen"
+          loading="eager"
+        ></iframe>
+      </div>
+      <div class="narrow-warning">
+        <h2>浏览器窗口过窄</h2>
+        <p>NeuroMap 需要更宽的视口来展示交互式图谱。请增大浏览器宽度或使用桌面设备访问。</p>
+      </div>
+
+      <section class="pipeline-section reveal">
+        <h2>如何使用 NeuroMap</h2>
+        <div class="pipeline-grid">
+          <div class="phase-card">
+            <span class="phase-tag">搜索</span>
+            <h3>查找概念</h3>
+            <p>
+              在搜索栏中输入关键词（如 "hippocampus"、"dopamine"），即可在图谱中定位相关概念。结果按相关性和连接数排序。点击搜索结果可选中该节点并将视图居中到该位置。
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">交互</span>
+            <h3>单击与双击</h3>
+            <p>
+              单击节点可在右侧面板查看详情——包括定义、别名、连接边和相关声明。双击节点可展开其邻域，在画布上显示直接相连的概念。
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">声明</span>
+            <h3>浏览文献声明</h3>
+            <p>
+              选中一条边或节点后，可查看其底层文献声明。每条声明展示主语–谓语–宾语三元组、来源论文（PMID）、发表年份和期刊。点击 PMID 链接可直接跳转到 PubMed 查看原文。
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">假说</span>
+            <h3>探索机器生成假说</h3>
+            <p>
+              切换到 Hypotheses 标签页可浏览 667 条机器生成的研究假说。每条假说基于图谱路径推理生成，并按新颖性、可行性和支撑证据评分。点击任意假说可查看其推理链和关联概念。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pipeline-section reveal">
+        <h2>NeuroMap 构建流程</h2>
+        <div class="pipeline-grid">
+          <div class="phase-card">
+            <span class="phase-tag">Phase 1 — 文献抽取</span>
+            <h3>从 PubMed 文献中提取结构化声明</h3>
+            <p>
+              NeuroClaw 按领域关键词（如 depression、autism、Alzheimer's）检索 PubMed 论文，使用 LLM 从摘要和全文中抽取结构化声明（claim）。每条声明包含主语、谓语、宾语三元组及来源元数据（PMID、年份、期刊）。实体名称通过 6 层解析管线（精确匹配、大小写无关、别名、模糊匹配、领域偏好）映射到 MeSH、NeuroNames、CogAt 等标准词表中的受控概念。
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">Phase 2 — 图谱构建</span>
+            <h3>图组装与边置信度评分</h3>
+            <p>
+              抽取的声明被注入 NetworkX 有向图。每个解析后的实体成为节点，每条声明生成一条带类型、带权重的边。边的置信度由来源数量、期刊影响力、时效性和跨论文一致性综合计算。模糊谓语通过 LLM 重分类进行精炼。噪声过滤器配合 salvage 逻辑，防止低质量 LLM 抽取产物进入图谱。流水线以 12 个并行 worker 运行，单批次可处理数千篇论文。
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

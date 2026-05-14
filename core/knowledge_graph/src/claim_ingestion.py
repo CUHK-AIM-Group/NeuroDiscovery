@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import re
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from openai import OpenAI
@@ -15,6 +17,277 @@ from .graph_manager import KnowledgeGraph
 from .schema import CLAIM_PREDICATES, Claim, ConceptNode, DomainTag, Edge, PaperRef
 
 logger = logging.getLogger(__name__)
+
+# ── Build-time noise filter ────────────────────────────────────────────
+# Gates the step-6 "mint new CLM_CONCEPT" fallback in resolve_entity.
+# Curated-vocab matches (MSH/NN/COGAT/...) happen in steps 1-5 and are
+# unaffected. Only names that would otherwise be auto-minted face the check.
+
+_NOISE_PREFIXES = (
+    "impaired ", "increased ", "decreased ", "reduced ",
+    "altered ", "elevated ", "abnormal ", "deficient ",
+    "excessive ", "diminished ", "enhanced ", "disrupted ",
+    "lower ", "higher ", "greater ", "lesser ",
+)
+_NOISE_SUFFIXES = (
+    " findings", " levels", " changes", " symptoms",
+    " deficits", " manifestations", " abnormalities",
+    " dysfunctions", " status", " outcomes", " profile",
+    " profiles", " patterns", " features",
+)
+# Trailing "X of Y" / "X in Y" tails — captures both halves for salvage
+_SALVAGE_SPLIT_RE = re.compile(
+    r"^(.+?)\s+(?:of|in|for|during|with)\s+(.+)$", re.I
+)
+
+# Toggled by ingest_claims based on its keep_noise parameter
+_NOISE_FILTER_ENABLED: bool = True
+
+# When True, resolve_entity will NEVER mint new CLM_CONCEPT nodes.
+# Unresolved subjects/objects are dropped (the claim is skipped entirely if
+# either endpoint fails to map). Phase 1 already covers most medical terms
+# via NeuroNames/MeSH/DisGeNET/CognitiveAtlas + UMLS alignment, so new nodes
+# from Phase 2 are almost always LLM variants of existing concepts or low-
+# quality noise. Toggled by ingest_claims(strict_phase1=True).
+_STRICT_PHASE1: bool = False
+
+_DROP_LOG_DEFAULT_PATH = Path("core/knowledge_graph/data/build_artifacts/dropped_entities.jsonl")
+
+
+def _is_noisy_name(name: str) -> bool:
+    """Match the Web UI 'clean' rules exactly.
+
+    Uses HypothesisEngine._is_noisy_entity (lazy import to avoid circular
+    dependency with hypothesis_engine.py). Also applies prefix/suffix
+    heuristics that catch LLM-extracted chaff like "MRI findings".
+    """
+    if not name:
+        return False
+    # Lazy import — hypothesis_engine imports from this module indirectly
+    from .hypothesis_engine import HypothesisEngine
+    if HypothesisEngine._is_noisy_entity(name):
+        return True
+    lname = name.lower()
+    return (any(lname.startswith(p) for p in _NOISE_PREFIXES)
+            or any(lname.endswith(s) for s in _NOISE_SUFFIXES))
+
+
+def _noise_reasons(name: str) -> list[str]:
+    """Human-readable reasons for audit log."""
+    reasons: list[str] = []
+    if not name:
+        return ["empty name"]
+    from .hypothesis_engine import HypothesisEngine
+    if HypothesisEngine._is_noisy_entity(name):
+        reasons.append("generic/nominalized token")
+    lname = name.lower()
+    for p in _NOISE_PREFIXES:
+        if lname.startswith(p):
+            reasons.append(f"prefix '{p.strip()}'")
+            break
+    for s in _NOISE_SUFFIXES:
+        if lname.endswith(s):
+            reasons.append(f"suffix '{s.strip()}'")
+            break
+    return reasons
+
+
+def _salvage_noisy_name(name: str) -> str:
+    """Strip noise affixes and return a cleaner candidate.
+
+    Strategy:
+    1. "X of|in|for|... Y" → prefer the non-noisy half. If both halves are
+       non-noise, favor the right (usually the semantic object).
+    2. Iteratively strip noise prefixes/suffixes until stable.
+
+    Returns "" if no salvage produces a non-empty change.
+    """
+    cleaned = name.strip()
+    if not cleaned:
+        return ""
+
+    # Step 1: split "X of/in/for Y" — pick the non-noisy half
+    m = _SALVAGE_SPLIT_RE.match(cleaned)
+    if m:
+        left = m.group(1).strip()
+        right = m.group(2).strip()
+        # Local noise check (don't recurse into hypothesis_engine for every split)
+        def _quick_noise(s: str) -> bool:
+            if not s:
+                return True
+            ls = s.lower()
+            return (any(ls.startswith(p) for p in _NOISE_PREFIXES)
+                    or any(ls.endswith(sfx) for sfx in _NOISE_SUFFIXES))
+        l_noise = _quick_noise(left)
+        r_noise = _quick_noise(right)
+        if l_noise and not r_noise:
+            cleaned = right
+        elif r_noise and not l_noise:
+            cleaned = left
+        elif not l_noise and not r_noise:
+            # Both clean — right half is usually the semantic object
+            cleaned = right
+        # if both noisy-looking, fall through — maybe affix strip helps
+
+    # Step 2: iteratively strip prefixes/suffixes until stable
+    for _ in range(4):  # bounded, avoid pathological loops
+        before = cleaned
+        lname = cleaned.lower()
+        for p in _NOISE_PREFIXES:
+            if lname.startswith(p):
+                cleaned = cleaned[len(p):].strip()
+                break
+        lname = cleaned.lower()
+        for s in _NOISE_SUFFIXES:
+            if lname.endswith(s):
+                cleaned = cleaned[:-len(s)].strip()
+                break
+        if cleaned == before:
+            break
+
+    # Step 3: pop trailing single-word noise tokens (e.g., "cognitive functions"
+    # → "cognitive"; "adverse events" → "adverse"). Uses the hypothesis_engine
+    # NOISE_WORDS list for consistency.
+    try:
+        from .hypothesis_engine import _NOISE_WORDS as _HE_NOISE_WORDS
+        tokens = cleaned.split()
+        while len(tokens) > 1 and tokens[-1].lower().strip(".,") in _HE_NOISE_WORDS:
+            tokens.pop()
+        while len(tokens) > 1 and tokens[0].lower().strip(".,") in _HE_NOISE_WORDS:
+            tokens.pop(0)
+        cleaned = " ".join(tokens).strip()
+    except Exception:
+        pass
+
+    if cleaned and cleaned.lower() != name.strip().lower():
+        return cleaned
+    return ""
+
+
+# ── Vague endpoint pre-filter ─────────────────────────────────────────
+# Internalizes judge_clm_endpoints.py logic: reject names that are too
+# vague to serve as hypothesis endpoints BEFORE minting a CLM_CONCEPT node.
+
+_VAGUE_ENDPOINT_SUFFIXES = (
+    " subgroup", " subgroups", " alteration", " alterations",
+    " impairment", " impairments", " deficit", " deficits",
+    " dysfunction", " disability", " decline", " deterioration",
+    " disturbance", " disturbances", " abnormality", " abnormalities",
+    " complication", " complications", " consequence", " consequences",
+    " manifestation", " manifestations", " characteristic", " characteristics",
+    " relationship", " relationships",
+)
+
+_VAGUE_ENDPOINT_EXACT = frozenset({
+    "focus", "integration", "balance", "knowledge", "autonomy",
+    "performance", "adaptation", "resilience", "vulnerability",
+    "recovery", "progression", "mechanism", "process", "outcome",
+    "outcomes", "survival", "improvement", "response", "effect",
+    "effects", "impact", "factor", "factors", "role", "function",
+    "functions", "activity", "condition", "conditions", "treatment",
+    "intervention", "approach", "strategy", "method",
+})
+
+_VAGUE_ENDPOINT_PATTERNS_RE = re.compile(
+    r"^(motor|cognitive|neurocognitive|functional|social|verbal|visual|"
+    r"sensory|emotional|behavioral|clinical|neurological|psychiatric|"
+    r"psychological|physiological|structural|significant|long-term|"
+    r"short-term|acute|chronic|general|overall|common|specific|intact|"
+    r"aggressive|personal)\s+"
+    r"(?:\w+\s+)?"
+    r"(deficit|deficits|impairment|impairments|dysfunction|disability|"
+    r"decline|deterioration|disturbance|disturbances|abnormality|"
+    r"abnormalities|alteration|alterations|features|abilities|"
+    r"relationships|outcomes|subgroup|subgroups|mechanism|processes)$",
+    re.I,
+)
+
+
+def _is_vague_endpoint_name(name: str) -> bool:
+    """Return True if name is too vague to be a useful hypothesis endpoint.
+
+    Catches patterns like:
+    - Single generic words: "balance", "focus", "outcome"
+    - "adjective + generic noun": "cognitive deficits", "clinical features"
+    - Names ending in vague suffixes: "aggressive subgroup"
+    - Very short names (< 3 chars, likely parsing artifacts)
+    """
+    if not name:
+        return True
+    s = name.strip()
+    if len(s) < 2:
+        return True
+    sl = s.lower()
+
+    # Single-word exact match
+    if sl in _VAGUE_ENDPOINT_EXACT:
+        return True
+
+    # Suffix match
+    if any(sl.endswith(suf) for suf in _VAGUE_ENDPOINT_SUFFIXES):
+        return True
+
+    # Pattern match (adjective + generic noun)
+    if _VAGUE_ENDPOINT_PATTERNS_RE.match(sl):
+        return True
+
+    return False
+
+
+class _DropLog:
+    """Append-only audit log of salvaged / dropped entity names."""
+
+    def __init__(self) -> None:
+        self.fp = None
+        self.n_dropped: int = 0
+        self.n_salvaged: int = 0
+        self.path: Optional[Path] = None
+
+    def open(self, path: Path) -> None:
+        if self.fp is not None:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.fp = path.open("a", encoding="utf-8")
+        self.path = path
+        # marker so successive runs are distinguishable when grepping
+        self.fp.write(json.dumps({
+            "ts": datetime.utcnow().isoformat(), "kind": "run_start",
+        }, ensure_ascii=False) + "\n")
+
+    def record(
+        self,
+        raw_name: str,
+        kind: str,
+        cleaned: str = "",
+        matched_id: Optional[str] = None,
+        reasons: Optional[list[str]] = None,
+    ) -> None:
+        if kind == "salvaged":
+            self.n_salvaged += 1
+        else:
+            self.n_dropped += 1
+        if self.fp is None:
+            return
+        self.fp.write(json.dumps({
+            "ts": datetime.utcnow().isoformat(),
+            "raw_name": raw_name,
+            "kind": kind,
+            "cleaned": cleaned,
+            "matched_id": matched_id,
+            "reasons": reasons or [],
+        }, ensure_ascii=False) + "\n")
+
+    def close(self) -> None:
+        if self.fp is not None:
+            try:
+                self.fp.flush()
+                self.fp.close()
+            finally:
+                self.fp = None
+
+
+_DROP_LOG = _DropLog()
+
 
 # ── RELATE: predicate refinement ──────────────────────────────────────
 
@@ -81,6 +354,21 @@ _PREDICATE_KEYWORDS: dict[str, list[re.Pattern]] = {
         re.compile(r"\binfluences?\b", re.I),
     ],
 }
+
+# Penalty factor applied to edge confidence when raw_text doesn't support
+# the assigned predicate. Keeps precise predicates but marks unsupported
+# ones as low-confidence, reducing their influence in hypothesis scoring.
+_UNSUPPORTED_PREDICATE_PENALTY = 0.5
+
+
+def _predicate_supported_by_text(predicate: str, raw_text: str) -> bool:
+    """Check if raw_text contains keywords supporting the given predicate."""
+    if not raw_text or predicate in _VAGUE_PREDICATES:
+        return True
+    patterns = _PREDICATE_KEYWORDS.get(predicate)
+    if not patterns:
+        return True
+    return any(p.search(raw_text) for p in patterns)
 
 
 def refine_predicate(claim: Claim, llm_client: Optional[OpenAI] = None, model: str = "") -> str:
@@ -274,7 +562,66 @@ def resolve_entity(
         candidates.sort(key=lambda n: len(n.preferred_name))
         return candidates[0].id
 
-    # 6. not found — create new concept
+    # 6. not found — noise check before minting a brand-new CLM_CONCEPT.
+    # Curated matches (steps 1-5) already returned above, so we only see
+    # names that would otherwise pollute the graph with auto-generated
+    # low-quality nodes. First try to salvage by stripping noise affixes
+    # and rechecking the curated index; if still noise, drop the entity.
+    if _NOISE_FILTER_ENABLED and _is_noisy_name(entity_name):
+        salvaged = _salvage_noisy_name(entity_name)
+        if salvaged:
+            salvaged_lower = salvaged.lower()
+            for node in kg._index.values():
+                if node.preferred_name.lower() == salvaged_lower:
+                    _DROP_LOG.record(entity_name, "salvaged", salvaged, node.id)
+                    return node.id
+                for alias in node.aliases:
+                    if alias.lower() == salvaged_lower:
+                        _DROP_LOG.record(entity_name, "salvaged", salvaged, node.id)
+                        return node.id
+        _DROP_LOG.record(entity_name, "dropped", salvaged, None, _noise_reasons(entity_name))
+        logger.debug(f"dropped noise entity: {entity_name!r} (salvage={salvaged!r})")
+        return None
+
+    # 6b. strict_phase1 mode — drop anything not already curated, even if it
+    # passes the noise filter. Phase 1 covers most neuroscience terms; Phase
+    # 2 LLM extraction should reuse those nodes, not proliferate new ones.
+    if _STRICT_PHASE1:
+        # Try one last salvage: maybe the entity is an obvious variant
+        # (plural, minor morphology) of something in the index.
+        salvaged = _salvage_noisy_name(entity_name) if _NOISE_FILTER_ENABLED else None
+        if salvaged:
+            salvaged_lower = salvaged.lower()
+            for node in kg._index.values():
+                if node.preferred_name.lower() == salvaged_lower:
+                    _DROP_LOG.record(entity_name, "salvaged_strict", salvaged, node.id)
+                    return node.id
+                for alias in node.aliases:
+                    if alias.lower() == salvaged_lower:
+                        _DROP_LOG.record(entity_name, "salvaged_strict", salvaged, node.id)
+                        return node.id
+        _DROP_LOG.record(entity_name, "strict_dropped", salvaged, None,
+                         ["not in phase1 curated index"])
+        logger.debug(f"strict_phase1 dropped entity: {entity_name!r}")
+        return None
+
+    # 6c. CLM_CONCEPT endpoint quality pre-check: reject names that are
+    # too vague to serve as hypothesis endpoints BEFORE minting a node.
+    # This internalizes what judge_clm_endpoints.py does post-hoc.
+    if _is_vague_endpoint_name(entity_name):
+        _DROP_LOG.record(entity_name, "vague_endpoint", None, None,
+                         ["too vague to be a hypothesis endpoint"])
+        logger.debug(f"vague endpoint dropped: {entity_name!r}")
+        return None
+
+    # 6d. Dedup by preferred_name: if an existing CLM_CONCEPT already has
+    # the same name (case-insensitive), reuse it instead of minting a
+    # duplicate with a different ID.
+    for node in kg._index.values():
+        if node.id.startswith("CLM_CONCEPT:") and node.preferred_name.lower() == entity_lower:
+            return node.id
+
+    # 7. mint a new concept
     domain = ENTITY_TYPE_TO_DOMAIN.get(entity_type, DomainTag.DISEASE)
     new_id = f"CLM_CONCEPT:{entity_name.replace(' ', '_')}"
     kg.add_concept(ConceptNode(
@@ -310,6 +657,9 @@ def ingest_claims(
     llm_base_url: str = "",
     llm_api_key: str = "",
     llm_model: str = "",
+    keep_noise: bool = False,
+    strict_phase1: bool = False,
+    drop_log_path: Optional[Path] = None,
 ) -> dict:
     """Ingest extracted claims into the knowledge graph.
 
@@ -319,12 +669,29 @@ def ingest_claims(
     3. Add a Claim node with full metadata
     4. Add a simplified edge for traversal
 
+    Args:
+        keep_noise: if True, skip build-time noise filter (debug mode).
+        strict_phase1: if True, do NOT mint new CLM_CONCEPT nodes. Claims whose
+            subject or object cannot resolve to a Phase-1-curated node are
+            dropped. Use this when Phase 1 (NeuroNames/MeSH/DisGeNET/Cognitive
+            Atlas + UMLS) is considered sufficient to cover medical terminology.
+        drop_log_path: override path for the dropped-entities audit log.
+
     Returns summary dict.
     """
     claims_added = 0
     edges_added = 0
     errors = 0
+    claims_skipped_noise = 0
+    claims_skipped_unresolved = 0
     predicates_refined = 0
+
+    # Configure build-time noise filter + strict_phase1 mode
+    global _NOISE_FILTER_ENABLED, _STRICT_PHASE1
+    _NOISE_FILTER_ENABLED = not keep_noise
+    _STRICT_PHASE1 = strict_phase1
+    if not keep_noise:
+        _DROP_LOG.open(drop_log_path or _DROP_LOG_DEFAULT_PATH)
 
     # Initialize LLM client POOL for predicate refinement (all 4 keys, not just 1)
     # and decide concurrency: refinement is IO-bound (LLM calls), safe to
@@ -390,15 +757,90 @@ def ingest_claims(
                     logger.debug(f"refine_predicate worker failed: {e}")
 
     # Serial KG mutation: resolve entities + add concept/edges.
+    # Triple dedup: skip claims whose (PMID, subject_id, predicate, object_id)
+    # has already been ingested in this batch or exists in the graph.
+    _seen_triples: set[tuple[str, str, str, str]] = set()
+    # Cross-predicate PMID dedup: for same (pmid, subject_id, object_id),
+    # only keep the most precise predicate (non-vague > vague).
+    _seen_pairs: dict[tuple[str, str, str], str] = {}  # key → predicate
+    claims_skipped_dedup = 0
+
+    # Seed from existing claim nodes in the graph (cross-run dedup)
+    for node in kg._index.values():
+        if not node.id.startswith("CLM:"):
+            continue
+        meta = node.metadata
+        if not isinstance(meta, dict):
+            continue
+        pmid = ""
+        sp = meta.get("source_paper")
+        if isinstance(sp, dict):
+            pmid = sp.get("pmid", "")
+        sid = meta.get("subject_id", "")
+        pred = meta.get("predicate", "")
+        oid = meta.get("object_id", "")
+        if sid and pred and oid:
+            _seen_triples.add((pmid, sid, pred, oid))
+            pair_key = (pmid, sid, oid)
+            existing_pred = _seen_pairs.get(pair_key)
+            if existing_pred is None or (existing_pred in _VAGUE_PREDICATES and pred not in _VAGUE_PREDICATES):
+                _seen_pairs[pair_key] = pred
+
+    logger.debug(f"triple dedup seeded with {len(_seen_triples)} existing triples")
+
     for claim in all_claims:
         try:
             # resolve entities
             claim = resolve_claim_entities(kg, claim)
 
             if not claim.subject_id or not claim.object_id:
-                logger.warning(f"could not resolve entities for claim {claim.id}")
-                errors += 1
+                # Distinguish noise drop, strict_phase1 drop, and real error
+                if _STRICT_PHASE1:
+                    claims_skipped_unresolved += 1
+                    logger.debug(
+                        f"strict_phase1 skipped claim {claim.id}: "
+                        f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
+                    )
+                elif _NOISE_FILTER_ENABLED and (
+                    _is_noisy_name(claim.subject_name)
+                    or _is_noisy_name(claim.object_name)
+                ):
+                    claims_skipped_noise += 1
+                    logger.debug(
+                        f"skipped noise claim {claim.id}: "
+                        f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
+                    )
+                else:
+                    logger.warning(f"could not resolve entities for claim {claim.id}")
+                    errors += 1
                 continue
+
+            # Triple dedup: same paper + same (subject, predicate, object) = duplicate
+            pmid = claim.source_paper.pmid or ""
+            triple_key = (pmid, claim.subject_id, claim.predicate, claim.object_id)
+            if triple_key in _seen_triples:
+                claims_skipped_dedup += 1
+                logger.debug(
+                    f"dedup skipped claim {claim.id}: "
+                    f"({pmid}, {claim.subject_id}, {claim.predicate}, {claim.object_id})"
+                )
+                continue
+            _seen_triples.add(triple_key)
+
+            # Cross-predicate PMID dedup: same paper + same (subject, object)
+            # but different predicate. Keep only the most precise one.
+            pair_key = (pmid, claim.subject_id, claim.object_id)
+            existing_pred = _seen_pairs.get(pair_key)
+            if existing_pred is not None:
+                if claim.predicate in _VAGUE_PREDICATES and existing_pred not in _VAGUE_PREDICATES:
+                    # Already have a precise predicate, skip this vague one
+                    claims_skipped_dedup += 1
+                    logger.debug(
+                        f"cross-pred dedup skipped vague {claim.id}: "
+                        f"already have {existing_pred} for pair"
+                    )
+                    continue
+            _seen_pairs[pair_key] = claim.predicate
 
             # add claim node
             kg.add_concept(ConceptNode(
@@ -410,6 +852,11 @@ def ingest_claims(
                 metadata=claim.to_dict(),
             ))
             claims_added += 1
+
+            # Predicate-evidence confidence penalty: if raw_text doesn't
+            # contain keywords supporting the predicate, reduce confidence.
+            if not _predicate_supported_by_text(claim.predicate, claim.raw_text):
+                claim.confidence *= _UNSUPPORTED_PREDICATE_PENALTY
 
             # add simplified edge
             edge = claim.to_edge()
@@ -440,8 +887,15 @@ def ingest_claims(
         "claims_added": claims_added,
         "edges_added": edges_added,
         "errors": errors,
+        "claims_skipped_noise": claims_skipped_noise,
+        "claims_skipped_unresolved": claims_skipped_unresolved,
+        "claims_skipped_dedup": claims_skipped_dedup,
+        "entities_salvaged": _DROP_LOG.n_salvaged,
+        "entities_dropped": _DROP_LOG.n_dropped,
         "papers_processed": len(results),
         "predicates_refined": predicates_refined,
+        "strict_phase1": strict_phase1,
     }
+    _DROP_LOG.close()
     logger.info(f"claim ingestion complete: {summary}")
     return summary

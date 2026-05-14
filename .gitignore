@@ -43,3 +43,12 @@ Thumbs.db
 .env.keys
 *.secret
 api_keys.txt
+models/benchmark_results/
+models/checkpoints/
+models/braingnn/atlas_sweep_results_BEFORE.csv
+models/braingnn/atlas_sweep_results.csv
+models/braingnn/checkpoints/
+
+# Deploy build artifacts
+deploy/
+models/

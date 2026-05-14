@@ -80,7 +80,31 @@ def format_gap(g: Gap, index: int) -> str:
 # ── commands ───────────────────────────────────────────────────────────
 
 def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5, max_seeds=50, as_json=False):
-    """Batch-generate hypotheses across the entire graph."""
+    """Batch-generate hypotheses across the entire graph.
+
+    `domain_pairs` may be:
+        None / "default" — DEFAULT_DOMAIN_PAIRS (clinical outcomes)
+        "imaging"        — IMAGING_DOMAIN_PAIRS (UKB/ADNI/HCP)
+        "decoding"       — DECODING_DOMAIN_PAIRS (NSD/BOLD5000/SEED brain decoding)
+        "all"            — union of all three
+        list[tuple]      — explicit (src_domain, tgt_domain) tuples
+    """
+    # Resolve string presets to actual pair lists
+    if isinstance(domain_pairs, str):
+        from .hypothesis_engine import (
+            DEFAULT_DOMAIN_PAIRS, IMAGING_DOMAIN_PAIRS, DECODING_DOMAIN_PAIRS,
+        )
+        preset_map = {
+            "default":  DEFAULT_DOMAIN_PAIRS,
+            "imaging":  IMAGING_DOMAIN_PAIRS,
+            "decoding": DECODING_DOMAIN_PAIRS,
+            "all":      DEFAULT_DOMAIN_PAIRS + IMAGING_DOMAIN_PAIRS + DECODING_DOMAIN_PAIRS,
+        }
+        if domain_pairs not in preset_map:
+            raise ValueError(f"Unknown domain-pairs preset: {domain_pairs}")
+        print(f"  domain-pairs preset: {domain_pairs} ({len(preset_map[domain_pairs])} pairs)")
+        domain_pairs = preset_map[domain_pairs]
+
     print(f"Batch generating hypotheses (max_hops={max_hops}, max_paths_per_pair={max_paths}, max_seeds={max_seeds})...")
     hypotheses = engine.batch_generate(
         domain_pairs=domain_pairs,
@@ -578,6 +602,20 @@ def cmd_evolve(engine, input_path, output_path, population, generations,
 
 # ── main ───────────────────────────────────────────────────────────────
 
+
+def cmd_recipe(*_args, **_kwargs):
+    """Phase 4.3 recipe generation has been removed.
+
+    Per project decision on 2026-05-13, Input Recipe generation was deleted;
+    static experiment infrastructure (atlases, modalities, models, datasets)
+    is now ingested in Phase 1 instead. See README for details.
+    """
+    print("Phase 4.3 recipe generation has been removed. "
+          "Use Phase 1 experiment-infra ingester for atlas/modality/model/dataset nodes.")
+
+
+# ── main ───────────────────────────────────────────────────────────────
+
 def main():
     parser = argparse.ArgumentParser(description="Hypothesis engine for NeuroClaw knowledge graph")
     parser.add_argument("--graph", default=None, help="Path to graph JSON")
@@ -590,6 +628,11 @@ def main():
     p_batch.add_argument("--max-hops", type=int, default=3)
     p_batch.add_argument("--max-paths", type=int, default=5, help="Max paths per domain pair seed")
     p_batch.add_argument("--max-seeds", type=int, default=50, help="Max seed concepts per domain")
+    p_batch.add_argument("--domain-pairs", choices=["default", "imaging", "decoding", "all"],
+                          default="default",
+                          help="Which domain-pair set to traverse: default (clinical outcomes), "
+                               "imaging (UKB/ADNI/HCP imaging), decoding (NSD/BOLD5000/SEED brain "
+                               "decoding), or all (union of the three)")
 
     # rank
     p_rank = sub.add_parser("rank", help="Load and re-rank saved hypotheses")
@@ -665,7 +708,10 @@ def main():
 
     # imaging-batch
     p_imaging = sub.add_parser("imaging-batch", help="Generate imaging-feature-driven hypotheses for a dataset")
-    p_imaging.add_argument("--dataset", default="UKB", choices=["UKB", "ADNI", "HCP_YA"],
+    p_imaging.add_argument("--dataset", default="UKB",
+                           choices=["UKB", "ADNI", "HCP_YA",
+                                    "ABIDE", "ADHD200", "COBRE",
+                                    "UCLA", "HCP_EP", "HCP_AGING"],
                            help="Target dataset (default: UKB)")
     p_imaging.add_argument("--output", default="core/knowledge_graph/data/hypotheses_imaging.json",
                            help="Output JSON path")
@@ -693,7 +739,9 @@ def main():
     as_json = args.json
 
     if args.command == "batch":
-        cmd_batch(engine, args.output, max_hops=args.max_hops, max_paths=args.max_paths, max_seeds=args.max_seeds, as_json=as_json)
+        cmd_batch(engine, args.output, domain_pairs=args.domain_pairs,
+                  max_hops=args.max_hops, max_paths=args.max_paths,
+                  max_seeds=args.max_seeds, as_json=as_json)
     elif args.command == "rank":
         cmd_rank(engine, args.input, top_n=args.top, as_json=as_json)
     elif args.command == "paths":

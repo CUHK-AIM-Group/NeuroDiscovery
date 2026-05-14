@@ -52,6 +52,8 @@ class KnowledgeGraph:
     # ── edge operations ──────────────────────────────────────────────
 
     def add_edge(self, edge: Edge) -> None:
+        if edge.source_id == edge.target_id:
+            return
         if edge.source_id not in self._index:
             logger.warning(f"source node {edge.source_id} not in graph, skipping edge")
             return
