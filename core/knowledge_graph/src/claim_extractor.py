@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
 DEFAULT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")  # cascade: 5.5 -> 5.4 -> 5.3 -> 5.2
 
 # Multi-key pool: set OPENAI_API_KEYS env var as comma-separated keys
 # e.g. export OPENAI_API_KEYS="sk-aaa,sk-bbb,sk-ccc"
@@ -87,11 +87,58 @@ class ExtractionResult:
     error: str = ""
 
 
+MODEL_CASCADE = ["gpt-5.5", "gpt-5.4", "claude-opus-4-7", "claude-opus-4-6", "gpt-5.3", "gpt-5.2"]
+DOWNGRADE_THRESHOLD = 1      # consecutive failures to trigger downgrade (aggressive)
+UPGRADE_INTERVAL = 600       # seconds before attempting upgrade back to preferred model (slow recovery)
+
+
+class _WorkerCascade:
+    """Per-worker adaptive model cascade state."""
+
+    def __init__(self, worker_id: int, cascade: list[str], preferred_idx: int = 0):
+        self.worker_id = worker_id
+        self._cascade = cascade
+        self._model_idx = preferred_idx
+        self._consecutive_failures = 0
+        self._last_upgrade_attempt = 0.0
+
+    @property
+    def model(self) -> str:
+        import time as _time
+        now = _time.time()
+        if self._model_idx > 0 and (now - self._last_upgrade_attempt) > UPGRADE_INTERVAL:
+            self._last_upgrade_attempt = now
+            prev = self._cascade[self._model_idx]
+            self._model_idx = max(0, self._model_idx - 1)
+            self._consecutive_failures = 0
+            logger.info(f"[worker-{self.worker_id}] model upgrade attempt: {prev} -> {self._cascade[self._model_idx]}")
+        return self._cascade[self._model_idx]
+
+    def record_success(self):
+        self._consecutive_failures = 0
+
+    def record_failure(self):
+        import time as _time
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= DOWNGRADE_THRESHOLD:
+            if self._model_idx < len(self._cascade) - 1:
+                prev = self._cascade[self._model_idx]
+                self._model_idx += 1
+                self._consecutive_failures = 0
+                self._last_upgrade_attempt = _time.time()
+                logger.warning(f"[worker-{self.worker_id}] model downgrade: {prev} -> {self._cascade[self._model_idx]} (after {DOWNGRADE_THRESHOLD} failures)")
+            else:
+                self._consecutive_failures = 0
+
+
 class ClaimExtractor:
     """Extract structured claims from paper abstracts using LLM.
 
     Supports multi-key round-robin to bypass per-key rate limits on proxy APIs.
     Set OPENAI_API_KEYS env var as comma-separated keys.
+
+    Each worker thread gets its own adaptive model cascade (gpt-5.5 -> 5.4 -> 5.3 -> 5.2),
+    downgrading independently on repeated failures and periodically retrying higher models.
     """
 
     def __init__(
@@ -101,8 +148,11 @@ class ClaimExtractor:
         model: str = DEFAULT_MODEL,
         api_keys: list[str] | None = None,
     ):
-        self.model = model
+        self.preferred_model = model
         self.base_url = base_url
+
+        self._cascade = MODEL_CASCADE if model in MODEL_CASCADE else [model] + MODEL_CASCADE
+        self._preferred_idx = self._cascade.index(model) if model in self._cascade else 0
 
         # Build client pool from explicit keys, env pool, or single key
         keys = api_keys or API_KEY_POOL or ([api_key] if api_key else [])
@@ -112,11 +162,35 @@ class ClaimExtractor:
         self._clients: list[OpenAI] = []
         for k in keys:
             self._clients.append(
-                OpenAI(base_url=base_url, api_key=k, http_client=httpx.Client(verify=False))
+                OpenAI(
+                    base_url=base_url,
+                    api_key=k,
+                    http_client=httpx.Client(verify=False, timeout=30.0),
+                    max_retries=0,  # disable internal retry; let cascade handle failures
+                    timeout=30.0,
+                )
             )
         self._client_idx = 0
         self._client_lock = __import__("threading").Lock()
-        logger.info(f"initialized {len(self._clients)} LLM client(s)")
+
+        # Per-worker cascade state, keyed by thread id
+        self._worker_cascades: dict[int, _WorkerCascade] = {}
+        self._worker_lock = __import__("threading").Lock()
+        self._worker_counter = 0
+
+        logger.info(f"initialized {len(self._clients)} LLM client(s), model cascade: {self._cascade}")
+
+    def _get_worker_cascade(self) -> _WorkerCascade:
+        """Get or create cascade state for the current thread."""
+        import threading
+        tid = threading.current_thread().ident
+        with self._worker_lock:
+            if tid not in self._worker_cascades:
+                self._worker_counter += 1
+                self._worker_cascades[tid] = _WorkerCascade(
+                    self._worker_counter, self._cascade, self._preferred_idx
+                )
+            return self._worker_cascades[tid]
 
     @property
     def client(self) -> OpenAI:
@@ -131,16 +205,7 @@ class ClaimExtractor:
         abstract: str,
         paper: PaperRef,
     ) -> ExtractionResult:
-        """Extract claims from a single paper abstract.
-
-        Args:
-            abstract: The paper abstract text.
-            paper: Paper metadata (PMID, title, authors, etc.).
-
-        Returns:
-            ExtractionResult with extracted claims.
-        """
-        # truncate very long abstracts to avoid token limits
+        """Extract claims from a single paper abstract."""
         if len(abstract) > 2000:
             abstract = abstract[:2000] + "..."
 
@@ -153,11 +218,16 @@ class ClaimExtractor:
             journal=paper.journal or "unknown",
         )
 
+        cascade = self._get_worker_cascade()
         backoff = 5.0
+        SLOW_RESPONSE_THRESHOLD = 15.0  # seconds; treat as soft failure for cascade
         for attempt in range(4):
+            current_model = cascade.model
+            import time as _time
+            req_start = _time.time()
             try:
                 response = self.client.chat.completions.create(
-                    model=self.model,
+                    model=current_model,
                     messages=[
                         {"role": "system", "content": "You are a precise neuroscience data extraction system. Output only valid JSON."},
                         {"role": "user", "content": prompt},
@@ -166,8 +236,16 @@ class ClaimExtractor:
                     max_tokens=8192,
                 )
 
+                latency = _time.time() - req_start
                 raw_text = response.choices[0].message.content.strip()
                 claims = self._parse_response(raw_text, paper)
+
+                # Slow response = soft failure (no exception thrown but service degraded)
+                if latency > SLOW_RESPONSE_THRESHOLD:
+                    cascade.record_failure()
+                    logger.debug(f"slow response PMID {paper.pmid} model={current_model}: {latency:.1f}s")
+                else:
+                    cascade.record_success()
 
                 return ExtractionResult(
                     paper=paper,
@@ -177,9 +255,10 @@ class ClaimExtractor:
 
             except Exception as e:
                 err_str = str(e)
-                if ("429" in err_str or "rate" in err_str.lower() or "forbidden" in err_str.lower()) and attempt < 3:
+                cascade.record_failure()
+                if ("429" in err_str or "rate" in err_str.lower() or "forbidden" in err_str.lower() or "timed out" in err_str.lower() or "connection" in err_str.lower()) and attempt < 3:
                     import time as _time
-                    logger.warning(f"rate limited PMID {paper.pmid} (attempt {attempt+1}), backing off {backoff:.0f}s")
+                    logger.warning(f"request failed PMID {paper.pmid} model={current_model} (attempt {attempt+1}), backing off {backoff:.0f}s: {err_str[:80]}")
                     _time.sleep(backoff)
                     backoff *= 2
                     continue
@@ -196,17 +275,8 @@ class ClaimExtractor:
         papers: list[tuple[str, PaperRef]],
         max_workers: int = 1,
     ) -> list[ExtractionResult]:
-        """Extract claims from multiple papers.
-
-        Args:
-            papers: List of (abstract, PaperRef) tuples.
-            max_workers: Number of parallel workers. 1 = sequential.
-
-        Returns:
-            List of ExtractionResult (same order as input).
-        """
+        """Extract claims from multiple papers with per-worker model cascade."""
         if max_workers <= 1:
-            # sequential mode
             results = []
             for i, (abstract, paper) in enumerate(papers):
                 logger.info(f"extracting claims [{i+1}/{len(papers)}] PMID={paper.pmid}")
@@ -215,7 +285,6 @@ class ClaimExtractor:
                 results.append(result)
             return results
 
-        # parallel mode
         results: list[Optional[ExtractionResult]] = [None] * len(papers)
 
         def _extract_one(idx: int, abstract: str, paper: PaperRef) -> tuple[int, ExtractionResult]:

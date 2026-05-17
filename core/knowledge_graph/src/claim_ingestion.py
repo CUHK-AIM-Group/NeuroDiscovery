@@ -489,6 +489,56 @@ def _word_boundary_match(short: str, long: str) -> bool:
     return re.search(r"\b" + re.escape(short) + r"\b", long) is not None
 
 
+# ── Name resolution index (O(1) lookup instead of O(n) scan) ──────────
+class _ResolutionIndex:
+    """Pre-built lookup tables for fast entity resolution."""
+
+    def __init__(self):
+        self._exact: dict[str, str] = {}          # preferred_name -> id
+        self._lower: dict[str, str] = {}          # preferred_name.lower() -> id
+        self._alias_lower: dict[str, str] = {}    # alias.lower() -> id
+        self._built = False
+
+    def build(self, kg: KnowledgeGraph):
+        self._exact.clear()
+        self._lower.clear()
+        self._alias_lower.clear()
+        for node in kg._index.values():
+            self._exact[node.preferred_name] = node.id
+            lower = node.preferred_name.lower()
+            if lower not in self._lower:
+                self._lower[lower] = node.id
+            for alias in node.aliases:
+                al = alias.lower()
+                if al not in self._alias_lower:
+                    self._alias_lower[al] = node.id
+        self._built = True
+        logger.info(f"resolution index built: {len(self._exact)} exact, {len(self._alias_lower)} aliases")
+
+    def add(self, node_id: str, preferred_name: str, aliases: list[str] = None):
+        """Incrementally add a new node to the index."""
+        self._exact[preferred_name] = node_id
+        lower = preferred_name.lower()
+        if lower not in self._lower:
+            self._lower[lower] = node_id
+        for alias in (aliases or []):
+            al = alias.lower()
+            if al not in self._alias_lower:
+                self._alias_lower[al] = node_id
+
+    def lookup_exact(self, name: str) -> Optional[str]:
+        return self._exact.get(name)
+
+    def lookup_lower(self, name: str) -> Optional[str]:
+        return self._lower.get(name.lower())
+
+    def lookup_alias(self, name: str) -> Optional[str]:
+        return self._alias_lower.get(name.lower())
+
+
+_resolution_idx = _ResolutionIndex()
+
+
 def resolve_entity(
     kg: KnowledgeGraph,
     entity_name: str,
@@ -497,9 +547,9 @@ def resolve_entity(
     """Resolve an entity name to a concept ID in the knowledge graph.
 
     Strategy:
-    1. Exact match on preferred_name
-    2. Case-insensitive match
-    3. Alias match (exact, case-insensitive)
+    1. Exact match on preferred_name (O(1) via index)
+    2. Case-insensitive match (O(1) via index)
+    3. Alias match (O(1) via index)
     4. Safe fuzzy match: substring only when both strings are long enough,
        short aliases (<4 chars) require word-boundary match
     5. If entity_type is given, prefer candidates whose domain matches
@@ -508,38 +558,38 @@ def resolve_entity(
     if not entity_name:
         return None
 
-    # 1. exact match
-    for node in kg._index.values():
-        if node.preferred_name == entity_name:
-            return node.id
+    # Build index on first call
+    if not _resolution_idx._built:
+        _resolution_idx.build(kg)
 
-    # 2. case-insensitive match
+    # 1. exact match (O(1))
+    hit = _resolution_idx.lookup_exact(entity_name)
+    if hit:
+        return hit
+
+    # 2. case-insensitive match (O(1))
     entity_lower = entity_name.lower()
-    for node in kg._index.values():
-        if node.preferred_name.lower() == entity_lower:
-            return node.id
+    hit = _resolution_idx.lookup_lower(entity_name)
+    if hit:
+        return hit
 
-    # 3. alias match (exact only — no substring here)
-    for node in kg._index.values():
-        for alias in node.aliases:
-            if alias.lower() == entity_lower:
-                return node.id
+    # 3. alias match (O(1))
+    hit = _resolution_idx.lookup_alias(entity_name)
+    if hit:
+        return hit
 
-    # 4. safe fuzzy match
+    # 4. safe fuzzy match (still O(n) but only reached for cache misses)
     candidates = []
     entity_len = len(entity_lower)
     for node in kg._index.values():
         name_lower = node.preferred_name.lower()
-        # Substring in preferred_name: both sides must be long enough
         if entity_len >= _MIN_SUBSTRING_LEN and len(name_lower) >= _MIN_SUBSTRING_LEN:
             if entity_lower in name_lower or name_lower in entity_lower:
                 candidates.append(node)
                 continue
-        # Alias substring: short aliases need word-boundary match
         for alias in node.aliases:
             alias_lower = alias.lower()
             if len(alias_lower) < _MIN_SUBSTRING_LEN:
-                # Short alias (e.g. "IC"): require whole-word match in entity
                 if _word_boundary_match(alias_lower, entity_lower):
                     candidates.append(node)
                     break
@@ -558,7 +608,6 @@ def resolve_entity(
     if len(candidates) == 1:
         return candidates[0].id
     elif len(candidates) > 1:
-        # prefer shortest name (most specific match)
         candidates.sort(key=lambda n: len(n.preferred_name))
         return candidates[0].id
 
@@ -630,6 +679,7 @@ def resolve_entity(
         domain_tags=[domain.value],
         source_vocab="claim_extraction",
     ))
+    _resolution_idx.add(new_id, entity_name)
     logger.info(f"created new concept: {new_id} ({entity_name})")
     return new_id
 

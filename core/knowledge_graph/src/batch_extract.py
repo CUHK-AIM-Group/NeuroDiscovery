@@ -20,8 +20,10 @@ import csv
 import json
 import logging
 import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
+from queue import Queue
 from typing import Optional
 
 from .claim_extractor import ClaimExtractor
@@ -409,7 +411,85 @@ def run_batch_extraction(
     total_claims = checkpoint.get("total_claims", 0)
     start_time = time.time()
 
+    def _ingest_and_save(
+        kg_, results_, meta_, papers_csv_, claims_file_,
+        disease_years_, completed_years_, checkpoint_,
+        checkpoint_file_, graph_file_, total_papers_, total_claims_,
+        year_start_, keep_noise_, strict_phase1_,
+    ):
+        """Ingest extraction results into KG, update CSV/JSONL/checkpoint."""
+        nonlocal total_papers, total_claims
+
+        d = meta_["disease"]
+        yr = meta_["year"]
+        papers_list = meta_["papers"]
+
+        batch_claims = 0
+        for result in results_:
+            if result.claims:
+                batch_claims += len(result.claims)
+
+        ingest_claims(kg_, results_, keep_noise=keep_noise_,
+                      strict_phase1=strict_phase1_)
+
+        papers_meta = []
+        for (abstract, ref), result in zip(papers_list, results_):
+            papers_meta.append({
+                "pmid": ref.pmid,
+                "doi": ref.doi,
+                "title": ref.title,
+                "authors": ref.authors,
+                "year": ref.year,
+                "journal": ref.journal,
+                "disease": d,
+                "abstract_length": len(abstract),
+                "n_claims": len(result.claims),
+                "timestamp": datetime.now().isoformat(),
+            })
+        _append_to_csv(papers_csv_, papers_meta)
+        _append_claims_to_jsonl(claims_file_, results_, d, yr)
+
+        total_papers += len(papers_list)
+        total_claims += batch_claims
+        logger.info(f"  {yr}: ingested {batch_claims} claims (total: {total_claims})")
+
+        disease_years_.append(yr)
+        completed_years_[d] = disease_years_
+        checkpoint_["total_papers"] = total_papers
+        checkpoint_["total_claims"] = total_claims
+        _save_checkpoint(checkpoint_, checkpoint_file_)
+
+        if (yr - year_start_ + 1) % 5 == 0:
+            save_graph(kg_, graph_file_)
+            logger.info(f"  graph checkpoint saved")
+
     expected_years = set(range(year_start, year_end + 1))
+
+    # Pipeline: use a background thread for extraction so ingestion and
+    # extraction of the next batch can overlap.
+    extract_pool = ThreadPoolExecutor(max_workers=1)
+    pending_extraction: Optional[Future] = None
+    pending_meta: Optional[dict] = None  # {disease, year, papers, total_hits}
+
+    def _submit_extraction(disease_name, yr, papers_list, hits):
+        """Submit extraction job to background thread."""
+        nonlocal pending_extraction, pending_meta
+        pending_meta = {"disease": disease_name, "year": yr, "papers": papers_list, "total_hits": hits}
+        pending_extraction = extract_pool.submit(
+            extractor.extract_batch, papers_list, max_workers
+        )
+
+    def _collect_extraction():
+        """Wait for pending extraction and return (meta, results)."""
+        nonlocal pending_extraction, pending_meta
+        if pending_extraction is None:
+            return None, None
+        results = pending_extraction.result()
+        meta = pending_meta
+        pending_extraction = None
+        pending_meta = None
+        return meta, results
+
     for disease in diseases:
         done_years = set(completed_years.get(disease, []))
         if disease in checkpoint.get("completed_diseases", []) and expected_years.issubset(done_years):
@@ -439,67 +519,47 @@ def run_batch_extraction(
             checkpoint["paper_counts"] = paper_counts
 
             if not papers:
-                # Never mark a year as "done" unless we actually fetched papers.
-                # PubMed rate-limit responses often look like total_hits=0, which
-                # is indistinguishable from "genuinely empty year". Better to
-                # leave it open for retry on next run than skip silently.
                 logger.warning(
                     f"  {year}: 0/{total_hits} fetched — NOT marking as done. "
                     f"Will retry on next run."
                 )
-                time.sleep(3)  # brief pause so we don't hammer NCBI if throttled
+                time.sleep(3)
                 continue
 
-            # extract claims (parallel)
-            results = extractor.extract_batch(papers, max_workers=max_workers)
+            # If there's a pending extraction, ingest its results while we
+            # kick off extraction for the current batch.
+            if pending_extraction is not None:
+                # Start extraction for current year in background
+                # But first, collect previous results
+                prev_meta, prev_results = _collect_extraction()
+                if prev_meta and prev_results:
+                    # Ingest previous batch (main thread, safe for KG)
+                    _ingest_and_save(
+                        kg, prev_results, prev_meta, papers_csv, claims_file,
+                        disease_years, completed_years, checkpoint,
+                        checkpoint_file, graph_file, total_papers, total_claims,
+                        year_start, keep_noise, strict_phase1,
+                    )
+                    total_papers = checkpoint["total_papers"]
+                    total_claims = checkpoint["total_claims"]
 
-            # ingest claims
-            batch_claims = 0
-            for result in results:
-                if result.claims:
-                    batch_claims += len(result.claims)
+            # Submit current year extraction to background
+            _submit_extraction(disease, year, papers, total_hits)
 
-            ingest_claims(kg, results, keep_noise=keep_noise,
-                          strict_phase1=strict_phase1)
-
-            # save paper metadata to CSV
-            papers_meta = []
-            for (abstract, ref), result in zip(papers, results):
-                papers_meta.append({
-                    "pmid": ref.pmid,
-                    "doi": ref.doi,
-                    "title": ref.title,
-                    "authors": ref.authors,
-                    "year": ref.year,
-                    "journal": ref.journal,
-                    "disease": disease,
-                    "abstract_length": len(abstract),
-                    "n_claims": len(result.claims),
-                    "timestamp": datetime.now().isoformat(),
-                })
-            _append_to_csv(papers_csv, papers_meta)
-
-            # save claims to JSONL
-            _append_claims_to_jsonl(claims_file, results, disease, year)
-
-            total_papers += len(papers)
-            total_claims += batch_claims
-            logger.info(f"  {year}: extracted {batch_claims} claims (total: {total_claims})")
-
-            # update checkpoint
-            disease_years.append(year)
-            completed_years[disease] = disease_years
-            checkpoint["total_papers"] = total_papers
-            checkpoint["total_claims"] = total_claims
-            _save_checkpoint(checkpoint, checkpoint_file)
-
-            # save graph periodically (every 5 years)
-            if (year - year_start + 1) % 5 == 0:
-                save_graph(kg, graph_file)
-                logger.info(f"  graph checkpoint saved")
-
-            # rate limiting
             time.sleep(0.5)
+
+        # Collect any remaining extraction for this disease
+        if pending_extraction is not None:
+            prev_meta, prev_results = _collect_extraction()
+            if prev_meta and prev_results:
+                _ingest_and_save(
+                    kg, prev_results, prev_meta, papers_csv, claims_file,
+                    disease_years, completed_years, checkpoint,
+                    checkpoint_file, graph_file, total_papers, total_claims,
+                    year_start, keep_noise, strict_phase1,
+                )
+                total_papers = checkpoint["total_papers"]
+                total_claims = checkpoint["total_claims"]
 
         # mark disease as complete only if all target years landed in checkpoint
         if expected_years.issubset(set(completed_years.get(disease, []))):
@@ -510,6 +570,21 @@ def run_batch_extraction(
         # save graph after each disease
         save_graph(kg, graph_file)
         logger.info(f"  {disease} complete, graph saved")
+
+    # Collect final pending extraction
+    if pending_extraction is not None:
+        prev_meta, prev_results = _collect_extraction()
+        if prev_meta and prev_results:
+            _ingest_and_save(
+                kg, prev_results, prev_meta, papers_csv, claims_file,
+                disease_years, completed_years, checkpoint,
+                checkpoint_file, graph_file, total_papers, total_claims,
+                year_start, keep_noise, strict_phase1,
+            )
+            total_papers = checkpoint["total_papers"]
+            total_claims = checkpoint["total_claims"]
+
+    extract_pool.shutdown(wait=False)
 
     # final save
     save_graph(kg, graph_file)

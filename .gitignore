@@ -1,24 +1,42 @@
-# Python and runtime artifacts
+# Runtime & build
 __pycache__/
 *.py[cod]
 *.pyo
+*.log
+logs/
+output/
+deploy/
+models/
+benchmark-env/
+hcp_env/
+
+# Data
+data/
+core/knowledge_graph/data
+UKBAnalytica_v2-main
+
+# Secrets
+.env
+.env.local
+.env.keys
+*.secret
+api_keys.txt
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.cursor/
+.claude
+
+# Project-specific ignores
 .neuroclaw_checkpoints/
 neuroclaw_environment.json
 installer/install_log.txt
-logs/
-*.log
-
-# Data, output, and local script directories
-output/
-data/
-benchmark-env/
-hcp_env/
-UKBAnalytica_v2-main
-core/knowledge_graph/data
 /scripts/
 !skills/*/scripts/
-
-# Documents and build artifacts
+skills/brain_gnn/scripts/*.json
+skills/brain_gnn/scripts/_*
 main.tex
 tools_probe.py
 TODO.md
@@ -29,26 +47,6 @@ core/knowledge_graph/README.md
 core/knowledge_graph/autoresearch_pipeline.md
 materials/CVPR_2026/neuroclaw_preprint_nature.tex
 materials/CVPR_2026/eeg_encoding_protocol_final.tex
-
-# OS / IDE artifacts
-.DS_Store
-Thumbs.db
-.vscode/
-.cursor/
-.claude
-
-# Secrets (never commit)
-.env
-.env.local
-.env.keys
-*.secret
-api_keys.txt
-models/benchmark_results/
-models/checkpoints/
-models/braingnn/atlas_sweep_results_BEFORE.csv
-models/braingnn/atlas_sweep_results.csv
-models/braingnn/checkpoints/
-
-# Deploy build artifacts
-deploy/
-models/
+skills/brain_gnn/scripts/run_sex_optimization.py
+skills/brain_gnn/scripts/run_kg_experiment.py
+skills/brain_gnn/scripts/run_brainnetcnn_scan.py

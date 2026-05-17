@@ -839,8 +839,8 @@ body {
       </label>
       <label><span>Layout</span>
         <select id="layoutSelect">
-          <option value="ring" selected>Ring</option>
-          <option value="force">Force</option>
+          <option value="ring">Ring</option>
+          <option value="force" selected>Force</option>
         </select>
       </label>
       <span class="graph-info" id="graphInfo" data-i18n="hint_select">Select a node to start exploring</span>
@@ -893,7 +893,7 @@ const state = {
   showAllInitial: false,  // 2s preview: all colors+labels before dimming
   lang: "en",
   fontSize: 32,
-  layoutMode: "ring",  // "ring" = concentric rings, "force" = FA2 random
+  layoutMode: "force",  // "ring" = concentric rings, "force" = FA2 random
   cachedNeighborhood: null,
   history: [],          // stack of previous node IDs for Back navigation
   transitioning: false, // guard to prevent overlapping zoom animations
