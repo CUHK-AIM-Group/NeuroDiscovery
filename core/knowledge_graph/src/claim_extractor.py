@@ -220,7 +220,7 @@ class ClaimExtractor:
 
         cascade = self._get_worker_cascade()
         backoff = 5.0
-        SLOW_RESPONSE_THRESHOLD = 15.0  # seconds; treat as soft failure for cascade
+        SLOW_RESPONSE_THRESHOLD = 8.0  # seconds; treat as soft failure for cascade
         for attempt in range(4):
             current_model = cascade.model
             import time as _time

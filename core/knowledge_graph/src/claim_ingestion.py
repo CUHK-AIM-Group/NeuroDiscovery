@@ -539,6 +539,44 @@ class _ResolutionIndex:
 _resolution_idx = _ResolutionIndex()
 
 
+# ── Persistent dedup state (across ingest_claims calls) ───────────────
+# Building these from scratch every call requires scanning all CLM nodes
+# (~178K+ in a mature graph), which costs 30-60s per call. Cache them
+# module-level so they survive between disease-year batches in the same
+# process, and use the seeded-flag to know when a fresh seed is needed.
+_persistent_seen_triples: set[tuple[str, str, str, str]] = set()
+_persistent_seen_pairs: dict[tuple[str, str, str], str] = {}
+_dedup_seeded: bool = False
+
+
+def _seed_dedup_from_kg(kg: KnowledgeGraph):
+    """Build cross-run dedup state from existing CLM nodes. Idempotent."""
+    global _dedup_seeded
+    if _dedup_seeded:
+        return
+    for node in kg._index.values():
+        if not node.id.startswith("CLM:"):
+            continue
+        meta = node.metadata
+        if not isinstance(meta, dict):
+            continue
+        pmid = ""
+        sp = meta.get("source_paper")
+        if isinstance(sp, dict):
+            pmid = sp.get("pmid", "")
+        sid = meta.get("subject_id", "")
+        pred = meta.get("predicate", "")
+        oid = meta.get("object_id", "")
+        if sid and pred and oid:
+            _persistent_seen_triples.add((pmid, sid, pred, oid))
+            pair_key = (pmid, sid, oid)
+            existing_pred = _persistent_seen_pairs.get(pair_key)
+            if existing_pred is None or (existing_pred in _VAGUE_PREDICATES and pred not in _VAGUE_PREDICATES):
+                _persistent_seen_pairs[pair_key] = pred
+    _dedup_seeded = True
+    logger.info(f"dedup state seeded: {len(_persistent_seen_triples):,} triples, {len(_persistent_seen_pairs):,} pairs")
+
+
 def resolve_entity(
     kg: KnowledgeGraph,
     entity_name: str,
@@ -809,34 +847,14 @@ def ingest_claims(
     # Serial KG mutation: resolve entities + add concept/edges.
     # Triple dedup: skip claims whose (PMID, subject_id, predicate, object_id)
     # has already been ingested in this batch or exists in the graph.
-    _seen_triples: set[tuple[str, str, str, str]] = set()
-    # Cross-predicate PMID dedup: for same (pmid, subject_id, object_id),
-    # only keep the most precise predicate (non-vague > vague).
-    _seen_pairs: dict[tuple[str, str, str], str] = {}  # key → predicate
+    # Use persistent module-level state to avoid rescanning all CLM nodes
+    # on every batch (would cost 30-60s per disease-year on a mature KG).
+    _seed_dedup_from_kg(kg)
+    _seen_triples = _persistent_seen_triples
+    _seen_pairs = _persistent_seen_pairs
     claims_skipped_dedup = 0
 
-    # Seed from existing claim nodes in the graph (cross-run dedup)
-    for node in kg._index.values():
-        if not node.id.startswith("CLM:"):
-            continue
-        meta = node.metadata
-        if not isinstance(meta, dict):
-            continue
-        pmid = ""
-        sp = meta.get("source_paper")
-        if isinstance(sp, dict):
-            pmid = sp.get("pmid", "")
-        sid = meta.get("subject_id", "")
-        pred = meta.get("predicate", "")
-        oid = meta.get("object_id", "")
-        if sid and pred and oid:
-            _seen_triples.add((pmid, sid, pred, oid))
-            pair_key = (pmid, sid, oid)
-            existing_pred = _seen_pairs.get(pair_key)
-            if existing_pred is None or (existing_pred in _VAGUE_PREDICATES and pred not in _VAGUE_PREDICATES):
-                _seen_pairs[pair_key] = pred
-
-    logger.debug(f"triple dedup seeded with {len(_seen_triples)} existing triples")
+    logger.debug(f"triple dedup state: {len(_seen_triples)} triples")
 
     for claim in all_claims:
         try:

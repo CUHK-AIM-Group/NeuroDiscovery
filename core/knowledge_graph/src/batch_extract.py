@@ -459,7 +459,7 @@ def run_batch_extraction(
         checkpoint_["total_claims"] = total_claims
         _save_checkpoint(checkpoint_, checkpoint_file_)
 
-        if (yr - year_start_ + 1) % 5 == 0:
+        if (yr - year_start_ + 1) % 15 == 0:
             save_graph(kg_, graph_file_)
             logger.info(f"  graph checkpoint saved")
 

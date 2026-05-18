@@ -4,6 +4,12 @@
 
 # NeuroClaw: Closed-Loop Agentic AI for Executable and Reproducible Neuroimaging Research
 
+<table align="center"><tr>
+  <td align="center"><img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" /></td>
+  <td align="center"><img src="docs/assets/logos/mgh.png" alt="Massachusetts General Hospital logo" height="50" /></td>
+  <td align="center"><img src="docs/assets/logos/lehigh.png" alt="Lehigh University logo" height="50" /></td>
+</tr></table>
+
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-81-purple)](skills)
@@ -60,7 +66,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 #### Supported Dataset Overview
 
 | Dataset | Supported Modalities | Additional Data | Cohort Scale | Official Link |
-| :---: | --- | --- | --- | :---: |
+| :---: | --- | --- | --- | :--- |
 | ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Physical and mental health; substance use; culture/environment; neurocognition; biological data | Target cohort of ~11,500 children; full cohort releases through the NIMH Data Archive | https://abcdstudy.org/ |
 | ABIDE | T1w; rs-fMRI | ASD/control phenotypic data | 1,112 datasets from 17 international sites | https://fcon_1000.projects.nitrc.org/indi/abide/ |
 | ADHD-200 | T1w; rs-fMRI | Diagnostic status; ADHD symptom measures; demographics; medication history; QC measures | 776 participants/datasets across 8 imaging sites | https://fcon_1000.projects.nitrc.org/indi/adhd200/ |
