@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from core.knowledge_graph.src.storage import load_graph
+from neurooracle.src.storage import load_graph
 
 
 def cmd_stats(kg):
@@ -85,7 +85,7 @@ def main():
 
     args = parser.parse_args()
 
-    graph_path = Path(args.graph) if args.graph else Path("core/knowledge_graph/data/knowledge_graph.json")
+    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
     kg = load_graph(graph_path)
 
     if args.command == "stats":

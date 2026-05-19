@@ -1147,7 +1147,7 @@ def create_app() -> Any:
         score = 0.0
         if not is_curated:
             try:
-                from core.knowledge_graph.src.hypothesis_engine import HypothesisEngine
+                from neurooracle.src.hypothesis_engine import HypothesisEngine
                 if HypothesisEngine._is_noisy_entity(name):
                     score += 0.5
             except Exception:
@@ -1171,7 +1171,7 @@ def create_app() -> Any:
         is_curated = any(node_id.startswith(p) for p in _CURATED_PREFIXES)
         if not is_curated:
             try:
-                from core.knowledge_graph.src.hypothesis_engine import HypothesisEngine
+                from neurooracle.src.hypothesis_engine import HypothesisEngine
                 if HypothesisEngine._is_noisy_entity(name):
                     reasons.append("generic/nominalized token (risk/effect/findings/...)")
             except Exception:
@@ -1238,8 +1238,8 @@ def create_app() -> Any:
 
     def _load_kg_blocking() -> dict:
         """Load KG + hypotheses + recipes; build reverse indexes. Called once."""
-        from core.knowledge_graph.src.storage import load_graph
-        from core.knowledge_graph.src.hypothesis_engine import Hypothesis
+        from neurooracle.src.storage import load_graph
+        from neurooracle.src.hypothesis_engine import Hypothesis
 
         t0 = time.time()
         print(f"[kg] loading knowledge graph from {KG_PATH} ...", flush=True)

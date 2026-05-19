@@ -20,7 +20,7 @@ This skill provides a reusable framework for constructing domain-specific knowle
 
 The output is a directed knowledge graph (NetworkX DiGraph + JSON serialization) where nodes represent domain concepts and claims, and edges represent typed relationships with confidence scores and provenance.
 
-**Primary implementation**: `core/knowledge_graph/` in the NeuroClaw project.
+**Primary implementation**: `neurooracle/` in the NeuroClaw project.
 
 ## Architecture
 
@@ -105,23 +105,23 @@ Large-scale extraction (10 diseases x 27 years x 20 papers = 5400 papers) takes 
 
 | Task | Command |
 |------|---------|
-| Ingest atlas data (Phase 1) | `python -m core.knowledge_graph.ingest_pipeline` |
-| Generate brain atlas TSV | `python core/knowledge_graph/data/raw/generate_brain_atlas_nilearn.py` |
-| Run single-disease extraction | `python -m core.knowledge_graph.batch_extract --diseases "Alzheimer's disease" --year-start 2024 --year-end 2024 --papers-per-year 5` |
-| Run full batch extraction | `python -m core.knowledge_graph.batch_extract` |
-| Resume from checkpoint | `python -m core.knowledge_graph.batch_extract` (auto-resumes) |
-| Start fresh (ignore checkpoint) | `python -m core.knowledge_graph.batch_extract --no-resume` |
-| Verbose logging | `python -m core.knowledge_graph.batch_extract -v` |
-| Query graph stats | `python -c "from core.knowledge_graph import load_graph; g = load_graph(); print(g.stats())"` |
-| **Batch generate hypotheses** | `python -m core.knowledge_graph.hypothesis_cli batch --output data/hypotheses.json` |
-| **Rank saved hypotheses** | `python -m core.knowledge_graph.hypothesis_cli rank --input data/hypotheses.json --top 20` |
-| Find hypothesis paths | `python -m core.knowledge_graph.hypothesis_cli paths "hippocampus" "Alzheimer Disease"` |
-| Bridge discovery | `python -m core.knowledge_graph.hypothesis_cli bridge "hippocampus" --target-domain disease` |
-| **Discover from concept** | `python -m core.knowledge_graph.hypothesis_cli discover "Alzheimer" --max-hops 3` |
-| **Find trending evidence** | `python -m core.knowledge_graph.hypothesis_cli trending --since 2020 --direction strengthening` |
-| Find contradictions | `python -m core.knowledge_graph.hypothesis_cli contradictions` |
-| Detect gaps | `python -m core.knowledge_graph.hypothesis_cli gaps --domain-a neuroanatomy --domain-b disease` |
-| Explore a concept | `python -m core.knowledge_graph.hypothesis_cli explore "hippocampus"` |
+| Ingest atlas data (Phase 1) | `python -m neurooracle.ingest_pipeline` |
+| Generate brain atlas TSV | `python neurooracle/data/raw/generate_brain_atlas_nilearn.py` |
+| Run single-disease extraction | `python -m neurooracle.batch_extract --diseases "Alzheimer's disease" --year-start 2024 --year-end 2024 --papers-per-year 5` |
+| Run full batch extraction | `python -m neurooracle.batch_extract` |
+| Resume from checkpoint | `python -m neurooracle.batch_extract` (auto-resumes) |
+| Start fresh (ignore checkpoint) | `python -m neurooracle.batch_extract --no-resume` |
+| Verbose logging | `python -m neurooracle.batch_extract -v` |
+| Query graph stats | `python -c "from neurooracle import load_graph; g = load_graph(); print(g.stats())"` |
+| **Batch generate hypotheses** | `python -m neurooracle.hypothesis_cli batch --output data/hypotheses.json` |
+| **Rank saved hypotheses** | `python -m neurooracle.hypothesis_cli rank --input data/hypotheses.json --top 20` |
+| Find hypothesis paths | `python -m neurooracle.hypothesis_cli paths "hippocampus" "Alzheimer Disease"` |
+| Bridge discovery | `python -m neurooracle.hypothesis_cli bridge "hippocampus" --target-domain disease` |
+| **Discover from concept** | `python -m neurooracle.hypothesis_cli discover "Alzheimer" --max-hops 3` |
+| **Find trending evidence** | `python -m neurooracle.hypothesis_cli trending --since 2020 --direction strengthening` |
+| Find contradictions | `python -m neurooracle.hypothesis_cli contradictions` |
+| Detect gaps | `python -m neurooracle.hypothesis_cli gaps --domain-a neuroanatomy --domain-b disease` |
+| Explore a concept | `python -m neurooracle.hypothesis_cli explore "hippocampus"` |
 
 ## Agent Reference Rule
 
@@ -130,7 +130,7 @@ When the agent needs knowledge graph implementation code, it should first consul
 Reference snippets available:
 - `scripts/entity_resolution.py` → EntityResolver class with 5-level matching
 - `scripts/graph_query.py` → CLI tool for graph queries (stats, search, neighbors, paths, domain)
-- `scripts/hypothesis_cli_reference.py` → Hypothesis engine usage patterns (executable code in `core/knowledge_graph/hypothesis_cli.py`)
+- `scripts/hypothesis_cli_reference.py` → Hypothesis engine usage patterns (executable code in `neurooracle/hypothesis_cli.py`)
 - `scripts/extraction_prompt_template.txt` → LLM extraction prompt template
 - `scripts/new_data_source_template.py` → Template for adding new data sources
 
@@ -164,7 +164,7 @@ conda activate neuroclaw
 
 ### Adding a New Data Source
 
-Create a new file in `core/knowledge_graph/ingestion/` following this pattern:
+Create a new file in `neurooracle/ingestion/` following this pattern:
 
 ```python
 """Ingest data from [SOURCE] into the knowledge graph."""
@@ -305,7 +305,7 @@ Each claim generates **three** graph elements:
 
 ## Phase 3: Hypothesis Engine
 
-The hypothesis engine **batch-generates** hypotheses across the entire graph, **persists** them to JSON, and **ranks** by novelty, evidence, testability, and confidence. See `core/knowledge_graph/hypothesis_engine.py` for the implementation.
+The hypothesis engine **batch-generates** hypotheses across the entire graph, **persists** them to JSON, and **ranks** by novelty, evidence, testability, and confidence. See `neurooracle/hypothesis_engine.py` for the implementation.
 
 ### Workflow
 

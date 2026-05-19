@@ -5,7 +5,7 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 testpaths = [
     "core/checkpoint",
-    "core/knowledge_graph/tests",
+    "neurooracle/tests",
     "core/skill_loader",
     "core/session",
     "core/subagent",

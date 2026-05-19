@@ -1,26 +1,26 @@
 """Hypothesis Engine CLI Reference - for agent use.
 
-The executable CLI lives in core/knowledge_graph/phase3.py.
+The executable CLI lives in neurooracle/phase3.py.
 This file documents the usage patterns for agent reference.
 
 Usage (run from project root):
 
     # Batch generate hypotheses across the entire graph
-    python -m core.knowledge_graph.phase3 batch --output data/hypotheses.json
+    python -m neurooracle.phase3 batch --output data/hypotheses.json
 
     # Load and re-rank saved hypotheses
-    python -m core.knowledge_graph.phase3 rank --input data/hypotheses.json --top 20
+    python -m neurooracle.phase3 rank --input data/hypotheses.json --top 20
 
     # Interactive queries
-    python -m core.knowledge_graph.phase3 paths "hippocampus" "Alzheimer Disease"
-    python -m core.knowledge_graph.phase3 bridge "hippocampus" --target-domain disease
-    python -m core.knowledge_graph.phase3 contradictions --domain disease
-    python -m core.knowledge_graph.phase3 gaps --domain-a neuroanatomy --domain-b disease
-    python -m core.knowledge_graph.phase3 explore "hippocampus"
-    python -m core.knowledge_graph.phase3 stats
+    python -m neurooracle.phase3 paths "hippocampus" "Alzheimer Disease"
+    python -m neurooracle.phase3 bridge "hippocampus" --target-domain disease
+    python -m neurooracle.phase3 contradictions --domain disease
+    python -m neurooracle.phase3 gaps --domain-a neuroanatomy --domain-b disease
+    python -m neurooracle.phase3 explore "hippocampus"
+    python -m neurooracle.phase3 stats
 
 Programmatic usage:
-    from core.knowledge_graph import load_graph, HypothesisEngine
+    from neurooracle import load_graph, HypothesisEngine
 
     kg = load_graph()
     engine = HypothesisEngine(kg)

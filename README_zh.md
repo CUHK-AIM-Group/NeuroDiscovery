@@ -4,18 +4,20 @@
 
 # NeuroClaw：面向可执行与可复现神经影像研究的闭环智能体 AI
 
-<table align="center"><tr>
-  <td align="center"><img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" /></td>
-  <td align="center"><img src="docs/assets/logos/mgh.png" alt="Massachusetts General Hospital logo" height="50" /></td>
-  <td align="center"><img src="docs/assets/logos/lehigh.png" alt="Lehigh University logo" height="50" /></td>
-</tr></table>
+<p align="center">
+  <img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/logos/mgh.png" alt="Massachusetts General Hospital logo" height="50" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/logos/lehigh.png" alt="Lehigh University logo" height="50" />
+</p>
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-81-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
 [![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroClaw/)
-[![NeuroMap](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroMap-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/neuroclaw-kg-explorer)
+[![NeuroOracle](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroOracle-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/NeuroOracle)
 
 [English README](README.md)
 
@@ -216,7 +218,7 @@ for s in skills:
 
 ### Benchmark 测试
 
-NeuroBench 任务位于 `neuro_bench/`，每个任务目录都包含一个 `task.md` 指令文件。
+NeuroBench 任务位于 `neurobench/`，每个任务目录都包含一个 `task.md` 指令文件。
 
 NeuroBench 目前接受以下几种测试设定：
 - `with-skills`：Agent 可以使用 `skills/` 目录中加载的技能
@@ -382,7 +384,7 @@ NeuroClaw/
 │   ├── ucla-cnp-skill/
 │   └── wmh-segmentation/
 │
-├── neuro_bench/                    # NeuroBench 评估任务（T00–T100）
+├── neurobench/                    # NeuroBench 评估任务（T00–T100）
 │   ├── T00_installer_validation/   # 验证安装程序输出
 │   └── …
 │

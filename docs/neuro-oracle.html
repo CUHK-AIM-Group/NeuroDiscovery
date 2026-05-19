@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClaw | NeuroOracle</title>
+    <meta
+      name="description"
+      content="NeuroOracle — interactive knowledge graph explorer for neuroscience concepts, claims, and hypotheses."
+    />
+    <meta name="theme-color" content="#0f5c57" />
+    <link rel="preconnect" href="https://zxcvb20001-neurooracle.hf.space" />
+    <link rel="dns-prefetch" href="https://zxcvb20001-neurooracle.hf.space" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      main {
+        width: 95% !important;
+        max-width: 95vw !important;
+        margin: 32px auto 80px;
+        padding: 1.5rem 0 0;
+      }
+      .map-hero { padding-bottom: 1rem; text-align: center; }
+      .map-hero h1 { font-size: 2rem; margin-bottom: 0.4rem; }
+      .map-hero .lead { font-size: 1.05rem; opacity: 0.8; max-width: 900px; margin: 0 auto; }
+      .map-actions { margin-top: 1rem; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+      .map-container {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 120px);
+        min-height: 600px;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      }
+      .map-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+      .pipeline-section {
+        margin-top: 3rem;
+        padding: 2.5rem 2rem;
+        max-width: 1120px;
+        margin-left: auto;
+        margin-right: auto;
+        background: var(--panel);
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+      .pipeline-section h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1.2rem;
+        color: var(--accent);
+      }
+      .pipeline-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+      }
+      @media (max-width: 768px) {
+        .pipeline-grid { grid-template-columns: 1fr; }
+      }
+      .phase-card {
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+      }
+      .phase-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.6rem;
+        color: var(--ink);
+      }
+      .phase-card p {
+        font-size: 0.92rem;
+        color: var(--muted);
+        line-height: 1.7;
+        margin: 0;
+      }
+      .phase-tag {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: rgba(15, 92, 87, 0.1);
+        color: var(--accent);
+        margin-bottom: 0.6rem;
+      }
+      .narrow-warning {
+        display: none;
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--muted);
+      }
+      .narrow-warning h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.8rem;
+        color: var(--ink);
+      }
+      .narrow-warning p { font-size: 0.95rem; max-width: 400px; margin: 0 auto; }
+      @media (max-width: 768px) {
+        .map-container { display: none; }
+        .narrow-warning { display: block; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
+        <img src="assets/logo.png" alt="NeuroClaw logo" />
+        <span>NeuroClaw</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="neurobench.html">NeuroBench</a>
+        <a href="neuro-oracle.html">NeuroOracle</a>
+        <a href="faq.html">FAQ</a>
+        <a href="get-started.html">Get Started</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="neuro-oracle-zh.html" aria-label="Switch to Chinese">中文</a>
+        <a class="btn ghost" href="mailto:chengwang@link.cuhk.edu.hk">Contact Us</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="map-hero reveal">
+        <h1>NeuroOracle</h1>
+        <p class="lead">
+          Interactive knowledge graph with 86,000+ neuroscience concepts, 154,000+ edges, 53,000+ literature claims, and 667 machine-generated hypotheses.
+        </p>
+        <div class="map-actions">
+          <a class="btn" href="https://huggingface.co/spaces/zxcvb20001/NeuroOracle" target="_blank" rel="noreferrer">Open in HuggingFace Spaces</a>
+        </div>
+      </section>
+
+      <div class="map-container">
+        <iframe
+          src="https://zxcvb20001-neurooracle.hf.space/explore"
+          allow="fullscreen"
+          loading="eager"
+        ></iframe>
+      </div>
+      <div class="narrow-warning">
+        <h2>Browser window too narrow</h2>
+        <p>NeuroOracle requires a wider viewport to display the interactive graph. Please increase your browser width or use a desktop device.</p>
+      </div>
+
+      <section class="pipeline-section reveal">
+        <h2>How to Use NeuroOracle</h2>
+        <div class="pipeline-grid">
+          <div class="phase-card">
+            <span class="phase-tag">Search</span>
+            <h3>Find Concepts</h3>
+            <p>
+              Type a keyword in the search bar (e.g., "hippocampus", "dopamine") to locate concepts in the graph. Results are ranked by relevance and connection count. Click a result to select the node and center the view on it.
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">Interact</span>
+            <h3>Click &amp; Double-Click</h3>
+            <p>
+              Single-click a node to view its details in the right panel — including definition, aliases, connected edges, and related claims. Double-click a node to expand its neighborhood and reveal directly connected concepts on the graph canvas.
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">Claims</span>
+            <h3>Browse Literature Claims</h3>
+            <p>
+              Select an edge or node to see the underlying literature claims. Each claim shows the subject–predicate–object triple, source paper (PMID), publication year, and journal. Click the PMID link to open the original paper on PubMed.
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">Hypotheses</span>
+            <h3>Explore Machine-Generated Hypotheses</h3>
+            <p>
+              Switch to the Hypotheses tab to browse 667 machine-generated research hypotheses. Each hypothesis is grounded in graph paths and scored by novelty, feasibility, and supporting evidence. Click any hypothesis to see its reasoning chain and linked concepts.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pipeline-section reveal">
+        <h2>How NeuroOracle is Built</h2>
+        <div class="pipeline-grid">
+          <div class="phase-card">
+            <span class="phase-tag">Phase 1 — Literature Extraction</span>
+            <h3>Claim Extraction from PubMed</h3>
+            <p>
+              NeuroClaw queries PubMed for domain-specific papers (e.g., depression, autism, Alzheimer's) and uses LLM-based extraction to identify structured claims from abstracts and full texts. Each claim captures a subject, predicate, object triple along with source metadata (PMID, year, journal). Entity names are resolved against curated vocabularies (MeSH, NeuroNames, CogAt) through a 6-step resolution pipeline including exact match, case-insensitive, alias, fuzzy, and domain-preference matching.
+            </p>
+          </div>
+          <div class="phase-card">
+            <span class="phase-tag">Phase 2 — Knowledge Graph Construction</span>
+            <h3>Graph Assembly and Edge Scoring</h3>
+            <p>
+              Extracted claims are ingested into a NetworkX directed graph. Each resolved entity becomes a node; each claim generates a typed, weighted edge. Edge confidence is computed from source count, journal impact, recency, and cross-paper agreement. Vague predicates are refined via LLM re-classification. A noise filter with salvage logic prevents low-quality LLM extraction artifacts from entering the graph. The pipeline runs with 12 parallel workers for optimal throughput, processing thousands of papers per batch.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

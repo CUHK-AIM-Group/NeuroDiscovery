@@ -3325,6 +3325,16 @@ class AgentSession:
         except Exception:
             self._checkpoint_mgr = None  # type: ignore[assignment]
 
+        # Cross-session memory store (user/feedback/project/reference facts).
+        # Lives under ~/.neuroclaw/projects/<workspace_hash>/memory/ so it is
+        # per-workspace, user-local, and never written into the project repo.
+        try:
+            from core.memory import MemoryStore, default_memory_root
+            self._memory_store = MemoryStore(root=default_memory_root(self.workspace))
+        except Exception:
+            self._memory_store = None  # type: ignore[assignment]
+        self._memory_extractor: Any = None  # initialised in set_llm_client
+
     # ── Public API for external callers (e.g. the web server) ──────────────────
 
     def set_llm_client(self, client: Any) -> None:
@@ -3335,6 +3345,19 @@ class AgentSession:
         the internal field can be renamed without breaking callers.
         """
         self._llm = client
+
+        # Initialise the memory extractor once a client is available. The
+        # extractor uses the same client to call a lightweight model for
+        # signal detection after each turn.
+        if self._memory_store is not None and client is not None:
+            try:
+                from core.memory import MemoryExtractor
+                self._memory_extractor = MemoryExtractor(
+                    llm_client=client,
+                    store=self._memory_store,
+                )
+            except Exception:
+                self._memory_extractor = None
 
     def start(self) -> None:
         """Interactive REPL — called by main.py."""
@@ -3403,6 +3426,8 @@ class AgentSession:
             print(f"\nNeuroClaw: {response}\n")
             self.history.append({"role": "assistant", "content": response})
             manager.maybe_compress(self.history)
+            if self._memory_extractor is not None:
+                self._memory_extractor.maybe_extract(user_input, response)
 
     # ── Slash commands ────────────────────────────────────────────────────────
 
@@ -3420,6 +3445,9 @@ class AgentSession:
         if cmd == "/reflection":
             return self._reflection_command(parts[1:])
 
+        if cmd == "/memory":
+            return self._memory_command(parts[1:])
+
         return None  # not recognised — forward to LLM
 
     def _help_text(self) -> str:
@@ -3431,6 +3459,12 @@ class AgentSession:
             "  /checkpoint rollback N <file> Restore single file from checkpoint N\n"
             "  /reflection list              Show recent reflections\n"
             "  /reflection search <keywords> Search reflections by keywords\n"
+            "  /memory list                  List persistent memories\n"
+            "  /memory show <name>           Show full body of a memory\n"
+            "  /memory add <type> <name> <description> | <body>\n"
+            "                                Manually add a memory (type=user|feedback|project|reference)\n"
+            "  /memory forget <name>         Delete a memory\n"
+            "  /memory where                 Print the on-disk memory directory\n"
             "  /help                         Show this help\n"
         )
 
@@ -3588,6 +3622,95 @@ class AgentSession:
                 return f"Failed to search reflections: {e}"
 
         return f"Unknown reflection subcommand: {subcmd}"
+
+    def _memory_command(self, args: list[str]) -> str:
+        """Handle /memory slash commands."""
+        if self._memory_store is None:
+            return "Memory system not available."
+
+        if not args:
+            return (
+                "Usage:\n"
+                "  /memory list                  List all memories\n"
+                "  /memory show <name>           Show full body of a memory\n"
+                "  /memory add <type> <name> <description> | <body>\n"
+                "  /memory forget <name>         Delete a memory\n"
+                "  /memory where                 Print the on-disk memory directory"
+            )
+
+        subcmd = args[0].lower()
+
+        if subcmd == "where":
+            return f"Memory directory: {self._memory_store.root}"
+
+        if subcmd == "list":
+            entries = self._memory_store.list_entries()
+            if not entries:
+                return "No memories saved yet."
+            order = {"feedback": 0, "user": 1, "project": 2, "reference": 3}
+            entries = sorted(entries, key=lambda e: (order.get(e.type, 99), e.name))
+            lines = [f"Memories ({len(entries)} total):"]
+            for e in entries:
+                desc = e.description or "(no description)"
+                lines.append(f"  [{e.type:9}] {e.name} — {desc}")
+            return "\n".join(lines)
+
+        if subcmd == "show":
+            if len(args) < 2:
+                return "Usage: /memory show <name>"
+            entry = self._memory_store.get(args[1])
+            if entry is None:
+                return f"Memory not found: {args[1]}"
+            return (
+                f"name: {entry.name}\n"
+                f"type: {entry.type}\n"
+                f"description: {entry.description}\n"
+                f"created_at: {entry.created_at}\n"
+                f"updated_at: {entry.updated_at}\n"
+                f"---\n{entry.body}"
+            )
+
+        if subcmd == "forget":
+            if len(args) < 2:
+                return "Usage: /memory forget <name>"
+            ok = self._memory_store.remove(args[1])
+            return f"Removed memory: {args[1]}" if ok else f"Memory not found: {args[1]}"
+
+        if subcmd == "add":
+            from core.memory import MemoryEntry, MemoryType  # type: ignore
+
+            if len(args) < 4:
+                return (
+                    "Usage: /memory add <type> <name> <description> | <body>\n"
+                    "       type must be one of: user, feedback, project, reference"
+                )
+            mem_type = args[1].lower()
+            if mem_type not in ("user", "feedback", "project", "reference"):
+                return f"Invalid type: {mem_type}. Must be user|feedback|project|reference."
+
+            # Reconstruct the rest of the line (slash-command tokens were split on whitespace).
+            rest = " ".join(args[2:])
+            # Format: <name> <description> | <body>
+            if "|" not in rest:
+                return "Body required. Use a '|' to separate description from body."
+            head, _, body = rest.partition("|")
+            head_parts = head.strip().split(maxsplit=1)
+            if len(head_parts) < 2:
+                return "Both <name> and <description> are required before '|'."
+            name, description = head_parts[0], head_parts[1]
+            try:
+                entry = MemoryEntry(
+                    name=name,
+                    description=description,
+                    type=mem_type,  # type: ignore[arg-type]
+                    body=body.strip(),
+                )
+                self._memory_store.upsert(entry)
+                return f"Saved memory: {entry.name} ({entry.type})"
+            except Exception as exc:
+                return f"Failed to save memory: {exc}"
+
+        return f"Unknown memory subcommand: {subcmd}"
 
     def _chat(self) -> str:
         """Send history to LLM and return response text (simplified, no streaming)."""
@@ -4225,7 +4348,13 @@ class AgentSession:
             )
         extra_parts = [part for part in (skill_hint_summary, skill_catalog_summary, skill_exec_summary) if part]
         extra = "\n\n" + "\n\n".join(extra_parts) if extra_parts else ""
-        return f"{soul}{loaded_skills_line}{extra}{benchmark_policy}"
+        memory_section = ""
+        if not self.benchmark_mode and self._memory_store is not None:
+            try:
+                memory_section = self._memory_store.render_index()
+            except Exception:
+                memory_section = ""
+        return f"{soul}{loaded_skills_line}{extra}{memory_section}{benchmark_policy}"
 
     # ── Subagent management ────────────────────────────────────────────────────
 
@@ -4408,7 +4537,7 @@ def main() -> None:
         os.environ[BENCHMARK_ENV_FLAG] = "1"
 
     if args.score_benchmark:
-        default_benchmark_root = str(REPO_ROOT / "neuro_bench")
+        default_benchmark_root = str(REPO_ROOT / "neurobench")
         default_output_root = str(REPO_ROOT / "output")
 
         while True:
@@ -4485,7 +4614,7 @@ def main() -> None:
         return
 
     if args.benchmark and not args.web:
-        default_benchmark_root = str(REPO_ROOT / "neuro_bench")
+        default_benchmark_root = str(REPO_ROOT / "neurobench")
         while True:
             benchmark_root_input = _prompt_with_default(
                 "Benchmark directory",

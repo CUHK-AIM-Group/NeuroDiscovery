@@ -12,7 +12,7 @@ hcp_env/
 
 # Data
 data/
-core/knowledge_graph/data
+neurooracle/data
 UKBAnalytica_v2-main
 
 # Secrets
@@ -43,10 +43,13 @@ TODO.md
 CHANGELOG.md
 docs/skill-usage-trace.md
 docs/autoresearch_papers_overview.md
-core/knowledge_graph/README.md
-core/knowledge_graph/autoresearch_pipeline.md
+neurooracle/README.md
+neurooracle/autoresearch_pipeline.md
 materials/CVPR_2026/neuroclaw_preprint_nature.tex
 materials/CVPR_2026/eeg_encoding_protocol_final.tex
 skills/brain_gnn/scripts/run_sex_optimization.py
 skills/brain_gnn/scripts/run_kg_experiment.py
 skills/brain_gnn/scripts/run_brainnetcnn_scan.py
+_lggnn.json
+export_tables.py
+*.pdf

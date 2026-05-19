@@ -13,9 +13,9 @@ import logging
 from pathlib import Path
 
 # Adjust import path for your project structure
-from core.knowledge_graph.src.schema import ConceptNode, Edge, DomainTag
-from core.knowledge_graph.src.graph_manager import KnowledgeGraph
-from core.knowledge_graph.src.storage import load_graph, save_graph
+from neurooracle.src.schema import ConceptNode, Edge, DomainTag
+from neurooracle.src.graph_manager import KnowledgeGraph
+from neurooracle.src.storage import load_graph, save_graph
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
-    graph_path = Path(args.graph) if args.graph else Path("core/knowledge_graph/data/knowledge_graph.json")
+    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
     kg = load_graph(graph_path)
 
     summary = ingest_source(kg, args.input)

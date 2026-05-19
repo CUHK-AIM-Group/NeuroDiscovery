@@ -4,18 +4,20 @@
 
 # NeuroClaw: Closed-Loop Agentic AI for Executable and Reproducible Neuroimaging Research
 
-<table align="center"><tr>
-  <td align="center"><img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" /></td>
-  <td align="center"><img src="docs/assets/logos/mgh.png" alt="Massachusetts General Hospital logo" height="50" /></td>
-  <td align="center"><img src="docs/assets/logos/lehigh.png" alt="Lehigh University logo" height="50" /></td>
-</tr></table>
+<p align="center">
+  <img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/logos/mgh.png" alt="Massachusetts General Hospital logo" height="50" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/logos/lehigh.png" alt="Lehigh University logo" height="50" />
+</p>
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-81-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
 [![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroClaw/)
-[![NeuroMap](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroMap-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/neuroclaw-kg-explorer)
+[![NeuroOracle](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroOracle-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/NeuroOracle)
 
 [中文版 README](README_zh.md)
 
@@ -217,7 +219,7 @@ for s in skills:
 
 ### Benchmark Evaluation
 
-NeuroBench tasks live under `neuro_bench/`, and each task directory contains a `task.md` instruction file.
+NeuroBench tasks live under `neurobench/`, and each task directory contains a `task.md` instruction file.
 
 NeuroBench currently accepts these benchmark configurations:
 - `with-skills`: the agent can use the skills loaded from `skills/`
@@ -382,7 +384,7 @@ NeuroClaw/
 │   ├── ucla-cnp-skill/
 │   └── wmh-segmentation/
 │
-├── neuro_bench/                    # NeuroBench evaluation tasks (T00–T100)
+├── neurobench/                    # NeuroBench evaluation tasks (T00–T100)
 │   ├── T00_installer_validation/   # Validates installer output
 │   └── …
 │
