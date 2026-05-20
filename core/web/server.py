@@ -1059,7 +1059,7 @@ def create_app() -> Any:
     _kg_state: dict[str, Any] = {"loaded": False, "loading": False, "error": None}
     _kg_lock = threading.Lock()
 
-    KG_DATA_DIR = REPO_ROOT / "core" / "knowledge_graph" / "data"
+    KG_DATA_DIR = REPO_ROOT / "neurooracle" / "data"
     KG_PATH = KG_DATA_DIR / "knowledge_graph.json"
     KG_QUICK_DIR = KG_DATA_DIR / "quick"
     HYPOTHESIS_SOURCES = [
@@ -2126,6 +2126,172 @@ def create_app() -> Any:
         if h is None:
             return JSONResponse({"error": f"hypothesis not found: {hyp_id}"}, status_code=404)
         return _serialize_hypothesis(state, h)
+
+    @app.get("/api/kg/paths")
+    async def kg_paths(
+        source: str,
+        target: str,
+        max_hops: int = 3,
+        max_paths: int = 50,
+        directed: bool = False,
+        exclude_predicates: str = "about,supported_by,contradicts",
+        skip_high_degree: int = 2000,
+        timeout_ms: int = 4000,
+        count_cap: int = 2000,
+    ) -> Any:
+        """Find simple paths between two concept nodes.
+
+        On-demand only; not auto-fired. Bounded by max_hops / max_paths /
+        timeout to keep responses fast even on hubs like 'brain' or 'fmri'.
+
+        Returns up to `max_paths` serialized paths plus `total_paths`
+        (the full count discovered up to `count_cap`, even paths beyond
+        the displayed window — gives the user a sense of how many exist).
+        """
+        try:
+            state = await _get_kg_state()
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+        kg = state["kg"]
+        if source not in kg._index:
+            return JSONResponse({"error": f"source not found: {source}"}, status_code=404)
+        if target not in kg._index:
+            return JSONResponse({"error": f"target not found: {target}"}, status_code=404)
+        if source == target:
+            return JSONResponse({"error": "source and target are identical"}, status_code=400)
+
+        max_hops = max(1, min(5, int(max_hops)))
+        max_paths = max(1, min(500, int(max_paths)))
+        count_cap = max(max_paths, min(20000, int(count_cap)))
+        timeout_s = max(0.5, min(10.0, float(timeout_ms) / 1000.0))
+        skip_high_degree = max(50, int(skip_high_degree))
+        excl = {p.strip() for p in exclude_predicates.split(",") if p.strip()}
+
+        G = kg.G
+        index = kg._index
+
+        def _dfs() -> dict:
+            """Synchronous DFS; runs in a worker thread."""
+            import time as _time
+
+            # `paths` stores at most max_paths serialized; `total_count` keeps
+            # counting beyond that so we can show "displaying X of Y total".
+            paths: list[tuple[list[str], list[tuple[str, str, dict, str]]]] = []
+            total_count = 0
+            deadline = _time.monotonic() + timeout_s
+            truncated_by = None  # "count_cap" | "timeout" | None
+            visited_count = 0
+
+            def neighbors(node: str):
+                for _, v, edata in G.out_edges(node, data=True):
+                    yield v, edata, "out"
+                if not directed:
+                    for u, _, edata in G.in_edges(node, data=True):
+                        yield u, edata, "in"
+
+            def expand(
+                node: str,
+                path_nodes: list[str],
+                path_edges: list[tuple[str, str, dict, str]],
+                depth: int,
+                on_path: set[str],
+            ) -> None:
+                nonlocal truncated_by, visited_count, total_count
+                if truncated_by is not None:
+                    return
+                visited_count += 1
+                if visited_count & 0xFF == 0 and _time.monotonic() > deadline:
+                    truncated_by = "timeout"
+                    return
+                if node == target and depth > 0:
+                    total_count += 1
+                    if len(paths) < max_paths:
+                        paths.append((list(path_nodes), list(path_edges)))
+                    if total_count >= count_cap:
+                        truncated_by = "count_cap"
+                    return
+                if depth >= max_hops:
+                    return
+                for v, edata, direction in neighbors(node):
+                    rt = edata.get("relation_type", "")
+                    if rt in excl:
+                        continue
+                    if v in on_path:
+                        continue
+                    nv = index.get(v)
+                    if nv is not None and "claim" in (nv.domain_tags or []):
+                        continue
+                    if v != target and v != source:
+                        try:
+                            if G.degree(v) > skip_high_degree:
+                                continue
+                        except Exception:
+                            pass
+                    on_path.add(v)
+                    path_nodes.append(v)
+                    path_edges.append((node, v, edata, direction))
+                    expand(v, path_nodes, path_edges, depth + 1, on_path)
+                    on_path.discard(v)
+                    path_nodes.pop()
+                    path_edges.pop()
+
+            expand(source, [source], [], 0, {source})
+
+            serialized = []
+            for pn, pe in paths:
+                nodes_out = []
+                for nid in pn:
+                    n = index.get(nid)
+                    if n is None:
+                        nodes_out.append({"id": nid, "name": nid, "domain": ""})
+                    else:
+                        domain = (n.domain_tags or [""])[0] if n.domain_tags else ""
+                        nodes_out.append({
+                            "id": nid,
+                            "name": n.preferred_name,
+                            "domain": domain,
+                        })
+                edges_out = []
+                conf_sum = 0.0
+                for s, t, edata, direction in pe:
+                    conf = float(edata.get("confidence") or 0.0)
+                    conf_sum += conf
+                    edges_out.append({
+                        "source": s,
+                        "target": t,
+                        "predicate": edata.get("relation_type", ""),
+                        "direction": direction,
+                        "confidence": conf,
+                        "edge_source": edata.get("source", ""),
+                    })
+                serialized.append({
+                    "nodes": nodes_out,
+                    "edges": edges_out,
+                    "length": len(edges_out),
+                    "avg_confidence": (conf_sum / len(edges_out)) if edges_out else 0.0,
+                })
+
+            serialized.sort(key=lambda p: (p["length"], -p["avg_confidence"]))
+
+            return {
+                "paths": serialized,
+                "total_count": total_count,
+                "truncated_by": truncated_by,
+                "expansions": visited_count,
+            }
+
+        result = await asyncio.to_thread(_dfs)
+        return {
+            "source": source,
+            "target": target,
+            "max_hops": max_hops,
+            "directed": directed,
+            "displayed_paths": len(result["paths"]),
+            "total_paths": result["total_count"],
+            "paths": result["paths"],
+            "truncated_by": result["truncated_by"],
+            "expansions": result["expansions"],
+        }
 
     return app
 

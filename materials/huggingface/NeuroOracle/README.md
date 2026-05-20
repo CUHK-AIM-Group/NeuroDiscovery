@@ -55,7 +55,7 @@ NeuroOracle is one of three modules within the broader NeuroClaw system:
 
 | Module | Role |
 |--------|------|
-| **NeuroClaw** | Top-level system: data processing, model execution, skill library (81 skills across 29 datasets) |
+| **NeuroClaw** | Top-level system: data processing, model execution, skill library (85 skills across 29 datasets) |
 | **NeuroOracle** | Knowledge graph and hypothesis engine (this Space) |
 | **NeuroBench** | Multi-agent neuroimaging workflow benchmark |
 

@@ -1,0 +1,219 @@
+{
+  "schema_version": "1.0",
+  "description": "Two-layer benchmark task index. The operational layer covers tools/pipelines/data orchestration — testing whether the agent can execute neuroimaging workflows correctly. The scientific layer covers research tasks defined by the atom algebra (see neurooracle/src/atoms.py); these are reserved buckets for hypothesis-generation benchmarks added over time.",
+  "operational_layer": {
+    "description": "Engineering-oriented benchmarks: does the agent use the right tool with the right configuration?",
+    "categories": {
+      "data_orchestration": {
+        "label": "Data orchestration",
+        "summary": "Raw data ingestion, BIDS organisation, format conversion, dataset staging.",
+        "tasks": [
+          "T02_bids_organizer",
+          "T55_dwi_bids_organize",
+          "T62_bids_organizer",
+          "T81_smri_bids_organize",
+          "T90_adni_bids_staging",
+          "T95_hcp_download",
+          "T96_hcp_bids_staging"
+        ]
+      },
+      "tool_use": {
+        "label": "Single-tool execution",
+        "summary": "Driving a specific tool / module — DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc.",
+        "tasks": [
+          "T04_conn_tool",
+          "T05_dcm2nii",
+          "T10_dipy_denoise",
+          "T11_dipy_brain_mask",
+          "T12_dipy_dti_fit",
+          "T13_dipy_metrics",
+          "T14_dipy_roi",
+          "T15_freesurfer_all",
+          "T16_freesurfer_fast_subcort",
+          "T17_freesurfer_t2_pial",
+          "T18_freesurfer_flair_seg",
+          "T19_freesurfer_multi_core",
+          "T20_freesurfer_stats_only",
+          "T21_fsl_structural_preproc",
+          "T22_fsl_brain_extract",
+          "T23_fsl_tissue_seg",
+          "T24_fsl_mni_register",
+          "T25_fsl_subcort_seg",
+          "T26_fsl_motion_correct",
+          "T27_fsl_task_glm",
+          "T28_fsl_resting_ica",
+          "T29_fsl_fix_denoise",
+          "T30_fsl_dwi_preproc",
+          "T31_fsl_tensor_fit",
+          "T32_fsl_multi_fiber",
+          "T33_fsl_tract_extract",
+          "T34_hcppipeline_structural_pre_fs",
+          "T35_hcppipeline_structural_free_surfer",
+          "T36_hcppipeline_structural_post_fs",
+          "T37_hcppipeline_functional_volume",
+          "T38_hcppipeline_functional_surface",
+          "T39_hcppipeline_ica_fix_denoise",
+          "T40_hcppipeline_diffusion_preproc",
+          "T41_hcppipeline_bedpostx_model",
+          "T42_hcppipeline_probtrackx_tract",
+          "T43_hcppipeline_msm_all_register",
+          "T48_nilearn_confounds",
+          "T49_nilearn_roi_ts",
+          "T50_nilearn_roi_connectome",
+          "T51_nilearn_seed_corr",
+          "T52_nilearn_first_glm",
+          "T53_nilearn_full_roi_pipeline",
+          "T56_dwi_qsiprep_preproc",
+          "T57_dwi_tensor_metrics",
+          "T58_dwi_roi_features",
+          "T59_dwi_mrtrix_tractography",
+          "T60_dwi_connectome",
+          "T63_dcm2nii_conversion",
+          "T66_freesurfer_reconall",
+          "T68_fsl_feat_glm",
+          "T69_conn_connectivity",
+          "T71_wmh_segmentation",
+          "T73_xcpd_denoising",
+          "T74_fmri_roi_extraction",
+          "T75_fmri_functional_connectivity",
+          "T76_fmri_effective_connectivity",
+          "T77_fmri_first_level_glm",
+          "T78_fmri_group_level",
+          "T80_fmri_mni152_alignment",
+          "T82_smri_dcm2nii",
+          "T83_smri_fsl_anat",
+          "T84_smri_freesurfer_full",
+          "T85_smri_hcp_structural",
+          "T86_smri_fmriprep_anat",
+          "T87_smri_wmh_segmentation",
+          "T88_smri_roi_features",
+          "T92_adni_dk68_roi",
+          "T94_adni_vqa_generation"
+        ]
+      },
+      "pipeline_execution": {
+        "label": "Multi-step pipeline",
+        "summary": "End-to-end pipelines (fMRIPrep, HCP full, ADNI end-to-end, multi-modal full): coordinating preprocessing, QC, and feature extraction across stages.",
+        "tasks": [
+          "T44_hcppipeline_full_structural",
+          "T45_hcppipeline_full_functional",
+          "T46_hcppipeline_full_diffusion",
+          "T47_hcppipeline_full_multimodal",
+          "T54_nilearn_full_pipeline",
+          "T61_dwi_full_pipeline",
+          "T64_fmriprep_preprocessing",
+          "T65_hcp_pipeline",
+          "T67_fsl_anat_structural",
+          "T70_eeg_full_pipeline",
+          "T72_full_fmri_end2end",
+          "T79_fmri_adni_rsfmri_full_pipeline",
+          "T89_smri_full_end_to_end",
+          "T91_adni_fmriprep",
+          "T93_adni_full_end_to_end",
+          "T97_hcp_smri_processing",
+          "T98_hcp_fmri_processing",
+          "T99_hcp_dwi_processing",
+          "T100_hcp_full_multimodal"
+        ]
+      },
+      "dev_environment": {
+        "label": "Development environment",
+        "summary": "Conda envs, git workflows, dependency planning, manuscript tooling.",
+        "tasks": [
+          "T03_conda_env_manager",
+          "T06_dependency_planner",
+          "T08_git",
+          "T09_overleaf"
+        ]
+      },
+      "research_tooling": {
+        "label": "Research tooling",
+        "summary": "Literature search, multi-engine retrieval, research workflow scaffolding.",
+        "tasks": [
+          "T01_academic_search",
+          "T07_multi_search_engine"
+        ]
+      }
+    }
+  },
+  "scientific_layer": {
+    "description": "Hypothesis-generation benchmarks indexed by canonical task from the atom algebra. Each bucket maps to a Task in CANONICAL_TASKS (neurooracle/src/atoms.py). Initially empty — populated as scientific benchmarks are added under neurobench/scientific/<task_name>/.",
+    "categories": {
+      "biomarker_discovery": {
+        "signature": "{IM}->D",
+        "family": "A. Disease understanding",
+        "tasks": []
+      },
+      "disease_subtyping": {
+        "signature": "{IM,Idv}->D[subtype]",
+        "family": "A. Disease understanding",
+        "tasks": []
+      },
+      "progression_prediction": {
+        "signature": "{IM}->D[longitudinal]",
+        "family": "A. Disease understanding",
+        "tasks": []
+      },
+      "imaging_genetics": {
+        "signature": "{G}->IM",
+        "family": "A. Disease understanding",
+        "tasks": []
+      },
+      "differential_diagnosis": {
+        "signature": "{IM}->D[contrastive]",
+        "family": "A. Disease understanding",
+        "tasks": []
+      },
+      "drug_response_prediction": {
+        "signature": "{D,Rx,IM}->O",
+        "family": "B. Treatment optimisation",
+        "tasks": []
+      },
+      "personalised_treatment": {
+        "signature": "{D,IM,Idv}->Rx",
+        "family": "B. Treatment optimisation",
+        "tasks": []
+      },
+      "drug_repurposing": {
+        "signature": "{Rx}->D",
+        "family": "B. Treatment optimisation",
+        "tasks": []
+      },
+      "adverse_event_prediction": {
+        "signature": "{Rx}->O",
+        "family": "B. Treatment optimisation",
+        "tasks": []
+      },
+      "neuromodulation_target": {
+        "signature": "{D,Tk}->IM",
+        "family": "B. Treatment optimisation",
+        "tasks": []
+      },
+      "functional_localization": {
+        "signature": "{Tk}->IM",
+        "family": "C. Brain function mapping",
+        "tasks": []
+      },
+      "cognitive_decoding": {
+        "signature": "{IM}->Tk",
+        "family": "C. Brain function mapping",
+        "tasks": []
+      },
+      "connectome_behavior": {
+        "signature": "{IM}->Idv",
+        "family": "C. Brain function mapping",
+        "tasks": []
+      },
+      "brain_age": {
+        "signature": "{IM}->Idv",
+        "family": "D. Health monitoring",
+        "tasks": []
+      },
+      "prognosis": {
+        "signature": "{D,IM}->O[longitudinal]",
+        "family": "D. Health monitoring",
+        "tasks": []
+      }
+    }
+  }
+}

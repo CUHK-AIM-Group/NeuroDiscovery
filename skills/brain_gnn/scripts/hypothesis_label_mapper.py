@@ -463,7 +463,7 @@ def get_experiment_groups(hypotheses: list[dict]) -> dict[str, list[dict]]:
 if __name__ == "__main__":
     import json
 
-    hyp_path = ROOT / "core" / "knowledge_graph" / "data" / "quick" / "hypotheses_imaging_hcp.json"
+    hyp_path = ROOT / "neurooracle" / "data" / "quick" / "hypotheses_imaging_hcp.json"
     with open(hyp_path) as f:
         data = json.load(f)
 

@@ -33,6 +33,13 @@ class DomainTag(str, Enum):
     VISUAL_STIMULUS = "visual_stimulus"  # image/video stimulus (NSD/BOLD5000/SEED-DV)
     EMOTION = "emotion"                  # affective state label (SEED family)
     VIGILANCE = "vigilance"              # alertness/drowsiness label (SEED-VIG)
+    # Treatment-effect / clinical-outcome variables (Phase 1, atom-algebra rollout
+    # 2026-05-20): a finer-grained sibling of DATASET_VARIABLE used specifically
+    # to tag nodes that represent quantitative drug-response or therapy outcomes
+    # (e.g. ΔADAS-Cog at 12 mo, ΔMDS-UPDRS, NIHSS at 6 mo, responder/non-responder
+    # labels). Distinguishes treatment-outcome variables from generic individual-data
+    # variables (age, APOE-ε4 status, lifestyle) when both share dataset_variable.
+    TREATMENT_OUTCOME = "treatment_outcome"
 
 
 class SemanticType(str, Enum):

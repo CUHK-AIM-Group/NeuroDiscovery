@@ -110,6 +110,49 @@ python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
         </div>
       </section>
 
+      <section class="panel reveal">
+        <h2>评测结果</h2>
+        <p class="sub">
+          每个基础模型都会在 <em>with-skills</em>（在 NeuroClaw 框架下运行）与 <em>no-skills</em> 两种设置下进行评测。下图左侧为整体 benchmark 分数，右侧为 <em>with-skills</em> 下分数与 token 消耗的权衡。
+        </p>
+        <div class="figure-preview">
+          <img src="assets/results.png" alt="NeuroBench 结果：各基础模型的整体得分与分数-token 权衡" />
+        </div>
+
+        <h3 class="dataset-table-title">NeuroBench 上由 skill 带来的性能提升</h3>
+        <p class="sub">
+          <em>A<sub>abs</sub></em> 表示相对 <em>no-skills</em> 基线的绝对分数提升；<em>g</em> 是归一化增益（裁剪到 <code>[-1, 1]</code>）。
+        </p>
+        <div class="dataset-table-wrap">
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>基础模型</th>
+                <th>With Skills (%)</th>
+                <th>No Skills (%)</th>
+                <th>A<sub>abs</sub> (%)</th>
+                <th>g</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Claude-Opus-4.6</td><td>72.10</td><td>69.12</td><td>2.98</td><td>0.0965</td></tr>
+              <tr><td>Claude-Sonnet-4.6</td><td>70.39</td><td>65.37</td><td>5.02</td><td>0.1450</td></tr>
+              <tr><td>DeepSeek-3.2</td><td>49.63</td><td>45.49</td><td>4.14</td><td>0.0759</td></tr>
+              <tr><td>Gemini-3-Flash</td><td>54.10</td><td>49.15</td><td>4.95</td><td>0.0973</td></tr>
+              <tr><td>Gemini-3.1-Pro</td><td>56.65</td><td>55.43</td><td>1.22</td><td>0.0274</td></tr>
+              <tr><td>GPT-5.4</td><td>67.69</td><td>64.57</td><td>3.12</td><td>0.0881</td></tr>
+              <tr><td>GPT-5.4-mini</td><td>50.61</td><td>46.94</td><td>3.67</td><td>0.0692</td></tr>
+              <tr><td>Grok-4.2</td><td>37.59</td><td>35.97</td><td>1.62</td><td>0.0253</td></tr>
+              <tr><td>MiniMax-M2.7</td><td>48.07</td><td>35.10</td><td>12.97</td><td>0.1998</td></tr>
+              <tr><td>Qwen3-plus</td><td>58.12</td><td>50.39</td><td>7.73</td><td>0.1558</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sub">
+          所有 10 个基础模型在 NeuroClaw 框架下都有提升，平均绝对增益为 4.74 分。相对增益最大的是 MiniMax-M2.7（g = 0.1998）、Qwen3-plus（g = 0.1558）和 Claude-Sonnet-4.6（g = 0.1450）。
+        </p>
+      </section>
+
       <section class="cta reveal">
         <h2>benchmark 工作流</h2>
         <p>先跑任务，再对生成的报告打分，用于分析质量与效率。</p>

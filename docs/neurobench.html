@@ -110,6 +110,49 @@ python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
         </div>
       </section>
 
+      <section class="panel reveal">
+        <h2>Results</h2>
+        <p class="sub">
+          Each base model is evaluated under both <em>with-skills</em> (running within the NeuroClaw framework) and <em>no-skills</em> settings. The left panel below shows overall benchmark scores; the right panel shows the score-vs-token trade-off under <em>with-skills</em>.
+        </p>
+        <div class="figure-preview">
+          <img src="assets/results.png" alt="NeuroBench results: overall scores and score-vs-token trade-off across base models" />
+        </div>
+
+        <h3 class="dataset-table-title">Performance gain from skill usage on NeuroBench</h3>
+        <p class="sub">
+          <em>A<sub>abs</sub></em> denotes absolute score improvement over the <em>no-skills</em> baseline; <em>g</em> is the normalized gain (clipped to <code>[-1, 1]</code>).
+        </p>
+        <div class="dataset-table-wrap">
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>Base Model</th>
+                <th>With Skills (%)</th>
+                <th>No Skills (%)</th>
+                <th>A<sub>abs</sub> (%)</th>
+                <th>g</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Claude-Opus-4.6</td><td>72.10</td><td>69.12</td><td>2.98</td><td>0.0965</td></tr>
+              <tr><td>Claude-Sonnet-4.6</td><td>70.39</td><td>65.37</td><td>5.02</td><td>0.1450</td></tr>
+              <tr><td>DeepSeek-3.2</td><td>49.63</td><td>45.49</td><td>4.14</td><td>0.0759</td></tr>
+              <tr><td>Gemini-3-Flash</td><td>54.10</td><td>49.15</td><td>4.95</td><td>0.0973</td></tr>
+              <tr><td>Gemini-3.1-Pro</td><td>56.65</td><td>55.43</td><td>1.22</td><td>0.0274</td></tr>
+              <tr><td>GPT-5.4</td><td>67.69</td><td>64.57</td><td>3.12</td><td>0.0881</td></tr>
+              <tr><td>GPT-5.4-mini</td><td>50.61</td><td>46.94</td><td>3.67</td><td>0.0692</td></tr>
+              <tr><td>Grok-4.2</td><td>37.59</td><td>35.97</td><td>1.62</td><td>0.0253</td></tr>
+              <tr><td>MiniMax-M2.7</td><td>48.07</td><td>35.10</td><td>12.97</td><td>0.1998</td></tr>
+              <tr><td>Qwen3-plus</td><td>58.12</td><td>50.39</td><td>7.73</td><td>0.1558</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sub">
+          All ten base models improve when run within the NeuroClaw framework, with an average absolute gain of 4.74 points. The largest relative gains come from MiniMax-M2.7 (g = 0.1998), Qwen3-plus (g = 0.1558), and Claude-Sonnet-4.6 (g = 0.1450).
+        </p>
+      </section>
+
       <section class="cta reveal">
         <h2>Benchmark workflow</h2>
         <p>Run tasks first, then score the generated reports to analyze quality and efficiency.</p>

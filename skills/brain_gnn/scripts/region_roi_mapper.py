@@ -188,7 +188,7 @@ def build_edge_boost_matrix(hypothesis: dict, n_roi: int = 116) -> np.ndarray:
 if __name__ == "__main__":
     import json
 
-    hyp_path = ROOT / "core" / "knowledge_graph" / "data" / "quick" / "hypotheses_imaging_hcp.json"
+    hyp_path = ROOT / "neurooracle" / "data" / "quick" / "hypotheses_imaging_hcp.json"
     with open(hyp_path) as f:
         data = json.load(f)
 

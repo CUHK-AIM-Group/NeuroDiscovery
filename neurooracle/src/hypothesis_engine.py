@@ -922,6 +922,327 @@ class HypothesisEngine:
         all_hypotheses = self.post_process(all_hypotheses)
         return all_hypotheses
 
+    # ── task-aware generation (Phase 2 of atom-algebra rollout) ───────────
+
+    def batch_generate_for_task(
+        self,
+        task,                                    # neurooracle.src.atoms.Task
+        max_hops: int = 3,
+        max_paths_per_pair: int = 5,
+        max_seeds_per_domain: int = 50,
+        require_atom_touch: bool = False,
+    ) -> list[Hypothesis]:
+        """Generate hypotheses scoped to a canonical Task.
+
+        Internally this maps each input atom to its KG domain pool and the
+        output atom to its target domain pool, then delegates to
+        ``batch_generate`` over the resulting (input_domain × output_domain)
+        pairs. Generated hypotheses are tagged with ``task_name`` /
+        ``task_signature`` / ``task_modifier`` in their metadata so downstream
+        consumers (NeuroBench, the explorer, leaderboards) can filter by task.
+
+        For multi-input tasks (e.g. drug_response_prediction = {D, Rx, IM}→O):
+            * paths *start* from any input-atom node and end at an output-atom
+              node — the simplest behaviour, equivalent to the union of the
+              corresponding domain pairs.
+            * ``require_atom_touch=True`` enforces the stricter constraint
+              that each path must visit at least one node from EVERY input
+              atom (source/target included). On sparse KGs this filter is
+              aggressive and may drop most candidates; off by default.
+
+        Args:
+            task: A :class:`neurooracle.src.atoms.Task` — typically one
+                  pulled from ``CANONICAL_TASKS``.
+            max_hops, max_paths_per_pair, max_seeds_per_domain: forwarded
+                  to :meth:`batch_generate`.
+            require_atom_touch: enable strict multi-atom path constraint.
+
+        Returns:
+            List of :class:`Hypothesis`, tagged with the source task in
+            metadata. Sorted/filtered by the existing ``post_process``
+            pipeline (which ``batch_generate`` calls internally).
+        """
+        from .atoms import Task as _Task, ATOM_TO_DOMAINS  # local import: avoid circulars
+
+        if not isinstance(task, _Task):
+            raise TypeError(f"expected atoms.Task, got {type(task).__name__}")
+
+        output_domains = ATOM_TO_DOMAINS[task.output]
+        input_domains: set[str] = set()
+        for in_atom in task.inputs:
+            input_domains |= ATOM_TO_DOMAINS[in_atom]
+
+        pairs: list[tuple[str, str]] = []
+        seen: set[tuple[str, str]] = set()
+        for in_dom in input_domains:
+            for out_dom in output_domains:
+                if in_dom == out_dom:
+                    continue
+                key = (in_dom, out_dom)
+                if key in seen:
+                    continue
+                seen.add(key)
+                pairs.append(key)
+
+        if not pairs:
+            logger.warning(
+                f"task '{task.name}' produced no domain pairs "
+                f"(input atoms: {[a.value for a in task.inputs]}, "
+                f"output atom: {task.output.value})"
+            )
+            return []
+
+        logger.info(
+            f"task '{task.name}' [{task.signature}] expanded to "
+            f"{len(pairs)} domain pair(s)"
+        )
+
+        hyps = self.batch_generate(
+            domain_pairs=pairs,
+            max_hops=max_hops,
+            max_paths_per_pair=max_paths_per_pair,
+            max_seeds_per_domain=max_seeds_per_domain,
+        )
+
+        # tag with task provenance
+        for h in hyps:
+            h.metadata = dict(h.metadata or {})
+            h.metadata["task_name"] = task.name
+            h.metadata["task_signature"] = task.signature
+            h.metadata["task_modifier"] = task.modifier.value
+
+        # optional strict multi-atom touch filter
+        if require_atom_touch and len(task.inputs) > 1:
+            kept = [h for h in hyps if self._path_touches_atoms(h, task.inputs)]
+            logger.info(
+                f"require_atom_touch: kept {len(kept)}/{len(hyps)} "
+                f"hypotheses for task '{task.name}'"
+            )
+            hyps = kept
+
+        return hyps
+
+    def _path_touches_atoms(self, h: Hypothesis, atoms) -> bool:
+        """Check whether a hypothesis path visits ≥1 node from every atom's
+        domain pool. Used by ``require_atom_touch`` filtering."""
+        from .atoms import ATOM_TO_DOMAINS
+
+        needed = {a: ATOM_TO_DOMAINS[a] for a in atoms}
+        visited: set = set()
+
+        node_ids: list[str] = []
+        if h.source_id: node_ids.append(h.source_id)
+        if h.target_id: node_ids.append(h.target_id)
+        for link in (h.path or []):
+            if getattr(link, "from_id", None):
+                node_ids.append(link.from_id)
+            if getattr(link, "to_id", None):
+                node_ids.append(link.to_id)
+
+        for nid in node_ids:
+            node = self._index.get(nid)
+            if node is None:
+                continue
+            node_domains = set(node.domain_tags or [])
+            for atom, atom_doms in needed.items():
+                if atom in visited:
+                    continue
+                if atom_doms & node_domains:
+                    visited.add(atom)
+            if len(visited) == len(needed):
+                return True
+        return len(visited) == len(needed)
+
+    # ── chain-aware generation (TaskChain mediation paths) ────────────────
+
+    def batch_generate_for_chain(
+        self,
+        chain,                                   # neurooracle.src.atoms.TaskChain
+        max_hops_per_segment: int = 2,
+        max_paths_per_segment: int = 3,
+        max_seeds: int = 30,
+        max_chains: int = 200,
+    ) -> list[Hypothesis]:
+        """Generate hypotheses scoped to a canonical TaskChain.
+
+        Unlike :meth:`batch_generate_for_task` (where input atoms are parallel
+        and a path only needs to start at any input and end at the output),
+        a chain forces the path to transit atom domains in the listed order:
+        ``chain[0] → chain[1] → ... → chain[-1]``. Intermediate atoms are
+        treated as mechanistic mediators, not parallel inputs.
+
+        Strategy: stitch segments. For each adjacent atom pair (Aᵢ, Aᵢ₊₁) we
+        run a BFS-bounded search of length ≤ ``max_hops_per_segment``, then
+        join consecutive segments by matching the segment-end node of the
+        previous segment to the segment-start of the next.
+
+        The generated paths are flattened back into linear ``HypothesisLink``
+        chains (the same shape ``batch_generate`` produces), but tagged with
+        ``chain_name`` / ``chain_signature`` / ``chain_atoms`` /
+        ``mediator_ids`` in metadata so downstream consumers can identify
+        them as mediated.
+
+        Args:
+            chain: A :class:`neurooracle.src.atoms.TaskChain` — typically one
+                pulled from ``CANONICAL_CHAINS``.
+            max_hops_per_segment: Max edge count between two consecutive
+                atom-domain anchors. Total path length is bounded by
+                (len(chain) - 1) × max_hops_per_segment.
+            max_paths_per_segment: Number of intermediate paths kept for
+                each (segment-source, segment-target) pair.
+            max_seeds: Cap on seed nodes drawn from the chain's source atom.
+            max_chains: Hard cap on total returned hypotheses. Stitching
+                explodes combinatorially; this prevents runaway output.
+
+        Returns:
+            List of :class:`Hypothesis` representing complete mediation
+            paths through the chain. Empty list if any segment has no
+            connections in the current KG.
+        """
+        from .atoms import TaskChain as _TaskChain, ATOM_TO_DOMAINS
+
+        if not isinstance(chain, _TaskChain):
+            raise TypeError(f"expected atoms.TaskChain, got {type(chain).__name__}")
+
+        atoms = chain.chain
+        # Per-atom domain pools, with claim/PATH_IGNORE nodes excluded.
+        atom_node_pools: list[set[str]] = []
+        for atom in atoms:
+            doms = ATOM_TO_DOMAINS[atom]
+            pool = {
+                nid for nid, data in self.G.nodes(data=True)
+                if (set(data.get("domain_tags", [])) & doms)
+                and "claim" not in data.get("domain_tags", [])
+                and nid not in PATH_IGNORE_NODE_IDS
+            }
+            atom_node_pools.append(pool)
+
+        if any(not p for p in atom_node_pools):
+            empty = [atoms[i].value for i, p in enumerate(atom_node_pools) if not p]
+            logger.warning(
+                f"chain '{chain.name}' [{chain.signature}]: empty node pool "
+                f"for atom(s) {empty} — returning []"
+            )
+            return []
+
+        # Seed from chain[0]; prefer high-degree nodes for connectivity.
+        seeds = [
+            n for n in atom_node_pools[0]
+            if n in self.G
+        ]
+        seeds.sort(key=lambda n: self.G.degree(n), reverse=True)
+        seeds = seeds[:max_seeds]
+
+        # ``frontier`` holds (path, anchor_indices) pairs. We track anchor
+        # positions during stitching so we can identify mediators precisely
+        # — re-deriving them post-hoc is unreliable when an intermediate
+        # node happens to also carry the next anchor atom's domain tag.
+        frontier: list[tuple[list[str], list[int]]] = [([s], [0]) for s in seeds]
+
+        for seg_idx in range(len(atoms) - 1):
+            next_pool = atom_node_pools[seg_idx + 1]
+            extended: list[tuple[list[str], list[int]]] = []
+
+            for partial, anchors in frontier:
+                head = partial[-1]
+                if head not in self.G:
+                    continue
+                try:
+                    reachable = nx.single_source_shortest_path(
+                        self.G, head, cutoff=max_hops_per_segment
+                    )
+                except nx.NetworkXError:
+                    continue
+
+                # Candidate next-anchor nodes within next atom's pool.
+                kept_for_this_partial = 0
+                for tgt, sub_path in reachable.items():
+                    if tgt == head or tgt not in next_pool:
+                        continue
+                    # Disallow re-entering atoms already visited as anchors.
+                    anchor_set = set(partial)
+                    if any(n in anchor_set for n in sub_path[1:]):
+                        continue
+                    # Disallow claim-node intermediates within a segment.
+                    if any(
+                        "claim" in self._index.get(n, ConceptNode(id="", preferred_name="")).domain_tags
+                        for n in sub_path[1:-1]
+                    ):
+                        continue
+                    new_path = partial + sub_path[1:]
+                    new_anchors = anchors + [len(new_path) - 1]
+                    extended.append((new_path, new_anchors))
+                    kept_for_this_partial += 1
+                    if kept_for_this_partial >= max_paths_per_segment:
+                        break
+
+                if len(extended) >= max_chains * 4:
+                    # safety brake — segment expansion combinatorially explodes
+                    break
+
+            if not extended:
+                logger.info(
+                    f"chain '{chain.name}': segment {seg_idx} "
+                    f"({atoms[seg_idx].value}→{atoms[seg_idx + 1].value}) "
+                    f"produced no extensions — returning []"
+                )
+                return []
+            frontier = extended
+
+        # Build hypotheses from the surviving full chains.
+        survivors = frontier[:max_chains]
+        logger.info(
+            f"chain '{chain.name}' [{chain.signature}]: "
+            f"{len(survivors)} mediation path(s) from {len(seeds)} seed(s)"
+        )
+
+        hyps: list[Hypothesis] = []
+        for path, anchors in survivors:
+            links = self._enrich_path(path)
+            if not links:
+                continue
+
+            conf = self._compute_confidence_score(links)
+            nov = self._compute_novelty_score(links)
+            evi = self._compute_evidence_score(links)
+            test, test_reason = self._compute_testability_score(links)
+            claim_ids = [l.claim_id for l in links if l.claim_id]
+
+            mediator_ids = [path[i] for i in anchors[1:-1]] if len(anchors) >= 3 else []
+            mediator_names = [
+                self._index[m].preferred_name
+                for m in mediator_ids if m in self._index
+            ]
+
+            h = Hypothesis(
+                hypothesis_type="chain",
+                source_id=path[0],
+                source_name=self._index[path[0]].preferred_name,
+                target_id=path[-1],
+                target_name=self._index[path[-1]].preferred_name,
+                path=links,
+                confidence_score=conf,
+                novelty_score=nov,
+                evidence_score=evi,
+                testability_score=test,
+                supporting_claims=claim_ids,
+                testability_reason=test_reason,
+                metadata={
+                    "chain_name": chain.name,
+                    "chain_signature": chain.signature,
+                    "chain_atoms": [a.value for a in atoms],
+                    "chain_modifier": chain.modifier.value,
+                    "mediator_ids": mediator_ids,
+                    "mediator_names": mediator_names,
+                },
+            )
+            h.explanation = self._generate_explanation(h)
+            h.composite_score = self._composite_score(h)
+            hyps.append(h)
+
+        hyps = self.post_process(hyps)
+        return hyps
+
     def post_process(
         self,
         hypotheses: list[Hypothesis],

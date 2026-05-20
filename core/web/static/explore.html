@@ -756,6 +756,104 @@ body {
   padding: 0 4px;
 }
 .focus-banner .close-x:hover { color: var(--text); }
+
+/* path finder (collapsible, on-demand) */
+.paths-section {
+  margin: 14px 0 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+.paths-section[open] { background: rgba(99,102,241,0.04); }
+.paths-section > summary {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+  user-select: none;
+}
+.paths-section > summary::-webkit-details-marker { display: none; }
+.paths-section > summary::before { content: "▸ "; color: var(--muted); }
+.paths-section[open] > summary::before { content: "▾ "; }
+.paths-section > summary:hover { background: rgba(255,255,255,0.04); border-radius: 8px 8px 0 0; }
+.paths-body { padding: 8px 14px 14px 14px; }
+.paths-controls { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.paths-controls input[type=text] {
+  flex: 1; min-width: 0;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+.paths-controls input[type=text]:focus { outline: none; border-color: var(--accent); }
+.paths-controls select {
+  padding: 7px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+}
+.paths-controls label.path-checkbox {
+  display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted);
+}
+.paths-suggestions { max-height: 200px; overflow-y: auto; margin-bottom: 8px; }
+.path-suggest {
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+.path-suggest:hover { background: rgba(99,102,241,0.12); }
+.path-suggest .domain-tag { margin-left: 6px; font-size: 10px; }
+.paths-summary {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.paths-results { max-height: 360px; overflow-y: auto; }
+.paths-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.path-row {
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+  font-size: 12px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+.path-row:hover { background: rgba(99,102,241,0.08); }
+.path-node {
+  cursor: pointer;
+  font-weight: 500;
+  border-bottom: 1px dotted currentColor;
+}
+.path-node:hover { text-decoration: underline; }
+.path-edge {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0 2px;
+}
+.path-edge small {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  background: rgba(255,255,255,0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin: 0 2px;
+}
 </style>
 </head>
 <body>
@@ -982,6 +1080,17 @@ const I18N = {
     node_type: "Node type",
     edge_type_legend: "Edge type",
     more_steps: (n) => `+ ${n} more steps`,
+    paths_section_title: "Find paths to another node",
+    paths_target_placeholder: "Type to search target node…",
+    paths_max_hops: "hops",
+    paths_searching: "Searching paths…",
+    paths_no_results: "No paths found within these limits. Try increasing hops.",
+    paths_truncated: (reason) => `truncated: ${reason}`,
+    paths_summary_text: (shown, total, plus) => `Showing ${shown} of ${total}${plus ? "+" : ""} paths`,
+    paths_reason_count_cap: "limit reached",
+    paths_reason_timeout: "timed out",
+    paths_reason_max_paths: "display limit",
+    load_failed: "load failed",
   },
   zh: {
     header_sub: "知识图谱浏览器",
@@ -1031,20 +1140,31 @@ const I18N = {
     and: " 与 ",
     close: "×",
     no_sources: "这两个概念没有直接关联来源",
-    curated_edges: "Curated 边",
+    curated_edges: "精选边",
     supporting_claims: "证据 Claims",
     pubmed: "PMID",
     doi: "DOI",
     year: "年份",
-    composite: "composite",
-    novelty: "novelty",
-    evidence: "evidence",
-    testability: "testability",
-    critic: "critic",
+    composite: "综合",
+    novelty: "新颖性",
+    evidence: "证据",
+    testability: "可测试性",
+    critic: "评审",
     predicate_filter: (p) => `过滤：谓词 = ${p}`,
     node_type: "节点类型",
     edge_type_legend: "关系类型",
     more_steps: (n) => `+ 还有 ${n} 步`,
+    paths_section_title: "寻找到另一节点的路径",
+    paths_target_placeholder: "输入目标节点名进行搜索…",
+    paths_max_hops: "跳",
+    paths_searching: "正在搜索路径…",
+    paths_no_results: "在限制范围内未找到路径，可尝试增加跳数",
+    paths_truncated: (reason) => `已截断：${reason}`,
+    paths_summary_text: (shown, total, plus) => `共 ${total}${plus ? "+" : ""} 条路径，显示前 ${shown} 条`,
+    paths_reason_count_cap: "达到计数上限",
+    paths_reason_timeout: "搜索超时",
+    paths_reason_max_paths: "达到显示上限",
+    load_failed: "加载失败",
   },
 };
 const t = (key, ...args) => {
@@ -1896,6 +2016,21 @@ function renderDetail(concept, claimsResp, hypsResp) {
       <label for="recipeOnlyToggle">${t("filter_recipe")}</label>
     </div>` : ""}
     <div id="tabBody"></div>
+    <details class="paths-section">
+      <summary>${t("paths_section_title")}</summary>
+      <div class="paths-body">
+        <div class="paths-controls">
+          <input type="text" id="pathTargetInput" placeholder="${t('paths_target_placeholder')}" autocomplete="off"/>
+          <select id="pathMaxHops">
+            <option value="2">2 ${t("paths_max_hops")}</option>
+            <option value="3" selected>3 ${t("paths_max_hops")}</option>
+            <option value="4">4 ${t("paths_max_hops")}</option>
+          </select>
+        </div>
+        <div id="pathTargetSuggestions" class="paths-suggestions"></div>
+        <div id="pathsResults" class="paths-results"></div>
+      </div>
+    </details>
   `;
 
   pane.querySelectorAll(".tab-btn").forEach((b) => {
@@ -1913,6 +2048,7 @@ function renderDetail(concept, claimsResp, hypsResp) {
     });
   }
   renderTabBody(concept, claims, hyps);
+  setupPathFinder(concept.id);
 }
 
 function renderTabBody(concept, claims, hyps) {
@@ -1921,6 +2057,113 @@ function renderTabBody(concept, claims, hyps) {
   if (state.activeTab === "hypotheses") body.innerHTML = renderHypothesesList(hyps);
   else if (state.activeTab === "claims") body.innerHTML = renderClaimsList(claims);
   else body.innerHTML = renderMetaPanel(concept);
+}
+
+// ── Path finder (on-demand; only runs when user expands & types) ────────────
+function setupPathFinder(currentNodeId) {
+  const input = document.getElementById("pathTargetInput");
+  const sugBox = document.getElementById("pathTargetSuggestions");
+  const hopsSel = document.getElementById("pathMaxHops");
+  if (!input || !sugBox || !hopsSel) return;
+  let debounceTimer = null;
+  let lastPicked = null;
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { sugBox.innerHTML = ""; return; }
+    debounceTimer = setTimeout(async () => {
+      try {
+        const url = new URL("/api/kg/search", location.origin);
+        url.searchParams.set("q", q);
+        url.searchParams.set("limit", "8");
+        const r = await fetch(url).then((r) => r.json());
+        const items = r.results || [];
+        if (!items.length) { sugBox.innerHTML = `<div class="paths-empty" style="padding:6px 10px;">${t("no_match")}</div>`; return; }
+        sugBox.innerHTML = items.map((it) => {
+          const primary = (it.domain_tags || []).find((d) => d !== "claim") || "";
+          const dt = primary
+            ? `<span class="domain-tag" style="background:${DOMAIN_COLORS[primary] || "#94a3b8"};">${escapeHtml(primary)}</span>`
+            : "";
+          return `<div class="path-suggest" data-id="${escapeHtml(it.id)}" data-name="${escapeHtml(it.name)}">${escapeHtml(it.name)}${dt}</div>`;
+        }).join("");
+        sugBox.querySelectorAll(".path-suggest").forEach((div) => {
+          div.addEventListener("click", () => {
+            input.value = div.dataset.name;
+            lastPicked = div.dataset.id;
+            sugBox.innerHTML = "";
+            findPaths(currentNodeId, div.dataset.id, parseInt(hopsSel.value, 10));
+          });
+        });
+      } catch (e) {
+        sugBox.innerHTML = "";
+      }
+    }, 250);
+  });
+  // re-run on hop change if a target was already selected
+  hopsSel.addEventListener("change", () => {
+    if (lastPicked) findPaths(currentNodeId, lastPicked, parseInt(hopsSel.value, 10));
+  });
+}
+
+async function findPaths(source, target, maxHops) {
+  const results = document.getElementById("pathsResults");
+  if (!results) return;
+  results.innerHTML = `<div class="loading"><span class="spinner"></span>${t("paths_searching")}</div>`;
+  try {
+    const url = new URL("/api/kg/paths", location.origin);
+    url.searchParams.set("source", source);
+    url.searchParams.set("target", target);
+    url.searchParams.set("max_hops", String(maxHops));
+    url.searchParams.set("max_paths", "50");
+    const r = await fetch(url).then((r) => r.json());
+    if (r.error) {
+      results.innerHTML = `<div class="paths-empty" style="color:var(--danger);">${escapeHtml(r.error)}</div>`;
+      return;
+    }
+    const paths = r.paths || [];
+    if (!paths.length) {
+      results.innerHTML = `<div class="paths-empty">${t("paths_no_results")}</div>`;
+      return;
+    }
+    const shown = r.displayed_paths != null ? r.displayed_paths : paths.length;
+    const total = r.total_paths != null ? r.total_paths : paths.length;
+    const plus = r.truncated_by === "count_cap" || r.truncated_by === "timeout";
+    let summary = t("paths_summary_text", shown, total, plus);
+    if (r.truncated_by) {
+      const reasonKey = "paths_reason_" + r.truncated_by;
+      const reasonText = t(reasonKey);
+      const finalReason = (typeof reasonText === "string" && reasonText !== reasonKey) ? reasonText : r.truncated_by;
+      summary += ` · ${t("paths_truncated", finalReason)}`;
+    }
+    let html = `<div class="paths-summary">${summary}</div>`;
+    html += paths.map(renderPathRow).join("");
+    results.innerHTML = html;
+    results.querySelectorAll(".path-node[data-id]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = el.dataset.id;
+        if (id) selectNode(id);
+      });
+    });
+  } catch (e) {
+    results.innerHTML = `<div class="paths-empty" style="color:var(--danger);">${t("load_failed")}</div>`;
+  }
+}
+
+function renderPathRow(path) {
+  const parts = [];
+  for (let i = 0; i < (path.nodes || []).length; i++) {
+    const n = path.nodes[i];
+    const color = DOMAIN_COLORS[n.domain] || "#94a3b8";
+    parts.push(`<span class="path-node" data-id="${escapeHtml(n.id)}" style="color:${color};">${escapeHtml(n.name)}</span>`);
+    if (i < (path.edges || []).length) {
+      const ed = path.edges[i];
+      const arrow = ed.direction === "in" ? "←" : "→";
+      parts.push(`<span class="path-edge">${arrow}<small>${escapeHtml(ed.predicate || "")}</small>${arrow}</span>`);
+    }
+  }
+  const conf = (path.avg_confidence || 0).toFixed(2);
+  return `<div class="path-row" title="length=${path.length} · conf=${conf}">${parts.join(" ")}</div>`;
 }
 
 function renderHypothesesList(hyps) {
