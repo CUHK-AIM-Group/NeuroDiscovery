@@ -317,6 +317,101 @@ SEMANTIC_MAP: dict[str, list[tuple[str, str, str]]] = {
         ("fearsomat", "emotion", "fear/somatic anxiety"),
         ("percstress", "psychiatric_distress", "stress ~ anxiety"),
     ],
+    # Language / speech
+    "Speech": [
+        ("readeng", "cognitive_language", "reading ~ speech production"),
+        ("picvocab", "cognitive_language", "vocabulary ~ speech"),
+        ("language_story", "task_performance", "language story task"),
+    ],
+    "Speech Disorders": [
+        ("readeng", "cognitive_language", "reading ~ language deficit proxy"),
+        ("language_story", "task_performance", "language task accuracy"),
+    ],
+    "language comprehension": [
+        ("readeng", "cognitive_language", "reading comprehension"),
+        ("picvocab", "cognitive_language", "vocabulary ~ comprehension"),
+    ],
+    "Language": [
+        ("readeng", "cognitive_language", "reading"),
+        ("picvocab", "cognitive_language", "vocabulary"),
+    ],
+    "verbal fluency": [
+        ("readeng", "cognitive_language", "reading fluency proxy"),
+        ("picvocab", "cognitive_language", "vocabulary access"),
+    ],
+    "word comprehension": [
+        ("picvocab", "cognitive_language", "vocabulary"),
+        ("readeng", "cognitive_language", "reading"),
+    ],
+    "writing and spelling ability": [
+        ("readeng", "cognitive_language", "reading proxy for spelling"),
+        ("picvocab", "cognitive_language", "vocabulary"),
+    ],
+    "repetition of phrases and sentences": [
+        ("language_story", "task_performance", "language story repetition"),
+        ("readeng", "cognitive_language", "reading"),
+    ],
+    # Memory / cognition
+    "Memory Disorders": [
+        ("iwrd_tot", "memory", "word memory ~ memory deficit"),
+        ("vsplot_tc", "memory", "visuospatial memory"),
+        ("iwrd_rtc", "memory", "word memory RT"),
+    ],
+    "autobiographical memory": [
+        ("iwrd_tot", "memory", "word memory proxy"),
+        ("vsplot_tc", "memory", "visuospatial memory"),
+    ],
+    "speed of information processing": [
+        ("procspeed", "processing_speed", "processing speed direct"),
+        ("iwrd_rtc", "memory", "memory RT"),
+    ],
+    "cognitive abilities": [
+        ("cogfluid", "cognitive_composite", "fluid cognition"),
+        ("cogcrystal", "cognitive_composite", "crystallized cognition"),
+        ("pmat24", "cognitive_executive", "reasoning"),
+    ],
+    "cognitive reserve": [
+        ("cogcrystal", "cognitive_composite", "crystallized cognition ~ reserve"),
+        ("picvocab", "cognitive_language", "vocabulary ~ reserve"),
+    ],
+    "Dementia": [
+        ("cogfluid", "cognitive_composite", "fluid decline ~ dementia"),
+        ("iwrd_tot", "memory", "memory decline"),
+        ("procspeed", "processing_speed", "slowed processing"),
+    ],
+    "Frontotemporal Lobar Degeneration": [
+        ("language_story", "task_performance", "language ~ FTLD variant"),
+        ("cogfluid", "cognitive_composite", "executive decline"),
+        ("readeng", "cognitive_language", "reading"),
+    ],
+    "association": [
+        ("relational_acc", "task_performance", "relational reasoning ~ association"),
+        ("relational_rel_acc", "task_performance", "relational reasoning"),
+    ],
+    # Motor / action
+    "action": [
+        ("dexterity", "motor", "fine motor ~ action"),
+        ("gaitspeed", "motor", "gait ~ action"),
+    ],
+    "apraxia": [
+        ("dexterity", "motor", "fine motor ~ apraxia"),
+        ("strength", "motor", "motor function"),
+    ],
+    # Visual / perception
+    "visual processing deficits": [
+        ("emotion_face_acc", "emotion", "face perception"),
+        ("vsplot_tc", "memory", "visuospatial perception"),
+    ],
+    # Self / personality / phenomenology
+    "Ego": [
+        ("neuroticism", "personality", "neuroticism ~ self-concept disturbance"),
+        ("openness", "personality", "openness ~ self-reflection"),
+    ],
+    "hypochondriacal traits": [
+        ("neuroticism", "personality", "neuroticism ~ hypochondriasis"),
+        ("fearsomat", "emotion", "somatic concern"),
+        ("percstress", "psychiatric_distress", "stress ~ health anxiety"),
+    ],
 }
 
 # Targets that truly cannot be mapped to any HCP behavioral measure

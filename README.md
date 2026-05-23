@@ -14,7 +14,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-85-purple)](skills)
+[![Skills](https://img.shields.io/badge/skills-86-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
 [![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroClaw/)
 [![NeuroOracle](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroOracle-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/NeuroOracle)
@@ -46,9 +46,10 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 ## 🚀 Updates
 
+- **[2026.05.23]**: NeuroBench now covers both data processing and model training/evaluation.
 - **[2026.05.20]**: 7 atoms × 15 canonical tasks + 4 mediation chains in `neurooracle.atoms`.
 - **[2026.05.15]**: NeuroOracle launched: knowledge-graph explorer plus hypothesis engine with live demo at https://huggingface.co/spaces/zxcvb20001/NeuroOracle.
-- **[2026.05.06]**: Added 19 dataset and modality skills with companion scripts; all 85 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill_loader DAG validation ensures dependency graph correctness.
+- **[2026.05.06]**: Added 19 dataset and modality skills with companion scripts; all 86 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill_loader DAG validation ensures dependency graph correctness.
 - **[2026.04.28]**: Our technical report is now available on arXiv: https://arxiv.org/abs/2604.24696
 - **[2026.04.22]**: v1.0 released. Stable release with improvements and full documentation.
 - **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroClaw/
@@ -306,7 +307,7 @@ NeuroClaw/
 │   ├── config_wizard.py            # Interactive 6-step configuration wizard (incl. Web UI deps)
 │   └── neuro_defaults.json         # Neuroscience-specific default template
 │
-├── skills/                         # 85 skills: base (38) / subagent (41) / interface (6)
+├── skills/                         # 86 skills: base (38) / subagent (42) / interface (6)
 │   ├── abide-skill/
 │   ├── aibl-skill/
 │   ├── abcd-skill/
@@ -346,6 +347,7 @@ NeuroClaw/
 │   ├── git-essentials/
 │   ├── git-workflows/
 │   ├── glm/
+│   ├── harmonization-tool/
 │   ├── harness-core/
 │   ├── hbn-skill/
 │   ├── hcpa-skill/
@@ -393,7 +395,7 @@ NeuroClaw/
 │   ├── ucla-cnp-skill/
 │   └── wmh-segmentation/
 │
-├── neurobench/                    # NeuroBench evaluation tasks (T00–T100)
+├── neurobench/                    # NeuroBench evaluation tasks (T01-T120)
 │   ├── T00_installer_validation/   # Validates installer output
 │   └── …
 │
@@ -446,6 +448,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | Skill | Function | Status |
 |------|----------|--------|
 | `brain-visualization` | Publication-ready figures and 3D assets (connectomes, atlas summaries, FreeSurfer PLY) | ✅ |
+| `harmonization-tool` | Cross-site / cross-scanner feature harmonization (ComBat, ComBat-GAM, CovBat, site-as-covariate) with site-stratified and leave-site-out splitters; required for honest mega-analysis across multi-site cohorts | ✅ |
 | `harness-core` | Core harness SDK: verification, checkpointing, drift detection, audit logging | ✅ |
 | `mne-eeg-tool` | Base-layer MNE-Python implementation for EEG | ✅ |
 | `fsl-tool` | FSL-based sMRI/fMRI/DWI processing utilities | ✅ |
@@ -528,34 +531,6 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 
 
 ---
-
-## TODO List
-
-### Architecture & Foundation
-- ✓ Hierarchical architecture design (Interface-Subagent-Base Tool)
-- ✓ Complete Interface layer implementation
-- ✓ Subagent coordination mechanisms
-- ✓ Unified skill metadata format (layer, skill_type, dependencies) with DAG validation
-- ✓ Checkpoint-based recoverable filesystem
-- ✓ Independent subagent execution
-- ✓ Reflection mechanism
-- ✓ Enhanced memory system
-
-### Dataset Ecosystem
-- ✓ Complete ADNI processing chain
-- ✓ HCP dataset adaptation
-- ✓ UK Biobank adaptation
-- 🏗️ Multi-dataset workflow support
-
-### Model Reproduction & Execution
-- ✓ Automatic paper model retrieval
-- ✓ Automatic environment configuration
-- ✓ Full Harness Engineering for Reproducibility
-- ✓ Experiment checkpoint and state management
-
-
----
-
 
 <a id="acknowledgments"></a>
 ## 🙏 Acknowledgments

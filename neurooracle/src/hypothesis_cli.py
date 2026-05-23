@@ -793,7 +793,68 @@ def main():
     p_evolve.add_argument("--tournament-size", type=int, default=3, help="Tournament selection size")
     p_evolve.add_argument("--elitism", type=int, default=5, help="Elite individuals preserved per generation")
 
+    # kge-train (Phase 4.3 — plausibility scorer)
+    p_kge_train = sub.add_parser("kge-train", help="Train ComplEx KG embedding for plausibility scoring")
+    p_kge_train.add_argument("--kg", required=True, help="Path to knowledge_graph.json")
+    p_kge_train.add_argument("--output", required=True, help="Output checkpoint path (.pt)")
+    p_kge_train.add_argument("--report", default=None, help="Optional JSON report with AUROC + loss curve")
+    p_kge_train.add_argument("--dim", type=int, default=64, help="Embedding dimension")
+    p_kge_train.add_argument("--epochs", type=int, default=50)
+    p_kge_train.add_argument("--batch-size", type=int, default=1024)
+    p_kge_train.add_argument("--lr", type=float, default=1e-3)
+    p_kge_train.add_argument("--negatives-per-pos", type=int, default=10)
+    p_kge_train.add_argument("--weight-decay", type=float, default=1e-6,
+                              help="L2 regularisation strength (default 1e-6)")
+    p_kge_train.add_argument("--eval-every", type=int, default=5,
+                              help="Run val AUROC every N epochs (default 5)")
+    p_kge_train.add_argument("--early-stop-patience", type=int, default=0,
+                              help="Stop if val AUROC hasn't improved for N evals (0 = off)")
+    p_kge_train.add_argument("--min-confidence", type=float, default=0.2,
+                              help="Drop edges with confidence below this (default 0.2)")
+    p_kge_train.add_argument("--seed", type=int, default=42)
+    p_kge_train.add_argument("--device", default=None, help="cuda / cpu (default: auto)")
+
+    # plausibility (Phase 4.3 — score hypotheses with trained ComplEx)
+    p_plaus = sub.add_parser("plausibility", help="Score hypotheses with KG plausibility + PubMed attestation")
+    p_plaus.add_argument("--input", required=True, help="Hypotheses JSON to score")
+    p_plaus.add_argument("--kge", required=True, help="Trained KGE checkpoint (.pt)")
+    p_plaus.add_argument("--output", default=None, help="Output file (default: overwrite input)")
+    p_plaus.add_argument("--novelty-cache", default=None,
+                          help="Reuse PubMed novelty cache file to avoid re-querying")
+    p_plaus.add_argument("--no-pubmed", action="store_true",
+                          help="Skip PubMed attestation; only compute kge_score")
+    p_plaus.add_argument("--top", type=int, default=0,
+                          help="Score only top-K by composite_score (0 = all)")
+    p_plaus.add_argument("--no-skip-existing", action="store_true",
+                          help="Re-score even hypotheses already having kge_score (default: skip)")
+    p_plaus.add_argument("--kg", default=None,
+                          help="Optional KG path; enables hub/CLM specificity filter")
+    p_plaus.add_argument("--device", default=None, help="cuda / cpu (default: auto)")
+
     args = parser.parse_args()
+
+    # Commands that don't need the full HypothesisEngine — short-circuit so we
+    # don't spend ~1 min loading the KG into a NetworkX graph for nothing.
+    if args.command in ("kge-train", "plausibility"):
+        from .kge.cli import cmd_kge_train, cmd_plausibility
+        if args.command == "kge-train":
+            cmd_kge_train(
+                kg_path=args.kg, output=args.output, report=args.report,
+                dim=args.dim, epochs=args.epochs, batch_size=args.batch_size,
+                lr=args.lr, negatives_per_pos=args.negatives_per_pos,
+                weight_decay=args.weight_decay, eval_every=args.eval_every,
+                early_stop_patience=args.early_stop_patience,
+                min_confidence=args.min_confidence, seed=args.seed, device=args.device,
+            )
+        else:
+            cmd_plausibility(
+                input_path=args.input, kge_checkpoint=args.kge,
+                output=args.output, novelty_cache=args.novelty_cache,
+                skip_existing=not args.no_skip_existing,
+                no_pubmed=args.no_pubmed, top=args.top, device=args.device,
+                kg_path=args.kg,
+            )
+        return
 
     graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
     kg = load_graph(graph_path)

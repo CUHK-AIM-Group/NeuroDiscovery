@@ -6,6 +6,7 @@ import gzip
 import io
 import json
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -44,7 +45,11 @@ def _open_for_write(path: Path):
 
 
 def save_graph(kg: KnowledgeGraph, path: Optional[Path] = None) -> Path:
-    """Save knowledge graph to JSON file. Compresses transparently if path ends with .gz."""
+    """Save knowledge graph to JSON file. Compresses transparently if path ends with .gz.
+
+    Atomic: writes to ``<path>.tmp`` then os.replace()s into place. A SIGTERM
+    or crash mid-write leaves the previous good file untouched.
+    """
     path = Path(path) if path else DEFAULT_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -66,8 +71,18 @@ def save_graph(kg: KnowledgeGraph, path: Optional[Path] = None) -> Path:
         "edges": edges,
     }
 
-    with _open_for_write(path) as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    tmp_path = path.with_name(path.name + ".tmp")
+    try:
+        with _open_for_write(tmp_path) as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, path)
+    except BaseException:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+        raise
 
     logger.info(f"saved graph to {path}: {kg.stats()['n_concepts']} concepts, {kg.stats()['n_edges']} edges")
     return path

@@ -37,7 +37,7 @@ from models.combraintf.scripts.data_adapter import (
 from skills.brain_gnn.scripts.hypothesis_label_mapper import (
     get_all_mappable_hypotheses, HCP_LABEL_CATEGORIES,
 )
-from skills.brain_gnn.scripts.region_roi_mapper import build_roi_mask
+from skills.brain_gnn.scripts.region_roi_mapper import build_roi_mask, build_edge_boost_matrix
 
 ATLAS = "aal_116"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -63,10 +63,11 @@ def make_split(n: int, seed: int = 42) -> tuple[np.ndarray, np.ndarray, np.ndarr
 
 def train_combraintf(labels_z: dict, y_mean: float, y_std: float,
                      community_ids, roi_mask, n_epochs: int, batch_size: int,
-                     lr: float, seed: int) -> dict:
+                     lr: float, seed: int,
+                     edge_boost: np.ndarray | None = None) -> dict:
     torch.manual_seed(seed); np.random.seed(seed)
     ds = BNTDataset(atlas=ATLAS, labels=labels_z, label_dtype="float",
-                    roi_mask=roi_mask)
+                    roi_mask=roi_mask, edge_boost=edge_boost)
     n = len(ds)
     if n < 30:
         return {"error": f"too few samples ({n})"}
@@ -167,8 +168,8 @@ def main():
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--top-k", type=int, default=8,
-                    help="Top-K mappable hypotheses by confidence_score")
+    ap.add_argument("--top-k", type=int, default=50,
+                    help="Top-K mappable hypotheses by confidence_score (default: all)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--output",
                     default="skills/brain_gnn/scripts/atom_task_validation_results.json")
@@ -201,7 +202,7 @@ def main():
     results = []
     t0 = time.time()
 
-    # Tier 1: vanilla + roi_mask per hypothesis
+    # Tier 1: vanilla + roi_mask + edge_boost per hypothesis
     for i, h in enumerate(tier1, 1):
         label_csv = get_csv_for(h["label_key"], h["label_category"])
         if label_csv is None:
@@ -210,17 +211,23 @@ def main():
         labels_z, y_mu, y_sd = load_zscored_labels(label_csv)
         mask = build_roi_mask(h, n_roi=116)
         n_mask = sum(mask)
+        boost = build_edge_boost_matrix(h, n_roi=116)
 
         print(f"\n[T1 {i}/{len(tier1)}] {h['id']} | {h['target_name']} -> "
-              f"{h['label_key']} | mask={n_mask}/116", flush=True)
+              f"{h['label_key']} | mask={n_mask}/116 conf={h['confidence_score']:.2f}",
+              flush=True)
 
         ts = time.time()
         v = train_combraintf(labels_z, y_mu, y_sd, community_ids, None,
                               args.n_epochs, args.batch_size, args.lr, args.seed)
-        print(f"  vanilla  : {v}", flush=True)
+        print(f"  vanilla    : {v}", flush=True)
         m = train_combraintf(labels_z, y_mu, y_sd, community_ids, mask,
                               args.n_epochs, args.batch_size, args.lr, args.seed)
-        print(f"  roi_mask : {m}", flush=True)
+        print(f"  roi_mask   : {m}", flush=True)
+        b = train_combraintf(labels_z, y_mu, y_sd, community_ids, None,
+                              args.n_epochs, args.batch_size, args.lr, args.seed,
+                              edge_boost=boost)
+        print(f"  edge_boost : {b}", flush=True)
 
         results.append({
             "tier": 1, "hypothesis_id": h["id"],
@@ -230,7 +237,7 @@ def main():
             "input_region": h.get("metadata", {}).get("input_region"),
             "roi_mask_size": n_mask,
             "y_mean": y_mu, "y_std": y_sd,
-            "vanilla": v, "roi_mask": m,
+            "vanilla": v, "roi_mask": m, "edge_boost": b,
             "elapsed_sec": round(time.time() - ts, 1),
         })
         # Save partial
@@ -260,23 +267,57 @@ def main():
     print(f"\nDone in {elapsed:.1f} min. Saved -> {out_path}")
 
     # Summary table
-    print(f"\n{'='*80}")
-    print(f"{'ID':18s} {'target':22s} {'label':12s} {'V_yr':>8s} {'M_yr':>8s} {'Δ':>8s}")
-    print("-" * 80)
-    for r in results:
-        if r["tier"] != 1: continue
+    print(f"\n{'='*100}")
+    print(f"{'ID':18s} {'target':22s} {'label':12s} {'conf':>5s} {'mask':>5s} "
+          f"{'V_yr':>7s} {'M_yr':>7s} {'B_yr':>7s} {'ΔM':>7s} {'ΔB':>7s}")
+    print("-" * 100)
+    t1 = [r for r in results if r["tier"] == 1]
+    for r in t1:
         v = r["vanilla"].get("test_mae_raw")
         m = r["roi_mask"].get("test_mae_raw")
+        b = r["edge_boost"].get("test_mae_raw") if "edge_boost" in r else None
         v_s = f"{v:.3f}" if v is not None else "n/a"
         m_s = f"{m:.3f}" if m is not None else "n/a"
-        d_s = f"{m-v:+.3f}" if (v and m) else "n/a"
+        b_s = f"{b:.3f}" if b is not None else "n/a"
+        dm_s = f"{m-v:+.3f}" if (v and m) else "n/a"
+        db_s = f"{b-v:+.3f}" if (v and b) else "n/a"
         print(f"{r['hypothesis_id']:18s} {r['target_name'][:22]:22s} "
-              f"{r['label_key']:12s} {v_s:>8s} {m_s:>8s} {d_s:>8s}")
+              f"{r['label_key']:12s} {r['confidence_score']:>5.2f} "
+              f"{r['roi_mask_size']:>5d} "
+              f"{v_s:>7s} {m_s:>7s} {b_s:>7s} {dm_s:>7s} {db_s:>7s}")
     for r in results:
         if r["tier"] != 2: continue
         v = r["vanilla"].get("test_mae_raw")
         v_s = f"{v:.3f}" if v is not None else "n/a"
-        print(f"{r['task_id']:30s} {r['label_key']:12s} {v_s:>8s} (T2 vanilla-only)")
+        print(f"{r['task_id']:30s} {r['label_key']:12s} {v_s:>7s} (T2 vanilla-only)")
+
+    # Confidence bucket analysis (Tier 1 only)
+    if t1:
+        print(f"\n{'='*60}")
+        print(f"Confidence bucket analysis (n={len(t1)} hypotheses)")
+        print('-' * 60)
+        buckets = [(0.30, 1.00, "high   (≥0.30)"),
+                   (0.25, 0.30, "med-hi (0.25-0.30)"),
+                   (0.20, 0.25, "med    (0.20-0.25)"),
+                   (0.00, 0.20, "low    (<0.20)")]
+        for lo, hi, name in buckets:
+            sub = [r for r in t1 if lo <= r["confidence_score"] < hi]
+            if not sub:
+                continue
+            dm = [r["roi_mask"]["test_mae_raw"] - r["vanilla"]["test_mae_raw"]
+                  for r in sub if "test_mae_raw" in r["roi_mask"] and "test_mae_raw" in r["vanilla"]]
+            db = [r["edge_boost"]["test_mae_raw"] - r["vanilla"]["test_mae_raw"]
+                  for r in sub if "edge_boost" in r and "test_mae_raw" in r["edge_boost"]]
+            # Normalize delta by y_std for cross-task aggregation -> use z-delta
+            dmz = [r["roi_mask"]["test_mae_z"] - r["vanilla"]["test_mae_z"]
+                   for r in sub if "test_mae_z" in r["roi_mask"]]
+            dbz = [r["edge_boost"]["test_mae_z"] - r["vanilla"]["test_mae_z"]
+                   for r in sub if "edge_boost" in r and "test_mae_z" in r["edge_boost"]]
+            wm = sum(1 for d in dmz if d < 0)
+            wb = sum(1 for d in dbz if d < 0)
+            print(f"  {name:18s} n={len(sub):2d}  "
+                  f"ΔM_z={np.mean(dmz):+.3f} ({wm}/{len(dmz)} wins)  "
+                  f"ΔB_z={np.mean(dbz):+.3f} ({wb}/{len(dbz)} wins)")
 
 
 if __name__ == "__main__":

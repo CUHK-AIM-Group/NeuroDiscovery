@@ -3,25 +3,23 @@
 NeuroBench is the benchmark part of NeuroClaw for neuroscience workflow evaluation.
 It focuses on whether an agent can complete real neuroimaging workflows end-to-end: organize raw data, run preprocessing pipelines, produce analysis outputs, and keep results reproducible.
 
-Current status:
-- **Operational layer**: 100 tasks (T01–T100) covering data orchestration, single-tool execution, multi-step pipelines, dev environment, and research tooling. These are *engineering* benchmarks — does the agent run the right tool with the right configuration?
-- **Scientific layer**: 15 reserved buckets under [`scientific/`](scientific/), one per canonical research task from the atom algebra (`neurooracle.src.atoms.CANONICAL_TASKS`). These are *hypothesis-generation* benchmarks — does the agent produce a hypothesis whose atom-shape matches the task and whose evidence chain is sound? Buckets are currently empty and will be populated as scientific evaluation rolls out.
+Current status: 120 tasks (T01-T120) covering data orchestration, single-tool execution, multi-step pipelines, dev environment, research tooling, and **model training / evaluation**. These are *engineering* benchmarks - does the agent run the right tool / model with the right configuration? The full registry mapping every task to its category lives in [`task_atlas.json`](task_atlas.json).
 
-Both layers share the same `task.md` execution and scoring machinery; they differ only in what each task asks of the agent. The full registry mapping every task to its layer/category lives in [`task_atlas.json`](task_atlas.json).
+## Operational benchmarks (T01-T120)
 
-## Layer 1 — Operational benchmarks (T01–T100)
-
-The 100 tasks are organised into five operational categories:
+The 120 tasks are organised into seven categories:
 
 | Category | Count | What it tests |
 |---|---:|---|
-| `data_orchestration` | 7 | BIDS organisation, dataset staging, format conversion (DICOM→NIfTI, downloads) |
-| `tool_use` | 68 | Single-tool calls — DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc. |
+| `data_orchestration` | 7 | BIDS organisation, dataset staging, format conversion (DICOM->NIfTI, downloads) |
+| `tool_use` | 68 | Single-tool calls - DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc. |
 | `pipeline_execution` | 19 | End-to-end pipelines (fMRIPrep, HCP full, ADNI end-to-end, multi-modal full) |
 | `dev_environment` | 4 | Conda envs, git workflows, dependency planning, Overleaf tooling |
 | `research_tooling` | 2 | Literature search, multi-engine retrieval |
+| `model_training` | 17 | Train + evaluate a brain model (FC / ROI time-series / voxel) on shared HCP-age + ABIDE-dx settings |
+| `cross_model_evaluation` | 3 | Multi-atlas sweep, cross-dataset generalisation with harmonization, site-stratified vs leave-site-out |
 
-Historical numbering (T01–T100) is preserved for backwards compatibility with prior leaderboard runs; the categorisation is overlaid via `task_atlas.json` rather than by moving directories.
+Historical numbering (T01-T100) is preserved for backwards compatibility with prior leaderboard runs; the categorisation is overlaid via `task_atlas.json` rather than by moving directories. The model-training and cross-model-evaluation categories (T101-T120) were added 2026-05-24.
 
 Original family-by-pipeline grouping:
 - **T01-T09**: Data organization, BIDS conversion, environment and utility tasks
@@ -36,22 +34,8 @@ Original family-by-pipeline grouping:
 - **T81-T89**: sMRI workflows (BIDS, FSL, FreeSurfer, fMRIPrep anat, ROI)
 - **T90-T94**: ADNI workflows
 - **T95-T100**: HCP dataset workflows (download, staging, sMRI/fMRI/DWI, full multimodal)
-
-## Layer 2 — Scientific benchmarks (`scientific/`)
-
-Indexed by canonical task from the atom algebra. Each bucket reserves a directory; populate with `<bucket>/<instance_id>/task.md` to add a benchmark instance.
-
-The 15 canonical buckets, by family:
-
-**A. Disease understanding** — biomarker_discovery `{IM}->D`, disease_subtyping `{IM,Idv}->D[subtype]`, progression_prediction `{IM}->D[longitudinal]`, imaging_genetics `{G}->IM`, differential_diagnosis `{IM}->D[contrastive]`
-
-**B. Treatment optimisation** — drug_response_prediction `{D,Rx,IM}->O`, personalised_treatment `{D,IM,Idv}->Rx`, drug_repurposing `{Rx}->D`, adverse_event_prediction `{Rx}->O`, neuromodulation_target `{D,Tk}->IM`
-
-**C. Brain function mapping** — functional_localization `{Tk}->IM`, cognitive_decoding `{IM}->Tk`, connectome_behavior `{IM}->Idv`
-
-**D. Health monitoring** — brain_age `{IM}->Idv`, prognosis `{D,IM}->O[longitudinal]`
-
-Adding a benchmark instance is a single `task.md` with the front-matter described in [`scientific/README.md`](scientific/README.md).
+- **T101-T117**: Model training and evaluation (BrainGNN, BNT, BrainNetCNN, IBGNN, LGGNN, ComBrainTF, Ridge baseline, STAGIN, BolT, FBNetGen, Brain Graphormer, Hierarchical GNN, SpaceNet, ROI-MLP, ROI-LSTM, NeuroSTORM, SwiFT)
+- **T118-T120**: Cross-model / cross-dataset evaluation (multi-atlas sweep, cross-dataset generalisation with harmonization, site-stratified vs leave-site-out)
 
 ## Task Structure
 

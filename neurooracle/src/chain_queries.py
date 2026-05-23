@@ -60,6 +60,37 @@ _PREFERRED_PREFIXES = (
     "NCBI_Gene:",
 )
 
+# Neuro domain gate: every chain/task query gets AND'd with this block, so
+# matches must explicitly mention a brain/nervous-system term. Without this
+# gate, generic atoms like DRUG/OUTCOME (top-K = "medications", "interventions",
+# "treatment") drift into endocrinology, infectious disease, oncology, etc.
+NEURO_DOMAIN_GATE = (
+    "(brain[Title/Abstract] OR neural[Title/Abstract] OR neuron*[Title/Abstract] "
+    "OR neurolog*[Title/Abstract] OR neuroimag*[Title/Abstract] "
+    "OR psychiatr*[Title/Abstract] OR psycholog*[Title/Abstract] "
+    "OR cogniti*[Title/Abstract] OR cortex[Title/Abstract] "
+    "OR cortical[Title/Abstract] OR cerebral[Title/Abstract] "
+    "OR \"nervous system\"[Title/Abstract])"
+)
+
+# Words that look like clean MeSH names but are too generic to constrain the
+# query — they show up as KG top-K for DRUG/OUTCOME/INDIVIDUAL_DATA and pull
+# in non-neuro literature. Lowercased exact-match.
+_GENERIC_TERM_STOPLIST = frozenset({
+    # too generic
+    "medications", "medication", "interventions", "intervention",
+    "treatment", "treatments", "treated", "therapy", "therapies",
+    "drug", "drugs", "drug therapy", "drug treatment",
+    "patients", "patient", "subjects", "participants",
+    "outcomes", "outcome", "effect", "effects",
+    "study", "studies", "trial", "trials",
+    "results", "analysis", "data", "method", "methods",
+    "control", "controls", "placebo",
+    "humans", "human", "adults", "adult", "children", "child",
+    # named entities that leaked through KG ingestion (proper nouns)
+    "edgar allan poe", "pepfar",
+})
+
 
 def _name_quality(name: str) -> int:
     """Higher = cleaner search term. Long acronyms with weird punctuation lose."""
@@ -118,6 +149,8 @@ def kg_top_terms_for_atom(
         name = (node.preferred_name or "").strip()
         if not name:
             continue
+        if name.lower() in _GENERIC_TERM_STOPLIST:
+            continue
         nq = _name_quality(name)
         if nq < 0:
             continue
@@ -174,6 +207,7 @@ def build_chain_query(
     chain: tuple[Atom, ...],
     year: Optional[int] = None,
     year_range: Optional[tuple[int, int]] = None,
+    domain_gate: bool = True,
 ) -> str:
     """Build a single compound PubMed query forcing each chain atom present.
 
@@ -182,6 +216,7 @@ def build_chain_query(
         (APOE OR BDNF OR ...)[T/A]
         AND (hippocampus OR amygdala OR ...)[T/A]
         AND (Alzheimer OR depression OR ...)[T/A]
+        AND (brain OR neural OR psychiatr* OR ...)[T/A]    ← domain gate
         AND 2024:2024[pdat]
 
     Returns "" when any atom has no terms (caller should skip such chains).
@@ -193,6 +228,8 @@ def build_chain_query(
         if not block:
             return ""
         blocks.append(block)
+    if domain_gate:
+        blocks.append(NEURO_DOMAIN_GATE)
     yc = _year_clause(year, year_range)
     if yc:
         blocks.append(yc)

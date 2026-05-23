@@ -15,6 +15,9 @@ data/
 neurooracle/data
 UKBAnalytica_v2-main
 
+# Experiment runs (harmonization pilots, model training outputs, etc.)
+runs/
+
 # Secrets
 .env
 .env.local

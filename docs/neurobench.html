@@ -44,7 +44,7 @@
         <p class="eyebrow">NeuroBench</p>
         <h1>Benchmark evaluation for NeuroClaw</h1>
         <p class="lead">
-          NeuroBench is the benchmark suite used to evaluate end-to-end neuroimaging workflows, reproducibility readiness, and skill-guided execution.
+          NeuroBench is the benchmark suite used to evaluate end-to-end neuroimaging workflows, reproducibility readiness, and skill-guided execution. It currently covers both data processing and model training/evaluation.
         </p>
       </section>
 
@@ -57,13 +57,36 @@
 
       <section class="panel reveal">
         <h2>What NeuroBench covers</h2>
+        <p class="sub">
+          120 tasks (T01-T120) organized into seven categories. The full registry mapping every task to its category lives in <code>neurobench/task_atlas.json</code>.
+        </p>
+        <div class="dataset-table-wrap">
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Count</th>
+                <th>What it tests</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Data orchestration</td><td>7</td><td>BIDS organization, dataset staging, format conversion (DICOM-&gt;NIfTI, downloads)</td></tr>
+              <tr><td>Single-tool execution</td><td>68</td><td>Single-tool calls - DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc.</td></tr>
+              <tr><td>Multi-step pipeline</td><td>19</td><td>End-to-end pipelines (fMRIPrep, HCP full, ADNI end-to-end, multi-modal full)</td></tr>
+              <tr><td>Dev environment</td><td>4</td><td>Conda envs, git workflows, dependency planning, Overleaf tooling</td></tr>
+              <tr><td>Research tooling</td><td>2</td><td>Literature search, multi-engine retrieval</td></tr>
+              <tr><td>Model training and evaluation</td><td>17</td><td>Train and evaluate a brain model (FC / ROI time-series / voxel) on shared HCP-age + ABIDE-dx settings</td></tr>
+              <tr><td>Cross-model and cross-dataset evaluation</td><td>3</td><td>Multi-atlas sweep, cross-dataset generalization with harmonization, site-stratified vs leave-site-out</td></tr>
+            </tbody>
+          </table>
+        </div>
         <div class="bench-grid">
           <article>
-            <h3>Coverage</h3>
+            <h3>Modality Coverage</h3>
             <p>Structural MRI, functional MRI, diffusion MRI, EEG, and multimodal integration tasks.</p>
           </article>
           <article>
-            <h3>Evaluation</h3>
+            <h3>Evaluation Dimensions</h3>
             <p>Planning quality, tool/skill reasonableness, code/command correctness, and reproducibility readiness.</p>
           </article>
           <article>

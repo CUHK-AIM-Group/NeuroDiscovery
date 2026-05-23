@@ -44,7 +44,7 @@
         <p class="eyebrow">NeuroBench</p>
         <h1>NeuroClaw 的 benchmark 评测页</h1>
         <p class="lead">
-          NeuroBench 用于评估端到端神经影像工作流、复现准备度以及技能驱动执行能力。
+          NeuroBench 用于评估端到端神经影像工作流、复现准备度以及技能驱动执行能力，目前已覆盖数据处理与模型训练/评估。
         </p>
       </section>
 
@@ -57,9 +57,32 @@
 
       <section class="panel reveal">
         <h2>NeuroBench 覆盖什么</h2>
+        <p class="sub">
+          共 120 个任务（T01-T120），划分为七个类别。完整任务到类别的映射记录在 <code>neurobench/task_atlas.json</code>。
+        </p>
+        <div class="dataset-table-wrap">
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>类别</th>
+                <th>数量</th>
+                <th>评测内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>数据编排</td><td>7</td><td>BIDS 组织、数据集准备、格式转换（DICOM-&gt;NIfTI、下载）</td></tr>
+              <tr><td>单工具执行</td><td>68</td><td>单工具调用 - DIPY 指标、FSL 提取、FreeSurfer 命令、Nilearn 函数等</td></tr>
+              <tr><td>多步流水线</td><td>19</td><td>端到端流水线（fMRIPrep、HCP full、ADNI end-to-end、多模态 full）</td></tr>
+              <tr><td>开发环境</td><td>4</td><td>Conda 环境、git 工作流、依赖规划、Overleaf 工具</td></tr>
+              <tr><td>研究工具</td><td>2</td><td>文献检索、多引擎检索</td></tr>
+              <tr><td>模型训练与评估</td><td>17</td><td>在统一的 HCP-age + ABIDE-dx 设置下训练和评估单个脑模型（FC / ROI 时间序列 / voxel）</td></tr>
+              <tr><td>跨模型与跨数据集评估</td><td>3</td><td>多 atlas sweep、带 harmonization 的跨数据集泛化、site-stratified vs leave-site-out</td></tr>
+            </tbody>
+          </table>
+        </div>
         <div class="bench-grid">
           <article>
-            <h3>覆盖范围</h3>
+            <h3>模态覆盖</h3>
             <p>结构像、功能像、扩散像、EEG 以及多模态整合任务。</p>
           </article>
           <article>

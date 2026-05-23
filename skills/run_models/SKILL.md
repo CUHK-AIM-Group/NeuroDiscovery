@@ -59,6 +59,15 @@ This skill does not hardcode detailed install/run commands for each model. Those
 | Filtering | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Denoised BOLD, cleaned time series, optional QC summaries | `skills/filtering/SKILL.md` |
 | Detrending | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Cleaned BOLD, cleaned time series, optional QC summaries | `skills/detrending/SKILL.md` |
 
+### Cross-Cutting Tools (Apply Across Models)
+These are not models. They are horizontal layers that any model in the registry above can opt into without changing model code.
+
+| Tool | Purpose | When to invoke | Tool Doc |
+|---|---|---|---|
+| harmonization-tool | Remove site/scanner/batch effects from features before model training; supports ComBat / ComBat-GAM / CovBat / site-as-covariate; ships site-stratified and leave-site-out splitters; required for honest mega-analysis across multi-site cohorts | Any multi-site or multi-dataset run (ABIDE, ADHD-200, ABCD, multi-cohort pooling); user mentions ComBat / harmonize / site effect / cross-site / mega-analysis | `skills/harmonization-tool/SKILL.md` |
+
+Insertion point: between dataset-skill output (feature matrix + meta) and model-skill input. Models read harmonized features identically to raw features.
+
 ### Citation Notes
 - BrainGNN:
 	- Li X, Zhou Y, Dvornek N, Zhang M, Gao S, Zhuang J, Scheinost D, Staib L, Ventola P, Duncan J. 2020.

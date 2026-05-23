@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "description": "Two-layer benchmark task index. The operational layer covers tools/pipelines/data orchestration — testing whether the agent can execute neuroimaging workflows correctly. The scientific layer covers research tasks defined by the atom algebra (see neurooracle/src/atoms.py); these are reserved buckets for hypothesis-generation benchmarks added over time.",
+  "description": "Benchmark task index. Covers tools/pipelines/data orchestration and model training/evaluation - testing whether the agent can execute neuroimaging workflows and train/evaluate brain models correctly.",
   "operational_layer": {
     "description": "Engineering-oriented benchmarks: does the agent use the right tool with the right configuration?",
     "categories": {
@@ -19,7 +19,7 @@
       },
       "tool_use": {
         "label": "Single-tool execution",
-        "summary": "Driving a specific tool / module — DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc.",
+        "summary": "Driving a specific tool / module - DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc.",
         "tasks": [
           "T04_conn_tool",
           "T05_dcm2nii",
@@ -133,86 +133,38 @@
           "T01_academic_search",
           "T07_multi_search_engine"
         ]
-      }
-    }
-  },
-  "scientific_layer": {
-    "description": "Hypothesis-generation benchmarks indexed by canonical task from the atom algebra. Each bucket maps to a Task in CANONICAL_TASKS (neurooracle/src/atoms.py). Initially empty — populated as scientific benchmarks are added under neurobench/scientific/<task_name>/.",
-    "categories": {
-      "biomarker_discovery": {
-        "signature": "{IM}->D",
-        "family": "A. Disease understanding",
-        "tasks": []
       },
-      "disease_subtyping": {
-        "signature": "{IM,Idv}->D[subtype]",
-        "family": "A. Disease understanding",
-        "tasks": []
+      "model_training": {
+        "label": "Model training and evaluation",
+        "summary": "Train and evaluate a single brain model (FC/ROI/time-series/voxel) on standard settings (HCP age regression + ABIDE classification) with shared 5-fold deterministic splits.",
+        "tasks": [
+          "T101_braingnn_train_eval",
+          "T102_bnt_train_eval",
+          "T103_brainnetcnn_train_eval",
+          "T104_ibgnn_train_eval",
+          "T105_lggnn_train_eval",
+          "T106_combraintf_train_eval",
+          "T107_ridge_baseline",
+          "T108_stagin_train_eval",
+          "T109_bolt_train_eval",
+          "T110_fbnetgen_train_eval",
+          "T111_brain_graphormer_train_eval",
+          "T112_hierarchical_gnn_train_eval",
+          "T113_spacenet_train_eval",
+          "T114_roi_mlp_baseline",
+          "T115_roi_lstm_baseline",
+          "T116_neurostorm_train_eval",
+          "T117_swift_train_eval"
+        ]
       },
-      "progression_prediction": {
-        "signature": "{IM}->D[longitudinal]",
-        "family": "A. Disease understanding",
-        "tasks": []
-      },
-      "imaging_genetics": {
-        "signature": "{G}->IM",
-        "family": "A. Disease understanding",
-        "tasks": []
-      },
-      "differential_diagnosis": {
-        "signature": "{IM}->D[contrastive]",
-        "family": "A. Disease understanding",
-        "tasks": []
-      },
-      "drug_response_prediction": {
-        "signature": "{D,Rx,IM}->O",
-        "family": "B. Treatment optimisation",
-        "tasks": []
-      },
-      "personalised_treatment": {
-        "signature": "{D,IM,Idv}->Rx",
-        "family": "B. Treatment optimisation",
-        "tasks": []
-      },
-      "drug_repurposing": {
-        "signature": "{Rx}->D",
-        "family": "B. Treatment optimisation",
-        "tasks": []
-      },
-      "adverse_event_prediction": {
-        "signature": "{Rx}->O",
-        "family": "B. Treatment optimisation",
-        "tasks": []
-      },
-      "neuromodulation_target": {
-        "signature": "{D,Tk}->IM",
-        "family": "B. Treatment optimisation",
-        "tasks": []
-      },
-      "functional_localization": {
-        "signature": "{Tk}->IM",
-        "family": "C. Brain function mapping",
-        "tasks": []
-      },
-      "cognitive_decoding": {
-        "signature": "{IM}->Tk",
-        "family": "C. Brain function mapping",
-        "tasks": []
-      },
-      "connectome_behavior": {
-        "signature": "{IM}->Idv",
-        "family": "C. Brain function mapping",
-        "tasks": []
-      },
-      "brain_age": {
-        "signature": "{IM}->Idv",
-        "family": "D. Health monitoring",
-        "tasks": []
-      },
-      "prognosis": {
-        "signature": "{D,IM}->O[longitudinal]",
-        "family": "D. Health monitoring",
-        "tasks": []
+      "cross_model_evaluation": {
+        "label": "Cross-model and cross-dataset evaluation",
+        "summary": "Sweeps and comparative protocols spanning multiple atlases, datasets, or evaluation splits - including mega-analysis (harmonization + site-aware splits).",
+        "tasks": [
+          "T118_multi_atlas_sweep",
+          "T119_cross_dataset_generalization",
+          "T120_site_split_protocol"
+        ]
       }
     }
   }
