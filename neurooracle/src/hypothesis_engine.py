@@ -266,16 +266,32 @@ PATH_IGNORE_NODE_IDS = frozenset({
 # ("A → Alzheimer → B" is just "A relates to AD, AD relates to B" — no
 # discovery value). Audit found 37.8% of hypotheses transit through these.
 INTERMEDIATE_ONLY_IGNORE_IDS = frozenset({
-    "COGAT_DISORDER:dso_5419",            # schizophrenia (degree 1005)
-    "MSH:D009103",                         # Multiple Sclerosis (816)
-    "COGAT_DISORDER:dso_3312",            # bipolar disorder (703)
-    "MSH:D000544",                         # Alzheimer Disease (746)
-    "MSH:D004827",                         # Epilepsy (750)
-    "MSH:D010300",                         # Parkinson Disease (709)
-    "COGAT_DISORDER:dso_0060041",         # autism spectrum disorder (613)
-    "MSH:D001289",                         # ADHD (601)
-    "MSH:D003863",                         # Depression (577)
-    "MSH:D001523",                         # Mental Disorders (489)
+    # Original disease hubs (audit-degree numbers; live KG values higher)
+    "COGAT_DISORDER:dso_5419",            # schizophrenia (degree ~9.5k live)
+    "MSH:D009103",                         # Multiple Sclerosis
+    "COGAT_DISORDER:dso_3312",            # bipolar disorder (cogat ID)
+    "MSH:D000544",                         # Alzheimer Disease (~13.8k live)
+    "MSH:D004827",                         # Epilepsy
+    "MSH:D010300",                         # Parkinson Disease (~7k live)
+    "COGAT_DISORDER:dso_0060041",         # autism spectrum disorder (~5k live)
+    "MSH:D001289",                         # ADHD (~9.8k live)
+    "MSH:D003863",                         # Depression
+    "MSH:D001523",                         # Mental Disorders
+    # Disease hubs missed in the plan but degree > 1500 in live KG
+    "MSH:D012640",                         # Seizures (~14.4k — top disease hub)
+    "MSH:D003704",                         # Dementia (~4.3k)
+    "MSH:D001321",                         # Autistic Disorder (MSH alias of ASD, ~4.2k)
+    "MSH:D060825",                         # Cognitive Dysfunction (~3.9k)
+    "COGAT_DISORDER:dso_1094",            # ADHD (cogat alias of D001289, ~2.6k)
+    "MSH:D001714",                         # Bipolar Disorder (MSH alias of dso_3312)
+    "MSH:D010842",                         # Pica (KG outlier hub, ~2k)
+    # Vague cognitive-function umbrella hubs (still valid as endpoints —
+    # "predict attention from FC" is a real task — but uninformative as
+    # transit nodes).
+    "COGAT_CONCEPT:trm_4a3fd79d09902",    # attention (~6k)
+    "MSH:D001519",                         # Behavior (~3.5k, too vague)
+    "COGAT_CONCEPT:trm_4a3fd79d09735",    # action (~2.5k, too vague)
+    "MSH:D004644",                         # Emotions (~1.9k)
 })
 
 DIRECTIONAL_RELATIONS = {
@@ -285,6 +301,29 @@ DIRECTIONAL_RELATIONS = {
     # Brain decoding directional predicates
     "evokes", "decoded_from", "elicits",
 }
+
+
+# ── Atom-aware intermediate-node constraint ──────────────────────────────
+# Every node visited by a hypothesis path must be a "scientifically
+# meaningful" node — i.e. it must play one of the canonical atoms
+# (DISEASE/DRUG/IM/GENE/COGNITIVE_TASK/OUTCOME/INDIVIDUAL_DATA). Nodes that
+# only carry infrastructure tags (atlas/modality/dataset/ml_model) or
+# meta tags (claim/recipe) describe the apparatus, not the science, and
+# must not appear on a hypothesis path.
+#
+# Lazy-imported on first use to avoid circular import with atoms.py.
+_ALLOWED_ATOM_DOMAINS_CACHE: Optional[frozenset[str]] = None
+
+
+def _allowed_atom_domains() -> frozenset[str]:
+    global _ALLOWED_ATOM_DOMAINS_CACHE
+    if _ALLOWED_ATOM_DOMAINS_CACHE is None:
+        from .atoms import ATOM_TO_DOMAINS
+        merged: set[str] = set()
+        for doms in ATOM_TO_DOMAINS.values():
+            merged |= doms
+        _ALLOWED_ATOM_DOMAINS_CACHE = frozenset(merged)
+    return _ALLOWED_ATOM_DOMAINS_CACHE
 
 # domain pairs worth exploring — aligned with NeuroClaw imaging experiments
 # target datasets: UKB (T1w/dMRI/rfMRI/SWI), ADNI (T1w/PET/fMRI/DTI), HCP-YA (T1w/T2w/fMRI/dMRI/MEG)
@@ -825,17 +864,55 @@ class HypothesisEngine:
 
     # ── batch generation ───────────────────────────────────────────────
 
+    def _path_intermediates_are_atoms(
+        self,
+        raw_path: list[str],
+        allowed_domains: Optional[frozenset[str]] = None,
+    ) -> bool:
+        """All non-endpoint nodes in `raw_path` carry ≥1 allowed-atom domain.
+
+        Endpoints (raw_path[0], raw_path[-1]) are skipped — task-driven
+        callers already constrain those by the input/output atom. The check
+        targets the bridge nodes (raw_path[1:-1]) and rejects paths that
+        transit infrastructure (atlas/modality/dataset/ml_model) or meta
+        (claim/recipe) nodes. Empty intermediate set passes trivially.
+
+        ``allowed_domains`` defaults to the union of all atom domains; a
+        stricter caller (e.g. requiring intermediates be IM-only) can pass
+        a narrower set.
+        """
+        if len(raw_path) <= 2:
+            return True
+        if allowed_domains is None:
+            allowed_domains = _allowed_atom_domains()
+        for nid in raw_path[1:-1]:
+            node = self._index.get(nid)
+            if node is None:
+                return False
+            node_doms = set(node.domain_tags or [])
+            if not (node_doms & allowed_domains):
+                return False
+        return True
+
     def batch_generate(
         self,
         domain_pairs: Optional[list[tuple[str, str]]] = None,
         max_hops: int = 3,
         max_paths_per_pair: int = 5,
         max_seeds_per_domain: int = 50,
+        output_atom=None,
+        skip_post_process: bool = False,
     ) -> list[Hypothesis]:
         """Batch-generate hypotheses across the entire graph.
 
         Strategy: for each domain pair, sample seed concepts from domain_a,
         find paths to concepts in domain_b within max_hops hops.
+
+        If ``output_atom`` (a :class:`neurooracle.src.atoms.Atom`) is supplied,
+        the post-processing target-domain check accepts that atom's domain
+        pool as valid outcomes — needed for tasks like personalised_treatment
+        whose target atom (DRUG) is otherwise excluded from the default
+        outcome set.
         """
         if domain_pairs is None:
             domain_pairs = DEFAULT_DOMAIN_PAIRS
@@ -881,6 +958,15 @@ class HypothesisEngine:
                     seen_pairs.add(pair_key)
 
                     raw_path = reachable[target_id]
+                    # Skip 1-hop paths (direct edges = no discovery value).
+                    # Doing this here, before counting against
+                    # max_paths_per_pair, prevents 1-hop candidates from
+                    # consuming the per-pair budget that should go to
+                    # multi-hop bridges.
+                    if len(raw_path) < 3:
+                        continue
+                    if not self._path_intermediates_are_atoms(raw_path):
+                        continue
                     links = self._enrich_path(raw_path)
                     if not links:
                         continue
@@ -919,6 +1005,8 @@ class HypothesisEngine:
 
         logger.info(f"batch generation complete: {len(all_hypotheses)} hypotheses from {len(domain_pairs)} domain pairs")
 
+        if skip_post_process:
+            return all_hypotheses
         all_hypotheses = self.post_process(all_hypotheses)
         return all_hypotheses
 
@@ -1002,14 +1090,24 @@ class HypothesisEngine:
             max_hops=max_hops,
             max_paths_per_pair=max_paths_per_pair,
             max_seeds_per_domain=max_seeds_per_domain,
+            skip_post_process=True,
         )
 
-        # tag with task provenance
+        # tag with task provenance BEFORE post_process so the task-aware
+        # _is_dataset_outcome filter can read task_name.
         for h in hyps:
             h.metadata = dict(h.metadata or {})
             h.metadata["task_name"] = task.name
             h.metadata["task_signature"] = task.signature
             h.metadata["task_modifier"] = task.modifier.value
+            h.metadata["task_kind"] = "task"
+
+        # Now apply post_process with task tags in place.
+        before = len(hyps)
+        hyps = self.post_process(hyps)
+        logger.info(
+            f"task '{task.name}': {before} raw -> {len(hyps)} after task-aware post_process"
+        )
 
         # optional strict multi-atom touch filter
         if require_atom_touch and len(task.inputs) > 1:
@@ -1163,11 +1261,22 @@ class HypothesisEngine:
                     anchor_set = set(partial)
                     if any(n in anchor_set for n in sub_path[1:]):
                         continue
-                    # Disallow claim-node intermediates within a segment.
-                    if any(
-                        "claim" in self._index.get(n, ConceptNode(id="", preferred_name="")).domain_tags
-                        for n in sub_path[1:-1]
-                    ):
+                    # Within-segment bridge nodes must be atom-domain nodes
+                    # (not claims, not infrastructure). Endpoints sub_path[0]
+                    # and sub_path[-1] are anchors — already pinned to atom
+                    # pools — so we only check sub_path[1:-1].
+                    _allowed = _allowed_atom_domains()
+                    bad_bridge = False
+                    for n in sub_path[1:-1]:
+                        node = self._index.get(n)
+                        if node is None:
+                            bad_bridge = True
+                            break
+                        node_doms = set(node.domain_tags or [])
+                        if "claim" in node_doms or not (node_doms & _allowed):
+                            bad_bridge = True
+                            break
+                    if bad_bridge:
                         continue
                     new_path = partial + sub_path[1:]
                     new_anchors = anchors + [len(new_path) - 1]
@@ -1234,6 +1343,7 @@ class HypothesisEngine:
                     "chain_modifier": chain.modifier.value,
                     "mediator_ids": mediator_ids,
                     "mediator_names": mediator_names,
+                    "task_kind": "chain",
                 },
             )
             h.explanation = self._generate_explanation(h)
@@ -1265,12 +1375,22 @@ class HypothesisEngine:
         filtered = []
 
         for h in hypotheses:
-            # filter noisy entities (source, target, and all intermediate nodes)
-            all_names = {h.source_name, h.target_name}
+            # filter noisy entities. Only check CLM_CONCEPT nodes — Phase 1
+            # curated vocabularies (MSH/COGAT/NN/...) are authoritative and
+            # shouldn't be rejected just because their canonical name happens
+            # to share a token with the noise word list (e.g. "Cognitive
+            # Dysfunction" is a valid MeSH term despite "dysfunction" ∈
+            # _NOISE_WORDS).
+            noisy_names: list[str] = []
+            for nid, name in [(h.source_id, h.source_name), (h.target_id, h.target_name)]:
+                if nid.startswith("CLM_CONCEPT") and self._is_noisy_entity(name):
+                    noisy_names.append(name)
             for link in h.path:
-                all_names.add(link.from_name)
-                all_names.add(link.to_name)
-            if any(self._is_noisy_entity(name) for name in all_names):
+                if link.from_id.startswith("CLM_CONCEPT") and self._is_noisy_entity(link.from_name):
+                    noisy_names.append(link.from_name)
+                if link.to_id.startswith("CLM_CONCEPT") and self._is_noisy_entity(link.to_name):
+                    noisy_names.append(link.to_name)
+            if noisy_names:
                 continue
 
             # filter 1-hop (single direct edge = no discovery value)
@@ -1606,53 +1726,78 @@ class HypothesisEngine:
     def _is_dataset_outcome(self, h: Hypothesis) -> bool:
         """Check if target is a UKB/ADNI/HCP-testable outcome.
 
-        The goal of our hypotheses is to predict SOMETHING from brain imaging.
-        Valid targets:
-        - Clinical diagnoses (disease domain) — Alzheimer, MCI, schizophrenia, etc.
-        - Cognitive/behavioral/personality measures (cognitive_function domain)
-        - Brain decoding targets:
-            * neuroanatomy (for encoding: stimulus → brain activation)
-            * visual_stimulus (for decoding: brain → stimulus category)
-            * emotion (SEED family: EEG → affect label)
-            * vigilance (SEED-VIG: EEG → alertness)
+        The target's valid domain set is determined by the task this hypothesis
+        was generated for: read ``metadata['task_name']``, look up the task's
+        output atom in :data:`neurooracle.src.atoms.CANONICAL_TASKS`, and use
+        ``ATOM_TO_DOMAINS[output]`` as the allowed outcome domains.
 
-        Invalid targets:
-        - Molecular entities (gene, biomarker, drug, neurotransmitter) — these
-          may be predictors, not predicted quantities
-        - Overly generic disease categories (Brain Diseases, Mental Disorders) —
-          already filtered by hub-to-hub, but double-check by keyword.
+        This makes the filter task-aware: ``personalised_treatment`` (output
+        DRUG) accepts drug-domain targets; ``brain_age`` (output
+        INDIVIDUAL_DATA) accepts only dataset_variable targets, etc. The
+        previous version used a fixed pool {disease, cognitive_function}
+        which (a) blocked drug targets that personalised_treatment legitimately
+        wants and (b) accepted clinical-disease targets for brain_age, which
+        produced low-quality samples like ``IM → Dementia → ADNI:DOM_DX``.
 
-        Accepts target if EITHER:
-          a) target's domain is in _OUTCOME_DOMAINS ∪ decoding domains, OR
-          b) target name matches _OUTCOME_KEYWORDS regex (as fallback for
-             claim_extraction concepts whose domain may be uncertain)
+        Falls back to the legacy union (disease + cognitive_function +
+        decoding domains + outcome keyword regex) when ``task_name`` is
+        missing (e.g. chain hypotheses, free-form imaging mode).
         """
         target = self._index.get(h.target_id)
         if target is None:
             return False
 
         domains = set(target.domain_tags)
-        # Accept: disease, cognitive_function, or decoding-target domains
+        task_name = (h.metadata or {}).get("task_name") or ""
+
+        if task_name:
+            allowed = self._task_outcome_domains(task_name)
+            if allowed is not None:
+                if domains & allowed:
+                    return True
+                # Encoding edge case: cognitive_decoding / functional_localization
+                # accept neuroanatomy as a target only when source is a
+                # decoding-style stimulus.
+                if "neuroanatomy" in allowed and "neuroanatomy" in domains:
+                    return True
+                return False
+
+        # Legacy fallback for chains and untagged hypotheses.
         outcome_domains = _OUTCOME_DOMAINS | {"visual_stimulus", "emotion", "vigilance"}
         if domains & outcome_domains:
             return True
-
-        # Accept: neuroanatomy targets when the hypothesis is a brain-decoding
-        # encoding path (stimulus → brain region). Excludes the clinical-
-        # prediction case where a target of 'White Matter' would be an input.
         if "neuroanatomy" in domains:
             source = self._index.get(h.source_id)
             if source:
                 source_domains = set(source.domain_tags)
                 if source_domains & {"visual_stimulus", "emotion", "vigilance"}:
                     return True
-
-        # Fallback: outcome keyword match (catches claim_extraction concepts
-        # that describe outcomes but have wrong domain tags)
         if _OUTCOME_KEYWORDS.search(h.target_name):
             return True
-
         return False
+
+    @staticmethod
+    def _task_outcome_domains(task_name: str) -> Optional[frozenset[str]]:
+        """Return the allowed target-domain set for a named task.
+
+        Looks up the task's output atom in CANONICAL_TASKS and returns its
+        ATOM_TO_DOMAINS pool. Returns None if the task name is unrecognised
+        so callers can fall back to legacy logic. Cached per-process.
+        """
+        cache = HypothesisEngine._task_outcome_cache
+        if task_name in cache:
+            return cache[task_name]
+
+        from .atoms import CANONICAL_TASKS, ATOM_TO_DOMAINS
+        for task in CANONICAL_TASKS:
+            if task.name == task_name:
+                allowed = ATOM_TO_DOMAINS.get(task.output, frozenset())
+                cache[task_name] = allowed
+                return allowed
+        cache[task_name] = None
+        return None
+
+    _task_outcome_cache: dict[str, Optional[frozenset[str]]] = {}
 
     def _has_weak_evidence(self, h: Hypothesis) -> bool:
         """Check if hypothesis path has weak evidence (target not mentioned in raw_text).
@@ -1776,6 +1921,15 @@ class HypothesisEngine:
                     seen_pairs.add(pair_key)
 
                     raw_path = reachable[target_id]
+                    # Skip 1-hop paths (direct edges = no discovery value).
+                    # Doing this here, before counting against
+                    # max_paths_per_pair, prevents 1-hop candidates from
+                    # consuming the per-pair budget that should go to
+                    # multi-hop bridges.
+                    if len(raw_path) < 3:
+                        continue
+                    if not self._path_intermediates_are_atoms(raw_path):
+                        continue
                     links = self._enrich_path(raw_path)
                     if not links:
                         continue
@@ -1966,6 +2120,15 @@ class HypothesisEngine:
                     seen_pairs.add(pair_key)
 
                     raw_path = reachable[target_id]
+                    # Skip 1-hop paths (direct edges = no discovery value).
+                    # Doing this here, before counting against
+                    # max_paths_per_pair, prevents 1-hop candidates from
+                    # consuming the per-pair budget that should go to
+                    # multi-hop bridges.
+                    if len(raw_path) < 3:
+                        continue
+                    if not self._path_intermediates_are_atoms(raw_path):
+                        continue
                     links = self._enrich_path(raw_path)
                     if not links:
                         continue

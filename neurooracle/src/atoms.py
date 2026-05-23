@@ -87,7 +87,15 @@ ATOM_TO_DOMAINS: dict[Atom, frozenset[str]] = {
         "vigilance",           # alertness levels
     }),
     Atom.OUTCOME:         frozenset({"treatment_outcome", "dataset_variable"}),
-    Atom.INDIVIDUAL_DATA: frozenset({"dataset_variable"}),
+    Atom.INDIVIDUAL_DATA: frozenset({
+        "dataset_variable",         # UKB/ADNI/HCP host categories (smoking, demographics, …)
+        "individual_data_anchor",   # concept-level anchors (Aging, APOE, Big-5 traits, …)
+                                    # seeded by ingestion.individual_data_anchors;
+                                    # bridges concept-side IM/disease/gene nodes to
+                                    # the dataset_variable hubs so brain_age /
+                                    # connectome_behavior / task_brain_behavior /
+                                    # disease_biomarker_prognosis can route IM ↔ Idv.
+    }),
 }
 
 

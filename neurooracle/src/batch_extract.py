@@ -31,6 +31,7 @@ from .claim_ingestion import ingest_claims
 from .graph_manager import KnowledgeGraph
 from .schema import PaperRef
 from .storage import load_graph, save_graph
+from .abstract_cache import AbstractCache, default_cache_path
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +96,18 @@ def _search_pubmed(query: str, max_results: int) -> list[str]:
     return []
 
 
-def _fetch_pubmed_details(pmids: list[str]) -> list[tuple[str, PaperRef]]:
+def _fetch_pubmed_details(
+    pmids: list[str],
+    cache: Optional[AbstractCache] = None,
+) -> list[tuple[str, PaperRef]]:
     """Fetch paper details for a list of PMIDs.
 
     Uses POST and batches to avoid HTTP 414 (URI Too Long) that hits when
     fetching hundreds of PMIDs in a single GET request.
+
+    If ``cache`` is provided, pmids already in the cache are served from
+    disk and excluded from the network call; newly fetched abstracts are
+    written back so subsequent runs can skip PubMed entirely.
     """
     import requests
     import xml.etree.ElementTree as ET
@@ -107,14 +115,30 @@ def _fetch_pubmed_details(pmids: list[str]) -> list[tuple[str, PaperRef]]:
     if not pmids:
         return []
 
+    papers: list[tuple[str, PaperRef]] = []
+
+    # Cache hit path — short-circuit before hitting NCBI.
+    pmids_to_fetch: list[str] = []
+    if cache is not None:
+        hits, misses = cache.get_many(pmids)
+        if hits:
+            papers.extend(hits)
+            logger.info(f"  cache: {len(hits)}/{len(pmids)} pmids served from disk")
+        pmids_to_fetch = misses
+    else:
+        pmids_to_fetch = list(pmids)
+
+    if not pmids_to_fetch:
+        return papers
+
     fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     # Batch size 200 keeps the POST body well within NCBI limits; use POST
     # so the id list goes in the request body rather than the URL.
     BATCH_SIZE = 200
-    papers: list[tuple[str, PaperRef]] = []
+    new_records: list[tuple[str, str, PaperRef]] = []
 
-    for i in range(0, len(pmids), BATCH_SIZE):
-        batch = pmids[i:i + BATCH_SIZE]
+    for i in range(0, len(pmids_to_fetch), BATCH_SIZE):
+        batch = pmids_to_fetch[i:i + BATCH_SIZE]
         data = {
             "db": "pubmed",
             "id": ",".join(batch),
@@ -168,10 +192,16 @@ def _fetch_pubmed_details(pmids: list[str]) -> list[tuple[str, PaperRef]]:
                     authors=authors_str, year=year, journal=journal,
                 )
                 papers.append((abstract, paper_ref))
+                if cache is not None and pmid:
+                    new_records.append((pmid, abstract, paper_ref))
 
             except Exception as e:
                 logger.warning(f"failed to parse article: {e}")
                 continue
+
+    if cache is not None and new_records:
+        n = cache.put_many(new_records)
+        logger.info(f"  cache: wrote {n} new abstracts ({len(cache):,} total)")
 
     return papers
 
@@ -181,6 +211,7 @@ def search_disease_year(
     year: int,
     max_results: int = 20,
     broad: bool = False,
+    cache: Optional[AbstractCache] = None,
 ) -> tuple[list[tuple[str, PaperRef]], int]:
     """Search PubMed for papers about a specific disease and year.
 
@@ -253,7 +284,7 @@ def search_disease_year(
         return [], total_hits
 
     time.sleep(0.4)  # NCBI rate limit
-    return _fetch_pubmed_details(pmids), total_hits
+    return _fetch_pubmed_details(pmids, cache=cache), total_hits
 
 
 # ── Checkpoint Management ──────────────────────────────────────────
@@ -402,6 +433,11 @@ def run_batch_extraction(
     # init CSV
     _init_csv(papers_csv)
 
+    # Abstract cache: persists fetched abstracts so re-runs can skip PubMed.
+    # One cache file per data_dir; lookups are pmid-keyed.
+    cache_path = default_cache_path(data_dir if data_dir is not None else None)
+    abstract_cache = AbstractCache(cache_path)
+
     # init extractor
     extractor = ClaimExtractor()
     logger.info(f"using {max_workers} parallel LLM workers")
@@ -508,7 +544,9 @@ def run_batch_extraction(
                 continue
 
             logger.info(f"  {year}: searching...")
-            papers, total_hits = search_disease_year(disease, year, papers_per_year, broad=broad)
+            papers, total_hits = search_disease_year(
+                disease, year, papers_per_year, broad=broad, cache=abstract_cache,
+            )
             logger.info(f"  {year}: found {len(papers)} papers (total hits in PubMed: {total_hits})")
 
             # track per-year-per-disease counts

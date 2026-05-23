@@ -8,7 +8,7 @@ from typing import Optional
 
 import networkx as nx
 
-from .schema import Claim, ConceptNode, Edge, Evidence, RELATION_TYPES
+from .schema import Claim, ConceptNode, Edge, Evidence, EDGE_TIER, DISPLAY_TIERS_DEFAULT, RELATION_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +266,41 @@ class KnowledgeGraph:
             if d.get("relation_type") == relation_type
         ]
         return self.G.edge_subgraph(edges).copy()
+
+    def export_display_subgraph(
+        self,
+        tiers: Optional[set[str]] = None,
+        drop_isolated_nodes: bool = True,
+    ) -> nx.DiGraph:
+        """Return a subgraph for human display, dropping admin/inverse/provenance edges.
+
+        The full graph (`self.G`) is unchanged — the hypothesis engine still
+        traverses every edge. This method produces a *view* with only edges
+        whose tier (per `schema.EDGE_TIER`) is in `tiers`.
+
+        Args:
+            tiers: which tiers to keep. Defaults to `{"discovery"}`. Pass
+                `{"discovery", "skeleton"}` to also surface is_a / part_of.
+                Unknown relation types default to "discovery" so the
+                long-tail of claim-extracted predicates is still surfaced.
+            drop_isolated_nodes: after edge filtering, drop nodes with no
+                remaining edges. Useful for visualization; turn off if you
+                need to preserve the node universe.
+
+        Returns:
+            A NetworkX DiGraph view (deep-copied so callers can mutate it
+            without touching the source graph).
+        """
+        keep = tiers if tiers is not None else set(DISPLAY_TIERS_DEFAULT)
+        edges_to_keep = [
+            (u, v) for u, v, d in self.G.edges(data=True)
+            if EDGE_TIER.get(d.get("relation_type", ""), "discovery") in keep
+        ]
+        sub = self.G.edge_subgraph(edges_to_keep).copy()
+        if drop_isolated_nodes:
+            isolated = [n for n in sub.nodes() if sub.degree(n) == 0]
+            sub.remove_nodes_from(isolated)
+        return sub
 
     # ── search ───────────────────────────────────────────────────────
 

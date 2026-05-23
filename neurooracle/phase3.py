@@ -1,6 +1,7 @@
-"""Phase 3: 假设引擎
+"""Phase 3: hypothesis engine.
 
-批量生成、评分、排序可检验假设。包含 Critic Agent 迭代审查。
+Batch-generate, score, and rank testable hypotheses. Includes a Critic Agent
+iterative review.
 
 Usage:
     python -m neurooracle.phase3 batch --output neurooracle/data/hypotheses.json

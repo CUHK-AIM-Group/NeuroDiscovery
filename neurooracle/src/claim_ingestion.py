@@ -462,6 +462,7 @@ Output ONLY the predicate name, nothing else."""
 
 # mapping from claim entity types to domain tags
 ENTITY_TYPE_TO_DOMAIN = {
+    # Legacy raw types (back-compat with already-extracted claims)
     "brain_region": DomainTag.NEUROANATOMY,
     "disease": DomainTag.DISEASE,
     "gene": DomainTag.GENE,
@@ -471,6 +472,10 @@ ENTITY_TYPE_TO_DOMAIN = {
     "network": DomainTag.CONNECTIVITY,
     "biomarker": DomainTag.BIOMARKER,
     "cognitive_function": DomainTag.COGNITIVE_FUNCTION,
+    # 7-atom aligned types (new, emitted by atom-aware extractor)
+    "rating_scale":    DomainTag.TREATMENT_OUTCOME,
+    "adverse_event":   DomainTag.TREATMENT_OUTCOME,
+    "individual_data": DomainTag.DATASET_VARIABLE,
 }
 
 
@@ -722,13 +727,69 @@ def resolve_entity(
     return new_id
 
 
+def _resolve_canonical_hint(kg: KnowledgeGraph, hint: str) -> Optional[str]:
+    """Try to resolve a canonical-ID hint emitted by the atom-aware extractor.
+
+    Accepts hints like "HGNC:APOE", "MSH:D000544", "ATC:N06DA02",
+    "OUTCOME:HAM-D", "COGAT_DISORDER:dso_1470", "COGAT_TASK:trm_xxx".
+
+    Strategy:
+    1. Direct ID lookup if the hint is already a node ID.
+    2. Prefix-aware fallback for HGNC: hints — try `HGNC:<symbol>` directly,
+       then look up the symbol as a preferred_name / alias (gene symbols are
+       widely indexed by symbol).
+    3. Otherwise: use the hint payload as a preferred_name lookup so that an
+       imprecise hint still benefits from the index without minting a node.
+    """
+    if not hint:
+        return None
+    hint = hint.strip()
+    if not hint:
+        return None
+
+    if kg.has_concept(hint):
+        return hint
+
+    if not _resolution_idx._built:
+        _resolution_idx.build(kg)
+
+    if ":" in hint:
+        prefix, payload = hint.split(":", 1)
+        payload = payload.strip()
+        if not payload:
+            return None
+        if prefix == "HGNC":
+            for cand in (payload, payload.upper()):
+                node_id = _resolution_idx.lookup_exact(cand) or _resolution_idx.lookup_alias(cand)
+                if node_id:
+                    return node_id
+        else:
+            node_id = _resolution_idx.lookup_exact(payload) or _resolution_idx.lookup_alias(payload)
+            if node_id:
+                return node_id
+        return None
+
+    return _resolution_idx.lookup_exact(hint) or _resolution_idx.lookup_alias(hint)
+
+
 def resolve_claim_entities(
     kg: KnowledgeGraph,
     claim: Claim,
 ) -> Claim:
-    """Resolve subject and object names to concept IDs."""
-    subject_id = resolve_entity(kg, claim.subject_name, claim.metadata.get("subject_type", ""))
-    object_id = resolve_entity(kg, claim.object_name, claim.metadata.get("object_type", ""))
+    """Resolve subject and object names to concept IDs.
+
+    Honors `subject_canonical_hint` / `object_canonical_hint` from the
+    atom-aware extractor first; falls back to name+type resolution otherwise.
+    """
+    meta = claim.metadata or {}
+
+    subject_id = _resolve_canonical_hint(kg, meta.get("subject_canonical_hint", ""))
+    if not subject_id:
+        subject_id = resolve_entity(kg, claim.subject_name, meta.get("subject_type", ""))
+
+    object_id = _resolve_canonical_hint(kg, meta.get("object_canonical_hint", ""))
+    if not object_id:
+        object_id = resolve_entity(kg, claim.object_name, meta.get("object_type", ""))
 
     if subject_id:
         claim.subject_id = subject_id

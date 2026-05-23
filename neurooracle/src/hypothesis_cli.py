@@ -79,39 +79,93 @@ def format_gap(g: Gap, index: int) -> str:
 
 # ── commands ───────────────────────────────────────────────────────────
 
-def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5, max_seeds=50, as_json=False):
+def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
+              max_seeds=50, as_json=False, legacy_domain_pairs=False,
+              task_filter=None, chain_filter=None):
     """Batch-generate hypotheses across the entire graph.
 
-    `domain_pairs` may be:
+    Default (atom-task driven): traverses every Task in CANONICAL_TASKS via
+    ``batch_generate_for_task`` and every TaskChain in CANONICAL_CHAINS via
+    ``batch_generate_for_chain``. Generated hypotheses are tagged with
+    ``task_name`` / ``chain_name`` / ``task_kind`` so downstream consumers
+    can filter by task.
+
+    Legacy mode (``--legacy-domain-pairs``): traverses raw KG domain pairs
+    with no task tagging. ``domain_pairs`` may be:
         None / "default" — DEFAULT_DOMAIN_PAIRS (clinical outcomes)
         "imaging"        — IMAGING_DOMAIN_PAIRS (UKB/ADNI/HCP)
         "decoding"       — DECODING_DOMAIN_PAIRS (NSD/BOLD5000/SEED brain decoding)
         "all"            — union of all three
         list[tuple]      — explicit (src_domain, tgt_domain) tuples
-    """
-    # Resolve string presets to actual pair lists
-    if isinstance(domain_pairs, str):
-        from .hypothesis_engine import (
-            DEFAULT_DOMAIN_PAIRS, IMAGING_DOMAIN_PAIRS, DECODING_DOMAIN_PAIRS,
-        )
-        preset_map = {
-            "default":  DEFAULT_DOMAIN_PAIRS,
-            "imaging":  IMAGING_DOMAIN_PAIRS,
-            "decoding": DECODING_DOMAIN_PAIRS,
-            "all":      DEFAULT_DOMAIN_PAIRS + IMAGING_DOMAIN_PAIRS + DECODING_DOMAIN_PAIRS,
-        }
-        if domain_pairs not in preset_map:
-            raise ValueError(f"Unknown domain-pairs preset: {domain_pairs}")
-        print(f"  domain-pairs preset: {domain_pairs} ({len(preset_map[domain_pairs])} pairs)")
-        domain_pairs = preset_map[domain_pairs]
 
-    print(f"Batch generating hypotheses (max_hops={max_hops}, max_paths_per_pair={max_paths}, max_seeds={max_seeds})...")
-    hypotheses = engine.batch_generate(
-        domain_pairs=domain_pairs,
-        max_hops=max_hops,
-        max_paths_per_pair=max_paths,
-        max_seeds_per_domain=max_seeds,
-    )
+    ``task_filter`` / ``chain_filter`` (task-driven only): comma-separated
+    name allow-lists, e.g. "biomarker_discovery,brain_age". None = run all.
+    """
+    if legacy_domain_pairs:
+        # Resolve string presets to actual pair lists
+        if isinstance(domain_pairs, str):
+            from .hypothesis_engine import (
+                DEFAULT_DOMAIN_PAIRS, IMAGING_DOMAIN_PAIRS, DECODING_DOMAIN_PAIRS,
+            )
+            preset_map = {
+                "default":  DEFAULT_DOMAIN_PAIRS,
+                "imaging":  IMAGING_DOMAIN_PAIRS,
+                "decoding": DECODING_DOMAIN_PAIRS,
+                "all":      DEFAULT_DOMAIN_PAIRS + IMAGING_DOMAIN_PAIRS + DECODING_DOMAIN_PAIRS,
+            }
+            if domain_pairs not in preset_map:
+                raise ValueError(f"Unknown domain-pairs preset: {domain_pairs}")
+            print(f"  legacy domain-pairs preset: {domain_pairs} ({len(preset_map[domain_pairs])} pairs)")
+            domain_pairs = preset_map[domain_pairs]
+
+        print(f"Legacy batch (max_hops={max_hops}, max_paths_per_pair={max_paths}, max_seeds={max_seeds})...")
+        hypotheses = engine.batch_generate(
+            domain_pairs=domain_pairs,
+            max_hops=max_hops,
+            max_paths_per_pair=max_paths,
+            max_seeds_per_domain=max_seeds,
+        )
+    else:
+        from .atoms import CANONICAL_TASKS, CANONICAL_CHAINS
+
+        task_names = None
+        if task_filter:
+            task_names = {n.strip() for n in task_filter.split(",") if n.strip()}
+        chain_names = None
+        if chain_filter:
+            chain_names = {n.strip() for n in chain_filter.split(",") if n.strip()}
+
+        tasks_to_run = [t for t in CANONICAL_TASKS
+                        if task_names is None or t.name in task_names]
+        chains_to_run = [c for c in CANONICAL_CHAINS
+                         if chain_names is None or c.name in chain_names]
+
+        print(f"Task-driven batch: {len(tasks_to_run)} tasks + {len(chains_to_run)} chains "
+              f"(max_hops={max_hops}, max_paths={max_paths}, max_seeds={max_seeds})")
+
+        hypotheses: list = []
+        for task in tasks_to_run:
+            print(f"  task: {task.name} [{task.signature}]")
+            hs = engine.batch_generate_for_task(
+                task,
+                max_hops=max_hops,
+                max_paths_per_pair=max_paths,
+                max_seeds_per_domain=max_seeds,
+            )
+            print(f"    -> {len(hs)} hypotheses")
+            hypotheses.extend(hs)
+
+        for chain in chains_to_run:
+            print(f"  chain: {chain.name} [{chain.signature}]")
+            hs = engine.batch_generate_for_chain(
+                chain,
+                max_hops_per_segment=max(max_hops // 2, 2),
+                max_paths_per_segment=max_paths,
+                max_seeds=max_seeds,
+            )
+            print(f"    -> {len(hs)} hypotheses")
+            hypotheses.extend(hs)
+
     print(f"Generated {len(hypotheses)} raw hypotheses")
 
     # auto-rank
@@ -628,11 +682,20 @@ def main():
     p_batch.add_argument("--max-hops", type=int, default=3)
     p_batch.add_argument("--max-paths", type=int, default=5, help="Max paths per domain pair seed")
     p_batch.add_argument("--max-seeds", type=int, default=50, help="Max seed concepts per domain")
+    p_batch.add_argument("--legacy-domain-pairs", action="store_true",
+                          help="Use raw KG domain-pair traversal (pre-atom-algebra). "
+                               "Default is task-driven generation over CANONICAL_TASKS + CANONICAL_CHAINS.")
     p_batch.add_argument("--domain-pairs", choices=["default", "imaging", "decoding", "all"],
                           default="default",
-                          help="Which domain-pair set to traverse: default (clinical outcomes), "
-                               "imaging (UKB/ADNI/HCP imaging), decoding (NSD/BOLD5000/SEED brain "
-                               "decoding), or all (union of the three)")
+                          help="(legacy mode only) Which domain-pair set to traverse: default (clinical "
+                               "outcomes), imaging (UKB/ADNI/HCP imaging), decoding (NSD/BOLD5000/SEED "
+                               "brain decoding), or all (union of the three)")
+    p_batch.add_argument("--tasks", default=None,
+                          help="Comma-separated task names to run (default: all CANONICAL_TASKS). "
+                               "Only used in task-driven mode.")
+    p_batch.add_argument("--chains", default=None,
+                          help="Comma-separated chain names to run (default: all CANONICAL_CHAINS). "
+                               "Only used in task-driven mode. Pass '' to skip chains entirely.")
 
     # rank
     p_rank = sub.add_parser("rank", help="Load and re-rank saved hypotheses")
@@ -741,7 +804,9 @@ def main():
     if args.command == "batch":
         cmd_batch(engine, args.output, domain_pairs=args.domain_pairs,
                   max_hops=args.max_hops, max_paths=args.max_paths,
-                  max_seeds=args.max_seeds, as_json=as_json)
+                  max_seeds=args.max_seeds, as_json=as_json,
+                  legacy_domain_pairs=args.legacy_domain_pairs,
+                  task_filter=args.tasks, chain_filter=args.chains)
     elif args.command == "rank":
         cmd_rank(engine, args.input, top_n=args.top, as_json=as_json)
     elif args.command == "paths":

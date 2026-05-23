@@ -1,7 +1,7 @@
-"""Phase 1: 结构化数据入库
+"""Phase 1: structured data ingestion.
 
-从 NeuroNames、MeSH、DisGeNET、CognitiveAtlas 构建知识图谱骨架。
-UMLS 对齐确保跨来源实体一致性。
+Build the KG skeleton from NeuroNames, MeSH, DisGeNET, and CognitiveAtlas.
+UMLS alignment keeps entities consistent across sources.
 
 Usage:
     python -m neurooracle.phase1

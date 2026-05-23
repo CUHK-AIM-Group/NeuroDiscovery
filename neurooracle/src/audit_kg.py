@@ -396,115 +396,115 @@ def format_md(nodes_r, edges_r, claims_r, hyp_r) -> str:
            "_Source: `neurooracle/data/full/`_",
            ""]
 
-    out.append("## Phase 1-2: 节点质量\n")
-    out.append(f"- 总节点数: **{nodes_r['total_nodes']:,}**")
-    out.append(f"  - Phase 1 已解析（NN/MeSH/CognitiveAtlas/etc.）: {nodes_r['phase1_resolved']:,}")
-    out.append(f"  - CLM_CONCEPT（Phase 2 LLM 新建）: **{nodes_r['clm_concepts']:,}**")
-    out.append(f"- 孤立节点（degree=0）: **{nodes_r['orphan_nodes']:,}**")
-    out.append(f"- CLM_CONCEPT degree ≤ 1（孤立或单一引用，价值低）: **{nodes_r['clm_isolated_count']:,}**")
-    out.append(f"- 无 aliases: {nodes_r['no_aliases_count']:,}")
-    out.append(f"- 无 definition: {nodes_r['no_definition_count']:,}")
-    out.append(f"- 无 external_ids: {nodes_r['no_external_ids_count']:,}")
-    out.append(f"- 短名字（≤3 chars 全小写）: **{nodes_r['short_name_count']:,}**")
-    out.append(f"- 模糊名字（仅由 'activity/function/effect' 等通用词构成）: **{nodes_r['vague_name_count']:,}**")
-    out.append(f"- 单词通用 hub（'brain', 'function' 等）: **{nodes_r['single_word_generic_count']:,}**")
-    out.append(f"- 纯数字/符号名字: {nodes_r['numeric_only_name_count']:,}")
-    out.append(f"- 空 preferred_name: {nodes_r['empty_name_count']:,}")
-    out.append(f"- 同名不同 id（疑似未合并别名）: **{nodes_r['duplicate_pref_name_count']:,}**\n")
+    out.append("## Phase 1-2: node quality\n")
+    out.append(f"- Total nodes: **{nodes_r['total_nodes']:,}**")
+    out.append(f"  - Phase 1 resolved (NN/MeSH/CognitiveAtlas/etc.): {nodes_r['phase1_resolved']:,}")
+    out.append(f"  - CLM_CONCEPT (Phase 2 LLM-created): **{nodes_r['clm_concepts']:,}**")
+    out.append(f"- Orphan nodes (degree=0): **{nodes_r['orphan_nodes']:,}**")
+    out.append(f"- CLM_CONCEPT degree <= 1 (orphan or single reference, low value): **{nodes_r['clm_isolated_count']:,}**")
+    out.append(f"- Missing aliases: {nodes_r['no_aliases_count']:,}")
+    out.append(f"- Missing definition: {nodes_r['no_definition_count']:,}")
+    out.append(f"- Missing external_ids: {nodes_r['no_external_ids_count']:,}")
+    out.append(f"- Short names (<=3 chars all lowercase): **{nodes_r['short_name_count']:,}**")
+    out.append(f"- Vague names (only generic words like 'activity/function/effect'): **{nodes_r['vague_name_count']:,}**")
+    out.append(f"- Single-word generic hubs ('brain', 'function', etc.): **{nodes_r['single_word_generic_count']:,}**")
+    out.append(f"- Pure numeric/symbol names: {nodes_r['numeric_only_name_count']:,}")
+    out.append(f"- Empty preferred_name: {nodes_r['empty_name_count']:,}")
+    out.append(f"- Duplicate preferred_name across ids (suspected unmerged aliases): **{nodes_r['duplicate_pref_name_count']:,}**\n")
 
-    out.append("### Source vocab 分布\n```json")
+    out.append("### Source vocab distribution\n```json")
     out.append(json.dumps(nodes_r["by_source_vocab"], indent=2, ensure_ascii=False))
     out.append("```\n")
-    out.append("### Domain 分布\n```json")
+    out.append("### Domain distribution\n```json")
     out.append(json.dumps(nodes_r["by_domain"], indent=2, ensure_ascii=False))
     out.append("```\n")
 
-    out.append("### High-degree hubs（degree ≥ 500，通用 hub 嫌疑）")
+    out.append("### High-degree hubs (degree >= 500, generic-hub suspects)")
     for ex in nodes_r["high_degree_hubs"]:
         out.append(f"- `{ex['id']}` **{ex['name']}** ({ex['vocab']}, degree={ex['degree']})")
 
     if nodes_r["short_name"]:
-        out.append("\n### 短名字示例")
+        out.append("\n### Short-name examples")
         for ex in nodes_r["short_name"][:15]:
-            out.append(f"- `{ex['id']}` → **{ex['name']}** ({ex['vocab']})")
+            out.append(f"- `{ex['id']}` -> **{ex['name']}** ({ex['vocab']})")
 
     if nodes_r["vague_name"]:
-        out.append("\n### 模糊名字示例")
+        out.append("\n### Vague-name examples")
         for ex in nodes_r["vague_name"][:15]:
-            out.append(f"- `{ex['id']}` → **{ex['name']}** ({ex['vocab']})")
+            out.append(f"- `{ex['id']}` -> **{ex['name']}** ({ex['vocab']})")
 
     if nodes_r["single_word_generic"]:
-        out.append("\n### 单词通用 hub 示例")
+        out.append("\n### Single-word generic hub examples")
         for ex in nodes_r["single_word_generic"][:15]:
-            out.append(f"- `{ex['id']}` → **{ex['name']}** ({ex['vocab']}, degree={ex['degree']})")
+            out.append(f"- `{ex['id']}` -> **{ex['name']}** ({ex['vocab']}, degree={ex['degree']})")
 
     if nodes_r["duplicate_pref_name_examples"]:
-        out.append("\n### 同名不同 id（top 20）")
+        out.append("\n### Duplicate preferred_name across ids (top 20)")
         for nm, ids in list(nodes_r["duplicate_pref_name_examples"].items())[:20]:
-            out.append(f"- **{nm}** → {len(ids)} ids: {ids[:4]}")
+            out.append(f"- **{nm}** -> {len(ids)} ids: {ids[:4]}")
 
     # ===== Edges =====
-    out.append("\n## Phase 2: 边质量\n")
-    out.append(f"- 总边数: **{edges_r['total_edges']:,}**")
-    out.append(f"- 模糊谓词 ({sorted(VAGUE_PREDICATES)}): **{edges_r['vague_predicate_count']:,}** "
+    out.append("\n## Phase 2: edge quality\n")
+    out.append(f"- Total edges: **{edges_r['total_edges']:,}**")
+    out.append(f"- Vague predicates ({sorted(VAGUE_PREDICATES)}): **{edges_r['vague_predicate_count']:,}** "
                f"({100*edges_r['vague_predicate_count']/max(1,edges_r['total_edges']):.1f}%)")
-    out.append(f"- 自环边: **{edges_r['self_loops']:,}**")
-    out.append(f"- confidence < 0.3 的边: **{edges_r['low_confidence_lt_0_3']:,}**")
-    out.append(f"- 无 evidence_ref: {edges_r['no_evidence_ref']:,}")
+    out.append(f"- Self-loop edges: **{edges_r['self_loops']:,}**")
+    out.append(f"- Edges with confidence < 0.3: **{edges_r['low_confidence_lt_0_3']:,}**")
+    out.append(f"- Missing evidence_ref: {edges_r['no_evidence_ref']:,}")
     out.append(f"- negated edges: {edges_r['negated_count']:,}")
-    out.append(f"- 重复 triple (s, rel, t): **{edges_r['duplicate_triples']:,}**\n")
-    out.append("### Relation 分布 top 30\n```json")
+    out.append(f"- Duplicate triples (s, rel, t): **{edges_r['duplicate_triples']:,}**\n")
+    out.append("### Relation distribution (top 30)\n```json")
     out.append(json.dumps(edges_r["by_relation"], indent=2, ensure_ascii=False))
     out.append("```\n")
 
     # ===== Claims =====
-    out.append("\n## Phase 2: Claims 内容质量\n")
+    out.append("\n## Phase 2: claim content quality\n")
     n = max(1, claims_r["total_claims"])
-    out.append(f"- 总 claims: **{claims_r['total_claims']:,}**")
-    out.append(f"- raw_text 缺失: {claims_r['raw_text_missing']:,}")
-    out.append(f"- raw_text < 60 chars（过短，证据弱）: {claims_r['raw_text_short_lt_60']:,}")
-    out.append(f"- subject_id == object_id（自指 claim）: **{claims_r['self_claim_subj_eq_obj']:,}**")
-    out.append(f"- predicate 关键词不在 raw_text 中: **{claims_r['predicate_keyword_absent_in_raw']:,}** "
+    out.append(f"- Total claims: **{claims_r['total_claims']:,}**")
+    out.append(f"- raw_text missing: {claims_r['raw_text_missing']:,}")
+    out.append(f"- raw_text < 60 chars (too short, weak evidence): {claims_r['raw_text_short_lt_60']:,}")
+    out.append(f"- subject_id == object_id (self-referential claim): **{claims_r['self_claim_subj_eq_obj']:,}**")
+    out.append(f"- predicate keyword absent from raw_text: **{claims_r['predicate_keyword_absent_in_raw']:,}** "
                f"({100*claims_r['predicate_keyword_absent_in_raw']/n:.1f}%)")
-    out.append(f"- object 名称多数 token 不在 raw_text（LLM 注入嫌疑）: **{claims_r['object_tokens_absent_from_raw']:,}** "
+    out.append(f"- object name: majority of tokens absent from raw_text (LLM-injection suspect): **{claims_r['object_tokens_absent_from_raw']:,}** "
                f"({100*claims_r['object_tokens_absent_from_raw']/n:.1f}%)")
-    out.append(f"- subject 名称多数 token 不在 raw_text: {claims_r['subject_tokens_absent_from_raw']:,}")
-    out.append(f"- 无 p_value 无 effect_size（弱量化证据）: {claims_r['no_p_value_no_effect_size']:,} "
+    out.append(f"- subject name: majority of tokens absent from raw_text: {claims_r['subject_tokens_absent_from_raw']:,}")
+    out.append(f"- No p_value and no effect_size (weak quantitative evidence): {claims_r['no_p_value_no_effect_size']:,} "
                f"({100*claims_r['no_p_value_no_effect_size']/n:.1f}%)")
-    out.append(f"- 来自 narrative_review/review 类研究: {claims_r['narrative_review_count']:,} "
+    out.append(f"- From narrative_review/review studies: {claims_r['narrative_review_count']:,} "
                f"({100*claims_r['narrative_review_count']/n:.1f}%)")
-    out.append(f"- 同 PMID 同 (s, o) 多谓词（待 dedup）: **{claims_r['same_pmid_same_pair_diff_predicate']:,}**\n")
+    out.append(f"- Same PMID + same (s, o) with multiple predicates (needs dedup): **{claims_r['same_pmid_same_pair_diff_predicate']:,}**\n")
 
-    out.append("### Predicate 分布\n```json")
+    out.append("### Predicate distribution\n```json")
     out.append(json.dumps(claims_r["by_predicate"], indent=2, ensure_ascii=False))
     out.append("```\n")
 
     if claims_r["examples_self_claim"]:
-        out.append("\n### Subject == Object 自指 claim 示例")
+        out.append("\n### Subject == Object self-referential claim examples")
         for ex in claims_r["examples_self_claim"][:6]:
             out.append(f"- PMID {ex['pmid']} | {ex['predicate']} | **{ex['subject_name']}** = **{ex['object_name']}**")
             out.append(f"  > {ex['raw_preview']}")
 
     if claims_r["examples_object_injected"]:
-        out.append("\n### Object token 缺失（LLM 注入嫌疑）示例")
+        out.append("\n### Object-token-absent (LLM-injection suspect) examples")
         for ex in claims_r["examples_object_injected"][:8]:
-            out.append(f"- PMID {ex['pmid']} | {ex['subject']} `{ex['predicate']}` → **{ex['object']}**")
+            out.append(f"- PMID {ex['pmid']} | {ex['subject']} `{ex['predicate']}` -> **{ex['object']}**")
             out.append(f"  > {ex['raw_preview']}")
 
     if claims_r["examples_subject_injected"]:
-        out.append("\n### Subject token 缺失示例")
+        out.append("\n### Subject-token-absent examples")
         for ex in claims_r["examples_subject_injected"][:6]:
-            out.append(f"- PMID {ex['pmid']} | **{ex['subject']}** `{ex['predicate']}` → {ex['object']}")
+            out.append(f"- PMID {ex['pmid']} | **{ex['subject']}** `{ex['predicate']}` -> {ex['object']}")
             out.append(f"  > {ex['raw_preview']}")
 
     if claims_r["examples_vague_plus_precise_pair"]:
-        out.append("\n### 模糊+精确谓词同源 claim 示例（重复 claim）")
+        out.append("\n### Vague + precise predicate sharing same source claim (duplicate claim) examples")
         for ex in claims_r["examples_vague_plus_precise_pair"][:8]:
-            out.append(f"- PMID {ex['pmid']} | {ex['subject_id']} → {ex['object_id']}: {ex['predicates']}")
+            out.append(f"- PMID {ex['pmid']} | {ex['subject_id']} -> {ex['object_id']}: {ex['predicates']}")
 
     # ===== Hypotheses =====
-    out.append("\n## Phase 3-4: 假设质量\n")
-    out.append("| 文件 | 总数 | 重复 path | 含模糊谓词 | hub-to-hub | 含未解析 CLM 端点 | 单节点 path | path 长度分布 |")
+    out.append("\n## Phase 3-4: hypothesis quality\n")
+    out.append("| file | count | duplicate path | vague predicate | hub-to-hub | unresolved CLM endpoint | single-node path | path length dist |")
     out.append("|---|---|---|---|---|---|---|---|")
     for fname, rec in hyp_r["files"].items():
         if "error" in rec:
@@ -515,20 +515,20 @@ def format_md(nodes_r, edges_r, claims_r, hyp_r) -> str:
                    f"| {rec['single_node_endpoint_unresolved_clm']} "
                    f"| {rec['single_node_path']} | {rec['path_length_counter']} |")
 
-    out.append("\n### 各假设文件细节")
+    out.append("\n### Per-file hypothesis details")
     for fname, rec in hyp_r["files"].items():
         if "error" in rec:
             continue
         out.append(f"#### {fname}")
-        out.append(f"- 假设数: {rec['count']}")
-        out.append(f"- 重复 path: {rec['duplicate_path']}")
-        out.append(f"- 含模糊谓词: {rec['vague_predicate_in_path']}")
-        out.append(f"- hub-to-hub 路径: {rec['hub_to_hub']}")
-        out.append(f"- 含未解析 CLM_CONCEPT 端点: {rec['single_node_endpoint_unresolved_clm']}")
+        out.append(f"- Hypothesis count: {rec['count']}")
+        out.append(f"- Duplicate path: {rec['duplicate_path']}")
+        out.append(f"- Contains vague predicate: {rec['vague_predicate_in_path']}")
+        out.append(f"- hub-to-hub paths: {rec['hub_to_hub']}")
+        out.append(f"- Contains unresolved CLM_CONCEPT endpoint: {rec['single_node_endpoint_unresolved_clm']}")
         out.append(f"- score < 0.2: {rec['low_score_lt_0_2']}")
         out.append(f"- target_domain: {rec['target_domain_counter']}")
         if rec.get("endpoint_examples"):
-            out.append("- 含未解析端点示例:")
+            out.append("- Unresolved endpoint examples:")
             for ex in rec["endpoint_examples"]:
                 out.append(f"  - {ex['path']}  (ids={ex['endpoint_ids']})")
 

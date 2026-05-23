@@ -1,6 +1,6 @@
-"""Phase 4: 假设扩展
+"""Phase 4: hypothesis expansion.
 
-文献新颖性检查 + 进化变异扩展假设空间。
+Literature novelty check + evolutionary mutation to expand the hypothesis space.
 
 Usage:
     python -m neurooracle.phase4 evolve --input neurooracle/data/hypotheses.json

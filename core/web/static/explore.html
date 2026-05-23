@@ -882,14 +882,23 @@ body {
       <input type="text" class="search-input" id="searchInput"
              data-i18n-ph="search_placeholder"
              placeholder="Search biomarker / outcome / concept (≥2 chars)" autocomplete="off">
-      <div class="domain-chips" id="domainChips">
-        <span class="chip active" data-domain="" data-i18n="domain_all">All</span>
-        <span class="chip" data-domain="biomarker">biomarker</span>
-        <span class="chip" data-domain="imaging_feature">imaging</span>
-        <span class="chip" data-domain="cognitive_function">cognitive</span>
-        <span class="chip" data-domain="disease">disease</span>
-        <span class="chip" data-domain="gene">gene</span>
-        <span class="chip" data-domain="neuroanatomy">brain</span>
+      <select class="domain-select" id="atomSelect" style="width:100%;margin-top:6px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
+        <option value=""                data-i18n="atom_all">All</option>
+        <option value="disease">Disease</option>
+        <option value="drug">Drug</option>
+        <option value="imaging_marker">Imaging marker</option>
+        <option value="gene_target">Gene / target</option>
+        <option value="cognitive_task">Cognitive task</option>
+        <option value="outcome">Outcome</option>
+        <option value="individual_data">Individual data</option>
+      </select>
+      <div class="task-row" style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+        <select id="taskSelect" style="flex:1;min-width:160px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
+          <option value="">— Task / Chain —</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);">
+          <input type="checkbox" id="strictChainToggle" disabled> strict chain
+        </label>
       </div>
     </div>
     <div class="results" id="results">
@@ -973,8 +982,11 @@ body {
 // ── State ─────────────────────────────────────────────────────────────
 const state = {
   currentNode: null,
+  currentNodeAtoms: [],   // atoms of the current query node (for task-availability)
+  taskPaths: [],          // current task-paths response: full per-path node lists
+  lockedPaths: null,      // Set<pid> — when set, hover is overridden by this lock
   focusEdge: null,    // {source, target} — a single-click edge inspection
-  domainFilter: "",
+  atomFilter: "",
   depth: 1,
   limit: 30,
   edgeTypes: "all",
@@ -997,21 +1009,34 @@ const state = {
   transitioning: false, // guard to prevent overlapping zoom animations
 };
 
-const DOMAIN_COLORS = {
-  biomarker: "#10b981",
-  imaging_feature: "#3b82f6",
-  cognitive_function: "#8b5cf6",
-  disease: "#ef4444",
-  gene: "#f59e0b",
-  neuroanatomy: "#06b6d4",
-  drug: "#ec4899",
-  neurotransmitter: "#f97316",
-  cell_type: "#14b8a6",
-  paradigm: "#a855f7",
-  connectivity: "#0ea5e9",
-  dataset_variable: "#84cc16",
-  claim: "#94a3b8",
+const ATOM_COLORS = {
+  disease:         "#ef4444",
+  drug:            "#ec4899",
+  imaging_marker:  "#3b82f6",
+  gene_target:     "#f59e0b",
+  cognitive_task:  "#a855f7",
+  outcome:         "#84cc16",
+  individual_data: "#14b8a6",
 };
+const ATOM_SHORT = {
+  disease: "D", drug: "Rx", imaging_marker: "IM", gene_target: "G",
+  cognitive_task: "Tk", outcome: "O", individual_data: "Idv",
+};
+const ATOM_FULL = {
+  disease: "Disease",
+  drug: "Drug",
+  imaging_marker: "Imaging marker",
+  gene_target: "Gene / target",
+  cognitive_task: "Cognitive task",
+  outcome: "Outcome",
+  individual_data: "Individual data",
+};
+function atomBadges(atoms) {
+  if (!atoms || !atoms.length) return "";
+  return atoms.map((a) =>
+    `<span class="domain-tag" title="${a}" style="background:${ATOM_COLORS[a] || "#94a3b8"};">${ATOM_SHORT[a] || a}</span>`
+  ).join("");
+}
 const GRAY = "#d1d5db";
 const GRAY_DARK = "#64748b";
 const DIM_EDGE = "#e5e7eb";
@@ -1024,7 +1049,7 @@ const I18N = {
     cold_start: "First load reads the 180MB knowledge graph (takes ~30–60s)…",
     search_placeholder: "Search biomarker / outcome / concept (≥2 chars)",
     search_hint: "Enter a keyword to search concepts",
-    domain_all: "All",
+    atom_all: "All",
     back: "Back",
     depth: "Depth",
     neighbors: "Neighbors",
@@ -1098,7 +1123,7 @@ const I18N = {
     cold_start: "首次打开需要加载 180MB 知识图谱（约 30–60 秒）…",
     search_placeholder: "搜索 biomarker / outcome / 概念（≥2 字符）",
     search_hint: "输入关键词，快速检索概念",
-    domain_all: "全部",
+    atom_all: "全部",
     back: "返回",
     depth: "深度",
     neighbors: "邻域",
@@ -1430,12 +1455,8 @@ $("searchInput").addEventListener("input", (e) => {
   }
   searchTimer = setTimeout(() => runSearch(q), 300);
 });
-$("domainChips").addEventListener("click", (e) => {
-  const chip = e.target.closest(".chip");
-  if (!chip) return;
-  [...$("domainChips").children].forEach((c) => c.classList.remove("active"));
-  chip.classList.add("active");
-  state.domainFilter = chip.dataset.domain || "";
+$("atomSelect").addEventListener("change", (e) => {
+  state.atomFilter = e.target.value || "";
   const q = $("searchInput").value.trim();
   if (q.length >= 2) runSearch(q);
   else loadDefaultList();
@@ -1449,7 +1470,7 @@ async function loadDefaultList() {
   try {
     const url = new URL("/api/kg/search", location.origin);
     url.searchParams.set("q", "");
-    if (state.domainFilter) url.searchParams.set("domain", state.domainFilter);
+    if (state.atomFilter) url.searchParams.set("atom", state.atomFilter);
     url.searchParams.set("quality", state.quality);
     url.searchParams.set("limit", "50");
     const r = await fetch(url).then((r) => r.json());
@@ -1468,7 +1489,7 @@ async function runSearch(q) {
   try {
     const url = new URL("/api/kg/search", location.origin);
     url.searchParams.set("q", q);
-    if (state.domainFilter) url.searchParams.set("domain", state.domainFilter);
+    if (state.atomFilter) url.searchParams.set("atom", state.atomFilter);
     url.searchParams.set("quality", state.quality);
     url.searchParams.set("limit", "30");
     const r = await fetch(url).then((r) => r.json());
@@ -1485,10 +1506,6 @@ function renderResults(items) {
     return;
   }
   items.forEach((it) => {
-    const primaryDomain = (it.domain_tags || []).find((d) => d !== "claim") || (it.domain_tags || [])[0] || "";
-    const domainBadge = primaryDomain
-      ? `<span class="domain-tag" title="${escapeHtml((it.domain_tags || []).join(', '))}" style="background:${DOMAIN_COLORS[primaryDomain] || "#94a3b8"};">${escapeHtml(primaryDomain)}</span>`
-      : "";
     const noiseMark = it.is_noise ? '<span class="noise-mini" title="possible noise"></span>' : "";
     const node = el("div", {
       className: "result-item" + (it.is_noise ? " is-noise" : ""),
@@ -1496,7 +1513,7 @@ function renderResults(items) {
     }, [
       el("div", { className: "result-name", html: escapeHtml(it.name) + noiseMark }),
       el("div", { className: "result-meta", html: `
-        ${domainBadge}
+        ${atomBadges(it.atoms)}
         <span class="badge">${(it.n_claims || 0).toLocaleString()} claims</span>
         <span class="badge">${it.n_hypotheses || 0} hyps</span>
       `}),
@@ -1605,6 +1622,399 @@ async function navigateBack() {
 
 $("backBtn").addEventListener("click", () => navigateBack());
 
+// ── Task / chain subgraph ────────────────────────────────────────────
+//
+// Behaviour: the dropdown options remain in the DOM at all times, but each
+// option is enabled only when the currently-selected query node has an atom
+// that intersects the task/chain atom set. With no query node selected, every
+// real option is greyed out — the user sees what's available but can't pick.
+const taskState = { tasks: [], chains: [] };
+
+function _atomSetFor(opt) {
+  // Stored as comma-separated atom values on data-atoms.
+  return new Set((opt.dataset.atoms || "").split(",").filter(Boolean));
+}
+
+function refreshTaskOptionAvailability() {
+  const sel = $("taskSelect");
+  if (!sel) return;
+  const queryAtoms = new Set(state.currentNodeAtoms || []);
+  const hasQuery = !!state.currentNode && queryAtoms.size > 0;
+  let enabledCount = 0;
+  [...sel.options].forEach((opt) => {
+    if (!opt.value) { opt.disabled = false; return; }  // placeholder
+    const atomSet = _atomSetFor(opt);
+    const hit = hasQuery && [...queryAtoms].some((a) => atomSet.has(a));
+    opt.disabled = !hit;
+    if (hit) enabledCount += 1;
+  });
+  // If the currently-selected option became disabled, reset.
+  if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled) {
+    sel.value = "";
+    $("strictChainToggle").disabled = true;
+    $("strictChainToggle").checked = false;
+  }
+  // Update placeholder hint.
+  const placeholder = sel.options[0];
+  if (placeholder && !placeholder.value) {
+    placeholder.textContent = hasQuery
+      ? (enabledCount ? "— Task / Chain —" : "— No task covers this node —")
+      : "— Select a query node first —";
+  }
+}
+
+async function loadTasks() {
+  try {
+    const r = await fetch("/api/kg/tasks").then((r) => r.json());
+    const sel = $("taskSelect");
+    if (!sel || !r) return;
+    taskState.tasks = r.tasks || [];
+    taskState.chains = r.chains || [];
+    const optHtml = (label, items, kind) => items.length
+      ? `<optgroup label="${label}">` + items.map((it) => {
+          const atoms = (kind === "chain")
+            ? (it.chain || [])
+            : ([...(it.inputs || []), it.output].filter(Boolean));
+          const atomAttr = [...new Set(atoms)].join(",");
+          return `<option value="${escapeHtml(it.name)}" data-kind="${kind}" data-atoms="${escapeHtml(atomAttr)}">${escapeHtml(it.name)}</option>`;
+        }).join("") + `</optgroup>`
+      : "";
+    sel.innerHTML = `<option value="">— Select a query node first —</option>` +
+      optHtml("Chains (≥3-hop)", taskState.chains, "chain") +
+      optHtml("Tasks", taskState.tasks, "task");
+    refreshTaskOptionAvailability();
+  } catch (e) {}
+}
+loadTasks();
+
+$("taskSelect").addEventListener("change", async (e) => {
+  const opt = e.target.selectedOptions[0];
+  const name = opt && opt.value;
+  const kind = (opt && opt.dataset.kind) || "task";
+  const strictBox = $("strictChainToggle");
+  strictBox.disabled = !(name && kind === "chain");
+  if (!name) { strictBox.checked = false; return; }
+  if (!state.currentNode) {
+    e.target.value = "";
+    return;
+  }
+  await loadTaskSubgraph(name, kind, strictBox.checked);
+});
+$("strictChainToggle").addEventListener("change", () => {
+  const sel = $("taskSelect");
+  const opt = sel.selectedOptions[0];
+  if (!opt || !opt.value) return;
+  loadTaskSubgraph(opt.value, opt.dataset.kind || "task", $("strictChainToggle").checked);
+});
+
+async function loadTaskSubgraph(name, kind, strict) {
+  $("graphInfo").textContent = t("loading") + "…";
+  if (!state.currentNode) {
+    $("graphInfo").textContent = "select a query node first";
+    return;
+  }
+  try {
+    const url = new URL("/api/kg/task-paths", location.origin);
+    url.searchParams.set("task", name);
+    url.searchParams.set("kind", kind);
+    url.searchParams.set("anchor", state.currentNode);
+    url.searchParams.set("limit", "30");
+    const r = await fetch(url).then((r) => r.json());
+    if (r.error) { $("graphInfo").textContent = r.error; return; }
+    renderTaskGraph(r);
+  } catch (err) {
+    $("graphInfo").textContent = "task subgraph load failed";
+  }
+}
+
+function renderTaskGraph(data) {
+  $("graphEmpty").style.display = "none";
+  $("legend").style.display = "flex";
+  $("hoverHint").style.display = "block";
+  state.showAllInitial = true;
+  const nodes = data.nodes || [];
+  const edges = data.edges || [];
+  const nPaths = data.n_paths != null ? data.n_paths : (data.paths || []).length;
+  const seqStr = (data.atom_sequence || []).join(" → ");
+  $("graphInfo").textContent = `${data.kind}: ${data.task} · ${nPaths} paths through anchor` +
+    (seqStr ? ` · ${seqStr}` : "") + ` · ${nodes.length} nodes / ${edges.length} edges`;
+  state.history = []; updateBackBtn();
+  state.currentNode = data.anchor || state.currentNode || null;
+  state.focusEdge = null; state.pinnedNode = null;
+  state.taskPaths = data.paths || [];
+  state.lockedPaths = null;
+
+  if (state.layoutWorker) { try { state.layoutWorker.kill(); } catch (e) {} state.layoutWorker = null; }
+  if (state.sigma) { state.sigma.kill(); state.sigma = null; }
+
+  const Graph = graphology.Graph;
+  const graph = new Graph({ type: "directed", multi: false, allowSelfLoops: false });
+  nodes.forEach((n, i) => {
+    const ang = (i / Math.max(1, nodes.length)) * 2 * Math.PI;
+    const r = 1.5 + Math.random() * 1.5;
+    const isAnchor = !!n.is_anchor;
+    graph.addNode(n.id, {
+      label: n.label, originalLabel: n.label,
+      size: isAnchor ? 22 : 14, baseSize: isAnchor ? 22 : 14,
+      color: n.color, baseColor: n.color,
+      x: isAnchor ? 0 : Math.cos(ang) * r, y: isAnchor ? 0 : Math.sin(ang) * r,
+      domain: n.primary_atom, is_center: isAnchor, is_claim: false,
+      is_noise: !!n.is_noise, depth: isAnchor ? 0 : 1,
+      paths: n.path_ids || [],
+    });
+  });
+  edges.forEach((e) => {
+    if (!graph.hasNode(e.source) || !graph.hasNode(e.target)) return;
+    if (graph.hasEdge(e.source, e.target)) return;
+    graph.addEdge(e.source, e.target, {
+      label: e.label, color: e.color, baseColor: e.color, size: 1.5,
+      relation: e.label, relations_fwd: [e.label], relations_rev: [],
+      bidirectional: false, curvature: 0.2,
+      paths: e.path_ids || [],
+    });
+  });
+
+  state.graph = graph;
+  const container = $("sigma-container");
+  const curveProgram = Sigma.rendering && Sigma.rendering.EdgeCurveProgram;
+  const edgeSettings = curveProgram
+    ? { defaultEdgeType: "curved", edgeProgramClasses: { curved: curveProgram } }
+    : { defaultEdgeType: "arrow" };
+
+  // Compute the active path-set: locked > hovered. When set, every render
+  // step (node/edge reducer) consults this to decide what's lit.
+  function activePathSet() {
+    if (state.lockedPaths && state.lockedPaths.size) return state.lockedPaths;
+    const hover = state.hoveredNode;
+    if (!hover || !graph.hasNode(hover)) return null;
+    const pids = graph.getNodeAttribute(hover, "paths") || [];
+    return new Set(pids);
+  }
+
+  state.sigma = new Sigma(graph, container, {
+    ...edgeSettings,
+    padding: 100, renderEdgeLabels: false,
+    labelSize: state.fontSize, labelWeight: "600",
+    labelRenderedSizeThreshold: 4,
+    nodeReducer(nid, d) {
+      const res = { ...d };
+      if (state.showAllInitial) { res.color = d.baseColor; res.label = d.originalLabel; res.forceLabel = true; return res; }
+      // Anchor always lit and labelled.
+      if (d.is_center) {
+        res.color = d.baseColor; res.label = d.originalLabel;
+        res.forceLabel = true;
+        res.size = d.baseSize * (nid === state.hoveredNode ? 1.1 : 1.0);
+        return res;
+      }
+      const activeSet = activePathSet();
+      if (!activeSet) {
+        // Idle: keep nodes coloured, hide labels to keep the bundle readable.
+        res.color = d.baseColor;
+        res.label = "";
+        res.forceLabel = false;
+        return res;
+      }
+      const onPath = (d.paths || []).some((pid) => activeSet.has(pid));
+      if (onPath) {
+        res.color = d.baseColor;
+        res.label = d.originalLabel;
+        res.forceLabel = true;
+        if (nid === state.hoveredNode) res.size = d.baseSize * 1.2;
+      } else {
+        res.color = GRAY; res.label = ""; res.forceLabel = false;
+      }
+      return res;
+    },
+    edgeReducer(eid, d) {
+      const res = { ...d };
+      if (state.showAllInitial) { res.color = d.baseColor; res.label = d.relation; res.size = 2; return res; }
+      const activeSet = activePathSet();
+      if (!activeSet) {
+        res.color = d.baseColor; res.label = ""; res.size = 1.5;
+        return res;
+      }
+      const onPath = (d.paths || []).some((pid) => activeSet.has(pid));
+      if (onPath) { res.color = d.baseColor; res.label = d.relation; res.size = 2.5; }
+      else { res.color = DIM_EDGE; res.label = ""; res.size = 1; }
+      return res;
+    },
+  });
+  try {
+    const settings = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
+    state.layoutWorker = new graphologyLibrary.FA2Layout(graph, { settings });
+    state.layoutWorker.start();
+    setTimeout(() => { try { state.layoutWorker && state.layoutWorker.stop(); } catch (e) {} }, 2500);
+  } catch (e) {}
+  state.sigma.on("enterNode", ({ node }) => { state.hoveredNode = node; state.sigma.refresh(); });
+  state.sigma.on("leaveNode", () => { state.hoveredNode = null; state.sigma.refresh(); });
+
+  // Click vs double-click: detect double via 260ms timer.
+  //  - single click: lock the chains containing this node + load claims
+  //    for every adjacent edge across those chains.
+  //  - double click: switch query node to this one + reset task dropdown.
+  let taskSingleClickTimer = null;
+  state.sigma.on("clickNode", ({ node }) => {
+    if (taskSingleClickTimer) { clearTimeout(taskSingleClickTimer); taskSingleClickTimer = null; return; }
+    taskSingleClickTimer = setTimeout(() => {
+      taskSingleClickTimer = null;
+      lockPathsThroughNode(node);
+    }, 260);
+  });
+  state.sigma.on("doubleClickNode", (e) => {
+    const { node } = e;
+    if (e.preventSigmaDefault) e.preventSigmaDefault();
+    if (e.event?.original?.preventDefault) e.event.original.preventDefault();
+    if (taskSingleClickTimer) { clearTimeout(taskSingleClickTimer); taskSingleClickTimer = null; }
+    if (state.transitioning) return;
+    resetTaskSelect();
+    navigateIntoNode(node);
+  });
+  // Click empty canvas → unlock and restore detail for the query node.
+  state.sigma.on("clickStage", () => {
+    if (state.lockedPaths) {
+      state.lockedPaths = null;
+      if (state.sigma) state.sigma.refresh();
+      if (state.currentNode) loadDetail(state.currentNode);
+    }
+  });
+  setTimeout(() => { state.showAllInitial = false; if (state.sigma) state.sigma.refresh(); }, 2000);
+}
+
+// ── Task-mode helpers: lock-through-node, claims fetch, dropdown reset ──
+function lockPathsThroughNode(node) {
+  if (!state.graph || !state.graph.hasNode(node)) return;
+  const pids = state.graph.getNodeAttribute(node, "paths") || [];
+  if (!pids.length) return;
+  state.lockedPaths = new Set(pids);
+  if (state.sigma) state.sigma.refresh();
+  const subset = (state.taskPaths || []).filter((_, idx) => state.lockedPaths.has(idx));
+  loadPathClaims(subset, node);
+}
+
+async function loadPathClaims(paths, focusNode) {
+  const pane = $("detailPane");
+  pane.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
+  try {
+    const r = await fetch("/api/kg/path-claims", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths, limit: 30 }),
+    }).then((r) => r.json());
+    renderPathClaims(r, focusNode);
+  } catch (e) {
+    pane.innerHTML = `<div class="detail-empty" style="color:var(--danger);">load failed</div>`;
+  }
+}
+
+function renderPathClaims(data, focusNode) {
+  const pane = $("detailPane");
+  const edgesArr = data.edges || [];
+  const focusName = (state.graph && state.graph.hasNode(focusNode))
+    ? (state.graph.getNodeAttribute(focusNode, "originalLabel") || focusNode)
+    : focusNode;
+
+  if (!edgesArr.length) {
+    pane.innerHTML = `
+      <div class="focus-banner">
+        <span>Locked chains through <b>${escapeHtml(focusName)}</b></span>
+        <span class="close-x" id="closePathBtn" title="Unlock">×</span>
+      </div>
+      <div class="detail-section"><div class="results-hint">${t("no_sources")}</div></div>`;
+    $("closePathBtn")?.addEventListener("click", unlockPaths);
+    return;
+  }
+
+  const sectionsHtml = edgesArr.map((edge) => {
+    const curated = edge.curated_edges || [];
+    const claims = edge.claims || [];
+    const curatedHtml = curated.length ? `
+      <div style="margin-bottom:8px;">
+        ${curated.map((e) => `
+          <div class="item-card">
+            <div class="item-head">
+              <span class="predicate">${escapeHtml(e.relation_type || "?")}</span>
+              <span class="conf">conf ${fmt(e.confidence, 2)}</span>
+            </div>
+            <div class="triple">
+              <b>${escapeHtml(e.from_name)}</b>
+              <span class="arrow">→</span>
+              <b>${escapeHtml(e.to_name)}</b>
+            </div>
+            <div class="evidence-row">
+              <span>vocab: ${escapeHtml(e.source_vocab)}</span>
+              ${e.evidence_ref ? `<span>${escapeHtml(e.evidence_ref.slice(0, 60))}</span>` : ""}
+            </div>
+          </div>`).join("")}
+      </div>` : "";
+    const claimsHtml = claims.map((c) => {
+      const pmid = c.paper?.pmid;
+      const doi = c.paper?.doi;
+      const year = c.paper?.year;
+      const paperLinks = [
+        pmid ? `<a class="badge link" href="${c.paper.pubmed_url}" target="_blank" rel="noopener">${t("pubmed")} ${pmid} ↗</a>` : null,
+        doi ? `<a class="badge link" href="${c.paper.doi_url}" target="_blank" rel="noopener">${t("doi")} ↗</a>` : null,
+        year ? `<span class="badge">${year}</span>` : null,
+        c.paper?.journal ? `<span class="badge" title="${escapeHtml(c.paper.journal)}">${escapeHtml((c.paper.journal || "").slice(0, 26))}</span>` : null,
+      ].filter(Boolean).join("");
+      const evRow = [
+        c.evidence?.study_type ? `<span>${escapeHtml(c.evidence.study_type)}</span>` : null,
+        c.evidence?.p_value != null ? `<span>p=${c.evidence.p_value}</span>` : null,
+        c.evidence?.sample_size ? `<span>n=${c.evidence.sample_size}</span>` : null,
+      ].filter(Boolean).join("");
+      return `
+        <div class="item-card">
+          <div class="item-head">
+            <span class="predicate">${escapeHtml(c.predicate || "?")}</span>
+            <span class="conf">conf ${fmt(c.confidence, 2)}</span>
+          </div>
+          <div class="triple">
+            <b>${escapeHtml(c.subject_name)}</b>
+            <span class="arrow">→</span>
+            <b>${escapeHtml(c.object_name)}</b>
+          </div>
+          ${c.raw_text ? `<div class="raw-text">${escapeHtml(c.raw_text)}</div>` : ""}
+          ${evRow ? `<div class="evidence-row">${evRow}</div>` : ""}
+          ${paperLinks ? `<div class="paper-row">${paperLinks}</div>` : ""}
+        </div>`;
+    }).join("");
+    return `
+      <div class="detail-section">
+        <h3>
+          <b>${escapeHtml(edge.from_name)}</b>
+          <span class="arrow"> ↔ </span>
+          <b>${escapeHtml(edge.to_name)}</b>
+          <span class="count">${edge.total_claims || 0}</span>
+        </h3>
+        ${curatedHtml}
+        ${claimsHtml}
+      </div>`;
+  }).join("");
+
+  pane.innerHTML = `
+    <div class="focus-banner">
+      <span>Locked chains through <b>${escapeHtml(focusName)}</b> · ${edgesArr.length} edges</span>
+      <span class="close-x" id="closePathBtn" title="Unlock">×</span>
+    </div>
+    ${sectionsHtml}`;
+  $("closePathBtn")?.addEventListener("click", unlockPaths);
+}
+
+function unlockPaths() {
+  state.lockedPaths = null;
+  if (state.sigma) state.sigma.refresh();
+  if (state.currentNode) loadDetail(state.currentNode);
+}
+
+function resetTaskSelect() {
+  const sel = $("taskSelect");
+  if (sel) sel.value = "";
+  const strictBox = $("strictChainToggle");
+  if (strictBox) { strictBox.checked = false; strictBox.disabled = true; }
+  state.taskPaths = [];
+  state.lockedPaths = null;
+  refreshTaskOptionAvailability();
+}
+
 async function loadNeighborhood(nodeId) {
   const url = new URL(`/api/kg/node/${encodeURIComponent(nodeId)}/neighborhood`, location.origin);
   url.searchParams.set("depth", state.depth);
@@ -1679,17 +2089,21 @@ function renderGraph(data) {
       depth: nodeDepth,
     });
   });
-  // When depth>=2, only show edges that touch a depth-2 node (hide center↔depth-1 clutter)
+  // When depth>=2, the static view de-emphasises center↔depth-1 edges (so the
+  // depth-1↔depth-2 frontier is the focus). We *keep* them in the graph so
+  // that pinning/hovering a depth-1 node still lights up its edge to center;
+  // the edgeReducer hides them only when nothing nearby is active.
   const depthMap = data.depth_map || {};
   const isDepth2Mode = state.depth >= 2;
   edges.forEach((e) => {
     if (!graph.hasNode(e.source) || !graph.hasNode(e.target)) return;
     if (graph.hasEdge(e.source, e.target)) return;
-    if (isDepth2Mode) {
-      const sd = depthMap[e.source] ?? 0;
-      const td = depthMap[e.target] ?? 0;
-      if (sd < 2 && td < 2) return;
-    }
+    const sd = depthMap[e.source] ?? 0;
+    const td = depthMap[e.target] ?? 0;
+    // In depth-2 mode, we de-emphasise center↔depth-1 edges (the inner
+    // hop) so the depth-1↔depth-2 frontier reads cleanly. They stay in
+    // the graph so pinning a depth-1 node still lights up its center edge.
+    const isFrontier = isDepth2Mode && sd < 2 && td < 2;
     graph.addEdge(e.source, e.target, {
       label: e.label,
       color: e.color,
@@ -1700,6 +2114,7 @@ function renderGraph(data) {
       relations_rev: e.relations_rev || [],
       bidirectional: !!e.bidirectional,
       curvature: 0.2,
+      isFrontier,
     });
   });
 
@@ -1790,6 +2205,13 @@ function renderGraph(data) {
         if (hoverIncident) res.size = 2.5;
         else if (pinIncident) res.size = 2.2;
         else res.size = 2;
+      } else if (data.isFrontier) {
+        // depth-2 mode: center↔depth-1 edges are de-emphasised when nothing
+        // is hovered/pinned, but stay in the graph so pinning lights them up.
+        res.color = DIM_EDGE;
+        res.label = "";
+        res.size = 1;
+        res.hidden = true;
       } else {
         res.color = DIM_EDGE;
         res.label = "";
@@ -1930,7 +2352,7 @@ function renderLegend() {
     rels.forEach((r) => { if (!relColors.has(r)) relColors.set(r, d.baseColor); });
   });
   const domHtml = [...domains].map((d) =>
-    `<span class="legend-item"><span class="legend-dot" style="background:${DOMAIN_COLORS[d] || "#94a3b8"}"></span>${d}</span>`
+    `<span class="legend-item"><span class="legend-dot" style="background:${ATOM_COLORS[d] || "#94a3b8"}"></span>${ATOM_FULL[d] || d}</span>`
   ).join("");
   const edgeHtml = [...relColors.entries()].slice(0, 8).map(([rel, c]) =>
     `<span class="legend-item"><span class="legend-line" style="background:${c}"></span>${escapeHtml(rel)}</span>`
@@ -1957,6 +2379,10 @@ async function loadDetail(nodeId) {
       fetch(`/api/kg/node/${encodeURIComponent(nodeId)}/claims?limit=80${predParam}`).then((r) => r.json()),
       fetch(`/api/kg/node/${encodeURIComponent(nodeId)}/hypotheses?limit=30${state.recipeOnly ? "&recipe_only=true" : ""}`).then((r) => r.json()),
     ]);
+    if (nodeId === state.currentNode) {
+      state.currentNodeAtoms = Array.isArray(concept.atoms) ? concept.atoms : [];
+      refreshTaskOptionAvailability();
+    }
     renderDetail(concept, claims, hyps);
   } catch (e) {
     pane.innerHTML = `<div class="detail-empty" style="color:var(--danger);">load failed</div>`;
@@ -1969,9 +2395,6 @@ function renderDetail(concept, claimsResp, hypsResp) {
   const hyps = hypsResp.hypotheses || [];
   state.hasRecipes = hypsResp.has_recipes;
 
-  const domainsHtml = (concept.domain_tags || []).map((d) =>
-    `<span class="badge domain" style="background:${DOMAIN_COLORS[d] || "#94a3b8"};">${d}</span>`
-  ).join("");
   const externalHtml = (concept.external_links || []).map((l) =>
     l.url
       ? `<a class="badge link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.label)} ↗</a>`
@@ -1992,7 +2415,7 @@ function renderDetail(concept, claimsResp, hypsResp) {
       <div class="detail-title">${escapeHtml(concept.name)}${noiseBadge}</div>
       ${aliasesHtml ? `<div class="detail-aliases">${aliasesHtml}</div>` : ""}
       <div class="badge-row">
-        ${domainsHtml}
+        ${atomBadges(concept.atoms)}
         <span class="badge" style="font-family:ui-monospace,monospace;">${escapeHtml(concept.id)}</span>
       </div>
       ${concept.definition ? `<div class="detail-definition">${escapeHtml(concept.definition)}</div>` : ""}
@@ -2080,10 +2503,7 @@ function setupPathFinder(currentNodeId) {
         const items = r.results || [];
         if (!items.length) { sugBox.innerHTML = `<div class="paths-empty" style="padding:6px 10px;">${t("no_match")}</div>`; return; }
         sugBox.innerHTML = items.map((it) => {
-          const primary = (it.domain_tags || []).find((d) => d !== "claim") || "";
-          const dt = primary
-            ? `<span class="domain-tag" style="background:${DOMAIN_COLORS[primary] || "#94a3b8"};">${escapeHtml(primary)}</span>`
-            : "";
+          const dt = atomBadges(it.atoms);
           return `<div class="path-suggest" data-id="${escapeHtml(it.id)}" data-name="${escapeHtml(it.name)}">${escapeHtml(it.name)}${dt}</div>`;
         }).join("");
         sugBox.querySelectorAll(".path-suggest").forEach((div) => {
@@ -2154,7 +2574,7 @@ function renderPathRow(path) {
   const parts = [];
   for (let i = 0; i < (path.nodes || []).length; i++) {
     const n = path.nodes[i];
-    const color = DOMAIN_COLORS[n.domain] || "#94a3b8";
+    const color = ATOM_COLORS[n.atom] || "#94a3b8";
     parts.push(`<span class="path-node" data-id="${escapeHtml(n.id)}" style="color:${color};">${escapeHtml(n.name)}</span>`);
     if (i < (path.edges || []).length) {
       const ed = path.edges[i];

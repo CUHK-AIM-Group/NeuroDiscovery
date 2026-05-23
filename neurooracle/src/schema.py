@@ -40,6 +40,12 @@ class DomainTag(str, Enum):
     # labels). Distinguishes treatment-outcome variables from generic individual-data
     # variables (age, APOE-ε4 status, lifestyle) when both share dataset_variable.
     TREATMENT_OUTCOME = "treatment_outcome"
+    # Concept-level anchors for INDIVIDUAL_DATA (Aging, APOE, Big-5 traits, …),
+    # seeded by ingestion.individual_data_anchors. Distinct from dataset_variable
+    # (which is the UKB/ADNI/HCP host category hub) so the bridge layer can
+    # connect concept-side IM/disease/gene nodes to dataset variables in two
+    # hops without polluting either side's domain.
+    INDIVIDUAL_DATA_ANCHOR = "individual_data_anchor"
 
 
 class SemanticType(str, Enum):
@@ -127,17 +133,6 @@ RELATION_TYPES = {
     "mediates",
     "inhibits",
     "distinguishes",
-    # Deprecated Phase 4.3 Input Recipe edges — reserved, unused after
-    # 2026-05-13 removal of input_recipe/recipe_kg_ingest modules.
-    "tests_hypothesis",   # (deprecated) Recipe → Hypothesis
-    "predicts_outcome",   # (deprecated) Recipe → target ConceptNode
-    "uses_biomarker",     # (deprecated) Recipe → Biomarker atom
-    "uses_atlas",         # (deprecated) Recipe → Atlas
-    "uses_modality",      # (deprecated) Recipe → Modality
-    "uses_model",         # (deprecated) Recipe → Model
-    "evaluated_on",       # (deprecated) Recipe → Dataset
-    "measured_in",        # (deprecated) Biomarker → Neuroanatomy ROI
-    "measured_by",        # (deprecated) Biomarker → Modality
     # Phase 1.5 Experiment infrastructure edges
     "supports_modality",  # Model → Modality (compat declaration)
     "provides_modality",  # Dataset → Modality (what the dataset contains)
@@ -145,7 +140,95 @@ RELATION_TYPES = {
     "evokes",             # visual_stimulus → neuroanatomy (encoding direction)
     "decoded_from",       # visual_stimulus ← neuroanatomy (decoding direction)
     "elicits",            # stimulus → emotion/vigilance (behavioral label)
+    # Outcome / dataset-variable bridges
+    "measures",                # rating_scale → disease (the scale measures the disease)
+    "assessed_in",             # rating_scale → dataset_variable host
+    "affects_system",          # MedDRA SOC → disease umbrella
+    "provides_signal_for",     # disease → dataset_variable (anchor → variable)
+    # Therapy reverse edges (closes drug indegree gap)
+    "is_indicated_for",        # drug → disease (canonical indication)
+    "is_treated_by",           # disease → drug (reverse of treats; for personalised_treatment)
+    # Imaging modality edges (closes IM↔Idv gap)
+    "measured_in_modality",    # imaging_marker → dataset_variable (modality host)
+    "modality_provides",       # dataset_variable → imaging_marker (reverse)
+    # Outcome closure edges (closes IM/D/Rx → OUTCOME gap)
+    "is_assessed_by",          # disease → rating_scale (reverse of measures)
+    "has_adverse_effect",      # drug → AE SOC (drug → outcome)
 }
+
+
+# Edge tier classification — used by `KnowledgeGraph.export_display_subgraph`
+# to derive a human-facing view of the KG that drops provenance, inverse
+# mirrors, and admin/bridge edges. The full graph (self.G) is unchanged and
+# the hypothesis engine still uses every edge.
+#
+# Tiers:
+#   "discovery" — direct semantic claim, surface to readers (claim predicates,
+#                 canonical pharmacology / connectivity / scale relations)
+#   "skeleton"  — taxonomy/hierarchy (is_a, part_of), usually rendered as a
+#                 tree, not as graph edges; opt-in via `include_skeleton=True`
+#   "inverse"   — inverse mirror of a canonical Tier-1 edge, kept for reverse
+#                 path traversal in the hypothesis engine; never display
+#   "bridge"    — admin/bridge edge that connects atom families through hub
+#                 nodes (dataset-variable, disease-umbrella); never display
+#   "provenance"— claim→subject/object 'about' edges, support links; never display
+#   "deprecated"— removed Phase 4.3 relations kept in RELATION_TYPES for
+#                 forward-compat; never display
+#
+# Relations not listed here default to "discovery" so the long-tail of
+# claim-extracted predicates ("improves", "disrupts", …) is still surfaced.
+EDGE_TIER: dict[str, str] = {
+    # Tier 1 — discovery
+    "reduces":                       "discovery",
+    "increases":                     "discovery",
+    "correlates_with":               "discovery",
+    "causes":                        "discovery",
+    "is_biomarker_of":               "discovery",
+    "is_risk_factor_for":            "discovery",
+    "is_associated_with":            "discovery",
+    "associated_with":               "discovery",
+    "predicts":                      "discovery",
+    "mediates":                      "discovery",
+    "inhibits":                      "discovery",
+    "distinguishes":                 "discovery",
+    "contradicts":                   "discovery",
+    "predisposes":                   "discovery",
+    "contraindicated_for":           "discovery",
+    "gene_associated_with_disease":  "discovery",
+    "treats":                        "discovery",
+    "protein_encoded_by":            "discovery",
+    "binds_to":                      "discovery",
+    "modulates":                     "discovery",
+    "projects_to":                   "discovery",
+    "connects_to":                   "discovery",
+    "activates":                     "discovery",
+    "coactivates":                   "discovery",
+    "evokes":                        "discovery",
+    "elicits":                       "discovery",
+    "measures":                      "discovery",
+    # Tier 2 — skeleton
+    "is_a":                          "skeleton",
+    "part_of":                       "skeleton",
+    "supports_modality":             "skeleton",
+    "provides_modality":             "skeleton",
+    # Tier 3 — inverse mirrors of canonical Tier-1 edges
+    "is_treated_by":                 "inverse",
+    "is_assessed_by":                "inverse",
+    "modality_provides":             "inverse",
+    "has_part":                      "inverse",
+    "decoded_from":                  "inverse",
+    # Tier 3 — admin / bridge
+    "assessed_in":                   "bridge",
+    "affects_system":                "bridge",
+    "provides_signal_for":           "bridge",
+    "measured_in_modality":          "bridge",
+    "has_adverse_effect":            "bridge",
+    # Tier 3 — provenance
+    "about":                         "provenance",
+    "supported_by":                  "provenance",
+}
+
+DISPLAY_TIERS_DEFAULT: frozenset[str] = frozenset({"discovery"})
 
 # Claim-specific predicates (extracted from papers)
 CLAIM_PREDICATES = {

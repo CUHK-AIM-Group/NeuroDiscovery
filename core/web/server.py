@@ -551,7 +551,7 @@ def create_app() -> Any:
     """Build and return the FastAPI application object."""
     _require_webdeps()
 
-    from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect  # type: ignore
+    from fastapi import Body, FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect  # type: ignore
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse  # type: ignore
     from fastapi.staticfiles import StaticFiles  # type: ignore
 
@@ -1070,47 +1070,63 @@ def create_app() -> Any:
     ]
     RECIPES_PATH = KG_QUICK_DIR / "recipes_top10.json"
 
-    DOMAIN_COLORS = {
-        "biomarker": "#10b981",
-        "imaging_feature": "#3b82f6",
-        "cognitive_function": "#8b5cf6",
-        "disease": "#ef4444",
-        "gene": "#f59e0b",
-        "neuroanatomy": "#06b6d4",
-        "drug": "#ec4899",
-        "neurotransmitter": "#f97316",
-        "cell_type": "#14b8a6",
-        "paradigm": "#a855f7",
-        "connectivity": "#0ea5e9",
-        "dataset_variable": "#84cc16",
-        "claim": "#94a3b8",
+    ATOM_COLORS = {
+        "disease":         "#ef4444",
+        "drug":            "#ec4899",
+        "imaging_marker":  "#3b82f6",
+        "gene_target":     "#f59e0b",
+        "cognitive_task":  "#a855f7",
+        "outcome":         "#84cc16",
+        "individual_data": "#14b8a6",
     }
+
+    def _node_atoms(domain_tags) -> list[str]:
+        try:
+            from neurooracle.src.atoms import atoms_for_domain
+        except Exception:
+            return []
+        seen: list[str] = []
+        for d in domain_tags or []:
+            for a in atoms_for_domain(d):
+                if a.value not in seen:
+                    seen.append(a.value)
+        return seen
+
     RELATION_COLORS = {
-        "is_a": "#94a3b8",
-        "part_of": "#64748b",
-        "causes": "#dc2626",
-        "associated_with": "#3b82f6",
+        # Structural (mid + near-black slate)
+        "is_a":            "#94a3b8",
+        "part_of":         "#1f2937",
+        # Association (sky → cyan → deep navy: max lightness spread within hue)
+        "associated_with":    "#3b82f6",
         "is_associated_with": "#3b82f6",
-        "predisposes": "#f97316",
-        "treats": "#10b981",
-        "modulates": "#8b5cf6",
-        "reduces": "#ef4444",
-        "increases": "#16a34a",
-        "correlates_with": "#0ea5e9",
-        "is_biomarker_of": "#06b6d4",
-        "is_risk_factor_for": "#f59e0b",
-        "predicts": "#0891b2",
-        "mediates": "#7c3aed",
-        "inhibits": "#b91c1c",
-        "distinguishes": "#c026d3",
-        "projects_to": "#0369a1",
-        "connects_to": "#0284c7",
-        "activates": "#15803d",
-        "coactivates": "#22c55e",
-        "gene_associated_with_disease": "#eab308",
-        "about": "#cbd5e1",
-        "supported_by": "#94a3b8",
-        "contradicts": "#dc2626",
+        "correlates_with":    "#1e3a8a",
+        "connects_to":        "#67e8f9",
+        "projects_to":        "#155e75",
+        # Causal harm (vivid red, dark wine, hot pink-red)
+        "causes":          "#e63946",
+        "inhibits":        "#7d1538",
+        "contradicts":     "#ff4d6d",
+        # Risk (orange → burnt → yellow)
+        "predisposes":                  "#fb923c",
+        "is_risk_factor_for":           "#c2410c",
+        "gene_associated_with_disease": "#facc15",
+        # Treat / mediate (emerald, very dark green, pale teal)
+        "treats":          "#10b981",
+        "reduces":         "#064e3b",
+        "mediates":        "#5eead4",
+        # Activate / boost (lime, forest, olive)
+        "increases":       "#a3e635",
+        "activates":       "#16a34a",
+        "coactivates":     "#65a30d",
+        # Modulate (royal purple)
+        "modulates":       "#6d28d9",
+        # Marker / predict (fuchsia, pale lavender, dark mulberry)
+        "predicts":        "#d946ef",
+        "is_biomarker_of": "#f0abfc",
+        "distinguishes":   "#831843",
+        # Provenance (very pale stone, warm dark gray)
+        "about":           "#e7e5e4",
+        "supported_by":    "#57534e",
     }
     DEFAULT_EDGE_COLOR = "#94a3b8"
 
@@ -1236,6 +1252,21 @@ def create_app() -> Any:
             return None
         return f"https://doi.org/{doi}" if not doi.startswith("http") else doi
 
+    def _resolve_optional_gz(path: Path) -> Path:
+        """If path doesn't exist but path.gz does, return the gz variant."""
+        if path.exists():
+            return path
+        gz = path.with_suffix(path.suffix + ".gz")
+        return gz if gz.exists() else path
+
+    def _read_maybe_gz(path: Path) -> str:
+        """Read a text file, transparently decompressing if path ends with .gz."""
+        if str(path).endswith(".gz"):
+            import gzip
+            with gzip.open(path, "rt", encoding="utf-8") as f:
+                return f.read()
+        return path.read_text(encoding="utf-8")
+
     def _load_kg_blocking() -> dict:
         """Load KG + hypotheses + recipes; build reverse indexes. Called once."""
         from neurooracle.src.storage import load_graph
@@ -1273,15 +1304,15 @@ def create_app() -> Any:
         # Load hypotheses — critic first (priority), then imaging
         hypotheses_by_id: dict[str, Hypothesis] = {}
         for fname in HYPOTHESIS_SOURCES:
-            fpath = KG_QUICK_DIR / fname
+            fpath = _resolve_optional_gz(KG_QUICK_DIR / fname)
             if not fpath.exists():
                 # fallback: try parent data/ dir (without quick/)
-                fpath = KG_DATA_DIR / fname
+                fpath = _resolve_optional_gz(KG_DATA_DIR / fname)
             if not fpath.exists():
                 print(f"[kg] skip missing hypothesis file: {fname}", flush=True)
                 continue
             try:
-                data = json.loads(fpath.read_text(encoding="utf-8"))
+                data = json.loads(_read_maybe_gz(fpath))
                 for h_dict in data.get("hypotheses", []):
                     h = Hypothesis.from_dict(h_dict)
                     if h.id and h.id not in hypotheses_by_id:
@@ -1311,9 +1342,10 @@ def create_app() -> Any:
 
         # Recipes (optional)
         recipes_by_hyp: dict[str, dict] = {}
-        if RECIPES_PATH.exists():
+        recipes_path = _resolve_optional_gz(RECIPES_PATH)
+        if recipes_path.exists():
             try:
-                rdata = json.loads(RECIPES_PATH.read_text(encoding="utf-8"))
+                rdata = json.loads(_read_maybe_gz(recipes_path))
                 for r in rdata.get("recipes", []):
                     hid = r.get("hypothesis_id")
                     if hid:
@@ -1486,6 +1518,7 @@ def create_app() -> Any:
             "id": node.id,
             "name": node.preferred_name,
             "domain_tags": list(node.domain_tags or []),
+            "atoms": _node_atoms(node.domain_tags),
             "aliases": list(node.aliases or [])[:6],
             "n_claims": len(state["concept_to_claims"].get(node_id, [])),
             "n_hypotheses": len(state["concept_to_hyps"].get(node_id, set())),
@@ -1631,10 +1664,397 @@ def create_app() -> Any:
         except Exception as exc:
             return JSONResponse({"loaded": False, "error": str(exc)}, status_code=500)
 
+    @app.get("/api/kg/tasks")
+    async def kg_tasks() -> Any:
+        try:
+            from neurooracle.src.atoms import (
+                CANONICAL_TASKS, CANONICAL_CHAINS, ATOM_TO_DOMAINS, Atom,
+            )
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+        tasks = [{**t.to_dict(), "kind": "task"} for t in CANONICAL_TASKS]
+        chains = [{**c.to_dict(), "kind": "chain"} for c in CANONICAL_CHAINS]
+        atom_domains = {a.value: sorted(ATOM_TO_DOMAINS[a]) for a in Atom}
+        return {
+            "tasks": tasks,
+            "chains": chains,
+            "atom_domains": atom_domains,
+            "atom_colors": ATOM_COLORS,
+        }
+
+    @app.get("/api/kg/task-paths")
+    async def kg_task_paths(
+        task: str,
+        kind: str = "task",
+        anchor: str = "",
+        limit: int = 30,
+    ) -> Any:
+        """Enumerate up to `limit` atom-aligned paths through `anchor`.
+
+        For chains, the anchor's atom pins its position in the chain (chain
+        atoms are unique). We DFS forward from anchor along the suffix atoms,
+        and backward along the prefix atoms, then cross-product the two halves
+        into full-length paths.
+
+        For tasks (unordered: {inputs} → output), we treat them as a 2-step
+        chain anchored at query: if anchor.atom ∈ inputs, enumerate
+        (anchor → output_atom_node); if anchor.atom == output, enumerate
+        (input_atom_node → anchor) for each input atom. Edges may run either
+        direction in the underlying KG (the relation already encodes
+        directionality semantically).
+        """
+        try:
+            from neurooracle.src.atoms import (
+                CANONICAL_TASKS, CANONICAL_CHAINS, atoms_for_domain,
+            )
+            state = await _get_kg_state()
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+
+        kg = state["kg"]
+        kind = kind.lower().strip()
+        anchor_id = (anchor or "").strip()
+        if not anchor_id or anchor_id not in kg._index:
+            return JSONResponse({"error": "anchor required"}, status_code=400)
+
+        # Resolve atom sequences to walk.
+        if kind == "chain":
+            obj = next((c for c in CANONICAL_CHAINS if c.name == task), None)
+            if obj is None:
+                return JSONResponse({"error": f"unknown chain: {task}"}, status_code=404)
+            chain_seq = list(obj.chain)
+        else:
+            obj = next((t for t in CANONICAL_TASKS if t.name == task), None)
+            if obj is None:
+                return JSONResponse({"error": f"unknown task: {task}"}, status_code=404)
+            # Build per-input atom-sequence anchored on query.
+            chain_seq = None  # decided per anchor atom below
+
+        def _atoms(nid: str) -> set:
+            nd = kg._index[nid]
+            out: set = set()
+            for d in nd.domain_tags or []:
+                out |= atoms_for_domain(d)
+            return out
+
+        anchor_atoms = _atoms(anchor_id)
+        if not anchor_atoms:
+            return JSONResponse({"error": f"anchor {anchor_id} has no atom"}, status_code=400)
+
+        # Build the list of (atom_sequence) walks to enumerate. Each walk is
+        # an ordered list of atoms; anchor must occupy exactly one position
+        # in the sequence (its atom).
+        walks: list[list] = []
+        if kind == "chain":
+            chain_atoms = chain_seq
+            # Find anchor's index in the chain (chain atoms are unique by design).
+            anchor_idx = next((i for i, a in enumerate(chain_atoms) if a in anchor_atoms), None)
+            if anchor_idx is None:
+                return JSONResponse(
+                    {"error": f"anchor atom not in chain"}, status_code=400
+                )
+            walks.append((chain_atoms, anchor_idx))
+        else:
+            inputs = list(obj.inputs)
+            output = obj.output
+            if output in anchor_atoms:
+                # Anchor is the output: each input becomes [input_atom, anchor_atom]
+                for inp in inputs:
+                    walks.append(([inp, output], 1))
+            else:
+                # Anchor is one of the inputs: walk anchor → output
+                for inp in inputs:
+                    if inp in anchor_atoms:
+                        walks.append(([inp, output], 0))
+
+        if not walks:
+            return JSONResponse({"error": "no atom-walk anchored at this node"}, status_code=400)
+
+        G = kg.G
+        max_paths = max(1, min(100, int(limit)))
+
+        # Pre-cache atoms for visited nodes to avoid recompute (atoms_for_domain is hot).
+        atoms_cache: dict[str, frozenset] = {}
+        def _atoms_cached(nid: str) -> frozenset:
+            v = atoms_cache.get(nid)
+            if v is None:
+                v = frozenset(_atoms(nid))
+                atoms_cache[nid] = v
+            return v
+
+        # Walk forward (next atom in sequence) along undirected adjacency, no
+        # node revisits within a single path. We treat the relation as
+        # undirected here: the chain's atom order is the semantic constraint;
+        # KG edge direction may not always match.
+        def _walk(start: str, atom_seq: list, used: set) -> list:
+            """Return all simple paths whose atom-types follow atom_seq."""
+            if not atom_seq:
+                return [[start]]
+            results: list[list] = []
+            target_atom = atom_seq[0]
+            neighbors = set(G.successors(start)) | set(G.predecessors(start))
+            for nb in neighbors:
+                if nb in used:
+                    continue
+                if target_atom not in _atoms_cached(nb):
+                    continue
+                for sub in _walk(nb, atom_seq[1:], used | {nb}):
+                    results.append([start] + sub)
+                    if len(results) >= max_paths * 4:  # cap explosion
+                        return results
+            return results
+
+        all_paths: list[list[str]] = []
+        for atom_seq, anchor_idx in walks:
+            prefix_atoms = atom_seq[:anchor_idx][::-1]   # walk backward from anchor
+            suffix_atoms = atom_seq[anchor_idx + 1:]     # walk forward from anchor
+            prefixes = _walk(anchor_id, prefix_atoms, {anchor_id})
+            suffixes = _walk(anchor_id, suffix_atoms, {anchor_id})
+            for pre in prefixes:
+                pre_rev = pre[::-1]  # ends at anchor
+                for suf in suffixes:
+                    if len(suf) > 1 and any(n in pre_rev for n in suf[1:]):
+                        continue  # disjoint halves
+                    full = pre_rev + suf[1:]
+                    all_paths.append(full)
+                    if len(all_paths) >= max_paths:
+                        break
+                if len(all_paths) >= max_paths:
+                    break
+            if len(all_paths) >= max_paths:
+                break
+
+        # De-dup paths (same node sequence).
+        seen_paths: set[tuple[str, ...]] = set()
+        unique_paths: list[list[str]] = []
+        for p in all_paths:
+            key = tuple(p)
+            if key in seen_paths:
+                continue
+            seen_paths.add(key)
+            unique_paths.append(p)
+            if len(unique_paths) >= max_paths:
+                break
+
+        # Collect nodes & edges across all kept paths, with path-membership.
+        node_paths: dict[str, list[int]] = {}
+        edge_paths: dict[tuple[str, str], list[int]] = {}
+        for pi, path in enumerate(unique_paths):
+            for nid in path:
+                node_paths.setdefault(nid, []).append(pi)
+            for u, v in zip(path, path[1:]):
+                # Use canonical (u,v) order matching DB direction if present.
+                if G.has_edge(u, v):
+                    key = (u, v)
+                elif G.has_edge(v, u):
+                    key = (v, u)
+                else:
+                    continue
+                edge_paths.setdefault(key, []).append(pi)
+
+        noise_map = state.get("noise_map", {})
+        nodes_out: list[dict] = []
+        for nid, pids in node_paths.items():
+            nd = kg._index[nid]
+            atoms_list = sorted(a.value for a in _atoms_cached(nid))
+            primary_atom = atoms_list[0] if atoms_list else ""
+            nodes_out.append({
+                "id": nid,
+                "label": nd.preferred_name or nid,
+                "color": ATOM_COLORS.get(primary_atom, "#94a3b8"),
+                "atoms": atoms_list,
+                "primary_atom": primary_atom,
+                "domains": list(nd.domain_tags or []),
+                "size": 9,
+                "noise_score": noise_map.get(nid, 0.0),
+                "is_noise": noise_map.get(nid, 0.0) >= NOISE_THRESHOLD,
+                "is_anchor": nid == anchor_id,
+                "path_ids": pids,
+            })
+
+        edges_out: list[dict] = []
+        for (s, t), pids in edge_paths.items():
+            data = G.edges[s, t]
+            rt = data.get("relation_type", "")
+            edges_out.append({
+                "id": f"e{len(edges_out)}",
+                "source": s,
+                "target": t,
+                "label": rt,
+                "color": RELATION_COLORS.get(rt, DEFAULT_EDGE_COLOR),
+                "confidence": float(data.get("confidence", 1.0)),
+                "path_ids": pids,
+            })
+
+        # Atom sequence for display (from the first walk; all walks share length
+        # for chains; for tasks each walk is 2-atom).
+        display_seq = [a.value for a in walks[0][0]] if walks else []
+        return {
+            "task": task,
+            "kind": kind,
+            "anchor": anchor_id,
+            "atom_sequence": display_seq,
+            "n_paths": len(unique_paths),
+            "paths": [list(p) for p in unique_paths],
+            "nodes": nodes_out,
+            "edges": edges_out,
+        }
+
+    @app.get("/api/kg/task-subgraph")
+    async def kg_task_subgraph(
+        task: str,
+        kind: str = "task",
+        strict_chain: bool = False,
+        limit: int = 200,
+        anchor: str = "",
+    ) -> Any:
+        """Subgraph slice for a canonical task or chain.
+
+        kind=task   → keep nodes whose atoms ∈ (inputs ∪ {output}); all edges between them.
+        kind=chain  → keep nodes whose atoms ∈ chain; if strict_chain, only edges
+                      whose (src_atom, tgt_atom) is an adjacent pair in chain.
+
+        If `anchor` is given, the candidate pool is restricted to that node and
+        its 1-hop neighbours (atom-filtered the same way) so the result is the
+        slice of the task/chain that passes through the query node.
+        """
+        try:
+            from neurooracle.src.atoms import (
+                CANONICAL_TASKS, CANONICAL_CHAINS, atoms_for_domain,
+            )
+            state = await _get_kg_state()
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+
+        kg = state["kg"]
+        kind = kind.lower().strip()
+        if kind == "chain":
+            obj = next((c for c in CANONICAL_CHAINS if c.name == task), None)
+            if obj is None:
+                return JSONResponse({"error": f"unknown chain: {task}"}, status_code=404)
+            atom_set = set(obj.chain)
+            chain_seq = list(obj.chain)
+            allowed_pairs = {(chain_seq[i], chain_seq[i + 1]) for i in range(len(chain_seq) - 1)}
+        else:
+            obj = next((t for t in CANONICAL_TASKS if t.name == task), None)
+            if obj is None:
+                return JSONResponse({"error": f"unknown task: {task}"}, status_code=404)
+            atom_set = set(obj.inputs) | {obj.output}
+            chain_seq = []
+            allowed_pairs = set()
+            strict_chain = False  # not meaningful for flat task
+
+        limit = max(20, min(800, int(limit)))
+
+        G = kg.G
+        anchor_id = (anchor or "").strip()
+        if anchor_id and anchor_id not in kg._index:
+            return JSONResponse({"error": f"anchor not found: {anchor_id}"}, status_code=404)
+
+        def _node_atom_hit(nid: str) -> frozenset:
+            nd = kg._index[nid]
+            node_atoms: set = set()
+            for d in nd.domain_tags or []:
+                node_atoms |= atoms_for_domain(d)
+            return frozenset(node_atoms & atom_set)
+
+        if anchor_id:
+            anchor_hit = _node_atom_hit(anchor_id)
+            if not anchor_hit:
+                return JSONResponse(
+                    {"error": f"anchor {anchor_id} has no atom in {sorted(a.value for a in atom_set)}"},
+                    status_code=400,
+                )
+            pool = set(G.successors(anchor_id)) | set(G.predecessors(anchor_id))
+            candidates: list[tuple[int, str, frozenset]] = []
+            for nid in pool:
+                hit = _node_atom_hit(nid)
+                if not hit:
+                    continue
+                candidates.append((G.degree(nid), nid, hit))
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            kept = candidates[: max(0, limit - 1)]
+            keep_ids = {nid for _, nid, _ in kept} | {anchor_id}
+            node_atom_map = {nid: hit for _, nid, hit in kept}
+            node_atom_map[anchor_id] = anchor_hit
+            ordered_kept = [(G.degree(anchor_id), anchor_id, anchor_hit)] + kept
+            n_total_candidates = len(candidates) + 1
+        else:
+            candidates = []
+            for nid, nd in kg._index.items():
+                hit = _node_atom_hit(nid)
+                if not hit:
+                    continue
+                candidates.append((G.degree(nid), nid, hit))
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            kept = candidates[:limit]
+            keep_ids = {nid for _, nid, _ in kept}
+            node_atom_map = {nid: hit for _, nid, hit in kept}
+            ordered_kept = kept
+            n_total_candidates = len(candidates)
+
+        noise_map = state.get("noise_map", {})
+        nodes_out: list[dict] = []
+        for _, nid, hit in ordered_kept:
+            nd = kg._index[nid]
+            atoms_list = sorted(a.value for a in hit)
+            primary_atom = atoms_list[0] if atoms_list else ""
+            nodes_out.append({
+                "id": nid,
+                "label": nd.preferred_name or nid,
+                "color": ATOM_COLORS.get(primary_atom, "#94a3b8"),
+                "atoms": atoms_list,
+                "primary_atom": primary_atom,
+                "domains": list(nd.domain_tags or []),
+                "size": 9,
+                "noise_score": noise_map.get(nid, 0.0),
+                "is_noise": noise_map.get(nid, 0.0) >= NOISE_THRESHOLD,
+                "is_anchor": nid == anchor_id,
+            })
+
+        edges_out: list[dict] = []
+        seen_pairs: set[tuple[str, str]] = set()
+        for s, t, data in G.edges(data=True):
+            if s not in keep_ids or t not in keep_ids:
+                continue
+            rt = data.get("relation_type", "")
+            if not rt or rt == "about":
+                continue
+            if strict_chain and chain_seq:
+                s_atoms = node_atom_map.get(s, frozenset())
+                t_atoms = node_atom_map.get(t, frozenset())
+                if not any((sa, ta) in allowed_pairs for sa in s_atoms for ta in t_atoms):
+                    continue
+            key = (s, t, rt)
+            if key in seen_pairs:
+                continue
+            seen_pairs.add(key)
+            edges_out.append({
+                "id": f"e{len(edges_out)}",
+                "source": s,
+                "target": t,
+                "label": rt,
+                "color": RELATION_COLORS.get(rt, DEFAULT_EDGE_COLOR),
+                "confidence": float(data.get("confidence", 1.0)),
+            })
+
+        return {
+            "task": task,
+            "kind": kind,
+            "strict_chain": bool(strict_chain),
+            "atoms": sorted(a.value for a in atom_set),
+            "chain": [a.value for a in chain_seq] if chain_seq else [],
+            "anchor": anchor_id or None,
+            "nodes": nodes_out,
+            "edges": edges_out,
+            "truncated": n_total_candidates > len(ordered_kept),
+        }
+
     @app.get("/api/kg/search")
     async def kg_search(
         q: str = "",
         domain: str = "",
+        atom: str = "",
         limit: int = 20,
         quality: str = "clean",
     ) -> Any:
@@ -1644,6 +2064,18 @@ def create_app() -> Any:
             return JSONResponse({"error": str(exc)}, status_code=500)
         q_norm = (q or "").strip().lower()
         domain_filter = {d.strip() for d in (domain or "").split(",") if d.strip()}
+        # Atom filter — expand each atom to its set of KG domains and union into
+        # domain_filter. Unknown atom values are silently ignored.
+        if atom:
+            try:
+                from neurooracle.src.atoms import Atom, ATOM_TO_DOMAINS
+                for a in (s.strip() for s in atom.split(",") if s.strip()):
+                    try:
+                        domain_filter |= set(ATOM_TO_DOMAINS[Atom(a)])
+                    except (ValueError, KeyError):
+                        continue
+            except Exception:
+                pass
         quality = quality.lower() if quality else "clean"
         if quality not in ("all", "clean", "strict"):
             quality = "clean"
@@ -1753,6 +2185,7 @@ def create_app() -> Any:
             "name": node.preferred_name,
             "definition": node.definition or "",
             "domain_tags": list(node.domain_tags or []),
+            "atoms": _node_atoms(node.domain_tags),
             "semantic_types": list(node.semantic_types or []),
             "source_vocab": node.source_vocab or "",
             "aliases": list(node.aliases or []),
@@ -1764,8 +2197,8 @@ def create_app() -> Any:
             "noise_score": noise,
             "is_noise": noise >= NOISE_THRESHOLD,
             "noise_reasons": reasons,
-            "color": DOMAIN_COLORS.get(
-                (node.domain_tags or ["unknown"])[0], "#94a3b8"
+            "color": ATOM_COLORS.get(
+                (_node_atoms(node.domain_tags) or [""])[0], "#94a3b8"
             ),
         }
 
@@ -1865,15 +2298,9 @@ def create_app() -> Any:
             nd = kg._index.get(nid)
             if nd is None:
                 continue
-            domain = (nd.domain_tags or ["unknown"])[0]
             is_claim = "claim" in (nd.domain_tags or [])
-            # Prefer a biology domain over "claim" for color
-            color_domain = domain
-            if is_claim and len(nd.domain_tags or []) > 1:
-                for d in nd.domain_tags:
-                    if d != "claim":
-                        color_domain = d
-                        break
+            atoms_n = _node_atoms(nd.domain_tags)
+            primary_atom = atoms_n[0] if atoms_n else ""
             label = nd.preferred_name or nid
             if is_claim and len(label) > 60:
                 label = label[:57] + "…"
@@ -1883,9 +2310,10 @@ def create_app() -> Any:
             nodes_out.append({
                 "id": nid,
                 "label": label,
-                "color": DOMAIN_COLORS.get(color_domain, "#94a3b8"),
-                "domain": color_domain,
+                "color": ATOM_COLORS.get(primary_atom, "#94a3b8"),
+                "domain": primary_atom,
                 "domains": list(nd.domain_tags or []),
+                "atoms": atoms_n,
                 "is_claim": is_claim,
                 "is_center": nid == node_id,
                 "depth": depth_map.get(nid, 0),
@@ -2086,6 +2514,77 @@ def create_app() -> Any:
             "curated_edges": curated_edges,
         }
 
+    @app.post("/api/kg/path-claims")
+    async def kg_path_claims(payload: dict = Body(...)) -> Any:
+        """Given a list of node-paths, return claims grouped per adjacent pair.
+
+        Body: {"paths": [["A","B","C"], ["A","D","C"], ...], "limit": 30}
+        Response: {"edges": [{"from_id","from_name","to_id","to_name","claims":[...],"curated_edges":[...]}]}
+        Pairs are deduplicated across paths (each unique unordered pair shows once).
+        """
+        try:
+            state = await _get_kg_state()
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+        kg = state["kg"]
+        paths = payload.get("paths") or []
+        per_edge_limit = max(1, min(100, int(payload.get("limit") or 30)))
+
+        seen_pairs: set[tuple[str, str]] = set()
+        edges_out: list[dict] = []
+        for path in paths:
+            if not isinstance(path, list):
+                continue
+            for u, v in zip(path, path[1:]):
+                if not isinstance(u, str) or not isinstance(v, str):
+                    continue
+                key = (u, v) if u < v else (v, u)
+                if key in seen_pairs:
+                    continue
+                seen_pairs.add(key)
+                if u not in kg._index or v not in kg._index:
+                    continue
+
+                # Same logic as /api/kg/edge-sources but inlined to batch.
+                u_claims = set(state["concept_to_claims"].get(u, []))
+                v_claims = set(state["concept_to_claims"].get(v, []))
+                claim_items: list[dict] = []
+                for cid in u_claims & v_claims:
+                    s = _serialize_claim(state, cid)
+                    if s:
+                        claim_items.append(s)
+                claim_items.sort(key=lambda c: (
+                    -(c.get("confidence") or 0.0),
+                    -((c.get("paper") or {}).get("year") or 0),
+                ))
+
+                curated_edges: list[dict] = []
+                G = kg.G
+                for a, b in ((u, v), (v, u)):
+                    if G.has_edge(a, b):
+                        data = G.edges[a, b]
+                        src_str = data.get("source", "")
+                        if src_str.startswith("claim:"):
+                            continue
+                        curated_edges.append({
+                            "from_id": a, "from_name": kg._index[a].preferred_name,
+                            "to_id": b, "to_name": kg._index[b].preferred_name,
+                            "relation_type": data.get("relation_type", ""),
+                            "confidence": float(data.get("confidence", 1.0)),
+                            "source_vocab": src_str or "curated",
+                            "evidence_ref": data.get("evidence_ref", ""),
+                        })
+
+                edges_out.append({
+                    "from_id": u, "from_name": kg._index[u].preferred_name,
+                    "to_id": v, "to_name": kg._index[v].preferred_name,
+                    "total_claims": len(claim_items),
+                    "claims": claim_items[:per_edge_limit],
+                    "curated_edges": curated_edges,
+                })
+
+        return {"edges": edges_out, "n_edges": len(edges_out)}
+
     @app.get("/api/kg/node/{node_id}/hypotheses")
     async def kg_hypotheses(
         node_id: str,
@@ -2243,13 +2742,13 @@ def create_app() -> Any:
                 for nid in pn:
                     n = index.get(nid)
                     if n is None:
-                        nodes_out.append({"id": nid, "name": nid, "domain": ""})
+                        nodes_out.append({"id": nid, "name": nid, "atom": ""})
                     else:
-                        domain = (n.domain_tags or [""])[0] if n.domain_tags else ""
+                        atoms_n = _node_atoms(n.domain_tags)
                         nodes_out.append({
                             "id": nid,
                             "name": n.preferred_name,
-                            "domain": domain,
+                            "atom": atoms_n[0] if atoms_n else "",
                         })
                 edges_out = []
                 conf_sum = 0.0

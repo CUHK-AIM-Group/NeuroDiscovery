@@ -39,7 +39,8 @@ API_KEY_POOL = [k.strip() for k in _API_KEYS_RAW.split(",") if k.strip()] or (
 EXTRACTION_PROMPT = """Extract ALL scientific claims from this neuroscience paper abstract as JSON array.
 
 Each claim object fields:
-- subject, subject_type, predicate, object, object_type, negated
+- subject, subject_type, subject_canonical_hint
+- predicate, object, object_type, object_canonical_hint, negated
 - effect_metric, effect_size, p_value, sample_size
 - study_type, methodology, replicability, direction, raw_sentence
 - conditions: list of conditions under which this claim holds (e.g. ["female only", "age > 65", "resting-state fMRI"]). Empty list [] if unconditional.
@@ -53,7 +54,32 @@ IMPORTANT rules for numeric fields:
 - effect_metric: output the metric name (e.g. "Cohen's d", "odds ratio", "AUC", "beta"), or "not_reported" if not mentioned.
 - NEVER output null for these four fields — use "not_reported" instead.
 
-Types: brain_region, disease, gene, neurotransmitter, protein, drug, network, biomarker, cognitive_function
+Entity types (aligned to the 7-atom alphabet — DISEASE / DRUG / IMAGING_MARKER /
+GENE_TARGET / COGNITIVE_TASK / OUTCOME / INDIVIDUAL_DATA):
+- disease            → DISEASE atom    (e.g. "Alzheimer disease", "schizophrenia")
+- drug               → DRUG atom       (e.g. "donepezil", "ketamine", "lithium")
+- brain_region       → IMAGING_MARKER  (e.g. "hippocampus", "prefrontal cortex")
+- network            → IMAGING_MARKER  (e.g. "default mode network", "salience network")
+- biomarker          → IMAGING_MARKER  (e.g. "amyloid SUVR", "cortical thickness", "FA")
+- gene               → GENE_TARGET     (e.g. "APOE", "BDNF", "DRD2")
+- neurotransmitter   → GENE_TARGET     (e.g. "dopamine", "GABA", "serotonin")
+- protein            → GENE_TARGET     (e.g. "tau protein", "alpha-synuclein")
+- cognitive_function → COGNITIVE_TASK  (e.g. "working memory", "n-back", "Stroop task")
+- rating_scale       → OUTCOME         (e.g. "HAM-D", "MMSE", "MDS-UPDRS", "PANSS")
+- adverse_event      → OUTCOME         (e.g. "hepatotoxicity", "akathisia")
+- individual_data    → INDIVIDUAL_DATA (e.g. "age", "sex", "APOE-ε4 status",
+                                          "smoking status", "polygenic risk score")
+
+subject_canonical_hint / object_canonical_hint (OPTIONAL, prefer to fill in when
+you recognize a standard ID for the entity; otherwise output ""):
+- HGNC:<symbol>          for human genes/proteins (e.g. "HGNC:APOE", "HGNC:BDNF")
+- MSH:<descriptor>        for MeSH terms (e.g. "MSH:D000544" for Alzheimer)
+- ATC:<code>              for drugs (e.g. "ATC:N06DA02" for donepezil)
+- OUTCOME:<scale>         for clinical scales (e.g. "OUTCOME:HAM-D",
+                                                  "OUTCOME:MMSE", "OUTCOME:MDS-UPDRS")
+- COGAT_DISORDER:<id>     for Cognitive Atlas disorders
+- COGAT_TASK:<id>         for Cognitive Atlas tasks/concepts
+If unsure, leave the hint as "" — name-only resolution will be used.
 
 Predicates (USE THE MOST SPECIFIC ONE):
 - CAUSAL: causes, treats, inhibits, activates, increases, reduces, modulates
@@ -87,7 +113,16 @@ class ExtractionResult:
     error: str = ""
 
 
-MODEL_CASCADE = ["gpt-5.5", "gpt-5.4", "claude-opus-4-7", "claude-opus-4-6", "gpt-5.3", "gpt-5.2"]
+MODEL_CASCADE = [
+    "gpt-5.5",
+    "gemini-3.1-pro-preview",
+    "claude-sonnet-4-6",
+    "gpt-5.4",
+    "gemini-3.5-flash",
+    "claude-opus-4-7",
+    "claude-opus-4-6",
+    "gpt-5.2",
+]
 DOWNGRADE_THRESHOLD = 1      # consecutive failures to trigger downgrade (aggressive)
 UPGRADE_INTERVAL = 600       # seconds before attempting upgrade back to preferred model (slow recovery)
 
@@ -105,11 +140,15 @@ class _WorkerCascade:
     @property
     def model(self) -> str:
         import time as _time
+        import random as _random
         now = _time.time()
         if self._model_idx > 0 and (now - self._last_upgrade_attempt) > UPGRADE_INTERVAL:
             self._last_upgrade_attempt = now
             prev = self._cascade[self._model_idx]
-            self._model_idx = max(0, self._model_idx - 1)
+            # Randomly jump to any higher-priority model (idx in [0, current_idx))
+            # rather than always stepping up one tier — explores all faster models
+            # after extended downgrades.
+            self._model_idx = _random.randint(0, self._model_idx - 1)
             self._consecutive_failures = 0
             logger.info(f"[worker-{self.worker_id}] model upgrade attempt: {prev} -> {self._cascade[self._model_idx]}")
         return self._cascade[self._model_idx]
@@ -467,6 +506,8 @@ class ClaimExtractor:
             metadata={
                 "subject_type": item.get("subject_type", ""),
                 "object_type": item.get("object_type", ""),
+                "subject_canonical_hint": (item.get("subject_canonical_hint") or "").strip(),
+                "object_canonical_hint":  (item.get("object_canonical_hint") or "").strip(),
                 "conditions": conditions,
                 "population": population,
                 "raw_stats": raw_stats,
