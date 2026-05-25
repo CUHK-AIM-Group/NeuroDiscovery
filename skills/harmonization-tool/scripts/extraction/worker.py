@@ -83,22 +83,32 @@ class _ResampleCache:
         self._fitted = True
 
 
-def _download(url: str, dst: Path, retries: int = 5,
-              backoff: float = 2.0) -> Path:
+def _download(url: str, dst: Path, retries: int = 8,
+              backoff: float = 3.0, timeout: float = 600.0) -> Path:
     if dst.exists() and dst.stat().st_size > 0:
         return dst
     dst.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dst.with_suffix(dst.suffix + ".part")
     last = None
     for attempt in range(retries):
         try:
-            tmp = dst.with_suffix(dst.suffix + ".part")
-            with urllib.request.urlopen(url, timeout=120) as r, open(tmp, "wb") as f:
-                shutil.copyfileobj(r, f, length=1024 * 256)
+            with urllib.request.urlopen(url, timeout=timeout) as r:
+                expected = r.headers.get("Content-Length")
+                expected = int(expected) if expected else None
+                with open(tmp, "wb") as f:
+                    shutil.copyfileobj(r, f, length=1024 * 256)
+            got = tmp.stat().st_size
+            if expected is not None and got != expected:
+                raise RuntimeError(f"short read: got {got} expected {expected}")
             tmp.rename(dst)
             return dst
         except Exception as e:
             last = e
-            time.sleep(backoff * (2 ** attempt))
+            try:
+                tmp.unlink(missing_ok=True)
+            except Exception:
+                pass
+            time.sleep(min(60.0, backoff * (2 ** attempt)))
     raise RuntimeError(f"download failed after {retries} retries: {url} ({last})")
 
 

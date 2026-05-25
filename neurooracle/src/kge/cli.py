@@ -111,6 +111,9 @@ def cmd_plausibility(
     top: int = 0,
     device: Optional[str] = None,
     kg_path: Optional[str] = None,
+    enable_surprise: bool = False,
+    surprise_alpha: float = 0.1,
+    evo_surprise_min: Optional[float] = None,
 ) -> None:
     in_path = Path(input_path)
     out_path = Path(output) if output else in_path
@@ -174,6 +177,36 @@ def cmd_plausibility(
             logger.info("  ...%d/%d", i + 1, len(hypotheses))
 
     logger.info("scored %d new, skipped %d", n_scored, n_skipped)
+
+    if enable_surprise:
+        n_boosted = 0
+        for h in hypotheses:
+            gap = h.surprise_gap if h.surprise_gap is not None else (h.metadata or {}).get("surprise_gap")
+            if gap is None:
+                continue
+            bonus = surprise_alpha * max(0.0, float(gap))
+            if bonus > 0:
+                h.composite_score = float(h.composite_score) + bonus
+                n_boosted += 1
+        logger.info("surprise bonus applied to %d/%d hypotheses (alpha=%.3f)",
+                    n_boosted, len(hypotheses), surprise_alpha)
+
+    if evo_surprise_min is not None:
+        before = len(hypotheses)
+        kept = []
+        n_dropped_evo = 0
+        for h in hypotheses:
+            if not h.id.startswith("EVO:"):
+                kept.append(h)
+                continue
+            gap = h.surprise_gap if h.surprise_gap is not None else (h.metadata or {}).get("surprise_gap")
+            if gap is None or float(gap) < evo_surprise_min:
+                n_dropped_evo += 1
+                continue
+            kept.append(h)
+        hypotheses = kept
+        logger.info("EVO surprise filter: dropped %d EVO with surprise_gap<%.2f (kept %d/%d)",
+                    n_dropped_evo, evo_surprise_min, len(hypotheses), before)
 
     # Persist back into the original schema shape
     if isinstance(raw, list):

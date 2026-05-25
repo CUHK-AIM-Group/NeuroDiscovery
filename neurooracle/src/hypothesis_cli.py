@@ -20,6 +20,7 @@ import logging
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from typing import Optional
 
 from .storage import load_graph
 from .hypothesis_engine import (
@@ -81,7 +82,8 @@ def format_gap(g: Gap, index: int) -> str:
 
 def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
               max_seeds=50, as_json=False, legacy_domain_pairs=False,
-              task_filter=None, chain_filter=None):
+              task_filter=None, chain_filter=None,
+              target_per_task=None, max_retries=3, retry_scale=2.0):
     """Batch-generate hypotheses across the entire graph.
 
     Default (atom-task driven): traverses every Task in CANONICAL_TASKS via
@@ -146,27 +148,78 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
         hypotheses: list = []
         for task in tasks_to_run:
             print(f"  task: {task.name} [{task.signature}]")
-            hs = engine.batch_generate_for_task(
-                task,
-                max_hops=max_hops,
-                max_paths_per_pair=max_paths,
-                max_seeds_per_domain=max_seeds,
-            )
-            print(f"    -> {len(hs)} hypotheses")
-            hypotheses.extend(hs)
+            seen_ids: set = set()
+            kept: list = []
+            cur_paths, cur_seeds = max_paths, max_seeds
+            for attempt in range(1, max_retries + 1):
+                hs = engine.batch_generate_for_task(
+                    task,
+                    max_hops=max_hops,
+                    max_paths_per_pair=cur_paths,
+                    max_seeds_per_domain=cur_seeds,
+                )
+                added = 0
+                for h in hs:
+                    if h.id not in seen_ids:
+                        seen_ids.add(h.id)
+                        kept.append(h)
+                        added += 1
+                print(f"    attempt {attempt}: +{added} (total {len(kept)}, paths={cur_paths}, seeds={cur_seeds})")
+                if target_per_task is None or len(kept) >= target_per_task:
+                    break
+                cur_paths = max(int(cur_paths * retry_scale), cur_paths + 1)
+                cur_seeds = max(int(cur_seeds * retry_scale), cur_seeds + 1)
+            print(f"    -> {len(kept)} hypotheses")
+            hypotheses.extend(kept)
 
         for chain in chains_to_run:
             print(f"  chain: {chain.name} [{chain.signature}]")
-            hs = engine.batch_generate_for_chain(
-                chain,
-                max_hops_per_segment=max(max_hops // 2, 2),
-                max_paths_per_segment=max_paths,
-                max_seeds=max_seeds,
-            )
-            print(f"    -> {len(hs)} hypotheses")
-            hypotheses.extend(hs)
+            seen_ids = set()
+            kept = []
+            cur_paths, cur_seeds = max_paths, max_seeds
+            for attempt in range(1, max_retries + 1):
+                hs = engine.batch_generate_for_chain(
+                    chain,
+                    max_hops_per_segment=max(max_hops // 2, 2),
+                    max_paths_per_segment=cur_paths,
+                    max_seeds=cur_seeds,
+                )
+                added = 0
+                for h in hs:
+                    if h.id not in seen_ids:
+                        seen_ids.add(h.id)
+                        kept.append(h)
+                        added += 1
+                print(f"    attempt {attempt}: +{added} (total {len(kept)}, paths={cur_paths}, seeds={cur_seeds})")
+                if target_per_task is None or len(kept) >= target_per_task:
+                    break
+                cur_paths = max(int(cur_paths * retry_scale), cur_paths + 1)
+                cur_seeds = max(int(cur_seeds * retry_scale), cur_seeds + 1)
+            print(f"    -> {len(kept)} hypotheses")
+            hypotheses.extend(kept)
 
     print(f"Generated {len(hypotheses)} raw hypotheses")
+
+    # Cross-task / cross-chain deduplication: same path can be reachable from
+    # multiple task templates. Keep first occurrence (task_name tag wins) and
+    # drop any hypothesis lacking a stable id.
+    seen_ids: set = set()
+    deduped = []
+    n_dups = 0
+    n_empty = 0
+    for h in hypotheses:
+        if not h.id:
+            n_empty += 1
+            continue
+        if h.id in seen_ids:
+            n_dups += 1
+            continue
+        seen_ids.add(h.id)
+        deduped.append(h)
+    if n_dups or n_empty:
+        print(f"  deduplicated: -{n_dups} duplicate id(s), -{n_empty} empty id(s)")
+    hypotheses = deduped
+    print(f"After dedup: {len(hypotheses)} unique hypotheses")
 
     # auto-rank
     ranked = engine.rank_hypotheses(hypotheses)
@@ -434,6 +487,20 @@ def cmd_critic(engine, input_path, top_k, output_path, max_rounds, threshold, ma
 
     all_hypotheses.sort(key=lambda h: h.composite_score, reverse=True)
 
+    # Deduplicate by id (keep highest composite_score, which is first after sort)
+    seen_ids: set = set()
+    deduped = []
+    n_dups = 0
+    for h in all_hypotheses:
+        if h.id in seen_ids:
+            n_dups += 1
+            continue
+        seen_ids.add(h.id)
+        deduped.append(h)
+    if n_dups:
+        print(f"  deduplicated {n_dups} duplicate id(s)")
+    all_hypotheses = deduped
+
     out_path = output_path or input_path
     engine.save_hypotheses(all_hypotheses, out_path)
 
@@ -622,6 +689,17 @@ def cmd_evolve(engine, input_path, output_path, population, generations,
     out_path = output_path or input_path
     engine.save_hypotheses(evolved, out_path)
 
+    # Dump dropped EVO variants so we can diagnose post-filter wipeouts
+    # (cycle_005 saw raw_evo=0 even though K-Paths reported 15 kept).
+    dropped = getattr(evo, "_dropped_evos", None)
+    if dropped:
+        from pathlib import Path
+        diag_path = str(Path(out_path).parent / "_diag_evos.json")
+        with open(diag_path, "w", encoding="utf-8") as fh:
+            json.dump({"n_dropped": len(dropped), "dropped": dropped},
+                      fh, ensure_ascii=False, indent=2)
+        print(f"  diag: dumped {len(dropped)} dropped EVO variants -> {diag_path}")
+
     # count operators used
     op_counts = {}
     for h in evolved:
@@ -657,15 +735,92 @@ def cmd_evolve(engine, input_path, output_path, population, generations,
 # ── main ───────────────────────────────────────────────────────────────
 
 
-def cmd_recipe(*_args, **_kwargs):
-    """Phase 4.3 recipe generation has been removed.
+def cmd_recipe(graph_path: str, output: str, n: int = 50,
+               model: Optional[str] = None, batch_size: int = 50,
+               seed: int = 0) -> None:
+    """Generate computable-quantity recipes from KG inventory via LLM.
 
-    Per project decision on 2026-05-13, Input Recipe generation was deleted;
-    static experiment infrastructure (atlases, modalities, models, datasets)
-    is now ingested in Phase 1 instead. See README for details.
+    The LLM sees only a short data inventory (modalities + representative
+    gene/biomarker/region/score names) and is asked for ``n`` quantities.
+    No downstream task framing is included in the prompt.
+
+    For ``n <= batch_size`` a single LLM call is issued. For larger ``n``,
+    ``brainstorm_recipes_batched`` runs ceil(n/batch_size) calls with
+    rotating focus buckets and a "do not repeat" hint built from
+    previously-accepted names.
+
+    Output is a JSON file ``{"recipes": [...]}``. Recipes are linked back to
+    KG concepts by name match, but are NOT injected into the KG here - that
+    is a deliberate second step.
     """
-    print("Phase 4.3 recipe generation has been removed. "
-          "Use Phase 1 experiment-infra ingester for atlas/modality/model/dataset nodes.")
+    import os
+    import httpx
+    from openai import OpenAI
+
+    from .recipe import (build_inventory, brainstorm_recipes,
+                          brainstorm_recipes_batched, link_to_concepts,
+                          tag_atoms)
+
+    with open(graph_path, encoding="utf-8") as f:
+        kg = json.load(f)
+    concepts = kg.get("concepts") or {}
+    edges = kg.get("edges") or []
+    inventory = build_inventory(concepts, edges=edges)
+    print(f"inventory buckets: {[(k, len(v)) for k, v in inventory.items()]}")
+
+    base_url = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
+    model_name = model or os.environ.get("OPENAI_MODEL", "gpt-5.5")
+    keys_raw = os.environ.get("OPENAI_API_KEYS", "") or os.environ.get("OPENAI_API_KEY", "")
+    keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
+    if not keys:
+        raise RuntimeError("OPENAI_API_KEYS / OPENAI_API_KEY not set")
+    client = OpenAI(base_url=base_url, api_key=keys[0],
+                     http_client=httpx.Client(verify=False))
+
+    def _llm_call(prompt: str, system_prompt: str) -> str:
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=4096,
+        )
+        return resp.choices[0].message.content.strip()
+
+    if n <= batch_size:
+        recipes = brainstorm_recipes(inventory, n=n, llm_call=_llm_call,
+                                      model_name=model_name)
+    else:
+        recipes = brainstorm_recipes_batched(
+            inventory, n_total=n, llm_call=_llm_call,
+            model_name=model_name, batch_size=batch_size, seed=seed)
+    print(f"LLM returned {len(recipes)} recipes (after dedup + filter)")
+    link_to_concepts(recipes, concepts)
+    n_linked = sum(1 for r in recipes if r.linked_concept_ids)
+    print(f"linked {n_linked}/{len(recipes)} to KG concepts")
+    tag_atoms(recipes, concepts)
+    from collections import Counter
+    atom_counts = Counter()
+    for r in recipes:
+        for a in r.atoms:
+            atom_counts[a] += 1
+    print(f"atom coverage: {dict(atom_counts.most_common())}")
+
+    out_path = Path(output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "metadata": {
+            "n_recipes": len(recipes),
+            "llm_model": model_name,
+            "inventory": inventory,
+        },
+        "recipes": [r.to_dict() for r in recipes],
+    }
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"wrote -> {out_path}")
 
 
 # ── main ───────────────────────────────────────────────────────────────
@@ -696,6 +851,13 @@ def main():
     p_batch.add_argument("--chains", default=None,
                           help="Comma-separated chain names to run (default: all CANONICAL_CHAINS). "
                                "Only used in task-driven mode. Pass '' to skip chains entirely.")
+    p_batch.add_argument("--target-per-task", type=int, default=None,
+                          help="Retry generation per task/chain until at least N unique hypotheses "
+                               "are kept after post_process (default: no retry).")
+    p_batch.add_argument("--max-retries", type=int, default=3,
+                          help="Max retry attempts per task/chain when --target-per-task is set.")
+    p_batch.add_argument("--retry-scale", type=float, default=2.0,
+                          help="Scale factor applied to max-paths and max-seeds on each retry.")
 
     # rank
     p_rank = sub.add_parser("rank", help="Load and re-rank saved hypotheses")
@@ -829,7 +991,27 @@ def main():
                           help="Re-score even hypotheses already having kge_score (default: skip)")
     p_plaus.add_argument("--kg", default=None,
                           help="Optional KG path; enables hub/CLM specificity filter")
+    p_plaus.add_argument("--enable-surprise", action="store_true",
+                          help="Add alpha * max(0, surprise_gap) into composite_score (default OFF)")
+    p_plaus.add_argument("--surprise-alpha", type=float, default=0.1,
+                          help="Weight for surprise_gap when --enable-surprise is set (default 0.1)")
+    p_plaus.add_argument("--evo-surprise-min", type=float, default=None,
+                          help="Drop EVO:* hypotheses with surprise_gap below this threshold "
+                               "(e.g. 0.0 = require positive surprise; default: no filter)")
     p_plaus.add_argument("--device", default=None, help="cuda / cpu (default: auto)")
+
+    # recipe (Input Recipe: LLM-brainstormed computable quantities)
+    p_recipe = sub.add_parser("recipe",
+                                help="Brainstorm computable quantities from KG data inventory")
+    p_recipe.add_argument("--graph", dest="recipe_graph", default=None,
+                            help="KG path (default: --graph or neurooracle/data/full/knowledge_graph.json)")
+    p_recipe.add_argument("--output", default="neurooracle/data/full/recipes.json")
+    p_recipe.add_argument("--n", type=int, default=50, help="Number of recipes to brainstorm")
+    p_recipe.add_argument("--model", default=None, help="LLM model override")
+    p_recipe.add_argument("--batch-size", type=int, default=50,
+                            help="Recipes per LLM call when n > batch_size (default 50)")
+    p_recipe.add_argument("--seed", type=int, default=0,
+                            help="RNG seed for batched focus rotation")
 
     args = parser.parse_args()
 
@@ -853,7 +1035,16 @@ def main():
                 skip_existing=not args.no_skip_existing,
                 no_pubmed=args.no_pubmed, top=args.top, device=args.device,
                 kg_path=args.kg,
+                enable_surprise=args.enable_surprise,
+                surprise_alpha=args.surprise_alpha,
+                evo_surprise_min=args.evo_surprise_min,
             )
+        return
+
+    if args.command == "recipe":
+        graph_p = args.recipe_graph or args.graph or "neurooracle/data/full/knowledge_graph.json"
+        cmd_recipe(graph_path=graph_p, output=args.output, n=args.n,
+                    model=args.model, batch_size=args.batch_size, seed=args.seed)
         return
 
     graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
@@ -867,7 +1058,10 @@ def main():
                   max_hops=args.max_hops, max_paths=args.max_paths,
                   max_seeds=args.max_seeds, as_json=as_json,
                   legacy_domain_pairs=args.legacy_domain_pairs,
-                  task_filter=args.tasks, chain_filter=args.chains)
+                  task_filter=args.tasks, chain_filter=args.chains,
+                  target_per_task=args.target_per_task,
+                  max_retries=args.max_retries,
+                  retry_scale=args.retry_scale)
     elif args.command == "rank":
         cmd_rank(engine, args.input, top_n=args.top, as_json=as_json)
     elif args.command == "paths":

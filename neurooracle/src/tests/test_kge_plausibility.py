@@ -101,26 +101,26 @@ def test_local_plausibility_empty_path():
     assert per == []
 
 
-def test_global_attestation_dedupes_path_nodes():
-    """The query should AND the unique node names, not edge endpoints."""
+def test_global_attestation_weakest_link():
+    """Returns min hits across adjacent (from,to) pairs, no quotes."""
     h = _Hyp(path=[
         _Link("A", "alpha", "B", "beta", "rel1"),
         _Link("B", "beta", "C", "gamma", "rel2"),
     ])
     seen_queries: list[str] = []
+    counts = {"alpha AND beta": 8, "beta AND gamma": 3}
 
     def fake_count(q: str) -> int:
         seen_queries.append(q)
-        return 5  # half of saturation
+        return counts.get(q, 0)
 
     score, hits, query = global_attestation(h, fake_count, saturation_hits=10)
-    assert hits == 5
-    assert score == pytest.approx(0.5)
-    assert seen_queries == [query]
-    # alpha + beta + gamma must each appear exactly once
-    assert query.count('"alpha"') == 1
-    assert query.count('"beta"') == 1
-    assert query.count('"gamma"') == 1
+    assert hits == 3
+    assert score == pytest.approx(0.3)
+    assert query == "beta AND gamma"
+    assert set(seen_queries) == {"alpha AND beta", "beta AND gamma"}
+    # bare phrases — no double-quotes
+    assert '"' not in query
 
 
 def test_global_attestation_saturates():

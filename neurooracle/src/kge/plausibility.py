@@ -62,34 +62,44 @@ def global_attestation(
     pubmed_count_fn,
     saturation_hits: int = ATTESTATION_SATURATION_HITS,
 ) -> tuple[float, int, str]:
-    """Normalised PubMed joint mention rate for the path's full node set.
+    """Pairwise weakest-link attestation across PubMed.
 
-    pubmed_count_fn(query: str) -> int. Caller injects the PubMed client so
-    this module stays free of network code (and unit-tests can pass a stub).
+    For each adjacent (from_name, to_name) pair on the path we issue a
+    PubMed AND query (no quotes, so MeSH auto-expansion + [All Fields] match
+    fire) and take the minimum hit count. Rationale: a chain is only as
+    well-documented as its weakest hop; an end-to-end joint AND query
+    returns 0 for any chain longer than two whose authors didn't happen
+    to write all nodes in one paper, which collapses the signal.
 
-    Saturation: ≥ ``saturation_hits`` joint mentions → 1.0. The score reflects
-    'how well-attested is the joint chain', not raw counts.
+    Returns (normalised_score, weakest_hit_count, debug_query). The
+    debug_query is the pair that produced the minimum, useful for spot-
+    checking why a path scored low.
     """
-    nodes: list[str] = []
-    seen: set[str] = set()
     path = getattr(hypothesis, "path", [])
+    pairs: list[tuple[str, str]] = []
     for link in path:
-        for name in (link.from_name, link.to_name):
-            if name and name not in seen:
-                seen.add(name)
-                nodes.append(name)
-    if len(nodes) < 2:
+        a, b = (link.from_name or "").strip(), (link.to_name or "").strip()
+        if a and b and a != b:
+            pairs.append((a, b))
+    if not pairs:
         return 0.0, 0, ""
 
-    query = " AND ".join(f'"{n}"' for n in nodes)
-    try:
-        hit_count = int(pubmed_count_fn(query))
-    except Exception as exc:  # pragma: no cover — defensive
-        logger.warning("pubmed_count_fn failed for %s: %s", query[:80], exc)
-        return 0.0, 0, query
+    weakest_hits = None
+    weakest_query = ""
+    for a, b in pairs:
+        query = f"{a} AND {b}"
+        try:
+            hits = int(pubmed_count_fn(query))
+        except Exception as exc:  # pragma: no cover — defensive
+            logger.warning("pubmed_count_fn failed for %s: %s", query[:80], exc)
+            hits = 0
+        if weakest_hits is None or hits < weakest_hits:
+            weakest_hits = hits
+            weakest_query = query
 
-    norm = min(hit_count / saturation_hits, 1.0)
-    return norm, hit_count, query
+    weakest_hits = weakest_hits or 0
+    norm = min(weakest_hits / saturation_hits, 1.0)
+    return norm, weakest_hits, weakest_query
 
 
 def surprise_gap(local: float, attest: float) -> float:
@@ -124,7 +134,10 @@ def score_hypothesis(
         meta = {}
         hypothesis.metadata = meta
 
-    if skip_existing and meta.get("kge_score") is not None:
+    existing = getattr(hypothesis, "kge_score", None)
+    if existing is None:
+        existing = meta.get("kge_score")
+    if skip_existing and existing is not None:
         return {
             "kge_score": meta.get("kge_score"),
             "kge_attestation": meta.get("kge_attestation"),
@@ -138,14 +151,22 @@ def score_hypothesis(
     meta["kge_score"] = local
     meta["kge_per_edge"] = per_edge
     meta["kge_model"] = scorer.name
+    if hasattr(hypothesis, "kge_score"):
+        hypothesis.kge_score = local
 
     spec_score, spec_issues = path_specificity(hypothesis, concepts, degrees)
     meta["specificity_score"] = spec_score
     meta["specificity_issues"] = spec_issues
+    if hasattr(hypothesis, "specificity_score"):
+        hypothesis.specificity_score = spec_score
+        hypothesis.specificity_issues = list(spec_issues)
 
     if pubmed_count_fn is None:
         meta.pop("kge_attestation", None)
         meta.pop("surprise_gap", None)
+        if hasattr(hypothesis, "kge_attestation"):
+            hypothesis.kge_attestation = None
+            hypothesis.surprise_gap = None
         return {
             "kge_score": local,
             "kge_attestation": None,
@@ -161,6 +182,9 @@ def score_hypothesis(
     meta["kge_attestation_hits"] = hit_count
     meta["kge_attestation_query"] = query
     meta["surprise_gap"] = gap
+    if hasattr(hypothesis, "kge_attestation"):
+        hypothesis.kge_attestation = attest
+        hypothesis.surprise_gap = gap
     return {
         "kge_score": local,
         "kge_attestation": attest,

@@ -198,22 +198,25 @@ class CriticAgent:
         prompt = self._build_review_prompt(hypothesis)
         perspective_results: dict[str, list[CriticFeedback]] = {}
 
-        if self.use_independent_agents and self._persona_agents:
-            # Use independent PersonaAgents with cross-round memory
-            for name in PERSPECTIVES:
+        def _call_and_parse(name: str, sys_prompt: str, use_agent: bool) -> list[CriticFeedback]:
+            if use_agent:
                 agent = self._persona_agents.get(name)
-                if agent is not None:
-                    raw = agent.discuss(prompt)
-                    perspective_results[name] = self._parse_review_response(raw)
-                else:
-                    sys_prompt = PERSPECTIVES[name]
-                    raw = self._call_llm(prompt, system_prompt=sys_prompt)
-                    perspective_results[name] = self._parse_review_response(raw)
-        else:
-            # Original stateless mode
-            for name, sys_prompt in PERSPECTIVES.items():
+                raw = agent.discuss(prompt) if agent is not None else self._call_llm(prompt, system_prompt=sys_prompt)
+            else:
                 raw = self._call_llm(prompt, system_prompt=sys_prompt)
-                perspective_results[name] = self._parse_review_response(raw)
+            if not raw or not raw.strip() or self._extract_json(raw) is None:
+                logger.info(
+                    f"empty/unparseable response for {hypothesis.id} ({name}), retrying once"
+                )
+                raw = self._call_llm(prompt, system_prompt=sys_prompt)
+            return self._parse_review_response(raw)
+
+        if self.use_independent_agents and self._persona_agents:
+            for name in PERSPECTIVES:
+                perspective_results[name] = _call_and_parse(name, PERSPECTIVES[name], use_agent=True)
+        else:
+            for name, sys_prompt in PERSPECTIVES.items():
+                perspective_results[name] = _call_and_parse(name, sys_prompt, use_agent=False)
 
         # Aggregate: take the average score per dimension across perspectives
         aggregated: list[CriticFeedback] = []

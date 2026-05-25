@@ -16,9 +16,44 @@ logger = logging.getLogger(__name__)
 class KnowledgeGraph:
     """Directed knowledge graph for neuroscience concepts and relationships."""
 
+    # Relation types that carry no semantic content for hypothesis traversal.
+    # `about` is provenance only (claim -> subject/object); traversal must skip it.
+    PROVENANCE_RELATIONS: set[str] = {"about"}
+
     def __init__(self):
         self.G = nx.DiGraph()
         self._index: dict[str, ConceptNode] = {}  # id -> ConceptNode
+        self._semantic_view = None  # lazy: built on first access
+
+    @property
+    def semantic_view(self) -> nx.DiGraph:
+        """Read-only view of G with provenance edges (`about`) filtered out.
+
+        Hypothesis traversal MUST use this view, not `self.G`. The full graph
+        retains `about` edges for confidence propagation and claim lookup.
+
+        Materialized as a real DiGraph (not subgraph_view) because lazy edge
+        filtering destroys all_simple_paths performance on multi-million-edge
+        graphs. Memory cost: ~22% of full graph (`about` is 78% of edges).
+        Built once on first access.
+        """
+        if self._semantic_view is None:
+            sv = nx.DiGraph()
+            sv.add_nodes_from(self.G.nodes(data=True))
+            for u, v, d in self.G.edges(data=True):
+                if d.get("relation_type", "") not in self.PROVENANCE_RELATIONS:
+                    sv.add_edge(u, v, **d)
+            logger.info(
+                f"semantic_view built: {sv.number_of_nodes()} nodes, "
+                f"{sv.number_of_edges()} edges (filtered "
+                f"{self.G.number_of_edges() - sv.number_of_edges()} `about` edges)"
+            )
+            self._semantic_view = sv
+        return self._semantic_view
+
+    def invalidate_semantic_view(self) -> None:
+        """Drop the cached semantic view. Call after large edge additions/removals."""
+        self._semantic_view = None
 
     # ── node operations ──────────────────────────────────────────────
 

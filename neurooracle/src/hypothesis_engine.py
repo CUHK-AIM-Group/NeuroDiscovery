@@ -78,6 +78,11 @@ class Hypothesis:
     critic_feedback: list[dict] = field(default_factory=list)
     critic_rounds: int = 0
     evolve_score: float = 0.0
+    kge_score: float | None = None
+    kge_attestation: float | None = None
+    surprise_gap: float | None = None
+    specificity_score: float | None = None
+    specificity_issues: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -232,6 +237,138 @@ _TARGET_TOO_BROAD_PATTERNS = [
 
 # Vague relation types that add little signal
 VAGUE_RELATIONS = {"is_associated_with", "associated_with", "about"}
+
+# (P2) Umbrella source-name patterns. These are entities that pass the
+# `_is_generic_intermediate` / `_is_too_broad_target` filters because they
+# look like specific biological objects, but in practice they are umbrella
+# nouns that don't constrain a downstream DL experiment as a SOURCE seed.
+#
+# Empirically (cycle_001 audit): 519 / 1054 hypotheses (49%) seeded from
+# these umbrellas. Examples in the top-15 source pool:
+#   "scalp EEG", "neuroimaging", "magnetic resonance spectroscopy"
+#       -> measurement modality, not an entity to predict from
+#   "cortical reorganization", "synaptic plasticity"
+#       -> abstract process; no concrete biomarker to feed a model
+#   "intestinal microbiota", "Neuroglia", "Nervous System"
+#       -> biological super-categories
+#   "high inflammation", "EEG abnormalities"
+#       -> qualitative state without measurable axis
+#   "direct pathway", "neurovascular unit", "Corpus Callosum"
+#       -> anatomical umbrellas (specific subregions are still allowed)
+#
+# Only blocks SOURCE seed selection. The same name may be valid as an
+# intermediate (carrying mechanism) or as a target outcome.
+_UMBRELLA_SOURCE_PATTERNS = [
+    # Measurement / imaging modalities used as entity names
+    re.compile(r"^(scalp\s+)?(eeg|meg|fmri|mri|pet|ct|ecg)"
+               r"(\s+(abnormalit(y|ies)|finding|findings|signal|signals|"
+               r"data|recording|recordings|measurement|measurements))?$", re.I),
+    re.compile(r"^(neuro)?imaging$", re.I),
+    re.compile(r"^(functional|structural|diffusion|resting[\s-]+state)\s+"
+               r"(mri|imaging|connectivity)$", re.I),
+    re.compile(r"^(magnetic\s+resonance\s+(imaging|spectroscopy)|"
+               r"positron\s+emission\s+tomography|"
+               r"electroencephalogra(phy|m)|"
+               r"magnetoencephalogra(phy|m))$", re.I),
+
+    # Abstract processes / states (no measurable axis to seed from)
+    re.compile(r"^(cortical|neural|synaptic|brain)\s+"
+               r"(reorganization|remodeling|adaptation|plasticity)$", re.I),
+    re.compile(r"^(neuro)?(plasticity|inflammation|degeneration|protection|"
+               r"genesis|modulation|transmission)$", re.I),
+    re.compile(r"^(high|low|elevated|reduced|increased|decreased|chronic|acute)\s+"
+               r"(inflammation|stress|activity|excitability|connectivity)$", re.I),
+
+    # System / super-category nouns
+    re.compile(r"^(central|peripheral|autonomic|somatic)?\s*nervous\s+system$", re.I),
+    re.compile(r"^(neurogli(a|al\s+cells)|glia|glial\s+cells|neurons?)$", re.I),
+    re.compile(r"^(immune|endocrine|cardiovascular|gastrointestinal)\s+system$", re.I),
+    re.compile(r"^(intestinal|gut|oral|skin)\s+(microbiota|microbiome|flora)$", re.I),
+
+    # Pathway / circuit umbrellas (specific subcomponents like "D1 MSN" still pass)
+    re.compile(r"^(direct|indirect|hyperdirect)\s+pathway$", re.I),
+    re.compile(r"^(neurovascular|neuromuscular)\s+unit$", re.I),
+
+    # Generic anatomy umbrellas at the gross level (specific subnuclei still pass:
+    # "CA1", "ventral striatum", "BA17" are not blocked)
+    re.compile(r"^(corpus\s+callosum|basal\s+ganglia|limbic\s+system|"
+               r"reticular\s+formation|brainstem|forebrain|midbrain|hindbrain)$", re.I),
+    re.compile(r"^(grey|gray|white)\s+matter$", re.I),
+
+    # Biomarker class umbrellas (specific markers like "anti-MOG" still pass)
+    re.compile(r"^(oligoclonal\s+bands|inflammatory\s+markers?|"
+               r"oxidative\s+stress\s+markers?)$", re.I),
+
+    # ── P2 v1.5 patterns added 2026-05-24 after first run exposed ──
+    # second-order umbrellas (hubs/circuitry/networks/systems suffixes,
+    # vague modifiers, sample-size descriptors).
+
+    # Bare topology nouns (single token)
+    re.compile(r"^(hubs?|circuits?|circuitries|networks?|systems?|"
+               r"pathways?|connections?|wirings?)$", re.I),
+
+    # Common-modifier + topology suffix (1-token modifier)
+    # Specific named networks like "Default Mode Network" / "salience network"
+    # would match here too, so exclude them in `_named_network_exception`.
+    # Empirically this catches "connectivity hubs", "network hubs",
+    # "metabolic networks", "reward circuitry", "sensory systems",
+    # "fronto-striatal circuitry", "prefrontal network".
+    re.compile(r"^(connectivity|network|reward|sensory|motor|cognitive|emotional|"
+               r"limbic|cortical|subcortical|neural|brain|metabolic|"
+               r"prefrontal|frontal|parietal|temporal|occipital|"
+               r"striato-?\w*|fronto-?\w*|cortico-?\w*|cerebro-?\w*)\s+"
+               r"(hubs?|circuitr(y|ies)|circuits?|networks?|systems?)$",
+               re.I),
+
+    # Vague qualifier + (optional middle token) + topology / connectivity
+    # Catches "selected neural circuits", "shared neural networks",
+    # "between-network functional connectivity changes",
+    # "undirected functional connectivity alterations".
+    # NOTE: `static`/`dynamic` are NOT vague (they name fMRI analysis
+    # types like "static functional connectivity"), so they are excluded.
+    re.compile(r"^(selected|shared|altered|aberrant|abnormal|impaired|"
+               r"reduced|increased|decreased|distributed|widespread|"
+               r"specific|various|different|key|core|main|primary|"
+               r"between-network|within-network|undirected|directed|"
+               r"true)\s+"
+               r"(\w+(-\w+)?\s+){0,3}"
+               r"(hubs?|circuits?|circuitr(y|ies)|networks?|systems?|"
+               r"connectivity|connections?|"
+               r"changes?|alterations?|disruptions?|disturbances?|"
+               r"abnormalit(y|ies)|deficits?|impairments?|dysfunctions?|"
+               r"neurodegeneration|degeneration|inflammation|damage)$",
+               re.I),
+
+    # Connectivity-as-noun wrapped in change-words ("X functional connectivity changes")
+    re.compile(r"^.*(connectivity|network)\s+"
+               r"(changes?|alterations?|abnormalit(y|ies)|"
+               r"disruptions?|disturbances?)$", re.I),
+
+    # Treatment / disease "effects" / "outcomes" as a source.
+    # Too vague to seed from ("treatment effects -> X" doesn't say which
+    # treatment, which effect axis). Specific outcomes like "PASI score"
+    # or "MMSE decline" are unaffected.
+    re.compile(r"^(treatment|disease|therapy|therapeutic|clinical)\s+"
+               r"(effects?|outcomes?|response|responses)$", re.I),
+
+    # Sample-size descriptors (claim_extractor noise: "250 healthy controls")
+    re.compile(r"^\d+\s+(healthy|normal|patient|patients?|controls?|"
+               r"subjects?|participants?|individuals?|men|women|"
+               r"adults|children|adolescents|elderly|cases?)\b", re.I),
+
+    # Generic process+functioning compounds
+    re.compile(r"^(gi|gut|metabolic|immune|cognitive|emotional|"
+               r"behavioral|social|sensorimotor|autonomic)\s+"
+               r"(functioning?|regulation|processing|control|"
+               r"dysregulation|dysfunction)$", re.I),
+
+    # Bare process nouns at single-token level (coupled with "X" prefix
+    # like "structural damage", "iron deposition" stay specific via
+    # required prefix; we only block the bare forms here).
+    re.compile(r"^(neurodegeneration|neuroinflammation|neuromodulation|"
+               r"neurogenesis|neuroprotection|neuroplasticity|"
+               r"oxidation|reduction|signaling|transmission)$", re.I),
+]
 
 # CognitiveAtlas / MeSH concept ids that are top-degree generic hubs
 # in the KG. The audit found these at degrees 700-9000+, with names that
@@ -850,7 +987,9 @@ class HypothesisEngine:
 
     def __init__(self, kg: KnowledgeGraph):
         self.kg = kg
-        self.G = kg.G
+        # P1: traversal walks the semantic layer only (no `about` provenance edges).
+        # The full graph remains accessible via self.kg.G for claim lookup.
+        self.G = kg.semantic_view if hasattr(kg, "semantic_view") else kg.G
         self._index = kg._index
         # Build claims index for frequency_boost: (subj, pred, obj) → [claim_meta, ...]
         self._claims_by_triple: dict[tuple[str, str, str], list[dict]] = {}
@@ -1470,6 +1609,14 @@ class HypothesisEngine:
             if self._is_too_broad_target(h.target_name):
                 continue
 
+            # (P2) filter: source is an umbrella concept (imaging modality,
+            # super-category, abstract process). batch_generate seeds via
+            # _sample_domain_nodes which already drops these, but other
+            # entry points (task pipelines, manual paths) skip that filter
+            # so we mirror the gate at post_process for defence-in-depth.
+            if self._is_umbrella_source(h.source_name):
+                continue
+
             # filter paths with no directional predicates (pure association chains)
             if len(h.path) >= 2:
                 relation_types = {l.relation_type for l in h.path}
@@ -1577,6 +1724,43 @@ class HypothesisEngine:
             return True
         s = name.strip()
         for pattern in _TARGET_TOO_BROAD_PATTERNS:
+            if pattern.match(s):
+                return True
+        return False
+
+    # (P2) Whitelist for the network-suffix umbrella check: these are
+    # named, well-defined functional networks. They look like
+    # "<modifier> network" but identify a specific, atlasable circuit
+    # so we want them to pass even if the umbrella regex matches.
+    _NAMED_NETWORK_EXCEPTIONS = frozenset({
+        "default mode network", "salience network", "executive control network",
+        "frontoparietal network", "central executive network",
+        "dorsal attention network", "ventral attention network",
+        "somatomotor network", "visual network", "limbic network",
+        "language network", "auditory network", "cingulo-opercular network",
+        # canonical anatomical pathways with strong specificity
+        "mesolimbic pathway", "mesocortical pathway", "nigrostriatal pathway",
+        "tuberoinfundibular pathway",
+    })
+
+    @staticmethod
+    def _is_umbrella_source(name: str) -> bool:
+        """(P2) Block source seeds that are umbrella concepts: imaging
+        modalities, abstract processes, super-category nouns, or pathway
+        umbrellas. These pass the noise/intermediate filters because they
+        look like real entities, but they don't constrain a downstream DL
+        experiment when used as the seed of a hypothesis.
+
+        Only call on the SOURCE node. Endpoints can legitimately be
+        umbrellas (predicting "neuroimaging finding" from a biomarker is
+        fine), and intermediates are filtered separately.
+        """
+        if not name:
+            return True
+        s = name.strip()
+        if s.lower() in HypothesisEngine._NAMED_NETWORK_EXCEPTIONS:
+            return False
+        for pattern in _UMBRELLA_SOURCE_PATTERNS:
             if pattern.match(s):
                 return True
         return False
@@ -2652,13 +2836,32 @@ class HypothesisEngine:
     # ── internal helpers ───────────────────────────────────────────────
 
     def _sample_domain_nodes(self, domain: str, max_n: int) -> list[str]:
-        """Sample up to max_n non-claim nodes from a domain, preferring nodes with edges."""
-        nodes = [
-            nid for nid, data in self.G.nodes(data=True)
+        """Sample up to max_n non-claim nodes from a domain, preferring nodes with edges.
+
+        (P2) Umbrella-source filter: drops imaging modalities, abstract
+        processes, super-category nouns and pathway umbrellas before sorting.
+        These look like real entities to the type system but don't
+        constrain a DL experiment when used as the seed of a hypothesis.
+        """
+        all_nodes = [
+            (nid, data) for nid, data in self.G.nodes(data=True)
             if domain in data.get("domain_tags", [])
             and "claim" not in data.get("domain_tags", [])
             and nid not in PATH_IGNORE_NODE_IDS
         ]
+        nodes = []
+        n_umbrella_dropped = 0
+        for nid, data in all_nodes:
+            name = data.get("preferred_name") or ""
+            if self._is_umbrella_source(name):
+                n_umbrella_dropped += 1
+                continue
+            nodes.append(nid)
+        if n_umbrella_dropped:
+            logger.info(
+                "domain=%s seed pool: dropped %d umbrella sources, kept %d",
+                domain, n_umbrella_dropped, len(nodes),
+            )
         # sort by degree (more connected = more useful as seed)
         nodes.sort(key=lambda n: self.G.degree(n), reverse=True)
         return nodes[:max_n]

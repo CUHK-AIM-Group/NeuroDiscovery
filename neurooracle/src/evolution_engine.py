@@ -26,6 +26,7 @@ from .hypothesis_engine import (
     Hypothesis, HypothesisEngine, HypothesisLink,
     _AAL_REGION_KEYWORDS, NON_MEASURABLE_BIOMARKER_TYPES,
     _NON_MEASURABLE_PATTERNS,
+    PATH_IGNORE_NODE_IDS, INTERMEDIATE_ONLY_IGNORE_IDS,
 )
 from .schema import ConceptNode
 
@@ -65,6 +66,28 @@ MODALITY_COMPAT: dict[str, set[str]] = {
 
 # Vague predicates that should be refined
 _VAGUE_PREDICATES = {"is_associated_with", "associated_with", "correlates_with", "about"}
+
+# Strong directional predicates: when mutation moves these onto a new subject/object,
+# the original semantics may be broken. Re-validate via LLM against the candidate pool
+# of predicates that the (subject_type, object_type) combination historically supports.
+_STRONG_DIRECTIONAL_PREDICATES = {
+    "reduces", "increases", "activates", "inhibits",
+    "causes", "treats", "may_underlie", "upregulates", "downregulates",
+}
+
+# ── K-Paths diversity-aware mutation ────────────────────────────────────
+# References: arXiv 2502.13344 (K-Paths, NeurIPS'25 workshop). Yen's
+# K-shortest loopless paths between (source, target) followed by a
+# diversity filter that rejects new paths whose edge/node/predicate
+# overlap with already-accepted paths exceeds the thresholds below.
+# Naturally implements the pair-wise hub quota the P5 brief asks for:
+# a hub repeating across paths blows past the edge/node-overlap cap.
+_KPATHS_MAX_CANDIDATES = 25       # Yen enumeration cap
+_KPATHS_MAX_LEN = 5               # reject overlong paths early
+_KPATHS_EDGE_OVERLAP = 0.5        # |E_new ∩ E_seen| / |E_new| must be <
+_KPATHS_NODE_OVERLAP = 0.6        # same on node sets
+_KPATHS_PREDICATE_JACCARD = 0.7   # predicate-multiset Jaccard cap
+
 
 
 class EvolutionMemory:
@@ -155,6 +178,22 @@ class EvolutionEngine:
         self._current_population: list[Hypothesis] = []
         self.memory = EvolutionMemory()
 
+        self._predicate_index: dict[tuple[frozenset, frozenset], set[str]] = {}
+        self._predicate_index_built = False
+        self._repredicate_cache: dict[tuple, str] = {}
+        self._repredicate_client = None
+        self._repredicate_stats = {"hits": 0, "misses": 0, "fallbacks": 0, "errors": 0}
+
+        # K-Paths semantic subgraph (lazy): true DiGraph copy with `about`
+        # edges and global hub nodes stripped, so Yen's k-shortest path
+        # enumeration cannot keep escaping into category umbrellas.
+        # subgraph_view is unsafe here — see feedback_networkx_subgraph_perf.
+        self._kpaths_subgraph: Optional[nx.DiGraph] = None
+        self._kpaths_stats = {
+            "trials": 0, "yen_ok": 0, "diversity_kept": 0,
+            "diversity_rejected": 0, "no_path": 0,
+        }
+
         self.mutators = [
             self._hop_extension,
             self._hop_contraction,
@@ -162,6 +201,7 @@ class EvolutionEngine:
             self._outcome_pivot,
             self._mediator_injection,
             self._convergence_fusion,
+            self._diverse_k_paths,
         ]
         self.crossovers = [
             self._path_crossover,
@@ -251,65 +291,80 @@ class EvolutionEngine:
                 _deg[v] += 1
         hub_ids = {cid for cid, _ in _deg.most_common(50)}
 
+        from .hypothesis_engine import (
+            PATH_IGNORE_NODE_IDS, INTERMEDIATE_ONLY_IGNORE_IDS,
+            HypothesisEngine, DIRECTIONAL_RELATIONS,
+        )
+
         filtered = []
+        drop_reasons: Counter = Counter()
+        self._dropped_evos: list[dict] = []
         for h in population:
             if not h.id.startswith("EVO:"):
                 filtered.append(h)
                 continue
-            # Quality gates for evolved variants:
-            if h.composite_score < 0.40:
-                continue
-            if any(s.confidence < 0.05 for s in h.path):
-                continue
-            vague_count = sum(1 for s in h.path
-                              if s.relation_type in {"is_associated_with", "correlates_with"})
-            if vague_count >= 2:
-                continue
-            if len(h.path) > 7:
-                continue
-            # New: reject if any step is hub-to-hub (generic category→category edge)
-            if any(s.from_id in hub_ids and s.to_id in hub_ids for s in h.path):
-                continue
-            # Also reject if any node in the path is in the explicit blacklist
-            # of vague COGAT/MeSH umbrella hubs (memory/logic/loss/Brain/etc.).
-            # Mirrors hypothesis_engine.post_process so evolved variants
-            # cannot smuggle these in by direct graph sampling.
-            from .hypothesis_engine import (
-                PATH_IGNORE_NODE_IDS, INTERMEDIATE_ONLY_IGNORE_IDS,
-                HypothesisEngine, DIRECTIONAL_RELATIONS,
-            )
-            if h.source_id in PATH_IGNORE_NODE_IDS or h.target_id in PATH_IGNORE_NODE_IDS:
-                continue
-            if any(s.from_id in PATH_IGNORE_NODE_IDS or s.to_id in PATH_IGNORE_NODE_IDS
-                   for s in h.path):
-                continue
-            # Reject paths transiting through disease mega-hubs
-            if HypothesisEngine._transits_intermediate_only_hub(h):
-                continue
-            # (C-1/2/3) mirror the phrase-level, directional-density, and
-            # too-broad-target gates from hypothesis_engine.post_process so
-            # evolved variants cannot slip generic phrases past us by
-            # construction (e.g. mutating into "neural activity" as hop).
-            intermediate_names: list[str] = []
-            for i, link in enumerate(h.path):
-                if i >= 1:
-                    intermediate_names.append(link.from_name or "")
-                if i < len(h.path) - 1:
-                    intermediate_names.append(link.to_name or "")
-            if any(HypothesisEngine._is_generic_intermediate(n) for n in intermediate_names):
-                continue
-            if len(h.path) >= 3:
-                directional = sum(1 for s in h.path if s.relation_type in DIRECTIONAL_RELATIONS)
-                if directional * 2 < len(h.path):
-                    continue
-            if HypothesisEngine._is_too_broad_target(h.target_name):
+
+            reason: Optional[str] = None
+            if h.composite_score < 0.30:
+                reason = "composite<0.30"
+            elif any(s.confidence < 0.05 for s in h.path):
+                reason = "weak_edge"
+            elif sum(1 for s in h.path
+                     if s.relation_type in {"is_associated_with", "correlates_with"}) >= 2:
+                reason = "dual_vague_predicates"
+            elif len(h.path) > 7:
+                reason = "len>7"
+            elif any(s.from_id in hub_ids and s.to_id in hub_ids for s in h.path):
+                reason = "hub_to_hub"
+            elif h.source_id in PATH_IGNORE_NODE_IDS or h.target_id in PATH_IGNORE_NODE_IDS:
+                reason = "endpoint_in_path_ignore"
+            elif any(s.from_id in PATH_IGNORE_NODE_IDS or s.to_id in PATH_IGNORE_NODE_IDS
+                     for s in h.path):
+                reason = "step_in_path_ignore"
+            elif HypothesisEngine._transits_intermediate_only_hub(h):
+                reason = "transits_intermediate_only_hub"
+            else:
+                intermediate_names: list[str] = []
+                for i, link in enumerate(h.path):
+                    if i >= 1:
+                        intermediate_names.append(link.from_name or "")
+                    if i < len(h.path) - 1:
+                        intermediate_names.append(link.to_name or "")
+                if any(HypothesisEngine._is_generic_intermediate(n) for n in intermediate_names):
+                    reason = "generic_intermediate"
+                elif len(h.path) >= 3:
+                    directional = sum(1 for s in h.path if s.relation_type in DIRECTIONAL_RELATIONS)
+                    if directional * 2 < len(h.path):
+                        reason = "directional_density<0.5"
+                if reason is None and HypothesisEngine._is_too_broad_target(h.target_name):
+                    reason = "too_broad_target"
+                if reason is None and HypothesisEngine._is_umbrella_source(h.source_name):
+                    reason = "umbrella_source"
+
+            if reason is not None:
+                drop_reasons[reason] += 1
+                self._dropped_evos.append({
+                    "id": h.id,
+                    "operator": h.metadata.get("operator"),
+                    "source_name": h.source_name,
+                    "target_name": h.target_name,
+                    "path": [(l.from_name, l.relation_type, l.to_name) for l in h.path],
+                    "composite_score": h.composite_score,
+                    "drop_reason": reason,
+                })
                 continue
             filtered.append(h)
         n_dropped = before_filter - len(filtered)
+        if drop_reasons:
+            logger.info(
+                "post-filter drop reasons: " + ", ".join(
+                    f"{k}={v}" for k,v in drop_reasons.most_common()
+                )
+            )
         if n_dropped > 0:
             logger.info(
                 f"post-filter dropped {n_dropped} evolved variants "
-                f"(quality gates: composite<0.4, weak edge, dual-vague, len>7, "
+                f"(quality gates: composite<0.3, weak edge, dual-vague, len>7, "
                 f"hub-to-hub, vague-umbrella-hub)"
             )
         population = filtered
@@ -326,6 +381,20 @@ class EvolutionEngine:
             if stats["trials"] > 0:
                 sr = stats["successes"] / stats["trials"]
                 logger.info(f"  {op_name}: {stats['trials']} trials, {sr:.1%} success")
+
+        rs = self._repredicate_stats
+        logger.info(
+            f"repredicate: {rs['misses']} llm calls, {rs['hits']} cache hits, "
+            f"{rs['fallbacks']} fallbacks, {rs['errors']} errors"
+        )
+
+        ks = self._kpaths_stats
+        if ks["trials"]:
+            logger.info(
+                f"k-paths: {ks['trials']} trials, {ks['yen_ok']} yen-ok, "
+                f"{ks['diversity_kept']} kept, {ks['diversity_rejected']} rejected, "
+                f"{ks['no_path']} no-path"
+            )
 
         return population
 
@@ -449,8 +518,8 @@ class EvolutionEngine:
                 claim_id=link_a.claim_id, raw_text=link_a.raw_text,
                 evidence=link_a.evidence, source_paper=link_a.source_paper,
             )
-            new_link_mid = self._make_link(mid_id, x_id)
-            new_link_c = self._make_link(x_id, target_id)
+            new_link_mid = self._make_link_with_repredicate(mid_id, x_id)
+            new_link_c = self._make_link_with_repredicate(x_id, target_id)
             if not new_link_mid or not new_link_c:
                 continue
             new_path.extend([new_link_a, new_link_mid, new_link_c])
@@ -476,7 +545,7 @@ class EvolutionEngine:
         if not self.G.has_edge(src_id, tgt_id):
             return None
 
-        new_link = self._make_link(src_id, tgt_id)
+        new_link = self._make_link_with_repredicate(src_id, tgt_id)
         if not new_link:
             return None
 
@@ -520,7 +589,7 @@ class EvolutionEngine:
         if not new_src_node:
             return None
 
-        new_first_link = self._make_link(new_src_id, next_id)
+        new_first_link = self._make_link_with_repredicate(new_src_id, next_id)
         if not new_first_link:
             return None
 
@@ -576,7 +645,7 @@ class EvolutionEngine:
         if not new_tgt_node:
             return None
 
-        new_last_link = self._make_link(prev_id, new_tgt_id)
+        new_last_link = self._make_link_with_repredicate(prev_id, new_tgt_id)
         if not new_last_link:
             return None
 
@@ -615,8 +684,8 @@ class EvolutionEngine:
             if m_node and "claim" in m_node.domain_tags:
                 continue
 
-            link_1 = self._make_link(src_id, m_id)
-            link_2 = self._make_link(m_id, tgt_id)
+            link_1 = self._make_link_with_repredicate(src_id, m_id)
+            link_2 = self._make_link_with_repredicate(m_id, tgt_id)
             if not link_1 or not link_2:
                 continue
 
@@ -696,6 +765,155 @@ class EvolutionEngine:
         child.metadata["fusion_partner_id"] = partner.id
         return child
 
+    # ── K-Paths diversity-aware mutation ───────────────────────────────
+
+    def _build_kpaths_subgraph(self) -> nx.DiGraph:
+        """Materialize a hub-stripped semantic DiGraph for Yen enumeration.
+
+        Drops `about` provenance edges and excludes nodes in the hard
+        path-blacklist (umbrella COGAT/MeSH terms). Disease/category
+        intermediate-only hubs are kept so they can still be valid
+        endpoints, but the diversity filter handles transit dilution.
+        """
+        if self._kpaths_subgraph is not None:
+            return self._kpaths_subgraph
+
+        H = nx.DiGraph()
+        skip_nodes = PATH_IGNORE_NODE_IDS
+        for u, v, data in self.G.edges(data=True):
+            if data.get("relation_type") == "about":
+                continue
+            if u in skip_nodes or v in skip_nodes:
+                continue
+            u_node = self._index.get(u)
+            v_node = self._index.get(v)
+            if u_node and "claim" in u_node.domain_tags:
+                continue
+            if v_node and "claim" in v_node.domain_tags:
+                continue
+            if H.has_edge(u, v):
+                continue
+            H.add_edge(u, v)
+        self._kpaths_subgraph = H
+        logger.info(
+            f"K-Paths subgraph built: {H.number_of_nodes()} nodes, "
+            f"{H.number_of_edges()} edges"
+        )
+        return H
+
+    @staticmethod
+    def _path_signature(path: list[HypothesisLink]) -> tuple[set, set, list[str]]:
+        """Return (edge_set, intermediate_node_set, predicate_multiset).
+
+        Intermediate-only nodes (excludes source/target) since K-Paths
+        siblings share endpoints by construction — including them would
+        always blow past the node-overlap cap.
+        """
+        edges: set[tuple[str, str]] = {(l.from_id, l.to_id) for l in path}
+        if len(path) <= 1:
+            inter: set[str] = set()
+        else:
+            inter = {l.to_id for l in path[:-1]}
+        preds: list[str] = [l.relation_type for l in path]
+        return edges, inter, preds
+
+    @staticmethod
+    def _multiset_jaccard(a: list[str], b: list[str]) -> float:
+        from collections import Counter
+        ca, cb = Counter(a), Counter(b)
+        inter = sum((ca & cb).values())
+        union = sum((ca | cb).values())
+        return inter / union if union else 0.0
+
+    def _is_diverse_against(
+        self,
+        candidate: list[HypothesisLink],
+        seen: list[tuple[set, set, list[str]]],
+    ) -> bool:
+        """Return True iff candidate path is diverse vs every seen signature."""
+        c_edges, c_nodes, c_preds = self._path_signature(candidate)
+        for s_edges, s_nodes, s_preds in seen:
+            if c_edges:
+                edge_ov = len(c_edges & s_edges) / len(c_edges)
+                if edge_ov >= _KPATHS_EDGE_OVERLAP:
+                    return False
+            if c_nodes:
+                node_ov = len(c_nodes & s_nodes) / len(c_nodes)
+                if node_ov >= _KPATHS_NODE_OVERLAP:
+                    return False
+            if self._multiset_jaccard(c_preds, s_preds) >= _KPATHS_PREDICATE_JACCARD:
+                return False
+        return True
+
+    def _diverse_k_paths(self, h: Hypothesis) -> Optional[Hypothesis]:
+        """Yen's k-shortest paths + diversity filter (edge/node/predicate).
+
+        Picks an alternate (source, target) path that is structurally
+        distinct from h's own path and from any K-Paths child already in
+        the current population. The first candidate that passes the
+        diversity gate is materialized into a child hypothesis.
+        """
+        if not h.source_id or not h.target_id or h.source_id == h.target_id:
+            return None
+
+        H = self._build_kpaths_subgraph()
+        if h.source_id not in H or h.target_id not in H:
+            self._kpaths_stats["no_path"] += 1
+            return None
+
+        # Seed seen-set: parent path + any prior K-Paths children for this
+        # (src, tgt) already in the population, so successive operator
+        # invocations diverge from each other rather than cluster.
+        seen: list[tuple[set, set, list[str]]] = [self._path_signature(h.path)]
+        for other in getattr(self, "_current_population", []) or []:
+            if other.id == h.id:
+                continue
+            if other.source_id != h.source_id or other.target_id != h.target_id:
+                continue
+            if other.metadata.get("operator") != "diverse_k_paths":
+                continue
+            seen.append(self._path_signature(other.path))
+
+        self._kpaths_stats["trials"] += 1
+
+        try:
+            gen = nx.shortest_simple_paths(H, h.source_id, h.target_id)
+        except nx.NetworkXNoPath:
+            self._kpaths_stats["no_path"] += 1
+            return None
+        except nx.NodeNotFound:
+            self._kpaths_stats["no_path"] += 1
+            return None
+
+        for idx, node_path in enumerate(gen):
+            if idx >= _KPATHS_MAX_CANDIDATES:
+                break
+            if len(node_path) - 1 < 2 or len(node_path) - 1 > _KPATHS_MAX_LEN:
+                continue
+            # Skip parent path itself (Yen often returns shortest first).
+            parent_nodes = [h.path[0].from_id] + [l.to_id for l in h.path]
+            if node_path == parent_nodes:
+                continue
+            # Build hop-by-hop with re-predication; bail on first failure.
+            new_path: list[HypothesisLink] = []
+            ok = True
+            for u, v in zip(node_path[:-1], node_path[1:]):
+                link = self._make_link_with_repredicate(u, v)
+                if link is None:
+                    ok = False
+                    break
+                new_path.append(link)
+            if not ok or not new_path:
+                continue
+            self._kpaths_stats["yen_ok"] += 1
+            if not self._is_diverse_against(new_path, seen):
+                self._kpaths_stats["diversity_rejected"] += 1
+                continue
+            self._kpaths_stats["diversity_kept"] += 1
+            return self._build_child(h, new_path, "diverse_k_paths")
+
+        return None
+
     # ── crossover operators ────────────────────────────────────────────
 
     def _path_crossover(self, h1: Hypothesis, h2: Hypothesis) -> Optional[Hypothesis]:
@@ -726,8 +944,8 @@ class EvolutionEngine:
         if not self.G.has_edge(src_id, mid_id) or not self.G.has_edge(mid_id, tgt_id):
             return None
 
-        link_1 = self._make_link(src_id, mid_id)
-        link_2 = self._make_link(mid_id, tgt_id)
+        link_1 = self._make_link_with_repredicate(src_id, mid_id)
+        link_2 = self._make_link_with_repredicate(mid_id, tgt_id)
         if not link_1 or not link_2:
             return None
 
@@ -898,6 +1116,172 @@ class EvolutionEngine:
             logger.debug(f"crossover {op.__name__} failed: {e}")
         return None
 
+    def _build_predicate_index(self) -> None:
+        """Scan KG once and record which predicates each (subj_type, obj_type) pair supports.
+
+        Only collects directional/strong predicates as positives; vague predicates
+        and `associated_with` are always available as fallbacks regardless.
+        """
+        if self._predicate_index_built:
+            return
+        for u, v, data in self.G.edges(data=True):
+            rel = data.get("relation_type", "")
+            if not rel or rel == "about":
+                continue
+            u_node = self._index.get(u)
+            v_node = self._index.get(v)
+            if not u_node or not v_node:
+                continue
+            u_types = frozenset(set(u_node.domain_tags) - {"claim"})
+            v_types = frozenset(set(v_node.domain_tags) - {"claim"})
+            if not u_types or not v_types:
+                continue
+            key = (u_types, v_types)
+            self._predicate_index.setdefault(key, set()).add(rel)
+        self._predicate_index_built = True
+        logger.info(f"predicate index built: {len(self._predicate_index)} type-pairs")
+
+    def _candidate_predicates_for(self, src_id: str, tgt_id: str) -> list[str]:
+        """Return positive predicates that historically connect these two type-pairs."""
+        self._build_predicate_index()
+        src_node = self._index.get(src_id)
+        tgt_node = self._index.get(tgt_id)
+        if not src_node or not tgt_node:
+            return []
+        src_types = set(src_node.domain_tags) - {"claim"}
+        tgt_types = set(tgt_node.domain_tags) - {"claim"}
+        candidates: set[str] = set()
+        for (k_src, k_tgt), preds in self._predicate_index.items():
+            if (k_src & src_types) and (k_tgt & tgt_types):
+                candidates |= preds
+        candidates.discard("about")
+        for v in _VAGUE_PREDICATES:
+            candidates.discard(v)
+        return sorted(candidates)
+
+    def _get_repredicate_client(self):
+        if self._repredicate_client is not None:
+            return self._repredicate_client
+        try:
+            import os, httpx
+            from openai import OpenAI
+            base_url = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
+            keys_raw = os.environ.get("OPENAI_API_KEYS", "")
+            key = next((k.strip() for k in keys_raw.split(",") if k.strip()),
+                       os.environ.get("OPENAI_API_KEY", ""))
+            if not key:
+                return None
+            self._repredicate_client = OpenAI(
+                base_url=base_url, api_key=key,
+                http_client=httpx.Client(verify=False),
+            )
+        except Exception as e:
+            logger.debug(f"repredicate client init failed: {e}")
+            return None
+        return self._repredicate_client
+
+    def _llm_repredicate(
+        self,
+        subj_name: str, subj_types: list[str],
+        obj_name: str, obj_types: list[str],
+        old_pred: str,
+        candidates: list[str],
+        raw_text: str = "",
+    ) -> str:
+        """Ask the LLM which predicate from `candidates` best fits the edge.
+
+        Returns one of `candidates` (a positive predicate) or `associated_with`
+        as a safe fallback. Caches by (subj_name, obj_name, old_pred, sorted candidates).
+        """
+        cache_key = (subj_name, obj_name, old_pred, tuple(candidates))
+        if cache_key in self._repredicate_cache:
+            self._repredicate_stats["hits"] += 1
+            return self._repredicate_cache[cache_key]
+        self._repredicate_stats["misses"] += 1
+
+        client = self._get_repredicate_client()
+        if client is None or not candidates:
+            self._repredicate_stats["fallbacks"] += 1
+            choice = "associated_with"
+            self._repredicate_cache[cache_key] = choice
+            return choice
+
+        import os
+        model = os.environ.get("OPENAI_MODEL_REPREDICATE",
+                               os.environ.get("OPENAI_MODEL", "gpt-5.5"))
+        choices_str = ", ".join(candidates) + ", associated_with"
+        prompt = (
+            f"Pick the single best predicate for this directed edge.\n"
+            f"Subject: {subj_name} (types: {', '.join(subj_types) or 'unknown'})\n"
+            f"Object: {obj_name} (types: {', '.join(obj_types) or 'unknown'})\n"
+            f"Original predicate (may be wrong after mutation): {old_pred}\n"
+            f"Allowed choices: {choices_str}\n"
+        )
+        if raw_text:
+            prompt += f"Original citation context: {raw_text[:400]}\n"
+        prompt += (
+            "Rules:\n"
+            "- Choose `associated_with` ONLY if no directional predicate fits.\n"
+            "- Do NOT invent predicates outside the allowed list.\n"
+            "- Respect direction: subject acts on object.\n"
+            'Reply with JSON only: {"predicate": "..."}'
+        )
+        allowed = set(candidates) | {"associated_with"}
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a careful biomedical knowledge graph editor. Output JSON only."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.0,
+                max_tokens=64,
+            )
+            raw = resp.choices[0].message.content.strip()
+            import json as _json, re as _re
+            m = _re.search(r"\{.*\}", raw, _re.DOTALL)
+            data = _json.loads(m.group(0)) if m else {}
+            pick = (data.get("predicate") or "").strip()
+            if pick not in allowed:
+                pick = "associated_with"
+                self._repredicate_stats["fallbacks"] += 1
+        except Exception as e:
+            logger.debug(f"repredicate LLM call failed: {e}")
+            self._repredicate_stats["errors"] += 1
+            pick = "associated_with"
+        self._repredicate_cache[cache_key] = pick
+        return pick
+
+    def _maybe_repredicate_link(self, link: HypothesisLink) -> HypothesisLink:
+        """If link carries a strong directional predicate, validate it against the
+        type-pair candidate set via LLM. Returns a (possibly relabeled) link."""
+        if link.relation_type not in _STRONG_DIRECTIONAL_PREDICATES:
+            return link
+        src_node = self._index.get(link.from_id)
+        tgt_node = self._index.get(link.to_id)
+        if not src_node or not tgt_node:
+            return link
+        src_types = sorted(set(src_node.domain_tags) - {"claim"})
+        tgt_types = sorted(set(tgt_node.domain_tags) - {"claim"})
+        candidates = self._candidate_predicates_for(link.from_id, link.to_id)
+        if link.relation_type in candidates and len(candidates) == 1:
+            return link
+        pick = self._llm_repredicate(
+            link.from_name, src_types,
+            link.to_name, tgt_types,
+            link.relation_type, candidates,
+            raw_text=link.raw_text or "",
+        )
+        if pick == link.relation_type:
+            return link
+        return HypothesisLink(
+            from_id=link.from_id, from_name=link.from_name,
+            to_id=link.to_id, to_name=link.to_name,
+            relation_type=pick, confidence=link.confidence,
+            claim_id=link.claim_id, raw_text=link.raw_text,
+            evidence=link.evidence, source_paper=link.source_paper,
+        )
+
     def _make_link(self, src_id: str, tgt_id: str) -> Optional[HypothesisLink]:
         """Create a HypothesisLink from graph edge data.
 
@@ -945,6 +1329,13 @@ class EvolutionEngine:
             evidence=evidence,
             source_paper=paper,
         )
+
+    def _make_link_with_repredicate(self, src_id: str, tgt_id: str) -> Optional[HypothesisLink]:
+        """Make link, then re-validate strong predicates via LLM against type-pair candidates."""
+        link = self._make_link(src_id, tgt_id)
+        if link is None:
+            return None
+        return self._maybe_repredicate_link(link)
 
     def _build_child(
         self,
