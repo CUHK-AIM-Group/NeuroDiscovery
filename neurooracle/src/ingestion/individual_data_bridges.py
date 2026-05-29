@@ -80,7 +80,6 @@ ANCHOR_TO_DATASET_VARS: dict[str, list[str]] = {
     "INDIVIDUAL_DATA:big5_conscientiousness": ["HCP:DOM_PSYCH"],
     "INDIVIDUAL_DATA:big5_openness":        ["HCP:DOM_PSYCH"],
     "INDIVIDUAL_DATA:big5_agreeableness":   ["HCP:DOM_PSYCH"],
-    "INDIVIDUAL_DATA:grit":                  ["HCP:DOM_DELAY", "HCP:DOM_PSYCH"],
 }
 
 

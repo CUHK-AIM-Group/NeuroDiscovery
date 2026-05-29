@@ -16,21 +16,27 @@ import sys
 from pathlib import Path
 
 from .graph_manager import KnowledgeGraph
+from .ingestion.ahba_gene_expression import ingest_ahba_gene_expression
 from .ingestion.atc_drugs import ingest_atc_drugs
+from .ingestion.atlas_roi_modality import ingest_atlas_roi_modality
 from .ingestion.brainmap import ingest_brainmap
 from .ingestion.clinical_outcomes import ingest_clinical_outcomes
 from .ingestion.cognitive_atlas import ingest_cognitive_atlas
 from .ingestion.dataset_variables import ingest_dataset_variables
 from .ingestion.disgenet import ingest_disgenet
+from .ingestion.drug_receptor_binding import ingest_drug_receptor_binding
+from .ingestion.enigma_disease_im import ingest_enigma_disease_im
 from .ingestion.experiment_infra import ingest_experiment_infrastructure
+from .ingestion.hansen_receptor_density import ingest_hansen_receptor_density
+from .ingestion.hpo_gene_anatomy import ingest_hpo_gene_anatomy
 from .ingestion.individual_data_anchors import ingest_individual_data_anchors
 from .ingestion.individual_data_bridges import ingest_individual_data_bridges
 from .ingestion.mesh import ingest_mesh
 from .ingestion.neuronames import ingest_neuronames
+from .ingestion.neurosynth_task_im import ingest_neurosynth_task_im
 from .ingestion.outcome_bridges import ingest_outcome_bridges
 from .ingestion.outcome_im_bridges import ingest_outcome_im_bridges
 from .ingestion.visual_functional_roi import ingest_visual_functional_roi
-from .ingestion.visual_stimulus import ingest_visual_stimuli
 from .storage import save_graph
 
 logger = logging.getLogger(__name__)
@@ -57,10 +63,14 @@ def run_full_ingestion(
     results = {}
 
     all_sources = ["neuronames", "mesh", "disgenet", "brainmap", "cognitive_atlas",
-                   "experiment_infra", "visual_functional_roi", "visual_stimulus",
+                   "experiment_infra", "visual_functional_roi",
                    "clinical_outcomes", "dataset_variables", "atc_drugs",
                    "outcome_bridges", "individual_data_anchors",
-                   "individual_data_bridges", "outcome_im_bridges"]
+                   "individual_data_bridges", "outcome_im_bridges",
+                   "hpo_gene_anatomy", "ahba_gene_expression",
+                   "enigma_disease_im", "atlas_roi_modality",
+                   "hansen_receptor_density", "drug_receptor_binding",
+                   "neurosynth_task_im"]
     if sources is None:
         sources = all_sources
 
@@ -98,10 +108,6 @@ def run_full_ingestion(
         logger.info("=== Ingesting Visual Functional ROIs (FFA/PPA/EBA/VWFA/LOC/MT+/V3/V4) ===")
         results["visual_functional_roi"] = ingest_visual_functional_roi(kg)
 
-    if "visual_stimulus" in sources:
-        logger.info("=== Ingesting Visual Stimulus Taxonomy (COCO/Places/SEED-DV) ===")
-        results["visual_stimulus"] = ingest_visual_stimuli(kg)
-
     if "clinical_outcomes" in sources:
         logger.info("=== Ingesting Clinical Outcomes (rating scales + MedDRA SOC) ===")
         results["clinical_outcomes"] = ingest_clinical_outcomes(kg)
@@ -129,6 +135,45 @@ def run_full_ingestion(
     if "outcome_im_bridges" in sources:
         logger.info("=== Ingesting OUTCOME-IM Bridges (IM→scale, disease→scale, drug→AE) ===")
         results["outcome_im_bridges"] = ingest_outcome_im_bridges(kg)
+
+    if "hpo_gene_anatomy" in sources:
+        logger.info("=== Ingesting HPO Gene -> Brain-Region Edges (GENE -> IM layer 1) ===")
+        results["hpo_gene_anatomy"] = ingest_hpo_gene_anatomy(
+            kg, data_dir / "hpo_genes_to_phenotype.txt",
+        )
+
+    if "ahba_gene_expression" in sources:
+        logger.info("=== Ingesting AHBA Gene Expression -> Brain-Region Edges (GENE -> IM layer 2) ===")
+        results["ahba_gene_expression"] = ingest_ahba_gene_expression(
+            kg,
+            ahba_dir=data_dir / "abagen-data" / "microarray",
+            hgnc_file=data_dir / "hgnc_complete_set.txt",
+        )
+
+    if "enigma_disease_im" in sources:
+        logger.info("=== Ingesting ENIGMA Toolbox Disease -> Brain-Region Edges (DISEASE -> IM layer 1) ===")
+        results["enigma_disease_im"] = ingest_enigma_disease_im(kg)
+
+    if "atlas_roi_modality" in sources:
+        logger.info("=== Ingesting Atlas -> ROI and Imaging-Feature -> Modality bridges ===")
+        results["atlas_roi_modality"] = ingest_atlas_roi_modality(kg)
+
+    if "hansen_receptor_density" in sources:
+        logger.info("=== Ingesting Hansen 2022 Receptor Density (GENE -> NN region; PET-derived) ===")
+        results["hansen_receptor_density"] = ingest_hansen_receptor_density(
+            kg, raw_dir=data_dir / "hansen_receptors",
+        )
+
+    if "drug_receptor_binding" in sources:
+        logger.info("=== Ingesting Curated Drug -> Receptor Pharmacology (DRUG -> GENE binds_to) ===")
+        results["drug_receptor_binding"] = ingest_drug_receptor_binding(kg)
+
+    if "neurosynth_task_im" in sources:
+        logger.info("=== Ingesting Neurosynth v0.7 task -> region forward inference (COGAT -> NN activates) ===")
+        results["neurosynth_task_im"] = ingest_neurosynth_task_im(
+            kg,
+            dataset_path=data_dir / "neurosynth" / "neurosynth_dataset.pkl.gz",
+        )
 
     stats = kg.stats()
     logger.info(f"\n{'='*50}")
@@ -168,10 +213,14 @@ def main():
         "--sources",
         nargs="+",
         choices=["neuronames", "mesh", "disgenet", "brainmap", "cognitive_atlas",
-                 "experiment_infra", "visual_functional_roi", "visual_stimulus",
+                 "experiment_infra", "visual_functional_roi",
                  "clinical_outcomes", "dataset_variables", "atc_drugs",
                  "outcome_bridges", "individual_data_anchors",
-                 "individual_data_bridges", "outcome_im_bridges"],
+                 "individual_data_bridges", "outcome_im_bridges",
+                 "hpo_gene_anatomy", "ahba_gene_expression",
+                 "enigma_disease_im", "atlas_roi_modality",
+                 "hansen_receptor_density", "drug_receptor_binding",
+                 "neurosynth_task_im"],
         default=None,
         help="Which sources to ingest (default: all available)",
     )

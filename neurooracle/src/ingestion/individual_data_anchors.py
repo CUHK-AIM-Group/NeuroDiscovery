@@ -174,12 +174,8 @@ INDIVIDUAL_DATA_ANCHORS: dict[str, dict] = {
         "axis": "personality",
         "definition": "Big-Five trait — prosocial orientation.",
     },
-    "INDIVIDUAL_DATA:grit": {
-        "name": "Grit",
-        "axis": "personality",
-        "definition": "Self-reported persistence / passion for long-term "
-                      "goals; HCP Grit-S scale.",
-    },
+    # NOTE: 2026-05-26 dropped "Grit": zero hits in 479k extracted claims;
+    # the HCP Grit-S scale is rarely named in narrative text.
 }
 
 

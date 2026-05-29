@@ -33,37 +33,41 @@ logger = logging.getLogger(__name__)
 # neuroanatomy (so they participate in existing neuroanatomy↔disease pairs).
 FUNCTIONAL_ROIS: dict[str, dict] = {
     "VROI:FFA": {
-        "preferred_name": "Fusiform Face Area",
+        "preferred_name": "Fusiform Face Area (FFA, visual ROI)",
         "aliases": ["FFA", "fusiform face area", "right fusiform face area",
-                    "left fusiform face area"],
+                    "left fusiform face area", "Fusiform Face Area"],
         "localizer": "face > object contrast",
         "parent_anatomy": "NN:305",   # Fusiform Gyrus
         "description": "Face-selective region on the lateral fusiform gyrus (Kanwisher 1997).",
     },
     "VROI:PPA": {
-        "preferred_name": "Parahippocampal Place Area",
-        "aliases": ["PPA", "parahippocampal place area", "place area"],
+        "preferred_name": "Parahippocampal Place Area (PPA, visual ROI)",
+        "aliases": ["PPA", "parahippocampal place area", "place area",
+                    "Parahippocampal Place Area"],
         "localizer": "scene > object contrast",
         "parent_anatomy": "NN:308",   # Parahippocampal Gyrus
         "description": "Scene/place-selective region on the collateral sulcus (Epstein 1998).",
     },
     "VROI:EBA": {
-        "preferred_name": "Extrastriate Body Area",
-        "aliases": ["EBA", "extrastriate body area", "body area"],
+        "preferred_name": "Extrastriate Body Area (EBA, visual ROI)",
+        "aliases": ["EBA", "extrastriate body area", "body area",
+                    "Extrastriate Body Area"],
         "localizer": "body > object contrast",
         "parent_anatomy": None,       # lateral occipitotemporal, no single NN match
         "description": "Body-part-selective region in lateral occipitotemporal cortex (Downing 2001).",
     },
     "VROI:VWFA": {
-        "preferred_name": "Visual Word Form Area",
-        "aliases": ["VWFA", "visual word form area", "word form area"],
+        "preferred_name": "Visual Word Form Area (VWFA, visual ROI)",
+        "aliases": ["VWFA", "visual word form area", "word form area",
+                    "Visual Word Form Area"],
         "localizer": "words > consonant strings",
         "parent_anatomy": "NN:305",   # Fusiform Gyrus (left mid-fusiform)
         "description": "Word-selective region in left mid-fusiform gyrus (Cohen 2000).",
     },
     "VROI:LOC": {
-        "preferred_name": "Lateral Occipital Complex",
-        "aliases": ["LOC", "lateral occipital complex", "lateral occipital cortex"],
+        "preferred_name": "Lateral Occipital Complex (LOC, visual ROI)",
+        "aliases": ["LOC", "lateral occipital complex", "lateral occipital cortex",
+                    "Lateral Occipital Complex"],
         "localizer": "object > scrambled contrast",
         # NN_HO:20022 Lateral Occipital Cortex superior division exists; use
         # the anatomical one as parent.
@@ -71,23 +75,27 @@ FUNCTIONAL_ROIS: dict[str, dict] = {
         "description": "Object-selective region spanning lateral occipital cortex (Malach 1995).",
     },
     "VROI:MTplus": {
-        "preferred_name": "Middle Temporal Visual Area (MT+)",
+        "preferred_name": "MT+ (visual motion area)",
         "aliases": ["MT+", "V5/MT", "hMT+", "motion-selective region",
-                    "middle temporal visual area"],
+                    "middle temporal visual area",
+                    "Middle Temporal Visual Area",
+                    "Middle Temporal Visual Area (MT+)"],
         "localizer": "moving > stationary contrast",
         "parent_anatomy": "NN:303",   # Middle Temporal Gyrus
         "description": "Motion-selective region at the temporo-occipital junction (Zeki 1991).",
     },
     "VROI:V3": {
-        "preferred_name": "Visual Area V3",
-        "aliases": ["V3", "tertiary visual cortex", "V3v", "V3d"],
+        "preferred_name": "V3 (visual area)",
+        "aliases": ["V3", "tertiary visual cortex", "V3v", "V3d",
+                    "Visual Area V3", "third visual area"],
         "localizer": "retinotopic mapping",
         "parent_anatomy": "NN:401",   # Primary Visual Cortex (nearest)
         "description": "Third-tier retinotopic visual area (dorsal V3d / ventral V3v).",
     },
     "VROI:V4": {
-        "preferred_name": "Visual Area V4",
-        "aliases": ["V4", "hV4", "V4alpha", "color-selective region"],
+        "preferred_name": "V4 (visual area)",
+        "aliases": ["V4", "hV4", "V4alpha", "color-selective region",
+                    "Visual Area V4", "fourth visual area"],
         "localizer": "color / retinotopic mapping",
         "parent_anatomy": "NN:401",
         "description": "Color- and form-selective retinotopic area in ventral occipital cortex.",
@@ -96,32 +104,69 @@ FUNCTIONAL_ROIS: dict[str, dict] = {
 
 
 def ingest_visual_functional_roi(kg: KnowledgeGraph) -> dict:
-    """Seed functional visual ROI nodes. Idempotent."""
-    stats = {"rois_added": 0, "parent_edges_added": 0}
+    """Seed functional visual ROI nodes. Idempotent.
+
+    Cross-source name-collision handling: if a same-name node already exists
+    (e.g. claim-extracted `fusiform face area`), the seed's aliases / tags
+    / metadata are merged into that existing node rather than skipped, so
+    downstream traversal still benefits from the seeded localizer + parent
+    anatomy. Disambiguating preferred_name suffixes ('(visual ROI)' /
+    '(visual area)') prevent traversal from confusing these with same-token
+    nodes elsewhere in the KG.
+    """
+    stats = {"rois_added": 0, "rois_merged": 0, "parent_edges_added": 0}
 
     for nid, info in FUNCTIONAL_ROIS.items():
         if kg.has_concept(nid):
             continue
-        kg.add_concept(ConceptNode(
-            id=nid,
-            preferred_name=info["preferred_name"],
-            domain_tags=[DomainTag.NEUROANATOMY.value],
-            source_vocab="visual_functional_roi",
-            aliases=info["aliases"],
-            definition=info["description"],
-            metadata={
-                "localizer": info["localizer"],
-                "parent_anatomy": info.get("parent_anatomy"),
-                "seed_source": "NSD/BOLD5000 functional ROI convention",
-            },
-        ))
-        stats["rois_added"] += 1
+
+        seed_metadata = {
+            "localizer": info["localizer"],
+            "parent_anatomy": info.get("parent_anatomy"),
+            "seed_source": "NSD/BOLD5000 functional ROI convention",
+        }
+
+        # Detect cross-source collisions on each alias (claim_extraction
+        # often pre-creates `fusiform face area` etc. as long-name claim
+        # subjects, which we want to enrich, not duplicate).
+        merged_into = None
+        for alias in [info["preferred_name"], *info["aliases"]]:
+            collisions = kg.find_by_name_exact(
+                alias,
+                exclude_source_vocab="visual_functional_roi",
+                exclude_id_prefixes=("CLAIM:",),
+            )
+            if collisions:
+                merged_into = collisions[0]
+                break
+
+        if merged_into is not None:
+            kg.merge_seed_into_existing(
+                merged_into.id,
+                seed_aliases=[info["preferred_name"], *info["aliases"]],
+                seed_metadata={**seed_metadata, "aliased_from_seed": nid},
+                seed_domain_tags=[DomainTag.NEUROANATOMY.value],
+            )
+            stats["rois_merged"] += 1
+            parent_for_edge = merged_into.id
+        else:
+            kg.add_concept(ConceptNode(
+                id=nid,
+                preferred_name=info["preferred_name"],
+                domain_tags=[DomainTag.NEUROANATOMY.value],
+                source_vocab="visual_functional_roi",
+                aliases=info["aliases"],
+                definition=info["description"],
+                metadata=seed_metadata,
+            ))
+            stats["rois_added"] += 1
+            parent_for_edge = nid
 
         parent = info.get("parent_anatomy")
         if parent and kg.has_concept(parent):
             before = kg.G.number_of_edges()
             kg.add_edge(Edge(
-                source_id=nid,
+                source_id=parent_for_edge,
                 target_id=parent,
                 relation_type="part_of",
                 source="visual_functional_roi",
@@ -131,7 +176,7 @@ def ingest_visual_functional_roi(kg: KnowledgeGraph) -> dict:
                 stats["parent_edges_added"] += 1
 
     logger.info(
-        "visual_functional_roi ingest: %d ROIs, %d part_of edges",
-        stats["rois_added"], stats["parent_edges_added"],
+        "visual_functional_roi ingest: %d new + %d merged ROIs, %d part_of edges",
+        stats["rois_added"], stats["rois_merged"], stats["parent_edges_added"],
     )
     return stats

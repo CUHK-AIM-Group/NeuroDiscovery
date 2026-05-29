@@ -80,10 +80,11 @@ def format_gap(g: Gap, index: int) -> str:
 
 # ── commands ───────────────────────────────────────────────────────────
 
-def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
+def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
               max_seeds=50, as_json=False, legacy_domain_pairs=False,
               task_filter=None, chain_filter=None,
-              target_per_task=None, max_retries=3, retry_scale=2.0):
+              target_per_task=None, max_retries=3, retry_scale=2.0,
+              min_hops=2, metapath_min_domains=2, prefer_longer_paths=True):
     """Batch-generate hypotheses across the entire graph.
 
     Default (atom-task driven): traverses every Task in CANONICAL_TASKS via
@@ -120,12 +121,17 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
             print(f"  legacy domain-pairs preset: {domain_pairs} ({len(preset_map[domain_pairs])} pairs)")
             domain_pairs = preset_map[domain_pairs]
 
-        print(f"Legacy batch (max_hops={max_hops}, max_paths_per_pair={max_paths}, max_seeds={max_seeds})...")
+        print(f"Legacy batch (max_hops={max_hops}, min_hops={min_hops}, "
+              f"metapath_min_domains={metapath_min_domains}, "
+              f"max_paths_per_pair={max_paths}, max_seeds={max_seeds})...")
         hypotheses = engine.batch_generate(
             domain_pairs=domain_pairs,
             max_hops=max_hops,
             max_paths_per_pair=max_paths,
             max_seeds_per_domain=max_seeds,
+            min_hops=min_hops,
+            metapath_min_domains=metapath_min_domains,
+            prefer_longer_paths=prefer_longer_paths,
         )
     else:
         from .atoms import CANONICAL_TASKS, CANONICAL_CHAINS
@@ -143,7 +149,9 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
                          if chain_names is None or c.name in chain_names]
 
         print(f"Task-driven batch: {len(tasks_to_run)} tasks + {len(chains_to_run)} chains "
-              f"(max_hops={max_hops}, max_paths={max_paths}, max_seeds={max_seeds})")
+              f"(max_hops={max_hops}, min_hops={min_hops}, "
+              f"metapath_min_domains={metapath_min_domains}, "
+              f"max_paths={max_paths}, max_seeds={max_seeds})")
 
         hypotheses: list = []
         for task in tasks_to_run:
@@ -157,6 +165,9 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=3, max_paths=5,
                     max_hops=max_hops,
                     max_paths_per_pair=cur_paths,
                     max_seeds_per_domain=cur_seeds,
+                    min_hops=min_hops,
+                    metapath_min_domains=metapath_min_domains,
+                    prefer_longer_paths=prefer_longer_paths,
                 )
                 added = 0
                 for h in hs:
@@ -735,38 +746,42 @@ def cmd_evolve(engine, input_path, output_path, population, generations,
 # ── main ───────────────────────────────────────────────────────────────
 
 
-def cmd_recipe(graph_path: str, output: str, n: int = 50,
-               model: Optional[str] = None, batch_size: int = 50,
-               seed: int = 0) -> None:
-    """Generate computable-quantity recipes from KG inventory via LLM.
+def cmd_im_brainstorm(graph_path: str, output: str, n: int = 50,
+                      model: Optional[str] = None, batch_size: int = 30,
+                      seed: int = 0) -> None:
+    """Brainstorm imaging markers (IMs) from KG primitives via LLM.
 
-    The LLM sees only a short data inventory (modalities + representative
-    gene/biomarker/region/score names) and is asked for ``n`` quantities.
-    No downstream task framing is included in the prompt.
+    The LLM sees a structured palette pulled from the KG: imaging modalities
+    (sMRI/dMRI/fMRI/PET/EEG/MEG), the 15 IF:* operations (thickness, FA, FC,
+    SUVR, ...), top-degree NN/VROI regions, and Cognitive Atlas tasks /
+    concepts. It composes IMs by picking modality + operation + regions
+    (and optional task conditioning) from this palette — never inventing
+    new ones. Outputs are validated against a static modality<->operation
+    compatibility table; rejects are logged with reasons.
 
-    For ``n <= batch_size`` a single LLM call is issued. For larger ``n``,
-    ``brainstorm_recipes_batched`` runs ceil(n/batch_size) calls with
-    rotating focus buckets and a "do not repeat" hint built from
-    previously-accepted names.
-
-    Output is a JSON file ``{"recipes": [...]}``. Recipes are linked back to
-    KG concepts by name match, but are NOT injected into the KG here - that
-    is a deliberate second step.
+    Output JSON: ``{"metadata": {...}, "palette": {...},
+    "imaging_markers": [...]}``. IMs are NOT injected into the KG —
+    disease/gene -> IM edges come from Phase 2 paper extraction.
     """
     import os
     import httpx
     from openai import OpenAI
 
-    from .recipe import (build_inventory, brainstorm_recipes,
-                          brainstorm_recipes_batched, link_to_concepts,
-                          tag_atoms)
+    from .recipe import (build_im_palette, brainstorm_ims,
+                          brainstorm_ims_batched, validate_ims,
+                          link_ims_to_kg, tag_atoms)
 
     with open(graph_path, encoding="utf-8") as f:
         kg = json.load(f)
     concepts = kg.get("concepts") or {}
     edges = kg.get("edges") or []
-    inventory = build_inventory(concepts, edges=edges)
-    print(f"inventory buckets: {[(k, len(v)) for k, v in inventory.items()]}")
+    palette = build_im_palette(concepts, edges=edges)
+    print(f"palette: {len(palette.modalities)} modalities, "
+          f"{len(palette.operations)} ops, "
+          f"{len(palette.core_regions)} core + "
+          f"{len(palette.enigma_regions)} ENIGMA + "
+          f"{len(palette.visual_rois)} VROI regions, "
+          f"{len(palette.tasks)} tasks, {len(palette.concepts)} concepts")
 
     base_url = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
     model_name = model or os.environ.get("OPENAI_MODEL", "gpt-5.5")
@@ -790,40 +805,149 @@ def cmd_recipe(graph_path: str, output: str, n: int = 50,
         return resp.choices[0].message.content.strip()
 
     if n <= batch_size:
-        recipes = brainstorm_recipes(inventory, n=n, llm_call=_llm_call,
-                                      model_name=model_name)
+        raw = brainstorm_ims(palette, n=n, llm_call=_llm_call,
+                              model_name=model_name)
     else:
-        recipes = brainstorm_recipes_batched(
-            inventory, n_total=n, llm_call=_llm_call,
+        raw = brainstorm_ims_batched(
+            palette, n_total=n, llm_call=_llm_call,
             model_name=model_name, batch_size=batch_size, seed=seed)
-    print(f"LLM returned {len(recipes)} recipes (after dedup + filter)")
-    link_to_concepts(recipes, concepts)
-    n_linked = sum(1 for r in recipes if r.linked_concept_ids)
-    print(f"linked {n_linked}/{len(recipes)} to KG concepts")
-    tag_atoms(recipes, concepts)
+    print(f"LLM returned {len(raw)} raw IMs (after batch dedup)")
+
+    report = validate_ims(raw, palette)
+    print(f"validation: {report.n_accepted} accepted, "
+          f"{report.n_rejected} rejected -> {report.reject_reasons()}")
+
+    accepted = report.accepted
+    link_ims_to_kg(accepted, palette)
+    tag_atoms(accepted)
+
     from collections import Counter
-    atom_counts = Counter()
-    for r in recipes:
-        for a in r.atoms:
-            atom_counts[a] += 1
-    print(f"atom coverage: {dict(atom_counts.most_common())}")
+    family_counts = Counter(im.family for im in accepted)
+    modality_counts = Counter(im.modality for im in accepted)
+    print(f"family coverage:   {dict(family_counts.most_common())}")
+    print(f"modality coverage: {dict(modality_counts.most_common())}")
 
     out_path = Path(output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "metadata": {
-            "n_recipes": len(recipes),
-            "llm_model": model_name,
-            "inventory": inventory,
+            "n_imaging_markers": len(accepted),
+            "n_rejected":        report.n_rejected,
+            "reject_reasons":    report.reject_reasons(),
+            "llm_model":         model_name,
         },
-        "recipes": [r.to_dict() for r in recipes],
+        "palette": palette.to_dict(),
+        "imaging_markers": [im.to_dict() for im in accepted],
     }
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     print(f"wrote -> {out_path}")
 
 
-# ── main ───────────────────────────────────────────────────────────────
+# == main =================================================================
+
+
+def cmd_gm_brainstorm(graph_path: str, output: str, n: int = 50,
+                       model: Optional[str] = None, batch_size: int = 30,
+                       seed: int = 0) -> None:
+    """Brainstorm genetic markers (GMs) from KG primitives + curated palette.
+
+    Mirrors `cmd_im_brainstorm`: the LLM sees data types
+    (genotype_array/wgs/wes/rnaseq/methylation/mtdna_seq), operations
+    (PRS, rare-variant burden, expression aggregate, methylation clock,
+    TWAS, ...), curated gene sets (AD/PD/Synaptic/Dopaminergic/...),
+    top-degree GENE:* symbols, GTEx brain v9 tissues, methylation clock
+    names, and disease GWAS sources. It composes GMs by picking from this
+    palette; output is validated against family/operation/data-type
+    compatibility tables and family-specific slot requirements.
+
+    Output JSON: ``{"metadata": {...}, "palette": {...},
+    "genetic_markers": [...]}``. GMs are NOT injected into the KG;
+    disease/anatomy -> GM edges come from Phase 2 paper extraction.
+    """
+    import os
+    import httpx
+    from openai import OpenAI
+
+    from .recipe import (build_gm_palette, brainstorm_gms,
+                          brainstorm_gms_batched, validate_gms,
+                          link_gms_to_kg, tag_gm_atoms)
+
+    with open(graph_path, encoding="utf-8") as f:
+        kg = json.load(f)
+    concepts = kg.get("concepts") or {}
+    edges = kg.get("edges") or []
+    palette = build_gm_palette(concepts, edges=edges)
+    print(f"palette: {len(palette.data_types)} data types, "
+          f"{len(palette.operations)} ops, "
+          f"{len(palette.gene_sets)} gene sets, "
+          f"{len(palette.top_genes)} top genes, "
+          f"{len(palette.tissues)} tissues, "
+          f"{len(palette.clocks)} clocks, "
+          f"{len(palette.diseases)} diseases")
+
+    base_url = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
+    model_name = model or os.environ.get("OPENAI_MODEL", "gpt-5.5")
+    keys_raw = os.environ.get("OPENAI_API_KEYS", "") or os.environ.get("OPENAI_API_KEY", "")
+    keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
+    if not keys:
+        raise RuntimeError("OPENAI_API_KEYS / OPENAI_API_KEY not set")
+    client = OpenAI(base_url=base_url, api_key=keys[0],
+                     http_client=httpx.Client(verify=False))
+
+    def _llm_call(prompt: str, system_prompt: str) -> str:
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=4096,
+        )
+        return resp.choices[0].message.content.strip()
+
+    if n <= batch_size:
+        raw = brainstorm_gms(palette, n=n, llm_call=_llm_call,
+                              model_name=model_name)
+    else:
+        raw = brainstorm_gms_batched(
+            palette, n_total=n, llm_call=_llm_call,
+            model_name=model_name, batch_size=batch_size, seed=seed)
+    print(f"LLM returned {len(raw)} raw GMs (after batch dedup)")
+
+    report = validate_gms(raw, palette)
+    print(f"validation: {report.n_accepted} accepted, "
+          f"{report.n_rejected} rejected -> {report.reject_reasons()}")
+
+    accepted = report.accepted
+    link_gms_to_kg(accepted, palette, concepts)
+    tag_gm_atoms(accepted)
+
+    from collections import Counter
+    family_counts = Counter(gm.family for gm in accepted)
+    op_counts = Counter(gm.operation for gm in accepted)
+    print(f"family coverage:    {dict(family_counts.most_common())}")
+    print(f"operation coverage: {dict(op_counts.most_common())}")
+
+    out_path = Path(output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "metadata": {
+            "n_genetic_markers": len(accepted),
+            "n_rejected":        report.n_rejected,
+            "reject_reasons":    report.reject_reasons(),
+            "llm_model":         model_name,
+        },
+        "palette": palette.to_dict(),
+        "genetic_markers": [gm.to_dict() for gm in accepted],
+    }
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"wrote -> {out_path}")
+
+
+# == main =================================================================
 
 def main():
     parser = argparse.ArgumentParser(description="Hypothesis engine for NeuroClaw knowledge graph")
@@ -834,7 +958,18 @@ def main():
     # batch
     p_batch = sub.add_parser("batch", help="Batch-generate hypotheses across the entire graph")
     p_batch.add_argument("--output", default="neurooracle/data/hypotheses_baseline.json", help="Output JSON path")
-    p_batch.add_argument("--max-hops", type=int, default=3)
+    p_batch.add_argument("--max-hops", type=int, default=4)
+    p_batch.add_argument("--min-hops", type=int, default=2,
+                          help="Minimum edges per kept path. 2 = the historical "
+                               "no-direct-edge guarantee; 3 = force >=3-hop chains.")
+    p_batch.add_argument("--metapath-min-domains", type=int, default=2,
+                          help="Minimum number of distinct atom domains a path "
+                               "must touch. 2 = source/target in different "
+                               "domains; 3 = require an explicit cross-domain "
+                               "mediator between them.")
+    p_batch.add_argument("--no-prefer-longer-paths", action="store_true",
+                          help="Disable the longer-paths-first preference when "
+                               "the candidate set exceeds the per-pair quota.")
     p_batch.add_argument("--max-paths", type=int, default=5, help="Max paths per domain pair seed")
     p_batch.add_argument("--max-seeds", type=int, default=50, help="Max seed concepts per domain")
     p_batch.add_argument("--legacy-domain-pairs", action="store_true",
@@ -1000,18 +1135,31 @@ def main():
                                "(e.g. 0.0 = require positive surprise; default: no filter)")
     p_plaus.add_argument("--device", default=None, help="cuda / cpu (default: auto)")
 
-    # recipe (Input Recipe: LLM-brainstormed computable quantities)
-    p_recipe = sub.add_parser("recipe",
-                                help="Brainstorm computable quantities from KG data inventory")
-    p_recipe.add_argument("--graph", dest="recipe_graph", default=None,
-                            help="KG path (default: --graph or neurooracle/data/full/knowledge_graph.json)")
-    p_recipe.add_argument("--output", default="neurooracle/data/full/recipes.json")
-    p_recipe.add_argument("--n", type=int, default=50, help="Number of recipes to brainstorm")
-    p_recipe.add_argument("--model", default=None, help="LLM model override")
-    p_recipe.add_argument("--batch-size", type=int, default=50,
-                            help="Recipes per LLM call when n > batch_size (default 50)")
-    p_recipe.add_argument("--seed", type=int, default=0,
-                            help="RNG seed for batched focus rotation")
+    # im-brainstorm (Phase 1 IM catalogue: LLM-brainstormed imaging markers)
+    p_im = sub.add_parser("im-brainstorm",
+                            help="Brainstorm imaging markers (IMs) from KG primitives")
+    p_im.add_argument("--graph", dest="im_graph", default=None,
+                        help="KG path (default: --graph or neurooracle/data/full/knowledge_graph.json)")
+    p_im.add_argument("--output", default="neurooracle/data/full/imaging_markers.json")
+    p_im.add_argument("--n", type=int, default=50, help="Number of IMs to brainstorm")
+    p_im.add_argument("--model", default=None, help="LLM model override")
+    p_im.add_argument("--batch-size", type=int, default=30,
+                        help="IMs per LLM call when n > batch_size (default 30)")
+    p_im.add_argument("--seed", type=int, default=0,
+                        help="RNG seed for batched family rotation")
+
+    # gm-brainstorm (Phase 1 GM catalogue: LLM-brainstormed genetic markers)
+    p_gm = sub.add_parser("gm-brainstorm",
+                            help="Brainstorm genetic markers (GMs) from KG primitives")
+    p_gm.add_argument("--graph", dest="gm_graph", default=None,
+                        help="KG path (default: --graph or neurooracle/data/full/knowledge_graph.json)")
+    p_gm.add_argument("--output", default="neurooracle/data/full/genetic_markers.json")
+    p_gm.add_argument("--n", type=int, default=50, help="Number of GMs to brainstorm")
+    p_gm.add_argument("--model", default=None, help="LLM model override")
+    p_gm.add_argument("--batch-size", type=int, default=30,
+                        help="GMs per LLM call when n > batch_size (default 30)")
+    p_gm.add_argument("--seed", type=int, default=0,
+                        help="RNG seed for batched family rotation")
 
     args = parser.parse_args()
 
@@ -1041,10 +1189,16 @@ def main():
             )
         return
 
-    if args.command == "recipe":
-        graph_p = args.recipe_graph or args.graph or "neurooracle/data/full/knowledge_graph.json"
-        cmd_recipe(graph_path=graph_p, output=args.output, n=args.n,
-                    model=args.model, batch_size=args.batch_size, seed=args.seed)
+    if args.command == "im-brainstorm":
+        graph_p = args.im_graph or args.graph or "neurooracle/data/full/knowledge_graph.json"
+        cmd_im_brainstorm(graph_path=graph_p, output=args.output, n=args.n,
+                          model=args.model, batch_size=args.batch_size, seed=args.seed)
+        return
+
+    if args.command == "gm-brainstorm":
+        graph_p = args.gm_graph or args.graph or "neurooracle/data/full/knowledge_graph.json"
+        cmd_gm_brainstorm(graph_path=graph_p, output=args.output, n=args.n,
+                          model=args.model, batch_size=args.batch_size, seed=args.seed)
         return
 
     graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
@@ -1061,7 +1215,10 @@ def main():
                   task_filter=args.tasks, chain_filter=args.chains,
                   target_per_task=args.target_per_task,
                   max_retries=args.max_retries,
-                  retry_scale=args.retry_scale)
+                  retry_scale=args.retry_scale,
+                  min_hops=args.min_hops,
+                  metapath_min_domains=args.metapath_min_domains,
+                  prefer_longer_paths=not args.no_prefer_longer_paths)
     elif args.command == "rank":
         cmd_rank(engine, args.input, top_n=args.top, as_json=as_json)
     elif args.command == "paths":

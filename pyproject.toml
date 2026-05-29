@@ -9,6 +9,7 @@ testpaths = [
     "core/skill_loader",
     "core/session",
     "core/subagent",
+    "skills/method-design/scripts",
 ]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]

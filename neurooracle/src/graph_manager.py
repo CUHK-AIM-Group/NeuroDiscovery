@@ -339,6 +339,78 @@ class KnowledgeGraph:
 
     # ── search ───────────────────────────────────────────────────────
 
+    def find_by_name_exact(
+        self,
+        name: str,
+        exclude_source_vocab: Optional[str] = None,
+        exclude_id_prefixes: Optional[tuple[str, ...]] = None,
+    ) -> list[ConceptNode]:
+        """Return concepts whose preferred_name matches `name` case-insensitively.
+
+        Used by seed importers to detect cross-source name collisions: when a
+        seed (e.g. VROI:FFA "Fusiform Face Area") would collide with an
+        already-extracted claim concept of the same name, callers can merge
+        aliases / metadata into the existing node rather than skipping or
+        creating a duplicate.
+
+        Args:
+            name: target preferred_name (case-insensitive match).
+            exclude_source_vocab: skip nodes from this vocab (typically the
+                caller's own vocab, so importers don't match themselves).
+            exclude_id_prefixes: skip ids starting with any of these prefixes.
+        """
+        target = name.strip().lower()
+        out: list[ConceptNode] = []
+        for node in self._index.values():
+            if node.preferred_name.strip().lower() != target:
+                continue
+            if exclude_source_vocab and node.source_vocab == exclude_source_vocab:
+                continue
+            if exclude_id_prefixes and node.id.startswith(exclude_id_prefixes):
+                continue
+            out.append(node)
+        return out
+
+    def merge_seed_into_existing(
+        self,
+        target_id: str,
+        seed_aliases: list[str],
+        seed_metadata: Optional[dict] = None,
+        seed_domain_tags: Optional[list[str]] = None,
+    ) -> bool:
+        """Augment an existing concept with seed-side aliases/metadata/tags.
+
+        Returns True if at least one new alias / tag / metadata key was added.
+        Does not change `preferred_name` or `source_vocab` of the target
+        node — the existing node remains the canonical entry; the seed
+        information enriches it.
+        """
+        node = self._index.get(target_id)
+        if node is None:
+            return False
+        changed = False
+        for a in seed_aliases or []:
+            if a and a not in node.aliases:
+                node.aliases.append(a)
+                changed = True
+        for tag in seed_domain_tags or []:
+            if tag and tag not in node.domain_tags:
+                node.domain_tags.append(tag)
+                changed = True
+        if seed_metadata:
+            md = dict(node.metadata) if node.metadata else {}
+            for k, v in seed_metadata.items():
+                if k not in md:
+                    md[k] = v
+                    changed = True
+            node.metadata = md
+        if changed:
+            data = self.G.nodes[target_id]
+            data["aliases"] = list(node.aliases)
+            data["domain_tags"] = list(node.domain_tags)
+            data["metadata"] = dict(node.metadata) if node.metadata else {}
+        return changed
+
     def search_by_name(self, query: str, limit: int = 20) -> list[ConceptNode]:
         """Fuzzy search concepts by preferred_name or aliases."""
         query_lower = query.lower()

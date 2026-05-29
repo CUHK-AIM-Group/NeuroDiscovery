@@ -110,6 +110,9 @@ RELATION_TYPES = {
     "contraindicated_for",  # A is contraindicated for B
     # molecular / genetic
     "gene_associated_with_disease",
+    "gene_associated_with_anatomy",  # gene -> neuroanatomy (HPO-derived; mutation-causes-phenotype-affecting-region)
+    "gene_enriched_in_region",       # gene -> neuroanatomy (AHBA-derived; cross-donor z-score expression enrichment)
+    "receptor_density_in",           # gene -> neuroanatomy (Hansen 2022 PET tracer-derived receptor density per ROI)
     "protein_encoded_by",
     "modulates",          # A modulates activity of B
     "binds_to",           # A binds to receptor B
@@ -154,6 +157,10 @@ RELATION_TYPES = {
     # Outcome closure edges (closes IM/D/Rx → OUTCOME gap)
     "is_assessed_by",          # disease → rating_scale (reverse of measures)
     "has_adverse_effect",      # drug → AE SOC (drug → outcome)
+    # Atlas / imaging-feature anchoring edges
+    "defines_region",          # atlas → neuroanatomy ROI (atlas covers ROI)
+    "measured_by_modality",    # imaging_feature → modality (e.g. CortThick → sMRI)
+    "is_imaging_feature_of",   # imaging_feature → neuroanatomy (feature lives on ROI)
 }
 
 
@@ -195,6 +202,9 @@ EDGE_TIER: dict[str, str] = {
     "predisposes":                   "discovery",
     "contraindicated_for":           "discovery",
     "gene_associated_with_disease":  "discovery",
+    "gene_associated_with_anatomy":  "discovery",
+    "gene_enriched_in_region":       "discovery",
+    "receptor_density_in":           "discovery",
     "treats":                        "discovery",
     "protein_encoded_by":            "discovery",
     "binds_to":                      "discovery",
@@ -211,6 +221,9 @@ EDGE_TIER: dict[str, str] = {
     "part_of":                       "skeleton",
     "supports_modality":             "skeleton",
     "provides_modality":             "skeleton",
+    "defines_region":                "skeleton",
+    "measured_by_modality":          "skeleton",
+    "is_imaging_feature_of":         "skeleton",
     # Tier 3 — inverse mirrors of canonical Tier-1 edges
     "is_treated_by":                 "inverse",
     "is_assessed_by":                "inverse",

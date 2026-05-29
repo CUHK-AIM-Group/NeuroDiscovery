@@ -30,43 +30,69 @@ logger = logging.getLogger(__name__)
 SUPPORTED_ATLASES: dict[str, dict] = {
     # Cortical functional parcellations (Schaefer 2018)
     "Schaefer100":  {"n_regions": 100,  "family": "Schaefer", "kind": "cortical_functional",
-                     "ref": "Schaefer et al. 2018 Cereb Cortex"},
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 100 parcellation", "Schaefer-100",
+                                 "Schaefer 100-region atlas"]},
     "Schaefer200":  {"n_regions": 200,  "family": "Schaefer", "kind": "cortical_functional",
-                     "ref": "Schaefer et al. 2018 Cereb Cortex"},
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 200 parcellation", "Schaefer-200"]},
     "Schaefer400":  {"n_regions": 400,  "family": "Schaefer", "kind": "cortical_functional",
-                     "ref": "Schaefer et al. 2018 Cereb Cortex"},
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 400 parcellation", "Schaefer-400",
+                                 "Schaefer 400-region atlas"]},
     "Schaefer1000": {"n_regions": 1000, "family": "Schaefer", "kind": "cortical_functional",
-                     "ref": "Schaefer et al. 2018 Cereb Cortex"},
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 1000 parcellation", "Schaefer-1000"]},
     # Automated Anatomical Labeling
     "AAL90":   {"n_regions": 90,  "family": "AAL", "kind": "anatomical",
-                "ref": "Tzourio-Mazoyer et al. 2002 NeuroImage"},
+                "ref": "Tzourio-Mazoyer et al. 2002 NeuroImage",
+                "aliases": ["AAL atlas", "AAL", "AAL 90-region atlas",
+                            "Automated Anatomical Labeling atlas"]},
     "AAL116":  {"n_regions": 116, "family": "AAL", "kind": "anatomical",
-                "ref": "Tzourio-Mazoyer et al. 2002 NeuroImage"},
+                "ref": "Tzourio-Mazoyer et al. 2002 NeuroImage",
+                "aliases": ["AAL 116 atlas", "AAL-116",
+                            "Automated Anatomical Labeling atlas"]},
     # Desikan-Killiany / Destrieux (FreeSurfer)
     "Desikan":   {"n_regions": 68,  "family": "FreeSurfer", "kind": "anatomical",
-                  "ref": "Desikan et al. 2006 NeuroImage"},
+                  "ref": "Desikan et al. 2006 NeuroImage",
+                  "aliases": ["Desikan-Killiany atlas", "Desikan atlas",
+                              "Desikan-Killiany cortical atlas",
+                              "Desikan-Killiany parcellation"]},
     "Destrieux": {"n_regions": 148, "family": "FreeSurfer", "kind": "anatomical",
-                  "ref": "Destrieux et al. 2010 NeuroImage"},
+                  "ref": "Destrieux et al. 2010 NeuroImage",
+                  "aliases": ["Destrieux atlas", "Destrieux parcellation",
+                              "a2009s atlas"]},
     # Subcortical
     "HarvardOxford_sub": {"n_regions": 21, "family": "HarvardOxford", "kind": "subcortical",
-                          "ref": "Harvard-Oxford subcortical atlas"},
+                          "ref": "Harvard-Oxford subcortical atlas",
+                          "aliases": ["Harvard-Oxford subcortical atlas",
+                                      "Harvard-Oxford atlas"]},
     # HCP multi-modal parcellation
     "Glasser": {"n_regions": 360, "family": "HCP", "kind": "multimodal",
-                "ref": "Glasser et al. 2016 Nature"},
+                "ref": "Glasser et al. 2016 Nature",
+                "aliases": ["Glasser atlas", "Glasser multi-modal parcellation",
+                            "HCP-MMP1", "HCP multi-modal parcellation",
+                            "Glasser 360-region atlas"]},
     # Voxel-level / whole-brain CNN input
     "voxel": {"n_regions": 0, "family": "voxel", "kind": "whole_brain",
-              "ref": "whole-brain 3D voxel grid"},
+              "ref": "whole-brain 3D voxel grid",
+              "aliases": ["voxel-level", "whole-brain voxel grid"]},
     # ── EEG electrode layouts (treated as "atlases" for uniform node model) ─
     "EEG_10_20":     {"n_regions": 19, "family": "10-20", "kind": "eeg_layout",
-                      "ref": "Jasper 1958 international 10-20 system"},
+                      "ref": "Jasper 1958 international 10-20 system",
+                      "aliases": ["10-20 system", "international 10-20 system"]},
     "EEG_10_10":     {"n_regions": 64, "family": "10-10", "kind": "eeg_layout",
-                      "ref": "Chatrian et al. 1988 modified 10-10 system"},
+                      "ref": "Chatrian et al. 1988 modified 10-10 system",
+                      "aliases": ["10-10 system", "modified 10-10 system"]},
     "EEG_SEED_62":   {"n_regions": 62, "family": "SEED", "kind": "eeg_layout",
-                      "ref": "62-channel ESI NeuroScan layout used by SEED/SEED-IV/SEED-V/SEED-VII/SEED-DV"},
+                      "ref": "62-channel ESI NeuroScan layout used by SEED/SEED-IV/SEED-V/SEED-VII/SEED-DV",
+                      "aliases": ["SEED 62-channel layout", "ESI NeuroScan 62 layout"]},
     "EEG_SEED_VIG_17": {"n_regions": 17, "family": "SEED-VIG", "kind": "eeg_layout",
-                        "ref": "17-channel layout used by SEED-VIG (plus 4-ch EOG)"},
+                        "ref": "17-channel layout used by SEED-VIG (plus 4-ch EOG)",
+                        "aliases": ["SEED-VIG 17-channel layout"]},
     "EEG_BCI_32":    {"n_regions": 32, "family": "BCI2000", "kind": "eeg_layout",
-                      "ref": "32-channel standard BCI/biosemi layout"},
+                      "ref": "32-channel standard BCI/biosemi layout",
+                      "aliases": ["32-channel BCI layout", "Biosemi 32 layout"]},
 }
 
 # ── Modality registry ──────────────────────────────────────────────────
@@ -178,6 +204,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI", "sMRI", "dMRI"],
         "description": "graph neural network operating on parcellated brain graphs",
         "ref": "Li et al. 2021 Med Image Anal",
+        "kg_node": True,
     },
     "NeuroStorm": {
         "family": "foundation_model",
@@ -185,6 +212,10 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI"],
         "description": "4D fMRI foundation model (large-scale pretraining)",
         "ref": "NeuroStorm Nat BME 2026",
+        # Engineering brand name with no measured paper occurrences -- kept
+        # as metadata only so dataset-level specificity scoring can still
+        # pick it up without polluting KG traversal with a dead-end node.
+        "kg_node": False,
     },
     "BrainLM": {
         "family": "foundation_model",
@@ -192,6 +223,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI"],
         "description": "time-series transformer over ROI-level BOLD",
         "ref": "Caro et al. 2024 ICLR",
+        "kg_node": False,
     },
     "SwiFT": {
         "family": "vision_transformer",
@@ -199,6 +231,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI"],
         "description": "swin transformer for 4D fMRI",
         "ref": "Kim et al. 2023 NeurIPS",
+        "kg_node": True,
     },
     "3D-CNN": {
         "family": "convolutional_network",
@@ -206,6 +239,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["sMRI", "PET"],
         "description": "3D convolutional network for volumetric images",
         "ref": "generic 3D CNN",
+        "kg_node": True,
     },
     "XGBoost": {
         "family": "gradient_boosting",
@@ -214,6 +248,7 @@ ML_MODELS: dict[str, dict] = {
                         "eye_tracking", "genetics", "clinical"],
         "description": "gradient-boosted decision trees on tabular features",
         "ref": "Chen & Guestrin 2016 KDD",
+        "kg_node": True,
     },
     "SVM": {
         "family": "kernel_method",
@@ -221,6 +256,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["sMRI", "dMRI", "PET", "EEG", "EOG", "genetics"],
         "description": "support vector machine classifier/regressor",
         "ref": "Cortes & Vapnik 1995",
+        "kg_node": True,
     },
     # ── EEG-specific deep learning models ──────────────────────────────
     "EEGNet": {
@@ -229,6 +265,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "compact 2D conv net (depthwise + separable) for EEG classification",
         "ref": "Lawhern et al. 2018 J Neural Eng",
+        "kg_node": True,
     },
     "ShallowConvNet": {
         "family": "convolutional_network",
@@ -236,6 +273,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "shallow temporal+spatial conv net, inspired by FBCSP",
         "ref": "Schirrmeister et al. 2017 Hum Brain Mapp",
+        "kg_node": True,
     },
     "DeepConvNet": {
         "family": "convolutional_network",
@@ -243,6 +281,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "deep 5-block conv net for raw EEG classification",
         "ref": "Schirrmeister et al. 2017 Hum Brain Mapp",
+        "kg_node": True,
     },
     "EEGConformer": {
         "family": "transformer",
@@ -250,6 +289,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "conv + self-attention hybrid for EEG emotion/MI/visual decoding",
         "ref": "Song et al. 2023 IEEE TNSRE",
+        "kg_node": False,
     },
     "LaBraM": {
         "family": "foundation_model",
@@ -257,6 +297,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "large brain foundation model for EEG (cross-task transfer)",
         "ref": "Jiang et al. 2024 ICLR",
+        "kg_node": False,
     },
 }
 
@@ -365,19 +406,52 @@ DATASETS: dict[str, dict] = {
 # ── Ingestion ─────────────────────────────────────────────────────────
 
 def _ensure(kg: KnowledgeGraph, node: ConceptNode) -> bool:
-    """Add node if absent. Returns True if newly created."""
+    """Add node if absent. Returns True if newly created.
+
+    If a same-id node exists it is left untouched (KnowledgeGraph.add_concept
+    already does alias/tag union when called with the same id). If a
+    *different-id* node has an identical preferred_name (cross-source name
+    collision, e.g. seed `Fusiform Face Area` vs an existing claim node of
+    the same name), the seed's aliases / domain_tags are merged into that
+    pre-existing node instead of creating a duplicate or silently dropping
+    the seed.
+    """
     if kg.has_concept(node.id):
+        return False
+    collisions = kg.find_by_name_exact(
+        node.preferred_name,
+        exclude_source_vocab=node.source_vocab,
+    )
+    if collisions:
+        target = collisions[0]
+        seed_meta = dict(node.metadata) if node.metadata else {}
+        seed_meta.setdefault("aliased_from_seed", node.id)
+        seed_meta.setdefault("aliased_from_source", node.source_vocab)
+        kg.merge_seed_into_existing(
+            target.id,
+            seed_aliases=[node.preferred_name, *node.aliases],
+            seed_metadata=seed_meta,
+            seed_domain_tags=node.domain_tags,
+        )
+        logger.debug(
+            "name collision: seed %s merged into existing %s",
+            node.id, target.id,
+        )
         return False
     kg.add_concept(node)
     return True
 
 
 def _build_atlas_node(name: str, info: dict) -> ConceptNode:
+    aliases = list(info.get("aliases", []))
+    if name not in aliases:
+        aliases.insert(0, name)
     return ConceptNode(
         id=f"ATLAS:{name}",
         preferred_name=name,
         domain_tags=[DomainTag.ATLAS.value],
         source_vocab="experiment_infra",
+        aliases=aliases,
         definition=f"Brain parcellation ({info['kind']}): {info['n_regions']} regions. "
                    f"Reference: {info['ref']}",
         metadata={k: info[k] for k in ("n_regions", "family", "kind", "ref")},
@@ -449,8 +523,11 @@ def ingest_experiment_infrastructure(kg: KnowledgeGraph) -> dict:
         if _ensure(kg, _build_modality_node(name, info)):
             stats["modalities_added"] += 1
 
-    # 3. ML models
+    # 3. ML models (skip those marked kg_node=False -- kept as engineering
+    #    metadata only, see ML_MODELS docstring)
     for name, info in ML_MODELS.items():
+        if not info.get("kg_node", True):
+            continue
         if _ensure(kg, _build_model_node(name, info)):
             stats["models_added"] += 1
 
@@ -459,8 +536,10 @@ def ingest_experiment_infrastructure(kg: KnowledgeGraph) -> dict:
         if _ensure(kg, _build_dataset_node(name, info)):
             stats["datasets_added"] += 1
 
-    # 5. Model --supports_modality--> Modality
+    # 5. Model --supports_modality--> Modality (only for KG-node-backed models)
     for model, info in ML_MODELS.items():
+        if not info.get("kg_node", True):
+            continue
         for mod in info["modalities"]:
             mod_id = f"MODALITY:{mod}"
             if not kg.has_concept(mod_id):

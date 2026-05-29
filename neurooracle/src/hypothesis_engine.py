@@ -146,6 +146,13 @@ _REVIEW_TYPES = {"review", "narrative_review", "systematic_review"}
 
 COMMON_RELATIONS = {"is_a", "part_of", "associated_with", "about", "is_associated_with"}
 
+# Pure taxonomy / provenance edges. A node connected ONLY by these has no
+# empirical evidence anchoring it to anything mechanistic — a "MeSH disease
+# leaf" with only `is_a` parents, or a concept that exists only as the
+# subject of `about` provenance edges. Walking through such nodes produces
+# hypotheses that look like graph paths but carry zero biological signal.
+TREE_RELATIONS = frozenset({"is_a", "part_of", "about"})
+
 # Noisy entity name patterns — hypotheses involving these are low quality.
 # Two categories:
 #   (a) process-word ≠ entity: nominalized verbs/states ("loss", "progression")
@@ -1000,6 +1007,51 @@ class HypothesisEngine:
             key = (meta.get("subject_id", ""), meta.get("predicate", ""), meta.get("object_id", ""))
             if key[0] and key[2]:
                 self._claims_by_triple.setdefault(key, []).append(meta)
+        # Lazy evidence-degree cache for the min_evidence_per_node walk filter.
+        self._non_tree_degree: Optional[dict[str, int]] = None
+
+    def _build_non_tree_degree(self) -> dict[str, int]:
+        """Count incident non-tree edges per node.
+
+        A "tree edge" is is_a / part_of / about — pure taxonomy or
+        provenance. Nodes whose entire neighbourhood is tree-only are
+        ontology leaves with no empirical anchor; routing a hypothesis
+        through them produces graph paths that read like mechanism but
+        are just "MeSH says X is_a Y is_a Z".
+
+        Counts each undirected incidence once: for every edge u→v whose
+        relation_type is NOT in TREE_RELATIONS, increment both u and v.
+        Cached on first access; rebuilt only if the engine is re-init'd.
+        """
+        deg: dict[str, int] = {}
+        for u, v, data in self.G.edges(data=True):
+            if data.get("relation_type") in TREE_RELATIONS:
+                continue
+            deg[u] = deg.get(u, 0) + 1
+            deg[v] = deg.get(v, 0) + 1
+        return deg
+
+    def _node_non_tree_degree(self, nid: str) -> int:
+        """Cached lookup. Lazily builds the per-node count on first call."""
+        if self._non_tree_degree is None:
+            self._non_tree_degree = self._build_non_tree_degree()
+        return self._non_tree_degree.get(nid, 0)
+
+    def _path_meets_evidence_floor(
+        self, raw_path: list[str], min_evidence_per_node: int,
+    ) -> bool:
+        """All nodes in raw_path have non-tree degree >= min_evidence_per_node.
+
+        Endpoints are checked too: a hypothesis whose source or target is
+        an evidence-orphaned ontology node is just as uninformative as one
+        with such a node in the middle.
+        """
+        if min_evidence_per_node <= 0:
+            return True
+        for nid in raw_path:
+            if self._node_non_tree_degree(nid) < min_evidence_per_node:
+                return False
+        return True
 
     # ── batch generation ───────────────────────────────────────────────
 
@@ -1033,14 +1085,41 @@ class HypothesisEngine:
                 return False
         return True
 
+    def _path_distinct_atom_domains(self, raw_path: list[str]) -> int:
+        """Count distinct atom domains touched by nodes along raw_path.
+
+        Used by the metapath bag-constraint to require that a candidate
+        hypothesis path crosses several semantic domains rather than
+        loitering inside a single one (e.g. two neuroanatomy hops).
+
+        Only domains in ``_allowed_atom_domains()`` are counted -- pure
+        infrastructure / claim tags are ignored. Returns 0 if no node on
+        the path carries any atom domain (should not happen after the
+        intermediates-are-atoms filter, but kept defensive).
+        """
+        allowed = _allowed_atom_domains()
+        seen: set[str] = set()
+        for nid in raw_path:
+            node = self._index.get(nid)
+            if node is None:
+                continue
+            for d in (node.domain_tags or []):
+                if d in allowed:
+                    seen.add(d)
+        return len(seen)
+
     def batch_generate(
         self,
         domain_pairs: Optional[list[tuple[str, str]]] = None,
-        max_hops: int = 3,
+        max_hops: int = 4,
         max_paths_per_pair: int = 5,
         max_seeds_per_domain: int = 50,
         output_atom=None,
         skip_post_process: bool = False,
+        min_hops: int = 2,
+        metapath_min_domains: int = 2,
+        prefer_longer_paths: bool = True,
+        min_evidence_per_node: int = 1,
     ) -> list[Hypothesis]:
         """Batch-generate hypotheses across the entire graph.
 
@@ -1049,9 +1128,30 @@ class HypothesisEngine:
 
         If ``output_atom`` (a :class:`neurooracle.src.atoms.Atom`) is supplied,
         the post-processing target-domain check accepts that atom's domain
-        pool as valid outcomes — needed for tasks like personalised_treatment
+        pool as valid outcomes -- needed for tasks like personalised_treatment
         whose target atom (DRUG) is otherwise excluded from the default
         outcome set.
+
+        Args (3-hop refactor stage 1):
+            min_hops: minimum edge count per kept path. Default 2 keeps the
+                "no direct edges" guarantee (raw_path length 3 = 2 edges).
+                Raise to 3 to force 3-hop-or-longer hypotheses; useful when
+                the seed pool contains many atom anchors that need to chain
+                through a mediator before reaching a clinical/IM endpoint.
+            metapath_min_domains: minimum number of *distinct* atom domains
+                that a path must touch (counting source / intermediates /
+                target). Default 2 enforces that source and target sit in
+                different domains (which the domain_pair gate already does
+                in most cases). Set to 3 to require an explicit cross-domain
+                mediator between source and target.
+            prefer_longer_paths: when more candidate paths exist than the
+                per-pair quota, sort longer paths first so the limited slots
+                go to richer chains rather than 2-hop shortcuts.
+            min_evidence_per_node: minimum non-tree (i.e. not is_a /
+                part_of / about) edge count required at every node on the
+                path. Default 1 drops nodes that are pure ontology leaves
+                with no empirical anchor. Raise to 2+ to demand multiple
+                independent evidence edges per visited node.
         """
         if domain_pairs is None:
             domain_pairs = DEFAULT_DOMAIN_PAIRS
@@ -1064,18 +1164,27 @@ class HypothesisEngine:
             logger.info(f"generating hypotheses: {dom_a} -> {dom_b}")
 
             seeds_a = self._sample_domain_nodes(dom_a, max_seeds_per_domain)
+            if min_evidence_per_node > 0:
+                seeds_a = [
+                    s for s in seeds_a
+                    if self._node_non_tree_degree(s) >= min_evidence_per_node
+                ]
             targets_b = {
                 nid for nid, data in self.G.nodes(data=True)
                 if dom_b in data.get("domain_tags", [])
                 and "claim" not in data.get("domain_tags", [])
                 and nid not in PATH_IGNORE_NODE_IDS
+                and (min_evidence_per_node <= 0
+                     or self._node_non_tree_degree(nid) >= min_evidence_per_node)
             }
 
             for seed_id in seeds_a:
                 if seed_id not in self.G:
                     continue
 
-                # BFS from seed
+                # BFS reach-set: cheap pre-filter to know which targets are
+                # reachable within max_hops before the more expensive
+                # all_simple_paths enumeration runs per (seed, target).
                 try:
                     reachable = nx.single_source_shortest_path(
                         self.G, seed_id, cutoff=max_hops
@@ -1083,7 +1192,6 @@ class HypothesisEngine:
                 except nx.NetworkXError:
                     continue
 
-                # find targets in domain_b
                 candidates = [
                     nid for nid in reachable
                     if nid in targets_b and nid != seed_id
@@ -1096,51 +1204,88 @@ class HypothesisEngine:
                         continue
                     seen_pairs.add(pair_key)
 
-                    raw_path = reachable[target_id]
-                    # Skip 1-hop paths (direct edges = no discovery value).
-                    # Doing this here, before counting against
-                    # max_paths_per_pair, prevents 1-hop candidates from
-                    # consuming the per-pair budget that should go to
-                    # multi-hop bridges.
-                    if len(raw_path) < 3:
-                        continue
-                    if not self._path_intermediates_are_atoms(raw_path):
-                        continue
-                    links = self._enrich_path(raw_path)
-                    if not links:
+                    # Enumerate up to N simple paths between this (seed, target).
+                    # Cap the enumerator so a high-degree pair cannot blow up
+                    # runtime: take 4x the per-pair quota then prune.
+                    raw_paths: list[list[str]] = []
+                    enum_cap = max(max_paths_per_pair * 4, 8)
+                    try:
+                        for p in nx.all_simple_paths(
+                            self.G, seed_id, target_id, cutoff=max_hops
+                        ):
+                            if len(p) - 1 < min_hops:
+                                continue
+                            if not self._path_intermediates_are_atoms(p):
+                                continue
+                            if (metapath_min_domains > 1 and
+                                self._path_distinct_atom_domains(p) < metapath_min_domains):
+                                continue
+                            if not self._path_meets_evidence_floor(p, min_evidence_per_node):
+                                continue
+                            raw_paths.append(p)
+                            if len(raw_paths) >= enum_cap:
+                                break
+                    except (nx.NetworkXError, nx.NodeNotFound):
                         continue
 
-                    conf = self._compute_confidence_score(links)
-                    nov = self._compute_novelty_score(links)
-                    evi = self._compute_evidence_score(links)
-                    test, test_reason = self._compute_testability_score(links)
-                    claim_ids = [l.claim_id for l in links if l.claim_id]
+                    if not raw_paths:
+                        # Fallback: keep the BFS shortest path if it satisfies
+                        # min_hops. Without this, raising metapath_min_domains
+                        # / min_hops on a sparse pair returns nothing rather
+                        # than the historical 2-hop shortest path.
+                        sp = reachable[target_id]
+                        if (len(sp) - 1 >= min_hops
+                                and self._path_intermediates_are_atoms(sp)
+                                and (metapath_min_domains <= 1
+                                     or self._path_distinct_atom_domains(sp)
+                                        >= metapath_min_domains)
+                                and self._path_meets_evidence_floor(
+                                    sp, min_evidence_per_node)):
+                            raw_paths = [sp]
+                        else:
+                            continue
 
-                    _hyp_counter += 1
-                    h = Hypothesis(
-                        id=f"HYP:{_hyp_counter:06d}",
-                        hypothesis_type="bridge",
-                        source_id=seed_id,
-                        source_name=self._index[seed_id].preferred_name,
-                        target_id=target_id,
-                        target_name=self._index[target_id].preferred_name,
-                        path=links,
-                        confidence_score=conf,
-                        novelty_score=nov,
-                        evidence_score=evi,
-                        testability_score=test,
-                        composite_score=0.0,  # set below
-                        supporting_claims=claim_ids,
-                        testability_reason=test_reason,
-                        metadata={"domain_a": dom_a, "domain_b": dom_b},
-                    )
-                    h.explanation = self._generate_explanation(h)
-                    h.composite_score = self._composite_score(h)
-                    all_hypotheses.append(h)
+                    if prefer_longer_paths:
+                        raw_paths.sort(key=len, reverse=True)
+                    raw_paths = raw_paths[:max_paths_per_pair]
 
-                    pair_count += 1
-                    if pair_count >= max_paths_per_pair:
-                        break
+                    for raw_path in raw_paths:
+                        links = self._enrich_path(raw_path)
+                        if not links:
+                            continue
+
+                        conf = self._compute_confidence_score(links)
+                        nov = self._compute_novelty_score(links)
+                        evi = self._compute_evidence_score(links)
+                        test, test_reason = self._compute_testability_score(links)
+                        claim_ids = [l.claim_id for l in links if l.claim_id]
+
+                        _hyp_counter += 1
+                        h = Hypothesis(
+                            id=f"HYP:{_hyp_counter:06d}",
+                            hypothesis_type="bridge",
+                            source_id=seed_id,
+                            source_name=self._index[seed_id].preferred_name,
+                            target_id=target_id,
+                            target_name=self._index[target_id].preferred_name,
+                            path=links,
+                            confidence_score=conf,
+                            novelty_score=nov,
+                            evidence_score=evi,
+                            testability_score=test,
+                            composite_score=0.0,  # set below
+                            supporting_claims=claim_ids,
+                            testability_reason=test_reason,
+                            metadata={"domain_a": dom_a, "domain_b": dom_b,
+                                      "n_hops": len(raw_path) - 1},
+                        )
+                        h.explanation = self._generate_explanation(h)
+                        h.composite_score = self._composite_score(h)
+                        all_hypotheses.append(h)
+
+                        pair_count += 1
+                        if pair_count >= max_paths_per_pair:
+                            break
 
         logger.info(f"batch generation complete: {len(all_hypotheses)} hypotheses from {len(domain_pairs)} domain pairs")
 
@@ -1154,10 +1299,14 @@ class HypothesisEngine:
     def batch_generate_for_task(
         self,
         task,                                    # neurooracle.src.atoms.Task
-        max_hops: int = 3,
+        max_hops: int = 4,
         max_paths_per_pair: int = 5,
         max_seeds_per_domain: int = 50,
         require_atom_touch: bool = False,
+        min_hops: int = 2,
+        metapath_min_domains: int = 2,
+        prefer_longer_paths: bool = True,
+        min_evidence_per_node: int = 1,
     ) -> list[Hypothesis]:
         """Generate hypotheses scoped to a canonical Task.
 
@@ -1230,6 +1379,10 @@ class HypothesisEngine:
             max_paths_per_pair=max_paths_per_pair,
             max_seeds_per_domain=max_seeds_per_domain,
             skip_post_process=True,
+            min_hops=min_hops,
+            metapath_min_domains=metapath_min_domains,
+            prefer_longer_paths=prefer_longer_paths,
+            min_evidence_per_node=min_evidence_per_node,
         )
 
         # tag with task provenance BEFORE post_process so the task-aware
@@ -1299,6 +1452,7 @@ class HypothesisEngine:
         max_paths_per_segment: int = 3,
         max_seeds: int = 30,
         max_chains: int = 200,
+        min_evidence_per_node: int = 1,
     ) -> list[Hypothesis]:
         """Generate hypotheses scoped to a canonical TaskChain.
 
@@ -1351,6 +1505,8 @@ class HypothesisEngine:
                 if (set(data.get("domain_tags", [])) & doms)
                 and "claim" not in data.get("domain_tags", [])
                 and nid not in PATH_IGNORE_NODE_IDS
+                and (min_evidence_per_node <= 0
+                     or self._node_non_tree_degree(nid) >= min_evidence_per_node)
             }
             atom_node_pools.append(pool)
 
@@ -1413,6 +1569,11 @@ class HypothesisEngine:
                             break
                         node_doms = set(node.domain_tags or [])
                         if "claim" in node_doms or not (node_doms & _allowed):
+                            bad_bridge = True
+                            break
+                        if (min_evidence_per_node > 0
+                                and self._node_non_tree_degree(n)
+                                    < min_evidence_per_node):
                             bad_bridge = True
                             break
                     if bad_bridge:
@@ -1499,6 +1660,7 @@ class HypothesisEngine:
         filter_vague_relations: bool = True,
         filter_non_measurable: bool = True,
         max_hops_filter: int = 5,
+        min_evidence_per_node: int = 1,
     ) -> list[Hypothesis]:
         """Filter low-quality hypotheses after generation.
 
@@ -1509,6 +1671,10 @@ class HypothesisEngine:
         4. Non-measurable biomarkers — entities not directly measurable from brain imaging
         5. Pure association chains — no directional predicates (causes/treats/increases/etc.)
         6. Overly long paths — exceeds max_hops_filter (default 5) to reduce noise accumulation
+        7. Tree-only nodes — any node on the path whose entire neighbourhood
+           is is_a / part_of / about edges (no empirical anchor). Controlled
+           by min_evidence_per_node; default 1 enforces "at least one
+           non-tree edge per visited node".
         """
         before = len(hypotheses)
         filtered = []
@@ -1531,6 +1697,19 @@ class HypothesisEngine:
                     noisy_names.append(link.to_name)
             if noisy_names:
                 continue
+
+            # filter tree-only nodes: any path node whose non-tree degree
+            # falls below the floor is an ontology leaf with no empirical
+            # anchor. Walking through it produces graph paths without
+            # biological signal.
+            if min_evidence_per_node > 0:
+                path_nodes: list[str] = [h.source_id, h.target_id]
+                for link in h.path:
+                    path_nodes.append(link.from_id)
+                    path_nodes.append(link.to_id)
+                if any(self._node_non_tree_degree(nid) < min_evidence_per_node
+                       for nid in path_nodes if nid):
+                    continue
 
             # filter 1-hop (single direct edge = no discovery value)
             if len(h.path) < min_hops:
