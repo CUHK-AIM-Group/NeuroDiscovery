@@ -227,10 +227,13 @@ def build_im_palette(
             })
 
     # Regions — three buckets so the LLM sees diverse anatomy.
+    # After UMLS canonicalization most regions live under CUI:Cxxx; we
+    # filter by domain_tags rather than id prefix.
     nn_items = [
         (cid, c, deg.get(cid, 0))
         for cid, c in concepts.items()
-        if cid.startswith("NN:") and _domain_of(c) == "neuroanatomy"
+        if _domain_of(c) == "neuroanatomy"
+        and not cid.startswith("VROI:")
     ]
     nn_items.sort(key=lambda t: -t[2])
     core_regions: list[dict] = []
@@ -271,23 +274,37 @@ def build_im_palette(
     # ENIGMA-canonical DK + Aseg targets are already in the KG via NN:*
     # ids, but they're a deliberate subset (only the 41 DK/Aseg ROIs ENIGMA
     # reports on). Surface them as a separate slot so the LLM sees them
-    # as the "case-control comparable" pool.
+    # as the "case-control comparable" pool. After UMLS canonicalization
+    # the original NN:* ids get remapped to CUI:Cxxx; we follow each node's
+    # merged_from metadata to build a reverse lookup back to the live id.
+    # Note: we deliberately allow overlap with core_regions — post-canonicalize
+    # the merged CUI nodes accumulate enough edges to top core_regions, and
+    # the ENIGMA slot's purpose is the "case-control comparable" annotation,
+    # not a non-overlapping pool.
     try:
         from ..ingestion.enigma_disease_im import ASEG_ROI_TO_NN, DK_ROI_TO_NN
-        enigma_ids = sorted({*DK_ROI_TO_NN.values(), *ASEG_ROI_TO_NN.values()})
+        enigma_raw_ids = sorted({*DK_ROI_TO_NN.values(), *ASEG_ROI_TO_NN.values()})
     except ImportError:
-        enigma_ids = []
+        enigma_raw_ids = []
+    merged_from_index: dict[str, str] = {}
+    for cid_, c in concepts.items():
+        for old in (c.get("metadata") or {}).get("merged_from") or []:
+            merged_from_index.setdefault(old, cid_)
+    enigma_resolved: set[str] = set()
+    for raw_id in enigma_raw_ids:
+        live = raw_id if raw_id in concepts else merged_from_index.get(raw_id)
+        if live and live in concepts:
+            enigma_resolved.add(live)
     enigma_regions: list[dict] = []
-    for cid in enigma_ids:
-        if cid in concepts and cid not in {r["id"] for r in core_regions}:
-            c = concepts[cid]
-            nm = (c.get("preferred_name") or "").strip()
-            if nm:
-                enigma_regions.append({
-                    "id":      cid,
-                    "name":    nm,
-                    "aliases": list(c.get("aliases") or [])[:3],
-                })
+    for cid in sorted(enigma_resolved):
+        c = concepts[cid]
+        nm = (c.get("preferred_name") or "").strip()
+        if nm:
+            enigma_regions.append({
+                "id":      cid,
+                "name":    nm,
+                "aliases": list(c.get("aliases") or [])[:3],
+            })
 
     tasks: list[dict] = []
     task_items = [

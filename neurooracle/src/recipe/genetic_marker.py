@@ -507,6 +507,7 @@ class GeneticMarker:
     gene_symbols: list[str] = field(default_factory=list)
     gene_set: Optional[str] = None
     tissue: Optional[str] = None
+    tissues: list[str] = field(default_factory=list)
     clock: Optional[str] = None
     disease: Optional[str] = None
     formula: str = ""
@@ -545,8 +546,9 @@ _RULES = (
     "  3. polygenic_risk and imputed_expression MUST set `disease` to a "
     "palette disease GWAS source.\n"
     "  4. expression_single, expression_aggregate, imputed_expression, "
-    "cross_tissue_expression, methylation_aggregate MUST set `tissue` to a "
-    "palette tissue.\n"
+    "methylation_aggregate MUST set `tissue` to a single palette tissue. "
+    "cross_tissue_expression instead MUST set `tissues` to a list of >=2 "
+    "palette tissues (and leave `tissue` null).\n"
     "  5. methylation_clock MUST set `clock` to a palette clock name.\n"
     "  6. single_locus, expression_single MUST list >=1 specific gene from "
     "the palette gene-symbols pool in `gene_symbols`.\n"
@@ -589,6 +591,7 @@ def _build_prompt(palette: GMPalette,
         '   "gene_symbols": ["<HGNC symbol>", ...] | [],\n'
         '   "gene_set": "<palette gene-set name>" | null,\n'
         '   "tissue": "<palette tissue name>" | null,\n'
+        '   "tissues": ["<palette tissue>", ...] | [],\n'
         '   "clock": "<palette clock name>" | null,\n'
         '   "disease": "<palette disease name>" | null,\n'
         '   "formula": "<one-line definition referencing palette tokens>",\n'
@@ -624,6 +627,9 @@ def brainstorm_gms(
         gs_raw = item.get("gene_symbols") or []
         if not isinstance(gs_raw, list):
             gs_raw = []
+        tissues_raw = item.get("tissues") or []
+        if not isinstance(tissues_raw, list):
+            tissues_raw = []
         out.append(GeneticMarker(
             id=f"gm_{i+1:04d}",
             name=name,
@@ -633,6 +639,7 @@ def brainstorm_gms(
             gene_symbols=[str(s).strip() for s in gs_raw if str(s).strip()],
             gene_set=(item.get("gene_set") or None),
             tissue=(item.get("tissue") or None),
+            tissues=[str(t).strip() for t in tissues_raw if str(t).strip()],
             clock=(item.get("clock") or None),
             disease=(item.get("disease") or None),
             formula=str(item.get("formula") or "").strip(),
@@ -783,9 +790,16 @@ def validate_gms(gms: Iterable[GeneticMarker], palette: GMPalette) -> Validation
                 rejected.append((gm, "disease_missing_or_unknown"))
                 continue
         if gm.family in TISSUE_REQUIRED_FAMILIES:
-            if not gm.tissue or gm.tissue not in tissue_names:
-                rejected.append((gm, "tissue_missing_or_unknown"))
-                continue
+            if gm.family == "cross_tissue_expression":
+                tissues_ok = [t for t in gm.tissues if t in tissue_names]
+                if len(tissues_ok) < 2:
+                    rejected.append((gm, "cross_tissue_needs_2plus_tissues"))
+                    continue
+                gm.tissues = tissues_ok
+            else:
+                if not gm.tissue or gm.tissue not in tissue_names:
+                    rejected.append((gm, "tissue_missing_or_unknown"))
+                    continue
         if gm.family in CLOCK_REQUIRED_FAMILIES:
             if not gm.clock or gm.clock not in clock_names:
                 rejected.append((gm, "clock_missing_or_unknown"))
@@ -814,7 +828,7 @@ def link_gms_to_kg(gms: Iterable[GeneticMarker], palette: GMPalette,
     back to a global symbol -> id lookup over `concepts` for completeness."""
     sym_to_id: dict[str, str] = {}
     for cid, c in concepts.items():
-        if cid.startswith("GENE:"):
+        if "gene" in (c.get("domain_tags") or []):
             sym = c.get("preferred_name") or cid.split(":", 1)[-1]
             sym_to_id.setdefault(sym, cid)
     for gm in gms:

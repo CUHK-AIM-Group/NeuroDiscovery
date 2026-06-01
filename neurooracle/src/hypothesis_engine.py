@@ -394,49 +394,93 @@ _UMBRELLA_SOURCE_PATTERNS = [
 # Hypotheses with these as intermediate nodes or endpoints are too vague
 # to drive a downstream DL experiment ("FPN -> memory" is not testable
 # because we don't know which memory subsystem). Filtered in post_process.
-PATH_IGNORE_NODE_IDS = frozenset({
-    "COGAT_CONCEPT:trm_4a3fd79d0a891",   # memory
-    "COGAT_CONCEPT:trm_4a3fd79d0a80f",   # logic
-    "COGAT_CONCEPT:trm_5159c80c1dd24",   # loss
-    "COGAT_CONCEPT:trm_4a3fd79d09741",   # activation
-    "COGAT_CONCEPT:trm_4a3fd79d0afcf",   # risk
-    "COGAT_CONCEPT:trm_4a3fd79d0b2a8",   # stress
-    "MSH:D001921",                        # Brain (umbrella)
-    "MSH:D009474",                        # Neurons (umbrella)
-})
+# Seed tables: (pre-UMLS id, expected preferred_name). After UMLS
+# canonicalization the original id may have been remapped to CUI:Cxxx, so
+# the engine resolves these to live KG ids via id-or-name lookup at init.
+_PATH_IGNORE_SEED: tuple[tuple[str, str], ...] = (
+    ("COGAT_CONCEPT:trm_4a3fd79d0a891",   "memory"),
+    ("COGAT_CONCEPT:trm_4a3fd79d0a80f",   "logic"),
+    ("COGAT_CONCEPT:trm_5159c80c1dd24",   "loss"),
+    ("COGAT_CONCEPT:trm_4a3fd79d09741",   "activation"),
+    ("COGAT_CONCEPT:trm_4a3fd79d0afcf",   "risk"),
+    ("COGAT_CONCEPT:trm_4a3fd79d0b2a8",   "stress"),
+    ("MSH:D001921",                       "Brain"),
+    ("MSH:D009474",                       "Neurons"),
+)
 
 # Disease/category mega-hubs that are valid as hypothesis endpoints
 # ("predict Alzheimer" is fine) but NOT as intermediate transit nodes
-# ("A → Alzheimer → B" is just "A relates to AD, AD relates to B" — no
+# ("A -> Alzheimer -> B" is just "A relates to AD, AD relates to B" — no
 # discovery value). Audit found 37.8% of hypotheses transit through these.
-INTERMEDIATE_ONLY_IGNORE_IDS = frozenset({
-    # Original disease hubs (audit-degree numbers; live KG values higher)
-    "COGAT_DISORDER:dso_5419",            # schizophrenia (degree ~9.5k live)
-    "MSH:D009103",                         # Multiple Sclerosis
-    "COGAT_DISORDER:dso_3312",            # bipolar disorder (cogat ID)
-    "MSH:D000544",                         # Alzheimer Disease (~13.8k live)
-    "MSH:D004827",                         # Epilepsy
-    "MSH:D010300",                         # Parkinson Disease (~7k live)
-    "COGAT_DISORDER:dso_0060041",         # autism spectrum disorder (~5k live)
-    "MSH:D001289",                         # ADHD (~9.8k live)
-    "MSH:D003863",                         # Depression
-    "MSH:D001523",                         # Mental Disorders
-    # Disease hubs missed in the plan but degree > 1500 in live KG
-    "MSH:D012640",                         # Seizures (~14.4k — top disease hub)
-    "MSH:D003704",                         # Dementia (~4.3k)
-    "MSH:D001321",                         # Autistic Disorder (MSH alias of ASD, ~4.2k)
-    "MSH:D060825",                         # Cognitive Dysfunction (~3.9k)
-    "COGAT_DISORDER:dso_1094",            # ADHD (cogat alias of D001289, ~2.6k)
-    "MSH:D001714",                         # Bipolar Disorder (MSH alias of dso_3312)
-    "MSH:D010842",                         # Pica (KG outlier hub, ~2k)
-    # Vague cognitive-function umbrella hubs (still valid as endpoints —
-    # "predict attention from FC" is a real task — but uninformative as
-    # transit nodes).
-    "COGAT_CONCEPT:trm_4a3fd79d09902",    # attention (~6k)
-    "MSH:D001519",                         # Behavior (~3.5k, too vague)
-    "COGAT_CONCEPT:trm_4a3fd79d09735",    # action (~2.5k, too vague)
-    "MSH:D004644",                         # Emotions (~1.9k)
-})
+# 2026-06-02: added 11 mega-hubs exposed by UMLS canonicalization (anatomy
+# umbrellas + broad disease/symptom terms that accumulated cross-vocab edges).
+_INTERMEDIATE_ONLY_SEED: tuple[tuple[str, str], ...] = (
+    ("COGAT_DISORDER:dso_5419",           "schizophrenia"),
+    ("MSH:D009103",                       "Multiple Sclerosis"),
+    ("COGAT_DISORDER:dso_3312",           "bipolar disorder"),
+    ("MSH:D000544",                       "Alzheimer Disease"),
+    ("MSH:D004827",                       "Epilepsy"),
+    ("MSH:D010300",                       "Parkinson Disease"),
+    ("COGAT_DISORDER:dso_0060041",        "autism spectrum disorder"),
+    ("MSH:D001289",                       "Attention Deficit Disorder with Hyperactivity"),
+    ("MSH:D003863",                       "Depression"),
+    ("MSH:D001523",                       "Mental Disorders"),
+    ("MSH:D012640",                       "Seizures"),
+    ("MSH:D003704",                       "Dementia"),
+    ("MSH:D001321",                       "Autistic Disorder"),
+    ("MSH:D060825",                       "Cognitive Dysfunction"),
+    ("COGAT_DISORDER:dso_1094",           "attention deficit hyperactivity disorder"),
+    ("MSH:D001714",                       "Bipolar Disorder"),
+    ("MSH:D010842",                       "Pica"),
+    ("COGAT_CONCEPT:trm_4a3fd79d09902",   "attention"),
+    ("MSH:D001519",                       "Behavior"),
+    ("COGAT_CONCEPT:trm_4a3fd79d09735",   "action"),
+    ("MSH:D004644",                       "Emotions"),
+    # Anatomy umbrella mega-hubs (post-canonicalize degree 900+)
+    ("CUI:C0152279",                      "Lateral Ventricles"),
+    ("CUI:C0010090",                      "Corpus Callosum"),
+    ("CUI:C0007776",                      "Cerebral Cortex"),
+    ("CUI:C0007765",                      "Cerebellum"),
+    ("CUI:C0039452",                      "Telencephalon"),
+    ("NN:3000",                           "Ventricular System"),
+    # Broad disease/symptom terms (post-canonicalize degree 600+)
+    ("CUI:C0025363",                      "Intellectual Disability"),
+    ("CUI:C0557874",                      "Global developmental delay"),
+    ("CUI:C1864897",                      "Cognitive delay"),
+    ("CUI:C0026825",                      "Muscle Hypotonia"),
+    ("CUI:C0011573",                      "Depressive Disorder"),
+)
+
+# Frozensets retained for any external import; engine instances use the
+# resolved sets built in __init__ instead.
+PATH_IGNORE_NODE_IDS = frozenset(nid for nid, _ in _PATH_IGNORE_SEED)
+INTERMEDIATE_ONLY_IGNORE_IDS = frozenset(nid for nid, _ in _INTERMEDIATE_ONLY_SEED)
+
+
+def _resolve_blacklist(
+    seeds: tuple[tuple[str, str], ...],
+    index: dict,
+) -> frozenset[str]:
+    """Resolve (original_id, expected_name) pairs to live KG ids.
+
+    For each seed: keep original_id if still present; otherwise look up by
+    preferred_name (case-insensitive) across the KG. Drops seeds that
+    resolve to nothing — the corresponding concept simply isn't in this KG.
+    """
+    name_to_id: dict[str, str] = {}
+    for nid, node in index.items():
+        nm = (node.preferred_name or "").lower()
+        if nm:
+            name_to_id.setdefault(nm, nid)
+    resolved: set[str] = set()
+    for original_id, expected_name in seeds:
+        if original_id in index:
+            resolved.add(original_id)
+            continue
+        match = name_to_id.get(expected_name.lower())
+        if match is not None:
+            resolved.add(match)
+    return frozenset(resolved)
 
 DIRECTIONAL_RELATIONS = {
     "causes", "treats", "increases", "reduces", "modulates",
@@ -444,6 +488,15 @@ DIRECTIONAL_RELATIONS = {
     "predicts", "distinguishes", "mediates",
     # Brain decoding directional predicates
     "evokes", "decoded_from", "elicits",
+    # Gene-specific discovery predicates (GENE -> DISEASE / neuroanatomy).
+    # All four are canonical single-direction edges (DisGeNET / HPO / AHBA /
+    # Hansen 2022) and the schema files them under tier "discovery". Without
+    # these, a `Gene -gene_associated_with_disease-> Disease` chain looks
+    # non-directional to post_process and gets dropped at the final gate.
+    "gene_associated_with_disease",
+    "gene_associated_with_anatomy",
+    "gene_enriched_in_region",
+    "receptor_density_in",
 }
 
 
@@ -998,6 +1051,13 @@ class HypothesisEngine:
         # The full graph remains accessible via self.kg.G for claim lookup.
         self.G = kg.semantic_view if hasattr(kg, "semantic_view") else kg.G
         self._index = kg._index
+        # Resolve blacklists to live KG ids: hardcoded ids may have been
+        # remapped to CUI:Cxxx by UMLS canonicalization, so look up by name
+        # when the original id is missing.
+        self._path_ignore_ids = _resolve_blacklist(_PATH_IGNORE_SEED, self._index)
+        self._intermediate_only_ignore_ids = _resolve_blacklist(
+            _INTERMEDIATE_ONLY_SEED, self._index,
+        )
         # Build claims index for frequency_boost: (subj, pred, obj) → [claim_meta, ...]
         self._claims_by_triple: dict[tuple[str, str, str], list[dict]] = {}
         for nid, node in self._index.items():
@@ -1173,7 +1233,7 @@ class HypothesisEngine:
                 nid for nid, data in self.G.nodes(data=True)
                 if dom_b in data.get("domain_tags", [])
                 and "claim" not in data.get("domain_tags", [])
-                and nid not in PATH_IGNORE_NODE_IDS
+                and nid not in self._path_ignore_ids
                 and (min_evidence_per_node <= 0
                      or self._node_non_tree_degree(nid) >= min_evidence_per_node)
             }
@@ -1504,7 +1564,7 @@ class HypothesisEngine:
                 nid for nid, data in self.G.nodes(data=True)
                 if (set(data.get("domain_tags", [])) & doms)
                 and "claim" not in data.get("domain_tags", [])
-                and nid not in PATH_IGNORE_NODE_IDS
+                and nid not in self._path_ignore_ids
                 and (min_evidence_per_node <= 0
                      or self._node_non_tree_degree(nid) >= min_evidence_per_node)
             }
@@ -2051,38 +2111,39 @@ class HypothesisEngine:
 
     def _touches_path_ignore_node(self, h: Hypothesis) -> bool:
         """Reject paths whose source, target, or any intermediate node is in
-        PATH_IGNORE_NODE_IDS (vague COGAT/MeSH umbrella hubs).
+        the path-ignore set (vague COGAT/MeSH umbrella hubs).
 
         Catches concepts the token-based _is_noisy_entity misses because
         the names ("memory", "logic", "Brain", "Neurons") are legitimate
         English words but the KG concept id refers to an over-general
         umbrella that's not testable.
         """
-        if h.source_id in PATH_IGNORE_NODE_IDS:
+        ignore = self._path_ignore_ids
+        if h.source_id in ignore:
             return True
-        if h.target_id in PATH_IGNORE_NODE_IDS:
+        if h.target_id in ignore:
             return True
         for link in h.path:
-            if link.from_id in PATH_IGNORE_NODE_IDS:
+            if link.from_id in ignore:
                 return True
-            if link.to_id in PATH_IGNORE_NODE_IDS:
+            if link.to_id in ignore:
                 return True
         return False
 
-    @staticmethod
-    def _transits_intermediate_only_hub(h: Hypothesis) -> bool:
+    def _transits_intermediate_only_hub(self, h: Hypothesis) -> bool:
         """Reject paths that use disease mega-hubs as intermediate transit.
 
-        INTERMEDIATE_ONLY_IGNORE_IDS nodes are valid as source/target
+        Intermediate-only-ignore nodes are valid as source/target
         (predicting Alzheimer is a real hypothesis) but not as middle
-        hops (A → Alzheimer → B is just "both relate to AD").
+        hops (A -> Alzheimer -> B is just "both relate to AD").
         """
         if len(h.path) < 2:
             return False
+        ignore = self._intermediate_only_ignore_ids
         for i, link in enumerate(h.path):
-            if i >= 1 and link.from_id in INTERMEDIATE_ONLY_IGNORE_IDS:
+            if i >= 1 and link.from_id in ignore:
                 return True
-            if i < len(h.path) - 1 and link.to_id in INTERMEDIATE_ONLY_IGNORE_IDS:
+            if i < len(h.path) - 1 and link.to_id in ignore:
                 return True
         return False
 
@@ -2394,7 +2455,7 @@ class HypothesisEngine:
             domains = set(data.get("domain_tags", []))
             if "claim" in domains:
                 continue
-            if nid in PATH_IGNORE_NODE_IDS:
+            if nid in self._path_ignore_ids:
                 continue
             if domains & {"disease", "cognitive_function"}:
                 outcome_ids.add(nid)
@@ -2624,7 +2685,7 @@ class HypothesisEngine:
         # Also strip vague umbrella hubs from the search subgraph so paths
         # never include them as intermediates. Endpoints are excluded from
         # the strip so a caller can still query them directly.
-        intermediate_exclude |= (PATH_IGNORE_NODE_IDS - {source_id, target_id})
+        intermediate_exclude |= (self._path_ignore_ids - {source_id, target_id})
 
         subgraph = self.G.copy()
         subgraph.remove_nodes_from(intermediate_exclude)
@@ -3026,7 +3087,7 @@ class HypothesisEngine:
             (nid, data) for nid, data in self.G.nodes(data=True)
             if domain in data.get("domain_tags", [])
             and "claim" not in data.get("domain_tags", [])
-            and nid not in PATH_IGNORE_NODE_IDS
+            and nid not in self._path_ignore_ids
         ]
         nodes = []
         n_umbrella_dropped = 0

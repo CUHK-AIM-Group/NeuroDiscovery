@@ -38,6 +38,7 @@ from .ingestion.outcome_bridges import ingest_outcome_bridges
 from .ingestion.outcome_im_bridges import ingest_outcome_im_bridges
 from .ingestion.visual_functional_roi import ingest_visual_functional_roi
 from .storage import save_graph
+from .umls_canonicalize import canonicalize_kg
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,22 @@ def run_full_ingestion(
 
     stats = kg.stats()
     logger.info(f"\n{'='*50}")
-    logger.info(f"INGESTION COMPLETE")
+    logger.info(f"INGESTION COMPLETE (pre-UMLS)")
+    logger.info(f"  Total concepts: {stats['n_concepts']}")
+    logger.info(f"  Total edges: {stats['n_edges']}")
+
+    # Final step: canonicalize node ids to UMLS CUIs where possible.
+    # Cross-vocab duplicates (e.g. NN:1 + MSH:D009420 + DISGENET:Cxxx for
+    # the same biological entity) collapse into a single CUI:Cxxxxxxx node;
+    # research-only entities (atlas/modality/model/dataset/IF/VROI/COGAT
+    # task/concept/dataset-variable hosts) keep their typed prefixes.
+    logger.info(f"\n=== UMLS canonicalization ===")
+    canon_summary = canonicalize_kg(kg)
+    results["umls_canonicalize"] = canon_summary
+
+    stats = kg.stats()
+    logger.info(f"\n{'='*50}")
+    logger.info(f"INGESTION COMPLETE (post-UMLS)")
     logger.info(f"  Total concepts: {stats['n_concepts']}")
     logger.info(f"  Total edges: {stats['n_edges']}")
     logger.info(f"  Domains: {stats['domains']}")
