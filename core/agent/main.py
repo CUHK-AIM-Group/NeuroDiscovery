@@ -62,6 +62,12 @@ _BENCHMARK_SCORER_CLIENT_CACHE_LOCK = threading.Lock()
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from core.llm.provider_profiles import (
+    apply_openai_compatible_profile_defaults,
+    get_openai_compatible_profile,
+    is_openai_compatible_provider,
+)
+
 
 # ── Environment bootstrap ──────────────────────────────────────────────────────
 
@@ -102,6 +108,8 @@ def _normalize_llm_backend(env: dict) -> None:
     if not isinstance(llm_cfg, dict):
         llm_cfg = {}
         env["llm_backend"] = llm_cfg
+
+    apply_openai_compatible_profile_defaults(llm_cfg)
 
     profile_name = llm_cfg.get("profile")
     profile: dict | None = None
@@ -151,6 +159,7 @@ def _normalize_llm_backend(env: dict) -> None:
         if profile_name:
             llm_cfg["profile_name"] = profile_name
 
+    apply_openai_compatible_profile_defaults(llm_cfg)
     llm_cfg["provider"] = llm_cfg.get("provider", "openai")
     llm_cfg["base_url"] = llm_cfg.get("base_url") or llm_cfg.get("baseUrl")
     llm_cfg["model"] = llm_cfg.get("model") or "gpt-4o"
@@ -168,7 +177,10 @@ def _normalize_available_models(llm_cfg: dict, profile: dict | None) -> list[dic
     if profile is not None:
         profile_models = profile.get("models")
         if isinstance(profile_models, list) and profile_models:
-            normalized = _coerce_model_catalog(profile_models, default_provider="openai")
+            normalized = _coerce_model_catalog(
+                profile_models,
+                default_provider=str(llm_cfg.get("provider") or "openai"),
+            )
             if normalized:
                 return normalized
 
@@ -200,7 +212,18 @@ def _coerce_model_catalog(
         if key in seen:
             continue
         seen.add(key)
-        catalog.append({"provider": provider, "model": model, "label": label})
+        entry = {"provider": provider, "model": model, "label": label}
+        if isinstance(item, dict):
+            for opt_key in (
+                "base_url",
+                "baseUrl",
+                "api_key_env",
+                "local_endpoint",
+                "openai_compatible",
+            ):
+                if opt_key in item:
+                    entry[opt_key] = item[opt_key]
+        catalog.append(entry)
     return catalog
 
 
@@ -279,7 +302,12 @@ def _apply_runtime_api_key(env: dict, api_key: str) -> None:
     provider = str(llm_cfg.get("provider", "openai") or "openai").strip().lower()
     env_var_name = str(llm_cfg.get("api_key_env") or "").strip()
     if not env_var_name:
-        env_var_name = "ANTHROPIC_API_KEY" if provider == "anthropic" else "OPENAI_API_KEY"
+        profile = get_openai_compatible_profile(provider)
+        env_var_name = (
+            "ANTHROPIC_API_KEY"
+            if provider == "anthropic"
+            else str((profile or {}).get("api_key_env") or "OPENAI_API_KEY")
+        )
         llm_cfg["api_key_env"] = env_var_name
     os.environ[env_var_name] = api_key
 
@@ -340,7 +368,7 @@ def build_llm_client(env: dict) -> Any:
             f"LLM provider '{provider}' is disabled in features.json."
         )
 
-    if provider == "openai":
+    if is_openai_compatible_provider(provider):
         return _build_openai_client(llm_cfg)
     if provider == "anthropic":
         return _build_anthropic_client(llm_cfg)
@@ -605,7 +633,7 @@ def _model_uses_proxy_forwarded_claude_openai_compat(env: dict) -> bool:
     """Detect proxy-forwarded Claude over OpenAI compat routing with weak tool-call parity."""
     llm_cfg = env.get("llm_backend", {}) if isinstance(env.get("llm_backend", {}), dict) else {}
     provider = str(llm_cfg.get("provider", "openai") or "openai").strip().lower()
-    if provider != "openai":
+    if not is_openai_compatible_provider(provider):
         return False
 
     model = str(llm_cfg.get("model", "") or "").strip().lower()
@@ -623,12 +651,12 @@ def _model_uses_deepseek_compat(env: dict, model_name: str = "") -> bool:
     """Detect DeepSeek models routed through an OpenAI-compatible endpoint."""
     llm_cfg = env.get("llm_backend", {}) if isinstance(env.get("llm_backend", {}), dict) else {}
     provider = str(llm_cfg.get("provider", "openai") or "openai").strip().lower()
-    if provider != "openai":
+    if not is_openai_compatible_provider(provider):
         return False
 
     model = str(model_name or llm_cfg.get("model") or "").strip().lower()
     base_url = str(llm_cfg.get("base_url") or llm_cfg.get("baseUrl") or "").strip().lower()
-    return "deepseek" in model or "deepseek" in base_url or "yunwu.ai" in base_url
+    return provider == "deepseek" or "deepseek" in model or "deepseek" in base_url or "yunwu.ai" in base_url
 
 
 def _get_openai_chat_create_kwargs(
@@ -1185,7 +1213,17 @@ def _load_available_model_catalog() -> tuple[list[dict[str, Any]], str, str]:
             model = str(item.get("model") or item.get("id") or item.get("name") or "").strip()
             label = str(item.get("label") or f"{provider} / {model}").strip()
             if provider and model:
-                catalog.append({"provider": provider, "model": model, "label": label})
+                entry = {"provider": provider, "model": model, "label": label}
+                for opt_key in (
+                    "base_url",
+                    "baseUrl",
+                    "api_key_env",
+                    "local_endpoint",
+                    "openai_compatible",
+                ):
+                    if opt_key in item:
+                        entry[opt_key] = item[opt_key]
+                catalog.append(entry)
 
     return catalog, default_provider, default_model
 
@@ -1193,7 +1231,7 @@ def _load_available_model_catalog() -> tuple[list[dict[str, Any]], str, str]:
 def _prompt_model_selection(
     prompt_label: str,
     default_model: str | None = None,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     catalog, default_provider, env_default_model = _load_available_model_catalog()
     resolved_default_model = str(default_model or "").strip() or env_default_model
 
@@ -1221,10 +1259,20 @@ def _prompt_model_selection(
             continue
         if 1 <= selected_index <= len(catalog):
             selected = catalog[selected_index - 1]
-            return {
+            result = {
                 "provider": str(selected.get("provider") or default_provider),
                 "model": str(selected.get("model") or resolved_default_model),
             }
+            for opt_key in (
+                "base_url",
+                "baseUrl",
+                "api_key_env",
+                "local_endpoint",
+                "openai_compatible",
+            ):
+                if opt_key in selected:
+                    result[opt_key] = selected[opt_key]
+            return result
         print(f"Please enter a number from 1 to {len(catalog)}.")
 
 
@@ -3076,6 +3124,7 @@ def _run_single_benchmark_job(job: dict[str, Any]) -> dict[str, Any]:
     model_name = str(job.get("model_name", ""))
     run_model_name = str(job.get("run_model_name", model_name))
     run_index = max(1, int(job.get("run_index", 1) or 1))
+    backend_overrides = job.get("backend_overrides", {})
 
     try:
         task_text = task_file.read_text(encoding="utf-8")
@@ -3092,8 +3141,19 @@ def _run_single_benchmark_job(job: dict[str, Any]) -> dict[str, Any]:
 
     task_prompt = _extract_task_summary_for_benchmark(task_text)
     session = AgentSession(benchmark_mode=True, no_skill_mode=no_skill_mode)
-    session.env.setdefault("llm_backend", {})["provider"] = provider
-    session.env.setdefault("llm_backend", {})["model"] = model_name
+    llm_cfg = session.env.setdefault("llm_backend", {})
+    if isinstance(backend_overrides, dict):
+        for key in (
+            "base_url",
+            "baseUrl",
+            "api_key_env",
+            "local_endpoint",
+            "openai_compatible",
+        ):
+            if key in backend_overrides:
+                llm_cfg[key] = backend_overrides[key]
+    llm_cfg["provider"] = provider
+    llm_cfg["model"] = model_name
     session._benchmark_report_model = run_model_name
     session._benchmark_report_run_index = run_index
 
@@ -3174,6 +3234,7 @@ def _run_benchmark_suite(
     benchmark_root: Path,
     benchmark_provider: str,
     model_name: str,
+    backend_overrides: dict[str, Any] | None = None,
     compare_skills: bool = False,
     benchmark_workers: int = 8,
     benchmark_repeats: int = 3,
@@ -3223,6 +3284,7 @@ def _run_benchmark_suite(
                         "model_name": model_name,
                         "run_model_name": run_model_name,
                         "run_index": run_index,
+                        "backend_overrides": dict(backend_overrides or {}),
                     }
                 )
 
@@ -3724,11 +3786,11 @@ class AgentSession:
         }
         chat_started = time.perf_counter()
 
-        if provider in {"openai", "anthropic"} and self._llm is None:
+        if (is_openai_compatible_provider(provider) or provider == "anthropic") and self._llm is None:
             return "[Agent: LLM backend not configured]"
 
         response = "[Agent: LLM backend not configured]"
-        if provider == "openai":
+        if is_openai_compatible_provider(provider):
             response = self._chat_openai_with_tools(model)
         elif provider == "anthropic":
             system_msg = next(
@@ -4631,6 +4693,7 @@ def main() -> None:
             benchmark_root,
             str(benchmark_selection.get("provider", "openai")),
             str(benchmark_selection.get("model", "gpt-4o")),
+            backend_overrides=benchmark_selection,
             compare_skills=bool(args.benchmark_compare_skills),
             benchmark_workers=max(1, int(args.benchmark_workers or 1)),
             benchmark_repeats=max(1, int(args.benchmark_repeats or 1)),

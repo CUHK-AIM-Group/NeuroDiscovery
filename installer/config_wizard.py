@@ -33,6 +33,11 @@ FEATURES_FILE = REPO_ROOT / "core" / "config" / "features.json"
 DEFAULTS_FILE = Path(__file__).parent / "neuro_defaults.json"
 LOG_FILE = Path(__file__).parent / "install_log.txt"
 
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.llm.provider_profiles import get_openai_compatible_profile
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 _log_lines: list[str] = []
 
@@ -385,10 +390,13 @@ def _setup_llm() -> dict:
     print("[NeuroClaw Setup] Step 4 — LLM Backend")
     print("=" * 60)
     print("  1. OpenAI API               → configure provider/model only")
-    print("  2. OpenAI-compatible API    → custom baseUrl (Azure, Groq, DeepSeek, …)")
-    print("  3. Anthropic                → configure provider/model only")
-    print("  4. Local model              → Ollama endpoint or llama.cpp path")
-    choice = _ask("Choose [1/2/3/4]", "1")
+    print("  2. DeepSeek                 → OpenAI-compatible API")
+    print("  3. MiniMax                  → OpenAI-compatible API")
+    print("  4. Kimi / Moonshot          → OpenAI-compatible API")
+    print("  5. OpenAI-compatible API    → custom baseUrl (Azure, Groq, OpenRouter, …)")
+    print("  6. Anthropic                → configure provider/model only")
+    print("  7. Local model              → Ollama endpoint or llama.cpp path")
+    choice = _ask("Choose [1/2/3/4/5/6/7]", "1")
 
     llm: dict = {
         "provider": None,
@@ -398,7 +406,7 @@ def _setup_llm() -> dict:
         "local_endpoint": None,
     }
 
-    if choice == "3":
+    if choice == "6":
         llm["provider"] = "anthropic"
         llm["model"] = _ask("Model name", "claude-3-5-sonnet-20241022")
         llm["api_key_env"] = "ANTHROPIC_API_KEY"
@@ -408,14 +416,36 @@ def _setup_llm() -> dict:
         )
         _log(f"LLM: Anthropic {llm['model']}")
 
-    elif choice == "4":
+    elif choice == "7":
         llm["provider"] = "local"
         llm["model"] = _ask("Model name / tag (e.g. llama3:8b)", "llama3:8b")
         endpoint = _ask("Ollama / llama.cpp HTTP endpoint", "http://localhost:11434")
         llm["local_endpoint"] = endpoint
         _log(f"LLM: local model {llm['model']} at {endpoint}")
 
-    elif choice == "2":
+    elif choice in {"2", "3", "4"}:
+        provider_by_choice = {"2": "deepseek", "3": "minimax", "4": "kimi"}
+        provider = provider_by_choice[choice]
+        profile = get_openai_compatible_profile(provider) or {}
+        llm["provider"] = provider
+        llm["model"] = _ask("Model name", str(profile.get("default_model", "")))
+        base_url = _ask("Base URL", str(profile.get("base_url", "")))
+        llm["base_url"] = base_url or None
+        env_var = _ask(
+            "Environment variable name for the API key",
+            str(profile.get("api_key_env", "OPENAI_API_KEY")),
+        )
+        llm["api_key_env"] = env_var
+        if profile.get("models"):
+            llm["available_models"] = profile["models"]
+        llm["openai_compatible"] = True
+        _log(
+            f"LLM API key is not collected during setup. Pass it at runtime via --api-key "
+            f"or export {env_var} before starting NeuroClaw."
+        )
+        _log(f"LLM: {profile.get('label', provider)} {llm['model']} at {base_url}")
+
+    elif choice == "5":
         # OpenAI-compatible provider (Azure, Groq, DeepSeek, Together, OpenRouter, …)
         llm["provider"] = "openai"
         llm["model"] = _ask("Model name (as required by the provider)", "")

@@ -31,6 +31,22 @@
       "enabled": true,
       "description": "OpenAI API (GPT-4o, GPT-4-turbo, \u2026)"
     },
+    "deepseek": {
+      "enabled": true,
+      "description": "DeepSeek OpenAI-compatible API"
+    },
+    "minimax": {
+      "enabled": true,
+      "description": "MiniMax OpenAI-compatible API"
+    },
+    "kimi": {
+      "enabled": true,
+      "description": "Kimi / Moonshot OpenAI-compatible API"
+    },
+    "moonshot": {
+      "enabled": true,
+      "description": "Moonshot / Kimi OpenAI-compatible API alias"
+    },
     "anthropic": {
       "enabled": true,
       "description": "Anthropic API (Claude 3.x, \u2026)"

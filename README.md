@@ -159,7 +159,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
   - Python runtime (system / conda / Docker)
   - CUDA / GPU configuration and optional PyTorch install
   - Neuroscience toolchain paths (FSL, FreeSurfer, dcm2niix, etc.)
-  - LLM backend selection (OpenAI, Anthropic, or local model)
+  - LLM backend selection (OpenAI, DeepSeek, MiniMax, Kimi/Moonshot, Anthropic, or local model)
   - Default BIDS and output directories
   - Web UI dependencies and attachment parsers (PDF/DOCX/XLSX/PPTX)
 
@@ -190,6 +190,10 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
    Then open **http://localhost:7080** in your browser. The Web UI features a chat interface, skills sidebar, markdown rendering, and code syntax highlighting.
 
   If you prefer environment variables, export the provider-specific key first and start NeuroClaw without `--api-key`.
+  Built-in OpenAI-compatible provider profiles:
+  - `deepseek`: `DEEPSEEK_API_KEY`, default endpoint `https://api.deepseek.com`
+  - `minimax`: `MINIMAX_API_KEY`, default endpoint `https://api.minimaxi.com/v1`
+  - `kimi` / `moonshot`: `MOONSHOT_API_KEY`, default endpoint `https://api.moonshot.cn/v1`
 
     Web UI attachment parsing currently supports these file types:
     - Text/config/code: `.txt`, `.md`, `.markdown`, `.json`, `.yaml`, `.yml`, `.csv`, `.tsv`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sh`, `.bash`, `.zsh`, `.sql`, `.html`, `.css`, `.xml`, `.log`, `.rst`, `.ini`, `.toml`, `.cfg`

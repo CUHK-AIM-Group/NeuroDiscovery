@@ -528,14 +528,15 @@ async def _respond(websocket: Any, session: Any) -> str:
     """
     Generate a reply for the latest message in session.history.
 
-    Streams chunks to the browser for OpenAI; falls back to asyncio.to_thread
-    for other backends (Anthropic, local).  Always sends a final
+    Streams chunks to the browser for OpenAI-compatible providers; falls back
+    to asyncio.to_thread for other backends (Anthropic, local).  Always sends a final
     ``{"type": "done", "content": "…"}`` frame.
     """
     provider = session.env.get("llm_backend", {}).get("provider", "openai")
     model = session.env.get("llm_backend", {}).get("model", "gpt-4o")
+    from core.llm.provider_profiles import is_openai_compatible_provider
 
-    if provider == "openai" and session._llm is not None:
+    if is_openai_compatible_provider(provider) and session._llm is not None:
         full = await _stream_openai(websocket, session._llm, model, session.history)
     else:
         # Non-streaming fallback: run blocking _chat() in a thread pool
@@ -702,12 +703,17 @@ def create_app() -> Any:
         env = load_environment()
         llm = env.setdefault("llm_backend", {})
         available_models = llm.get("available_models", [])
-        if not any(
-            isinstance(item, dict)
-            and str(item.get("provider", "")).strip() == provider
-            and str(item.get("model", item.get("id", item.get("name", "")))).strip() == model
-            for item in available_models
-        ):
+        selected_model = next(
+            (
+                item
+                for item in available_models
+                if isinstance(item, dict)
+                and str(item.get("provider", "")).strip() == provider
+                and str(item.get("model", item.get("id", item.get("name", "")))).strip() == model
+            ),
+            None,
+        )
+        if selected_model is None:
             return JSONResponse(
                 {"type": "error", "message": "Requested provider/model is not configured"},
                 status_code=400,
@@ -715,6 +721,15 @@ def create_app() -> Any:
 
         llm["provider"] = provider
         llm["model"] = model
+        for key in (
+            "base_url",
+            "baseUrl",
+            "api_key_env",
+            "local_endpoint",
+            "openai_compatible",
+        ):
+            if key in selected_model:
+                llm[key] = selected_model[key]
         save_environment(env)
         return {
             "type": "done",

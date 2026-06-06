@@ -64,7 +64,8 @@ def _check_existing_config() -> int:
     if (
         env_var_name
         and not os.environ.get(env_var_name)
-        and llm.get("provider") in ("openai", "anthropic")
+        and llm.get("provider")
+        in ("openai", "anthropic", "deepseek", "minimax", "kimi", "moonshot")
     ):
         llm_key_missing = True
 
