@@ -48,9 +48,9 @@ Run apply_claim_filter_to_kg.py to delete Tier A claim nodes from the KG.
 Usage
 -----
     python -m neurooracle.src.verbatim_validator \
-        --claims neurooracle/data/full/extracted_claims.jsonl \
-        --kg     neurooracle/data/full/knowledge_graph.json \
-        --out-dir neurooracle/data/full
+        --claims neurooracle/data/full_snapshot_v2/extracted_claims.jsonl \
+        --kg     neurooracle/data/full_snapshot_v2/knowledge_graph.json \
+        --out-dir neurooracle/data/full_snapshot_v2
 """
 from __future__ import annotations
 

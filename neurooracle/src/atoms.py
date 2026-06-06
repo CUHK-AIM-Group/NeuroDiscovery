@@ -346,6 +346,23 @@ CANONICAL_TASKS: tuple[Task, ...] = (
         description="Acute / baseline state + disease → outcome at follow-up.",
         example="Stroke acute lesion → 6-month NIHSS",
     ),
+
+    # ── E. Cross-disease structure (CS2: Transdiagnostic Brain Atlas) ──
+    # Shape-only entry: hypothesis generation goes through a separate
+    # cluster-mining generator (HypothesisEngine.find_transdiagnostic_clusters,
+    # implemented in step 2), not the standard path-based batch_generate.
+    # Listed here so the task name is reachable via task_by_name() and so
+    # downstream consumers (NeuroBench, leaderboards, novelty cache keys)
+    # see CS2 hypotheses tagged consistently with the rest.
+    Task(
+        name="transdiagnostic_clustering",
+        inputs=frozenset({Atom.IMAGING_MARKER}),
+        output=Atom.DISEASE,
+        modifier=TaskModifier.SUBTYPE,
+        description="Group ROI×modality imaging features into clusters whose effect "
+                    "profiles span ≥3 psychiatric/neurological diseases.",
+        example="{ACC + bilateral insula, CortThick} cluster → MDD/SCZ/BD/OCD/AN/SUD",
+    ),
 )
 
 
@@ -395,6 +412,28 @@ CANONICAL_CHAINS: tuple[TaskChain, ...] = (
             "predicts longitudinal outcome — biomarker-as-mediator prognosis."
         ),
         example="MCI → hippocampal volume → 24-month MMSE decline",
+    ),
+    # E. Pathway-level polygenic mediation (CS3)
+    # Three-atom chain: GENE → IM → OUTCOME, longitudinal modifier.
+    # The disease anchor is implicit in OUTCOME (the rating scales themselves
+    # are disease-bound: ADAS-Cog ≈ AD, MADRS ≈ MDD, PANSS ≈ Schizophrenia).
+    # Adding DISEASE as an explicit fourth atom forces a `scale → disease →
+    # other scale` tail that the critic flags as definitional rather than
+    # mechanistic. The CS3 case-study config is responsible for restricting
+    # GENE-pool nodes to pathway-aggregated entries — done via a pre-hook.
+    TaskChain(
+        name="pathway_polygenic_mediation",
+        chain=(Atom.GENE_TARGET, Atom.IMAGING_MARKER, Atom.OUTCOME),
+        modifier=TaskModifier.LONGITUDINAL,
+        description=(
+            "Pathway-level polygenic risk acts on a longitudinal clinical "
+            "outcome through an imaging endophenotype — three-step "
+            "mediation chain for pPRS-driven trajectories."
+        ),
+        example=(
+            "DA-synthesis pathway pPRS → striatal connectivity → "
+            "24-month UPDRS decline"
+        ),
     ),
 )
 

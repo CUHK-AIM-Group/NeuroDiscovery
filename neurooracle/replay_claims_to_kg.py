@@ -15,8 +15,8 @@ Usage::
 
     python -m neurooracle.replay_claims_to_kg \
         --snapshot neurooracle/data/full_snapshot_v1/knowledge_graph.json \
-        --claims neurooracle/data/full/extracted_claims.jsonl \
-        --out neurooracle/data/full/knowledge_graph.json
+        --claims neurooracle/data/full_snapshot_v2/extracted_claims.jsonl \
+        --out neurooracle/data/full_snapshot_v2/knowledge_graph.json
 """
 
 from __future__ import annotations

@@ -6,8 +6,8 @@ referencing them).
 
 Usage:
     python -m neurooracle.src.apply_claim_filter_to_kg \
-        --graph neurooracle/data/full/knowledge_graph.json \
-        --bad-ids neurooracle/data/full/bad_claim_ids.json \
+        --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json \
+        --bad-ids neurooracle/data/full_snapshot_v2/bad_claim_ids.json \
         [--dry-run]
 """
 from __future__ import annotations

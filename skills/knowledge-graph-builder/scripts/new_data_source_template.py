@@ -102,7 +102,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
-    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
+    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json")
     kg = load_graph(graph_path)
 
     summary = ingest_source(kg, args.input)

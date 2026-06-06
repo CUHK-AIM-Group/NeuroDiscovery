@@ -39,8 +39,8 @@ API_KEY_POOL = [k.strip() for k in _API_KEYS_RAW.split(",") if k.strip()] or (
 EXTRACTION_PROMPT = """Extract ALL scientific claims from this neuroscience paper abstract as JSON array.
 
 Each claim object fields:
-- subject, subject_type, subject_canonical_hint
-- predicate, object, object_type, object_canonical_hint, negated
+- subject, subject_type, subject_canonical_hint, subject_atlas
+- predicate, object, object_type, object_canonical_hint, object_atlas, negated
 - effect_metric, effect_size, p_value, sample_size
 - study_type, methodology, replicability, direction, raw_sentence
 - conditions: list of conditions under which this claim holds (e.g. ["female only", "age > 65", "resting-state fMRI"]). Empty list [] if unconditional.
@@ -58,34 +58,128 @@ Entity types (aligned to the 7-atom alphabet — DISEASE / DRUG / IMAGING_MARKER
 GENE_TARGET / COGNITIVE_TASK / OUTCOME / INDIVIDUAL_DATA):
 - disease            → DISEASE atom    (e.g. "Alzheimer disease", "schizophrenia")
 - drug               → DRUG atom       (e.g. "donepezil", "ketamine", "lithium")
-- brain_region       → IMAGING_MARKER  (e.g. "hippocampus", "prefrontal cortex")
-- network            → IMAGING_MARKER  (e.g. "default mode network", "salience network")
-- biomarker          → IMAGING_MARKER  (e.g. "amyloid SUVR", "cortical thickness", "FA")
-- gene               → GENE_TARGET     (e.g. "APOE", "BDNF", "DRD2")
-- neurotransmitter   → GENE_TARGET     (e.g. "dopamine", "GABA", "serotonin")
-- protein            → GENE_TARGET     (e.g. "tau protein", "alpha-synuclein")
-- cognitive_function → COGNITIVE_TASK  (e.g. "working memory", "n-back", "Stroop task")
-- rating_scale       → OUTCOME         (e.g. "HAM-D", "MMSE", "MDS-UPDRS", "PANSS")
-- adverse_event      → OUTCOME         (e.g. "hepatotoxicity", "akathisia")
-- individual_data    → INDIVIDUAL_DATA (e.g. "age", "sex", "APOE-ε4 status",
-                                          "smoking status", "polygenic risk score")
+                       Use the INN (international non-proprietary name), NOT brand
+                       names: "fluoxetine" not "Prozac"; "haloperidol" not "Haldol".
+- brain_region       → IMAGING_MARKER  (e.g. "hippocampus", "dorsolateral prefrontal cortex")
+- network            → IMAGING_MARKER  (e.g. "default mode network", "salience network",
+                       "frontoparietal network", "ventral attention network")
+- biomarker          → IMAGING_MARKER  (e.g. "amyloid SUVR", "cortical thickness", "FA",
+                       "ALFF", "ReHo", "functional connectivity strength")
+- gene               → GENE_TARGET     HGNC primary symbol (e.g. "APOE", "BDNF",
+                       "DRD2", "COMT", "MAPT", "SNCA")
+- neurotransmitter   → GENE_TARGET     For receptor / transporter measurements,
+                       output the receptor GENE symbol when identifiable:
+                       serotonin → "HTR1A"/"HTR1B"/"HTR2A"/"HTR4"/"SLC6A4";
+                       dopamine  → "DRD1"/"DRD2"/"SLC6A3";
+                       norepinephrine → "SLC6A2"; acetylcholine → "CHRM1"/"CHRNA4"/"SLC18A3";
+                       GABA → "GABRA1"; glutamate (mGluR5) → "GRM5"; opioid → "OPRM1";
+                       cannabinoid → "CNR1"; histamine → "HRH3"; SV2A → "SV2A".
+                       Fall back to neurotransmitter name only if no receptor/transporter
+                       is specified.
+- protein            → GENE_TARGET     (e.g. "tau protein" → "MAPT", "alpha-synuclein"
+                       → "SNCA", "amyloid-beta" → "APP")
+- cognitive_function → COGNITIVE_TASK  (e.g. "working memory", "n-back", "Stroop task",
+                       "MID task", "go/no-go", "emotional faces")
+- rating_scale       → OUTCOME         Established clinical / behavioral rating
+                       scales (e.g. "HAM-D", "MMSE", "MDS-UPDRS", "PANSS").
+                       Use the OUTCOME:<scale> hint when the scale matches the
+                       enum listed below.
+- adverse_event      → OUTCOME         Drug / treatment side-effects (e.g.
+                       "hepatotoxicity", "akathisia", "tardive dyskinesia",
+                       "extrapyramidal symptoms"). LEAVE the hint EMPTY — these
+                       are descriptive, not enum entries. Apply the canonical
+                       naming discipline (full term, expanded abbreviations).
+- clinical_event     → OUTCOME         Clinical events / symptoms / outcomes
+                       that are NOT rating scales (e.g. "seizure", "stroke",
+                       "encephalopathy", "cerebral edema", "all-cause mortality",
+                       "post-surgical outcome", "treatment response").
+                       LEAVE the hint EMPTY — descriptive, not enum.
+- individual_data    → INDIVIDUAL_DATA Demographic / lifestyle / non-imaging biological
+                       individual variables (e.g. "age", "sex", "APOE-ε4 status",
+                       "polygenic risk score", "BMI", "blood pressure", "education",
+                       "smoking", "diet", "socioeconomic status", "Big Five personality").
 
-subject_canonical_hint / object_canonical_hint (OPTIONAL, prefer to fill in when
-you recognize a standard ID for the entity; otherwise output ""):
-- HGNC:<symbol>          for human genes/proteins (e.g. "HGNC:APOE", "HGNC:BDNF")
-- MSH:<descriptor>        for MeSH terms (e.g. "MSH:D000544" for Alzheimer)
-- ATC:<code>              for drugs (e.g. "ATC:N06DA02" for donepezil)
-- OUTCOME:<scale>         for clinical scales (e.g. "OUTCOME:HAM-D",
-                                                  "OUTCOME:MMSE", "OUTCOME:MDS-UPDRS")
-- COGAT_DISORDER:<id>     for Cognitive Atlas disorders
-- COGAT_TASK:<id>         for Cognitive Atlas tasks/concepts
-If unsure, leave the hint as "" — name-only resolution will be used.
+subject_canonical_hint / object_canonical_hint (OPTIONAL — fill in when you recognize a
+standard ID; otherwise output ""). Do NOT try to guess UMLS CUIs — name-only resolution
+will be performed downstream. For the entities below, when you DO know the ID, prefer
+these prefix conventions:
+- GENE:<HGNC_symbol>       human gene/protein (e.g. "GENE:APOE", "GENE:BDNF", "GENE:HTR2A").
+                           Always uppercase HGNC primary symbol — not gene names.
+- NN:<id>                  NeuroNames brain region (e.g. "NN:11" for hippocampus).
+                           Only use if you are certain of the NN id; otherwise leave empty.
+- ATC:<code>               drug ATC code (e.g. "ATC:N06DA02" donepezil,
+                           "ATC:N06AB03" fluoxetine, "ATC:N03AX14" levetiracetam).
+- OUTCOME:<scale>          ONLY for established rating scales matching this enum.
+                           Do NOT use this prefix for adverse events, symptoms, or
+                           clinical events — for those, leave the hint "" and rely
+                           on descriptive naming. The KG currently knows:
+                           OUTCOME:HAM-D / MADRS / BDI / PHQ-9 / HAM-A / GAD-7 / MMSE /
+                           MoCA / CDR-SB / NPI / MDS-UPDRS / PDQ-39 / PANSS / BPRS / SANS /
+                           YMRS / CGI / GAF / ADHD-RS / ADOS / SRS / ALSFRS-R / EDSS / MSFC /
+                           UHDRS / NIHSS / PSQI / ESS / SF-36 / WHODAS / QOLIE-31 / BPI / AE_GI.
+- INDIVIDUAL_DATA:<anchor> known anchors: aging, sex, education, body_mass_index,
+                           blood_pressure, polygenic_risk_score, socioeconomic_status, diet,
+                           big5_openness / big5_conscientiousness / big5_extraversion /
+                           big5_agreeableness / big5_neuroticism.
+- COGAT_TASK:<id>          Cognitive Atlas task/concept (use only if you recognize the id).
+- COGAT_CONCEPT:<id>       Cognitive Atlas cognitive concept.
+- COGAT_DISORDER:<id>      Cognitive Atlas disorder.
+- ATLAS:<name>             parcellation atlas (DK / Schaefer400 / Aseg / AAL / HO / Dosenbach).
 
-Predicates (USE THE MOST SPECIFIC ONE):
-- CAUSAL: causes, treats, inhibits, activates, increases, reduces, modulates
-- PREDICTIVE: is_biomarker_of, is_risk_factor_for, predicts, distinguishes
-- CORRELATIONAL: correlates_with, mediates
-- VAGUE (AVOID): is_associated_with — ONLY use if the abstract text itself is vague (e.g., "X is associated with Y" without specifying direction or mechanism)
+HARD RULE for hints: every hint MUST either be the empty string "" OR start with one of
+these exact prefixes followed by a colon: GENE: / NN: / ATC: / OUTCOME: / INDIVIDUAL_DATA:
+/ COGAT_TASK: / COGAT_CONCEPT: / COGAT_DISORDER: / ATLAS:. Anything else (e.g. raw
+descriptive phrases like "tau pathology", "episodic memory", "schizophrenia") is INVALID
+— in those cases leave the hint "" and put the descriptive form into `subject` / `object`
+text instead.
+
+For all other entities (especially diseases, brain regions without an NN id, networks,
+biomarkers, cognitive functions, individual_data without a known anchor), the hint stays
+"" and you instead make the `subject` / `object` text itself as canonical as possible:
+- expand abbreviations: "AD" → "Alzheimer disease", "MDD" → "major depressive disorder",
+  "DLPFC" → "dorsolateral prefrontal cortex", "DMN" → "default mode network",
+  "ACC" → "anterior cingulate cortex", "OFC" → "orbitofrontal cortex".
+- use the full standard term, not lab jargon: "polygenic risk score" not "PRS";
+  "amyloid-beta 42" not "Aβ42".
+- prefer the form a MeSH/UMLS browser would return for that concept.
+This descriptive-name discipline is more useful than guessing CUI codes — downstream
+ingestion will alias-match these names against the canonical KG.
+
+subject_atlas / object_atlas (OPTIONAL, only for IMAGING_MARKER brain_region entries):
+If the abstract EXPLICITLY names the parcellation/atlas the region was measured in,
+output one of: "DK", "Schaefer400", "Aseg", "AAL", "HO" (Harvard-Oxford), "Brainnetome",
+"Glasser", "Dosenbach", "Power", "Yeo7", "Yeo17".
+HARD RULE: if the abstract does NOT explicitly name an atlas (e.g. it just says
+"hippocampus" or "default mode network" with no parcellation reference), you MUST
+output empty string "". DO NOT infer the atlas from modality, region type, or common
+practice. Inference here is a hallucination — leave it blank.
+For network-level entries: same rule. "DMN" by itself → "". "DMN as defined by Yeo's
+7-network parcellation" → "Yeo7".
+
+Predicates — CLOSED SET. The `predicate` field MUST be one of these exact strings; any
+other value is invalid. Pick the MOST SPECIFIC one that fits the abstract's language:
+
+  Causal / mechanistic:  causes, treats, inhibits, activates, increases, reduces, modulates
+  Predictive:            is_biomarker_of, is_risk_factor_for, predicts, distinguishes
+  Correlational:         correlates_with, mediates
+  Drug-target:           binds_to               (drug → receptor / transporter gene)
+  Adverse-effect:        has_adverse_effect     (drug → AE / symptom / clinical event)
+  Discovery (gene maps): gene_associated_with_disease   (gene → disease, GWAS/DisGeNET)
+                         gene_associated_with_anatomy   (gene → brain region)
+                         gene_enriched_in_region        (gene → brain region, AHBA)
+                         receptor_density_in            (receptor gene → brain region, PET)
+  Vague fallback:        is_associated_with     — last-resort ONLY when the abstract
+                         itself uses vague language ("X is associated with Y") and no
+                         direction or mechanism is reported.
+
+Common verb → canonical-predicate mappings (do NOT emit the left side):
+- "induces", "leads to", "produces" → causes
+- "ameliorates", "improves", "alleviates" → treats
+- "preserves", "protects", "maintains" → treats   (when the protected outcome is a
+   clinical / cognitive measure that disease would otherwise worsen)
+- "facilitates", "aids" → causes (if mechanistic) OR predicts (if outcome-level)
+- "reflects", "indexes" → is_biomarker_of
+- "progresses toward", "predicts conversion to" → predicts
 
 CRITICAL: Choose the most precise predicate based on the study design and language:
 - RCT / intervention → "treats" or "causes"
@@ -93,6 +187,11 @@ CRITICAL: Choose the most precise predicate based on the study design and langua
 - Diagnostic accuracy → "is_biomarker_of" or "distinguishes"
 - Molecular mechanism → "activates", "inhibits", "increases", "reduces"
 - Cross-sectional correlation → "correlates_with"
+- Drug pharmacology / receptor binding → "binds_to" (drug → receptor gene)
+- Drug side-effect language ("X causes/induces/leads to Y" where Y is an AE) → "has_adverse_effect"
+- GWAS hit / DisGeNET-style gene-disease report → "gene_associated_with_disease"
+- AHBA / spatial gene expression → "gene_enriched_in_region"
+- PET receptor density mapping → "receptor_density_in"
 - If the abstract says "X increases Y" or "X reduces Y", use "increases" or "reduces", NOT "is_associated_with"
 
 Study types: fMRI, PET, DTI, sMRI, EEG, MEG, lesion, meta_analysis, GWAS, animal_model, clinical_trial, case_control, longitudinal, cross_sectional, review, cohort, narrative_review
@@ -111,6 +210,51 @@ class ExtractionResult:
     claims: list[Claim]
     raw_response: str = ""
     error: str = ""
+
+
+# Map free-form predicate verbs the LLM occasionally emits despite the closed-set
+# instruction back into the canonical predicate. Applied in `_item_to_claim`.
+# Keep this list short and only for verbs we've actually observed in smoke runs.
+PREDICATE_ALIAS = {
+    "induces":               "causes",
+    "leads to":              "causes",
+    "produces":              "causes",
+    "occurs early along":    "causes",
+    "ameliorates":           "treats",
+    "improves":              "treats",
+    "alleviates":            "treats",
+    "preserves":             "treats",
+    "protects":              "treats",
+    "reflects":              "is_biomarker_of",
+    "indexes":               "is_biomarker_of",
+    "progresses toward":     "predicts",
+    "progress toward":       "predicts",
+    "facilitates":           "is_associated_with",
+    "aids":                  "is_associated_with",
+    "provides":              "is_associated_with",
+    "does not increase":     "is_associated_with",
+}
+
+# Hints must start with one of these prefixes; anything else is dropped to "" by
+# `_sanitize_hint`. Mirrors the HARD RULE in EXTRACTION_PROMPT.
+ALLOWED_HINT_PREFIXES = (
+    "GENE:", "NN:", "ATC:", "OUTCOME:", "INDIVIDUAL_DATA:",
+    "COGAT_TASK:", "COGAT_CONCEPT:", "COGAT_DISORDER:", "ATLAS:",
+)
+
+
+def _normalize_predicate(raw: str) -> str:
+    p = (raw or "").strip()
+    if not p:
+        return p
+    return PREDICATE_ALIAS.get(p.lower(), p)
+
+
+def _sanitize_hint(raw: str) -> str:
+    h = (raw or "").strip()
+    if not h:
+        return ""
+    return h if h.startswith(ALLOWED_HINT_PREFIXES) else ""
 
 
 MODEL_CASCADE = [
@@ -243,13 +387,25 @@ class ClaimExtractor:
         self,
         abstract: str,
         paper: PaperRef,
+        full_text: str | None = None,
+        full_text_max_chars: int = 16000,
     ) -> ExtractionResult:
-        """Extract claims from a single paper abstract."""
-        if len(abstract) > 2000:
-            abstract = abstract[:2000] + "..."
+        """Extract claims from a single paper.
+
+        By default operates on the abstract. Pass `full_text` to re-extract from
+        the full body when the abstract under-covers the paper's claims (e.g.
+        targeted refresh of high-value anchors). The body is truncated to
+        `full_text_max_chars` to bound LLM cost and context.
+        """
+        if full_text:
+            body = full_text if len(full_text) <= full_text_max_chars else full_text[:full_text_max_chars] + "..."
+            source_label = "Full text"
+        else:
+            body = abstract if len(abstract) <= 2000 else abstract[:2000] + "..."
+            source_label = "Abstract"
 
         prompt = EXTRACTION_PROMPT.format(
-            abstract=abstract,
+            abstract=f"[{source_label}] {body}",
             pmid=paper.pmid or "unknown",
             title=paper.title or "unknown",
             authors=paper.authors or "unknown",
@@ -437,7 +593,7 @@ class ClaimExtractor:
         """Convert a single JSON item to a Claim object."""
         subject = item.get("subject", "").strip()
         obj = item.get("object", "").strip()
-        predicate = item.get("predicate", "").strip()
+        predicate = _normalize_predicate(item.get("predicate", ""))
 
         if not subject or not obj or not predicate:
             return None
@@ -506,8 +662,10 @@ class ClaimExtractor:
             metadata={
                 "subject_type": item.get("subject_type", ""),
                 "object_type": item.get("object_type", ""),
-                "subject_canonical_hint": (item.get("subject_canonical_hint") or "").strip(),
-                "object_canonical_hint":  (item.get("object_canonical_hint") or "").strip(),
+                "subject_canonical_hint": _sanitize_hint(item.get("subject_canonical_hint") or ""),
+                "object_canonical_hint":  _sanitize_hint(item.get("object_canonical_hint") or ""),
+                "subject_atlas": (item.get("subject_atlas") or "").strip(),
+                "object_atlas":  (item.get("object_atlas") or "").strip(),
                 "conditions": conditions,
                 "population": population,
                 "raw_stats": raw_stats,

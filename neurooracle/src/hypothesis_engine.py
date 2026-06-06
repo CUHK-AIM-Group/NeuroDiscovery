@@ -497,6 +497,15 @@ DIRECTIONAL_RELATIONS = {
     "gene_associated_with_anatomy",
     "gene_enriched_in_region",
     "receptor_density_in",
+    # IM/region/scale closure edges — each encodes a single semantic
+    # direction (feature-of-region, scale-measures-disease, disease-
+    # assessed-by-scale) and is what stitches GENE→IM→DISEASE→OUTCOME
+    # chains together. Without these the chain reads as a 40%-directional
+    # narrative and is dropped by _has_thin_directional_density.
+    "has_imaging_feature",
+    "is_imaging_feature_of",
+    "measures",
+    "is_assessed_by",
 }
 
 
@@ -1058,6 +1067,14 @@ class HypothesisEngine:
         self._intermediate_only_ignore_ids = _resolve_blacklist(
             _INTERMEDIATE_ONLY_SEED, self._index,
         )
+        # Per-atom anchor-pool filters for batch_generate_for_chain. CS pre_hooks
+        # install entries here to restrict which nodes can serve as a given
+        # chain atom anchor (e.g. CS3 forces IMAGING_MARKER to IM:*-prefix
+        # atoms only, so the chain truly traverses the marker layer instead
+        # of falling back to raw neuroanatomy CUIs that share the domain tag).
+        # Filter signature: (node_id, ConceptNode) -> bool. None / missing
+        # entry = no extra filter beyond ATOM_TO_DOMAINS membership.
+        self._chain_atom_filters: dict = {}
         # Build claims index for frequency_boost: (subj, pred, obj) → [claim_meta, ...]
         self._claims_by_triple: dict[tuple[str, str, str], list[dict]] = {}
         for nid, node in self._index.items():
@@ -1560,6 +1577,7 @@ class HypothesisEngine:
         atom_node_pools: list[set[str]] = []
         for atom in atoms:
             doms = ATOM_TO_DOMAINS[atom]
+            extra_filter = self._chain_atom_filters.get(atom)
             pool = {
                 nid for nid, data in self.G.nodes(data=True)
                 if (set(data.get("domain_tags", [])) & doms)
@@ -1567,8 +1585,15 @@ class HypothesisEngine:
                 and nid not in self._path_ignore_ids
                 and (min_evidence_per_node <= 0
                      or self._node_non_tree_degree(nid) >= min_evidence_per_node)
+                and (extra_filter is None
+                     or extra_filter(nid, self._index.get(nid)))
             }
             atom_node_pools.append(pool)
+            if extra_filter is not None:
+                logger.info(
+                    f"chain '{chain.name}': atom {atom.value} pool restricted "
+                    f"by filter -> {len(pool)} node(s)"
+                )
 
         if any(not p for p in atom_node_pools):
             empty = [atoms[i].value for i, p in enumerate(atom_node_pools) if not p]
@@ -1666,6 +1691,7 @@ class HypothesisEngine:
         )
 
         hyps: list[Hypothesis] = []
+        _chain_counter = 0
         for path, anchors in survivors:
             links = self._enrich_path(path)
             if not links:
@@ -1683,7 +1709,9 @@ class HypothesisEngine:
                 for m in mediator_ids if m in self._index
             ]
 
+            _chain_counter += 1
             h = Hypothesis(
+                id=f"HYP:CHAIN:{chain.name}:{_chain_counter:06d}",
                 hypothesis_type="chain",
                 source_id=path[0],
                 source_name=self._index[path[0]].preferred_name,
@@ -1709,6 +1737,26 @@ class HypothesisEngine:
             h.explanation = self._generate_explanation(h)
             h.composite_score = self._composite_score(h)
             hyps.append(h)
+
+        # Prefix-dedup: same (source + intermediate anchor atoms) prefix
+        # often produces several near-duplicate chains that differ only in
+        # the terminal outcome (e.g. SLC6A4 → Amygdala → IM → MADRS vs the
+        # same prefix → BDI). Keep the highest-composite per prefix so the
+        # critic doesn't waste rounds on permutations of the same mechanism.
+        if hyps:
+            best_by_prefix: dict[tuple, Hypothesis] = {}
+            for h in hyps:
+                prefix = (h.source_id, *((h.metadata or {}).get("mediator_ids") or []))
+                cur = best_by_prefix.get(prefix)
+                if cur is None or h.composite_score > cur.composite_score:
+                    best_by_prefix[prefix] = h
+            deduped = list(best_by_prefix.values())
+            if len(deduped) < len(hyps):
+                logger.info(
+                    f"chain '{chain.name}': prefix-dedup {len(hyps)} -> "
+                    f"{len(deduped)} (kept best outcome per anchor prefix)"
+                )
+            hyps = deduped
 
         hyps = self.post_process(hyps)
         return hyps
@@ -2136,14 +2184,22 @@ class HypothesisEngine:
         Intermediate-only-ignore nodes are valid as source/target
         (predicting Alzheimer is a real hypothesis) but not as middle
         hops (A -> Alzheimer -> B is just "both relate to AD").
+
+        Exception: chain hypotheses pin specific atom positions (e.g.
+        GENE→IM→DISEASE→OUTCOME) — a disease at the DISEASE-anchor
+        position is required by the chain semantics, not a coincidental
+        hub. Mediator anchors recorded at generation time are exempted.
         """
         if len(h.path) < 2:
             return False
         ignore = self._intermediate_only_ignore_ids
+        anchor_exempt: set[str] = set()
+        if h.hypothesis_type == "chain":
+            anchor_exempt = set(h.metadata.get("mediator_ids") or [])
         for i, link in enumerate(h.path):
-            if i >= 1 and link.from_id in ignore:
+            if i >= 1 and link.from_id in ignore and link.from_id not in anchor_exempt:
                 return True
-            if i < len(h.path) - 1 and link.to_id in ignore:
+            if i < len(h.path) - 1 and link.to_id in ignore and link.to_id not in anchor_exempt:
                 return True
         return False
 
@@ -2269,6 +2325,168 @@ class HypothesisEngine:
         return True
 
     # ── imaging-driven batch generation ──────────────────────────────
+
+    def find_transdiagnostic_clusters(
+        self,
+        min_diseases_per_cluster: int = 3,
+        max_clusters: int = 20,
+        modality_partitioned: bool = True,
+        min_abs_d: float = 0.05,
+        max_fdr_p: float = 0.05,
+    ) -> list[Hypothesis]:
+        """CS2 generator — mine ENIGMA case-control edges into transdiagnostic
+        (region, modality, sign) clusters that span ≥ ``min_diseases_per_cluster``
+        diseases.
+
+        Each ENIGMA edge in the v2 KG carries metadata
+        ``{cohens_d, fdr_p, modality, comparison, n_controls, n_patients,
+        hemisphere_kept}``. We bucket edges by ``(region_id, modality, sign(d))``
+        and emit a cluster Hypothesis whenever the bucket pools effects from at
+        least ``min_diseases_per_cluster`` distinct comparisons that pass the
+        ``min_abs_d`` / ``max_fdr_p`` significance gates.
+
+        The hypothesis is encoded as a star (not a sequential chain): ``path``
+        carries one ``HypothesisLink`` per disease→region edge, which is enough
+        for the critic / novelty stages to read the supporting evidence even
+        though the links don't form a connected chain. ``hypothesis_type`` is
+        ``"transdiagnostic_cluster"`` so post_process can route around the
+        chain-style filters.
+        """
+        from collections import defaultdict
+
+        bucket: dict[tuple[str, str, int], list[dict]] = defaultdict(list)
+        for u, v, d in self.G.edges(data=True):
+            m = d.get("metadata") or {}
+            cohens_d = m.get("cohens_d")
+            modality = m.get("modality")
+            fdr_p = m.get("fdr_p")
+            if cohens_d is None or modality is None or fdr_p is None:
+                continue
+            try:
+                cd = float(cohens_d)
+                fp = float(fdr_p)
+            except (TypeError, ValueError):
+                continue
+            if abs(cd) < min_abs_d or fp > max_fdr_p:
+                continue
+            sign = 1 if cd > 0 else -1
+            mod_key = modality if modality_partitioned else "_any"
+            bucket[(v, mod_key, sign)].append({
+                "disease_id": u,
+                "region_id": v,
+                "cohens_d": cd,
+                "fdr_p": fp,
+                "comparison": m.get("comparison", ""),
+                "rel": d.get("relation_type", "unknown"),
+                "modality": modality,
+                "hemi": m.get("hemisphere_kept", ""),
+                "n_controls": m.get("n_controls"),
+                "n_patients": m.get("n_patients"),
+            })
+
+        clusters: list[Hypothesis] = []
+        for (region_id, mod_key, sign), entries in bucket.items():
+            distinct_diseases = {(e["disease_id"], e["comparison"]) for e in entries}
+            if len(distinct_diseases) < min_diseases_per_cluster:
+                continue
+
+            region_node = self._index.get(region_id)
+            region_name = region_node.preferred_name if region_node else region_id
+            modality = entries[0]["modality"] if mod_key == "_any" else mod_key
+
+            entries.sort(key=lambda e: abs(e["cohens_d"]), reverse=True)
+            kept_first: dict[str, dict] = {}
+            for e in entries:
+                key = e["comparison"] or e["disease_id"]
+                if key not in kept_first:
+                    kept_first[key] = e
+            kept = list(kept_first.values())
+
+            links: list[HypothesisLink] = []
+            for e in kept:
+                disease = self._index.get(e["disease_id"])
+                disease_name = disease.preferred_name if disease else e["disease_id"]
+                links.append(HypothesisLink(
+                    from_id=e["disease_id"],
+                    from_name=disease_name,
+                    to_id=region_id,
+                    to_name=region_name,
+                    relation_type=e["rel"],
+                    confidence=min(1.0, abs(e["cohens_d"])),
+                    evidence={
+                        "cohens_d": e["cohens_d"],
+                        "fdr_p": e["fdr_p"],
+                        "modality": e["modality"],
+                        "comparison": e["comparison"],
+                        "hemisphere": e["hemi"],
+                        "n_controls": e["n_controls"],
+                        "n_patients": e["n_patients"],
+                    },
+                ))
+
+            anchor_disease = links[0].from_id
+            anchor_name = links[0].from_name
+            mean_abs_d = sum(abs(l.confidence) for l in links) / max(1, len(links))
+            sign_label = "increase" if sign > 0 else "decrease"
+
+            disease_listing = ", ".join(sorted({l.from_name for l in links}))
+            explanation = (
+                f"Transdiagnostic {sign_label} of {region_name} {modality} "
+                f"shared across {len(kept)} disorders: {disease_listing}. "
+                f"Mean |Cohen's d| = {mean_abs_d:.2f}."
+            )
+
+            h = Hypothesis(
+                id=f"cluster_{region_id}_{mod_key}_{sign_label}",
+                hypothesis_type="transdiagnostic_cluster",
+                source_id=anchor_disease,
+                source_name=f"Transdiagnostic cluster ({len(kept)} disorders)",
+                target_id=region_id,
+                target_name=f"{region_name} ({modality}, {sign_label})",
+                path=links,
+                confidence_score=min(1.0, mean_abs_d),
+                evidence_score=min(1.0, math.log1p(len(kept)) / math.log(12)),
+                novelty_score=0.5,
+                testability_score=0.8,
+                supporting_claims=[],
+                explanation=explanation,
+                testability_reason=(
+                    f"ENIGMA case-control effects on {region_name} ({modality}) "
+                    f"are directly testable on UKB / ENIGMA-cohort imaging."
+                ),
+                metadata={
+                    "case_study": "cs2_transdiagnostic",
+                    "cluster_region_id": region_id,
+                    "cluster_region_name": region_name,
+                    "cluster_modality": modality,
+                    "cluster_sign": sign_label,
+                    "diseases": sorted({l.from_name for l in links}),
+                    "disease_ids": sorted({l.from_id for l in links}),
+                    "n_diseases": len(kept),
+                    "mean_abs_d": mean_abs_d,
+                    "max_abs_d": max(abs(l.confidence) for l in links),
+                },
+            )
+            h.composite_score = (
+                0.5 * h.evidence_score
+                + 0.3 * h.confidence_score
+                + 0.2 * h.testability_score
+            )
+            clusters.append(h)
+
+        clusters.sort(
+            key=lambda c: (c.metadata["n_diseases"], c.metadata["mean_abs_d"]),
+            reverse=True,
+        )
+        if max_clusters and max_clusters > 0:
+            clusters = clusters[:max_clusters]
+
+        logger.info(
+            f"transdiagnostic clustering: {len(bucket)} (region,modality,sign) "
+            f"buckets -> {len(clusters)} clusters spanning >= "
+            f"{min_diseases_per_cluster} diseases"
+        )
+        return clusters
 
     def batch_generate_imaging(
         self,

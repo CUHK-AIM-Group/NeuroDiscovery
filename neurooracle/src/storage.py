@@ -16,7 +16,7 @@ from .schema import ConceptNode, DISPLAY_TIERS_DEFAULT, Edge
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PATH = Path(__file__).parent.parent / "data" / "knowledge_graph.json"
+DEFAULT_PATH = Path(__file__).parent.parent / "data" / "full_snapshot_v2" / "knowledge_graph.json"
 
 
 def _resolve_read_path(path: Path) -> Path:

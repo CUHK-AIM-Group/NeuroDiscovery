@@ -161,6 +161,7 @@ RELATION_TYPES = {
     "defines_region",          # atlas → neuroanatomy ROI (atlas covers ROI)
     "measured_by_modality",    # imaging_feature → modality (e.g. CortThick → sMRI)
     "is_imaging_feature_of",   # imaging_feature → neuroanatomy (feature lives on ROI)
+    "has_imaging_feature",     # neuroanatomy → imaging_feature (inverse, for D/G → region → IM closure)
 }
 
 
@@ -225,6 +226,7 @@ EDGE_TIER: dict[str, str] = {
     "measured_by_modality":          "skeleton",
     "is_imaging_feature_of":         "skeleton",
     # Tier 3 — inverse mirrors of canonical Tier-1 edges
+    "has_imaging_feature":           "inverse",
     "is_treated_by":                 "inverse",
     "is_assessed_by":                "inverse",
     "modality_provides":             "inverse",

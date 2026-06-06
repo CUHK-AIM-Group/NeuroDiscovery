@@ -14,9 +14,9 @@ fi
 CYCLE_ID="${1:-001}"
 SEED_FROM="${2:-}"
 PY=/c/Users/45846/anaconda3/envs/neuroclaw/python.exe
-KG=neurooracle/data/full/knowledge_graph.json
-KGE=neurooracle/data/full/kge_complex.pt
-NOV_CACHE=neurooracle/data/full/novelty_cache.json
+KG=neurooracle/data/full_snapshot_v2/knowledge_graph.json
+KGE=neurooracle/data/full_snapshot_v2/kge_complex.pt
+NOV_CACHE=neurooracle/data/full_snapshot_v2/novelty_cache.json
 OUT_DIR="neurooracle/data/cycles/cycle_${CYCLE_ID}"
 mkdir -p "$OUT_DIR"
 LOG="$OUT_DIR/cycle.log"

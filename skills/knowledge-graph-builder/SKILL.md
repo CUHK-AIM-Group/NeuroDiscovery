@@ -284,7 +284,7 @@ Each claim generates **three** graph elements:
 
 | File | Description |
 |------|-------------|
-| `data/knowledge_graph.json` | Full graph (concepts + edges + metadata) |
+| `data/full_snapshot_v2/knowledge_graph.json` | Full graph (concepts + edges + metadata) |
 | `data/papers_metadata.csv` | Paper records: pmid, doi, title, authors, year, journal, disease, abstract_length, n_claims, timestamp |
 | `data/batch_checkpoint.json` | Resume checkpoint: completed_diseases, completed_years, totals |
 

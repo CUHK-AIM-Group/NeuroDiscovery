@@ -85,7 +85,7 @@ def main():
 
     args = parser.parse_args()
 
-    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
+    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json")
     kg = load_graph(graph_path)
 
     if args.command == "stats":

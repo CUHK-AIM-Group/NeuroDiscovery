@@ -31,7 +31,7 @@ Subcommands:
 
     # 7) biomarker mention scanner
     python -m neurooracle.phase2 biomarker-scan \
-        --graph neurooracle/data/knowledge_graph.json \
+        --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json \
         --claims neurooracle/data/extracted_claims.jsonl \
         --output neurooracle/data/biomarker_mentions.json \
         --mode local
@@ -39,8 +39,45 @@ Subcommands:
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
+
+
+def _load_env_keys() -> None:
+    """Load repo-local .env.keys into os.environ if present.
+
+    The file currently uses shell-style lines such as:
+        export OPENAI_API_KEYS="k1,k2"
+        export OPENAI_BASE_URL=https://...
+
+    We intentionally keep parsing minimal here and only fill variables that
+    are not already present in the process environment.
+    """
+    env_path = Path(__file__).resolve().parent.parent / ".env.keys"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):].strip()
+        if "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or key in os.environ:
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        os.environ[key] = value
+
+
+_load_env_keys()
 
 from .src.batch_extract import main as batch_extract_main
 from .src.biomarker_scan import main as biomarker_scan_main

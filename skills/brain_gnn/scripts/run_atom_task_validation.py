@@ -41,7 +41,7 @@ from skills.brain_gnn.scripts.region_roi_mapper import build_roi_mask, build_edg
 
 ATLAS = "aal_116"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-HYP_JSON = ROOT / "neurooracle" / "data" / "full" / "hypotheses_imaging_hcp_ya.json"
+HYP_JSON = ROOT / "neurooracle" / "data" / "full_snapshot_v2" / "hypotheses_imaging_hcp_ya.json"
 DATA_DIR = ROOT / "data"
 
 

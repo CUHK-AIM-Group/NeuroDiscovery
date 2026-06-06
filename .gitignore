@@ -1,12 +1,12 @@
 # Runtime & build
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *.pyo
 *.log
 logs/
 output/
 deploy/
-models/
 benchmark-env/
 hcp_env/
 
@@ -17,6 +17,12 @@ UKBAnalytica_v2-main
 
 # Experiment runs (harmonization pilots, model training outputs, etc.)
 runs/
+models/checkpoints/
+models/**/checkpoints/
+models/benchmark_results/
+models/experiment_results/
+models/**/logs/
+models/**/*results*.csv
 
 # Secrets
 .env

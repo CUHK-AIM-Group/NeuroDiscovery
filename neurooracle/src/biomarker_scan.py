@@ -33,14 +33,14 @@ queryable "which papers talk about biomarker X" index for downstream phases.
 
 Usage:
     python -m neurooracle.phase2 biomarker-scan \
-        --graph neurooracle/data/knowledge_graph.json \
+        --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json \
         --claims neurooracle/data/extracted_claims.jsonl \
         --output neurooracle/data/biomarker_mentions.json \
         --mode local
 
     # Extend with PubMed counts (rate-limited, ~0.3-0.5s per biomarker)
     python -m neurooracle.phase2 biomarker-scan \
-        --graph neurooracle/data/knowledge_graph.json \
+        --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json \
         --claims neurooracle/data/extracted_claims.jsonl \
         --output neurooracle/data/biomarker_mentions.json \
         --mode pubmed --limit-biomarkers 50

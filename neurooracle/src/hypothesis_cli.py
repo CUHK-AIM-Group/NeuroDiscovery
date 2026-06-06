@@ -137,10 +137,10 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
         from .atoms import CANONICAL_TASKS, CANONICAL_CHAINS
 
         task_names = None
-        if task_filter:
+        if task_filter is not None:
             task_names = {n.strip() for n in task_filter.split(",") if n.strip()}
         chain_names = None
-        if chain_filter:
+        if chain_filter is not None:
             chain_names = {n.strip() for n in chain_filter.split(",") if n.strip()}
 
         tasks_to_run = [t for t in CANONICAL_TASKS
@@ -185,8 +185,10 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
 
         for chain in chains_to_run:
             print(f"  chain: {chain.name} [{chain.signature}]")
-            seen_ids = set()
-            kept = []
+            # Dedup by anchor prefix (source + intermediate mediators), not
+            # by id — chain ids reset per engine call, but the same anchor
+            # prefix produced across retries is the same mechanism.
+            best_by_prefix: dict[tuple, "Hypothesis"] = {}
             cur_paths, cur_seeds = max_paths, max_seeds
             for attempt in range(1, max_retries + 1):
                 hs = engine.batch_generate_for_chain(
@@ -197,15 +199,20 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
                 )
                 added = 0
                 for h in hs:
-                    if h.id not in seen_ids:
-                        seen_ids.add(h.id)
-                        kept.append(h)
+                    prefix = (h.source_id, *((h.metadata or {}).get("mediator_ids") or []))
+                    cur = best_by_prefix.get(prefix)
+                    if cur is None:
+                        best_by_prefix[prefix] = h
                         added += 1
+                    elif h.composite_score > cur.composite_score:
+                        best_by_prefix[prefix] = h
+                kept = list(best_by_prefix.values())
                 print(f"    attempt {attempt}: +{added} (total {len(kept)}, paths={cur_paths}, seeds={cur_seeds})")
                 if target_per_task is None or len(kept) >= target_per_task:
                     break
                 cur_paths = max(int(cur_paths * retry_scale), cur_paths + 1)
                 cur_seeds = max(int(cur_seeds * retry_scale), cur_seeds + 1)
+            kept = list(best_by_prefix.values())
             print(f"    -> {len(kept)} hypotheses")
             hypotheses.extend(kept)
 
@@ -949,6 +956,182 @@ def cmd_gm_brainstorm(graph_path: str, output: str, n: int = 50,
 
 # == main =================================================================
 
+def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
+                   graph_path, snapshot_2022_kg=None, snapshot_2022_kge=None,
+                   as_json=False):
+    """Run the four-stage autoresearch cycle for a registered case study.
+
+    Reads a :class:`CaseStudy` from :mod:`case_studies`, dispatches stage
+    [1/4] (raw generation) by ``case.generator``, then forwards the rest
+    of the pipeline to the existing ``cmd_novelty / cmd_critic /
+    cmd_plausibility`` with parameters from ``case.stage_params``.
+
+    Output layout mirrors run_cycle.sh:
+        <output_dir>/hypotheses_raw.json    [1/4]
+        <output_dir>/hypotheses_novel.json  [2/4]
+        <output_dir>/hypotheses_critic.json [3/4]
+        <output_dir>/hypotheses_final.json  [4/4]
+    """
+    from .case_studies import (
+        case_study_by_name,
+        GENERATOR_TASK, GENERATOR_CHAIN,
+        GENERATOR_CLUSTER_MINING, GENERATOR_ATOM_SUBSTITUTION,
+    )
+
+    case = case_study_by_name(case_study_name)
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    raw_out    = out_dir / "hypotheses_raw.json"
+    novel_out  = out_dir / "hypotheses_novel.json"
+    critic_out = out_dir / "hypotheses_critic.json"
+    final_out  = out_dir / "hypotheses_final.json"
+
+    print("=" * 72)
+    print(f"Case study: {case.name}")
+    print(f"  CN: {case.chinese_name}")
+    print(f"  EN: {case.english_name}")
+    print(f"  generator: {case.generator}")
+    if case.task is not None:
+        print(f"  task:  {case.task.name} [{case.task.signature}]")
+    if case.chain is not None:
+        print(f"  chain: {case.chain.name} [{case.chain.signature}]")
+    print(f"  output_dir: {out_dir}")
+    print(f"  stages: {stages}")
+    print("=" * 72)
+
+    stages_set = {s.strip() for s in stages.split(",") if s.strip()}
+
+    # ── Stage [1/4]: generation ────────────────────────────────────────
+    if "batch" in stages_set:
+        bp = case.stage_params.batch
+        if case.generator == GENERATOR_TASK:
+            kg = load_graph(Path(graph_path))
+            engine = HypothesisEngine(kg)
+            for hook in case.pre_hooks:
+                hook(engine, case)
+            cmd_batch(
+                engine, str(raw_out),
+                max_hops=bp.max_hops, min_hops=bp.min_hops,
+                metapath_min_domains=bp.metapath_min_domains,
+                max_paths=bp.max_paths, max_seeds=bp.max_seeds,
+                target_per_task=bp.target_per_task,
+                max_retries=bp.max_retries, retry_scale=bp.retry_scale,
+                prefer_longer_paths=bp.prefer_longer_paths,
+                task_filter=case.task.name, chain_filter="",
+                as_json=as_json,
+            )
+            for hook in case.post_hooks:
+                hook(engine, case, raw_out)
+
+        elif case.generator == GENERATOR_CHAIN:
+            kg = load_graph(Path(graph_path))
+            engine = HypothesisEngine(kg)
+            for hook in case.pre_hooks:
+                hook(engine, case)
+            cmd_batch(
+                engine, str(raw_out),
+                max_hops=bp.max_hops, min_hops=bp.min_hops,
+                metapath_min_domains=bp.metapath_min_domains,
+                max_paths=bp.max_paths, max_seeds=bp.max_seeds,
+                target_per_task=bp.target_per_task,
+                max_retries=bp.max_retries, retry_scale=bp.retry_scale,
+                prefer_longer_paths=bp.prefer_longer_paths,
+                task_filter="", chain_filter=case.chain.name,
+                as_json=as_json,
+            )
+            for hook in case.post_hooks:
+                hook(engine, case, raw_out)
+
+        elif case.generator == GENERATOR_CLUSTER_MINING:
+            kg = load_graph(Path(graph_path))
+            engine = HypothesisEngine(kg)
+            for hook in case.pre_hooks:
+                hook(engine, case)
+            extras = case.extras or {}
+            print(f"  cluster mining: task={case.task.name if case.task else '?'}")
+            clusters = engine.find_transdiagnostic_clusters(
+                min_diseases_per_cluster=int(extras.get("min_diseases_per_cluster", 3)),
+                max_clusters=int(extras.get("max_clusters", 20)),
+                modality_partitioned=bool(extras.get("modality_partitioned", True)),
+            )
+            print(f"  -> {len(clusters)} cluster(s)")
+            for c in clusters:
+                meta = c.metadata or {}
+                if case.task is not None:
+                    meta["task_name"] = case.task.name
+                    meta["task_signature"] = case.task.signature
+                    meta["task_modifier"] = (
+                        case.task.modifier.value
+                        if case.task.modifier is not None
+                        else None
+                    )
+                meta["case_study"] = case.name
+                c.metadata = meta
+            engine.save_hypotheses(clusters, str(raw_out))
+            print(f"Saved to {raw_out}")
+            for hook in case.post_hooks:
+                hook(engine, case, raw_out)
+
+        elif case.generator == GENERATOR_ATOM_SUBSTITUTION:
+            raise NotImplementedError(
+                f"case-study '{case.name}' uses generator='atom_substitution'; "
+                "implementation lands in step 3 (CS-γ hindcasting)."
+            )
+
+        else:
+            raise ValueError(f"unknown generator: {case.generator}")
+
+    # ── Stage [2/4]: novelty ───────────────────────────────────────────
+    if "novelty" in stages_set:
+        if not raw_out.exists():
+            raise FileNotFoundError(f"stage 'novelty' needs {raw_out} from stage 'batch'")
+        kg = load_graph(Path(graph_path))
+        engine = HypothesisEngine(kg)
+        np_ = case.stage_params.novelty
+        cmd_novelty(
+            engine, str(raw_out), np_.top, str(novel_out), np_.alpha,
+            skip_pubmed=np_.skip_pubmed, skip_semantic=np_.skip_semantic,
+            as_json=as_json,
+        )
+
+    # ── Stage [3/4]: critic ────────────────────────────────────────────
+    if "critic" in stages_set:
+        if not novel_out.exists():
+            raise FileNotFoundError(f"stage 'critic' needs {novel_out} from stage 'novelty'")
+        kg = load_graph(Path(graph_path))
+        engine = HypothesisEngine(kg)
+        cp = case.stage_params.critic
+        cmd_critic(
+            engine, str(novel_out), cp.top, str(critic_out),
+            cp.max_rounds, cp.threshold, cp.max_workers,
+            as_json=as_json,
+        )
+
+    # ── Stage [4/4]: plausibility ──────────────────────────────────────
+    if "plausibility" in stages_set:
+        if not critic_out.exists():
+            raise FileNotFoundError(f"stage 'plausibility' needs {critic_out} from stage 'critic'")
+        from .kge.cli import cmd_plausibility
+        pp = case.stage_params.plausibility
+        cmd_plausibility(
+            input_path=str(critic_out),
+            kge_checkpoint=kge_path,
+            output=str(final_out),
+            novelty_cache=str(out_dir / "novelty_cache.json"),
+            skip_existing=pp.skip_existing,
+            no_pubmed=pp.no_pubmed,
+            top=pp.top,
+            device=pp.device,
+            kg_path=kg_path,
+            enable_surprise=pp.enable_surprise,
+            surprise_alpha=pp.surprise_alpha,
+            evo_surprise_min=pp.evo_surprise_min,
+        )
+
+    print(f"=== case-study '{case.name}' done -> {out_dir} ===")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Hypothesis engine for NeuroClaw knowledge graph")
     parser.add_argument("--graph", default=None, help="Path to graph JSON")
@@ -1139,8 +1322,8 @@ def main():
     p_im = sub.add_parser("im-brainstorm",
                             help="Brainstorm imaging markers (IMs) from KG primitives")
     p_im.add_argument("--graph", dest="im_graph", default=None,
-                        help="KG path (default: --graph or neurooracle/data/full/knowledge_graph.json)")
-    p_im.add_argument("--output", default="neurooracle/data/full/imaging_markers.json")
+                        help="KG path (default: --graph or neurooracle/data/full_snapshot_v2/knowledge_graph.json)")
+    p_im.add_argument("--output", default="neurooracle/data/full_snapshot_v2/imaging_markers.json")
     p_im.add_argument("--n", type=int, default=50, help="Number of IMs to brainstorm")
     p_im.add_argument("--model", default=None, help="LLM model override")
     p_im.add_argument("--batch-size", type=int, default=30,
@@ -1152,14 +1335,38 @@ def main():
     p_gm = sub.add_parser("gm-brainstorm",
                             help="Brainstorm genetic markers (GMs) from KG primitives")
     p_gm.add_argument("--graph", dest="gm_graph", default=None,
-                        help="KG path (default: --graph or neurooracle/data/full/knowledge_graph.json)")
-    p_gm.add_argument("--output", default="neurooracle/data/full/genetic_markers.json")
+                        help="KG path (default: --graph or neurooracle/data/full_snapshot_v2/knowledge_graph.json)")
+    p_gm.add_argument("--output", default="neurooracle/data/full_snapshot_v2/genetic_markers.json")
     p_gm.add_argument("--n", type=int, default=50, help="Number of GMs to brainstorm")
     p_gm.add_argument("--model", default=None, help="LLM model override")
     p_gm.add_argument("--batch-size", type=int, default=30,
                         help="GMs per LLM call when n > batch_size (default 30)")
     p_gm.add_argument("--seed", type=int, default=0,
                         help="RNG seed for batched family rotation")
+
+    # case-study (Nature paper rollout — orchestrates the 4-stage cycle for
+    # one of CS2 / CS3 / CS-γ; reads stage params from case_studies.py)
+    from .case_studies import list_case_study_names
+    p_cs = sub.add_parser("case-study",
+                          help="Run autoresearch cycle for a registered Nature-paper case study")
+    p_cs.add_argument("name", choices=list(list_case_study_names()),
+                      help="Which case study to run")
+    p_cs.add_argument("--output-dir", required=True,
+                      help="Directory for stage outputs (raw / novel / critic / final JSONs)")
+    p_cs.add_argument("--stages", default="batch,novelty,critic,plausibility",
+                      help="Comma-separated subset of {batch,novelty,critic,plausibility} to run")
+    p_cs.add_argument("--kge",
+                      default="neurooracle/data/full_snapshot_v2/kge_complex.pt",
+                      help="Trained KGE checkpoint for stage [4/4]")
+    p_cs.add_argument("--kg-for-plausibility",
+                      default=None,
+                      help="KG path passed to plausibility stage (default: --graph)")
+    p_cs.add_argument("--snapshot-2022-kg",
+                      default=None,
+                      help="(CS-γ only) Path to 2022 KG snapshot; overrides extras default")
+    p_cs.add_argument("--snapshot-2022-kge",
+                      default=None,
+                      help="(CS-γ only) Path to 2022 KGE checkpoint; overrides extras default")
 
     args = parser.parse_args()
 
@@ -1190,18 +1397,34 @@ def main():
         return
 
     if args.command == "im-brainstorm":
-        graph_p = args.im_graph or args.graph or "neurooracle/data/full/knowledge_graph.json"
+        graph_p = args.im_graph or args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
         cmd_im_brainstorm(graph_path=graph_p, output=args.output, n=args.n,
                           model=args.model, batch_size=args.batch_size, seed=args.seed)
         return
 
     if args.command == "gm-brainstorm":
-        graph_p = args.gm_graph or args.graph or "neurooracle/data/full/knowledge_graph.json"
+        graph_p = args.gm_graph or args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
         cmd_gm_brainstorm(graph_path=graph_p, output=args.output, n=args.n,
                           model=args.model, batch_size=args.batch_size, seed=args.seed)
         return
 
-    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/knowledge_graph.json")
+    if args.command == "case-study":
+        graph_p = args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
+        kg_for_plaus = args.kg_for_plausibility or graph_p
+        cmd_case_study(
+            case_study_name=args.name,
+            output_dir=args.output_dir,
+            stages=args.stages,
+            kge_path=args.kge,
+            kg_path=kg_for_plaus,
+            graph_path=graph_p,
+            snapshot_2022_kg=args.snapshot_2022_kg,
+            snapshot_2022_kge=args.snapshot_2022_kge,
+            as_json=args.json,
+        )
+        return
+
+    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json")
     kg = load_graph(graph_path)
     engine = HypothesisEngine(kg)
 

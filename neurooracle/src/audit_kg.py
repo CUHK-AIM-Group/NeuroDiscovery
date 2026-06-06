@@ -2,8 +2,8 @@
 
 Usage:
     python -m neurooracle.src.audit_kg \
-        --kg neurooracle/data/full/knowledge_graph.json \
-        --claims neurooracle/data/full/extracted_claims.jsonl \
+        --kg neurooracle/data/full_snapshot_v2/knowledge_graph.json \
+        --claims neurooracle/data/full_snapshot_v2/extracted_claims.jsonl \
         --hyp-dir neurooracle/data/quick \
         --out neurooracle/data/audit_report.md
 """
@@ -393,7 +393,7 @@ def audit_hypotheses(hyp_dir: Path) -> dict:
 def format_md(nodes_r, edges_r, claims_r, hyp_r) -> str:
     out = ["# KG & Hypothesis Audit Report",
            "",
-           "_Source: `neurooracle/data/full/`_",
+           "_Source: `neurooracle/data/full_snapshot_v2/`_",
            ""]
 
     out.append("## Phase 1-2: node quality\n")

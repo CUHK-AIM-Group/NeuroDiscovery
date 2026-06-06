@@ -1,7 +1,7 @@
 """Unified ingestion pipeline for building the neuroscience knowledge graph.
 
 Usage:
-    python -m neurooracle.phase1 --data-dir ./data/raw --output ./data/knowledge_graph.json
+    python -m neurooracle.phase1 --data-dir ./data/raw --output ./data/full_snapshot_v2/knowledge_graph.json
 
     Or programmatically:
         from neurooracle.phase1 import run_full_ingestion
@@ -29,6 +29,7 @@ from .ingestion.enigma_disease_im import ingest_enigma_disease_im
 from .ingestion.experiment_infra import ingest_experiment_infrastructure
 from .ingestion.hansen_receptor_density import ingest_hansen_receptor_density
 from .ingestion.hpo_gene_anatomy import ingest_hpo_gene_anatomy
+from .ingestion.imaging_genetic_markers import ingest_imaging_genetic_markers
 from .ingestion.individual_data_anchors import ingest_individual_data_anchors
 from .ingestion.individual_data_bridges import ingest_individual_data_bridges
 from .ingestion.mesh import ingest_mesh
@@ -71,7 +72,7 @@ def run_full_ingestion(
                    "hpo_gene_anatomy", "ahba_gene_expression",
                    "enigma_disease_im", "atlas_roi_modality",
                    "hansen_receptor_density", "drug_receptor_binding",
-                   "neurosynth_task_im"]
+                   "neurosynth_task_im", "imaging_genetic_markers"]
     if sources is None:
         sources = all_sources
 
@@ -176,6 +177,10 @@ def run_full_ingestion(
             dataset_path=data_dir / "neurosynth" / "neurosynth_dataset.pkl.gz",
         )
 
+    if "imaging_genetic_markers" in sources:
+        logger.info("=== Ingesting IM/GM/GENESET nodes (NeuroClaw marker registries) ===")
+        results["imaging_genetic_markers"] = ingest_imaging_genetic_markers(kg)
+
     stats = kg.stats()
     logger.info(f"\n{'='*50}")
     logger.info(f"INGESTION COMPLETE (pre-UMLS)")
@@ -236,7 +241,7 @@ def main():
                  "hpo_gene_anatomy", "ahba_gene_expression",
                  "enigma_disease_im", "atlas_roi_modality",
                  "hansen_receptor_density", "drug_receptor_binding",
-                 "neurosynth_task_im"],
+                 "neurosynth_task_im", "imaging_genetic_markers"],
         default=None,
         help="Which sources to ingest (default: all available)",
     )

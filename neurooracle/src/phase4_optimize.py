@@ -24,79 +24,186 @@ logger = logging.getLogger(__name__)
 DATA_DIR = Path(__file__).parent.parent / "data"
 GRAPH_FILE = DATA_DIR / "knowledge_graph.json"
 
+SAFE_SAME_PREFIX_DEDUP_PREFIXES = {"COGAT_TASK", "COGAT_CONCEPT"}
+SAFE_SAME_PREFIX_DEDUP_VOCABS = {"CognitiveAtlas", "Cognitive Atlas", "COGAT"}
+
 
 # ── 1. Merge Duplicate Concepts ─────────────────────────────────────
 
-def merge_duplicate_concepts(kg: KnowledgeGraph) -> int:
-    """Merge concepts with the same preferred_name (case-insensitive).
+def _node_prefix(node_id: str) -> str:
+    return node_id.split(":", 1)[0] if ":" in node_id else node_id
 
-    Strategy: keep the node with the most edges as canonical, redirect
-    all edges from duplicates to canonical, then remove duplicates.
 
-    Returns number of merges performed.
+def collect_same_prefix_same_domain_duplicate_groups(kg: KnowledgeGraph) -> list[dict]:
+    """Return duplicate-name groups limited to same prefix + same domain tagset.
+
+    This is intentionally broader than the actual merge whitelist: it surfaces
+    all same-prefix/same-domain collisions for review, then annotates which
+    ones are conservative enough to auto-merge.
     """
-    # Group by lowercase name
-    name_groups: dict[str, list[str]] = defaultdict(list)
+    grouped: dict[tuple[str, str, tuple[str, ...]], list[str]] = defaultdict(list)
     for nid, node in kg._index.items():
-        if "claim" not in node.domain_tags:
-            name_groups[node.preferred_name.lower().strip()].append(nid)
-
-    merges = 0
-    for name, nids in name_groups.items():
-        if len(nids) < 2:
+        if "claim" in node.domain_tags:
             continue
+        name = (node.preferred_name or "").strip()
+        if not name:
+            continue
+        grouped[(
+            _node_prefix(nid),
+            name.casefold(),
+            tuple(sorted(node.domain_tags or [])),
+        )].append(nid)
 
-        # Pick canonical: node with highest degree
-        canonical = max(nids, key=lambda n: kg.G.degree(n) if n in kg.G else 0)
-        duplicates = [n for n in nids if n != canonical]
+    rows: list[dict] = []
+    for (prefix, _name_key, domain_tags), ids in grouped.items():
+        if len(ids) < 2:
+            continue
+        nodes = [kg._index[nid] for nid in ids]
+        source_vocabs = sorted({node.source_vocab or "" for node in nodes})
+        semantic_type_sets = sorted({tuple(sorted(node.semantic_types or [])) for node in nodes})
 
-        for dup_id in duplicates:
-            if dup_id not in kg.G:
+        safe_to_merge = (
+            prefix in SAFE_SAME_PREFIX_DEDUP_PREFIXES
+            and len(source_vocabs) == 1
+            and source_vocabs[0] in SAFE_SAME_PREFIX_DEDUP_VOCABS
+            and len(semantic_type_sets) == 1
+        )
+        if safe_to_merge:
+            rationale = "safe_cogat_internal_duplicate"
+        elif prefix == "CUI":
+            rationale = "blocked_distinct_umls_cuis_same_label"
+        elif prefix == "NN":
+            rationale = "blocked_atlas_specific_neuroanatomy"
+        else:
+            rationale = "blocked_requires_manual_review"
+
+        display_name = next(
+            ((kg._index[nid].preferred_name or "").strip() for nid in ids if (kg._index[nid].preferred_name or "").strip()),
+            "",
+        )
+        rows.append({
+            "preferred_name": display_name,
+            "prefix": prefix,
+            "domain_tags": list(domain_tags),
+            "source_vocabs": source_vocabs,
+            "semantic_type_sets": [list(sts) for sts in semantic_type_sets],
+            "ids": sorted(ids),
+            "safe_to_merge": safe_to_merge,
+            "rationale": rationale,
+        })
+
+    rows.sort(key=lambda row: (row["prefix"], row["preferred_name"].casefold(), row["ids"]))
+    return rows
+
+
+def _choose_canonical_duplicate(kg: KnowledgeGraph, ids: list[str]) -> str:
+    def rank_key(nid: str) -> tuple[int, int, int, str]:
+        node = kg._index[nid]
+        degree = kg.G.degree(nid) if nid in kg.G else 0
+        return (degree, len(node.aliases), 1 if node.definition else 0, nid)
+
+    return max(ids, key=rank_key)
+
+
+def merge_duplicate_concepts(kg: KnowledgeGraph) -> int:
+    """Merge only conservative same-prefix/same-domain duplicate concepts.
+
+    Current auto-merge whitelist is intentionally narrow:
+    - same preferred_name (case-insensitive)
+    - same id prefix
+    - same domain tag set
+    - Cognitive Atlas internal duplicates only (`COGAT_TASK`, `COGAT_CONCEPT`)
+
+    High-risk cases such as distinct UMLS CUIs with the same label or
+    atlas-specific NeuroNames ROIs are surfaced for review but not merged.
+    """
+    review_groups = collect_same_prefix_same_domain_duplicate_groups(kg)
+    merge_groups = [group["ids"] for group in review_groups if group["safe_to_merge"]]
+    if not merge_groups:
+        logger.info("merged 0 duplicate concepts (no conservative groups found)")
+        return 0
+
+    redirect: dict[str, str] = {}
+    merges = 0
+    for ids in merge_groups:
+        canonical_id = _choose_canonical_duplicate(kg, ids)
+        canonical = kg._index[canonical_id]
+        merged_ids = set(
+            canonical.metadata.get("dedup_merged_ids", [])
+            if isinstance(canonical.metadata.get("dedup_merged_ids"), list)
+            else []
+        )
+
+        for dup_id in ids:
+            if dup_id == canonical_id:
                 continue
-
-            # Redirect all edges from duplicate to canonical
-            # Outgoing edges
-            for _, target, data in list(kg.G.out_edges(dup_id, data=True)):
-                if target == canonical:
-                    continue
-                if not kg.G.has_edge(canonical, target):
-                    kg.G.add_edge(canonical, target, **data)
-                else:
-                    # Merge: keep higher confidence edge
-                    existing = kg.G.edges[canonical, target]
-                    if data.get("confidence", 0) > existing.get("confidence", 0):
-                        for k, v in data.items():
-                            kg.G.edges[canonical, target][k] = v
-
-            # Incoming edges
-            for source, _, data in list(kg.G.in_edges(dup_id, data=True)):
-                if source == canonical:
-                    continue
-                if not kg.G.has_edge(source, canonical):
-                    kg.G.add_edge(source, canonical, **data)
-                else:
-                    existing = kg.G.edges[source, canonical]
-                    if data.get("confidence", 0) > existing.get("confidence", 0):
-                        for k, v in data.items():
-                            kg.G.edges[source, canonical][k] = v
-
-            # Merge aliases
             dup_node = kg._index.get(dup_id)
-            can_node = kg._index.get(canonical)
-            if dup_node and can_node:
-                for alias in dup_node.aliases:
-                    if alias not in can_node.aliases:
-                        can_node.aliases.append(alias)
-                # Merge metadata
-                for k, v in dup_node.metadata.items():
-                    if k not in can_node.metadata:
-                        can_node.metadata[k] = v
-
-            # Remove duplicate node
-            kg.G.remove_node(dup_id)
-            if dup_id in kg._index:
-                del kg._index[dup_id]
+            if dup_node is None:
+                continue
+            redirect[dup_id] = canonical_id
             merges += 1
+
+            merged_ids.add(dup_id)
+            if dup_node.preferred_name and dup_node.preferred_name != canonical.preferred_name:
+                if dup_node.preferred_name not in canonical.aliases:
+                    canonical.aliases.append(dup_node.preferred_name)
+            for alias in dup_node.aliases:
+                if alias and alias != canonical.preferred_name and alias not in canonical.aliases:
+                    canonical.aliases.append(alias)
+            for tag in dup_node.domain_tags:
+                if tag not in canonical.domain_tags:
+                    canonical.domain_tags.append(tag)
+            for st in dup_node.semantic_types:
+                if st not in canonical.semantic_types:
+                    canonical.semantic_types.append(st)
+            for key, value in dup_node.external_ids.items():
+                canonical.external_ids.setdefault(key, value)
+            if not canonical.definition and dup_node.definition:
+                canonical.definition = dup_node.definition
+            for key, value in dup_node.metadata.items():
+                if key == "dedup_merged_ids":
+                    if isinstance(value, list):
+                        merged_ids.update(str(v) for v in value)
+                    continue
+                canonical.metadata.setdefault(key, value)
+
+        if merged_ids:
+            canonical.metadata["dedup_merged_ids"] = sorted(merged_ids)
+            canonical.metadata["dedup_rule"] = "conservative_same_prefix_same_domain_v1"
+
+    if not redirect:
+        logger.info("merged 0 duplicate concepts (no redirect candidates)")
+        return 0
+
+    new_graph = type(kg.G)()
+    surviving_ids = set(kg._index.keys()) - set(redirect.keys())
+    for nid in surviving_ids:
+        new_graph.add_node(nid, **kg._index[nid].to_dict())
+
+    for src, tgt, data in kg.G.edges(data=True):
+        new_src = redirect.get(src, src)
+        new_tgt = redirect.get(tgt, tgt)
+        if new_src == new_tgt:
+            continue
+        if new_src not in surviving_ids or new_tgt not in surviving_ids:
+            continue
+        if new_graph.has_edge(new_src, new_tgt):
+            existing = new_graph.edges[new_src, new_tgt]
+            if data.get("confidence", 0) > existing.get("confidence", 0):
+                edata = dict(data)
+                edata["source_id"] = new_src
+                edata["target_id"] = new_tgt
+                new_graph.edges[new_src, new_tgt].update(edata)
+            continue
+        edata = dict(data)
+        edata["source_id"] = new_src
+        edata["target_id"] = new_tgt
+        new_graph.add_edge(new_src, new_tgt, **edata)
+
+    kg.G = new_graph
+    for dup_id in redirect:
+        kg._index.pop(dup_id, None)
+    kg.invalidate_semantic_view()
 
     logger.info(f"merged {merges} duplicate concepts")
     return merges
@@ -557,6 +664,6 @@ if __name__ == "__main__":
     )
     parser = argparse.ArgumentParser(description="Phase 4: KG quality optimization")
     parser.add_argument("--graph", type=Path, default=GRAPH_FILE,
-                        help="Path to knowledge_graph.json (default: neurooracle/data/knowledge_graph.json)")
+                        help="Path to knowledge_graph.json (default: neurooracle/data/full_snapshot_v2/knowledge_graph.json)")
     args = parser.parse_args()
     run_phase4(args.graph)

@@ -271,14 +271,22 @@ def test_task_chain_to_dict_roundtrip_keys():
     assert d["chain"] == ["gene_target", "imaging_marker", "disease"]
 
 
-def test_canonical_chains_present_for_all_four_families():
+def test_canonical_chains_present_for_all_registered_families():
     names = {c.name for c in CANONICAL_CHAINS}
     assert names == {
         "genetic_imaging_disease",
         "drug_imaging_outcome",
         "task_brain_behavior",
         "disease_biomarker_prognosis",
+        "pathway_polygenic_mediation",
     }
+
+
+def test_pathway_polygenic_mediation_keeps_disease_implicit_in_outcome():
+    """CS3 is intentionally G -> IM -> O, with disease encoded by outcome."""
+    c = chain_by_name("pathway_polygenic_mediation")
+    assert c.signature == "G->IM->O[longitudinal]"
+    assert c.chain == (Atom.GENE_TARGET, Atom.IMAGING_MARKER, Atom.OUTCOME)
 
 
 def test_canonical_chain_names_unique():

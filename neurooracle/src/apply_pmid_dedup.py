@@ -9,7 +9,7 @@ Why a standalone runner instead of `run_phase4`:
 
 Usage:
     python -m neurooracle.src.apply_pmid_dedup \
-        --graph neurooracle/data/full/knowledge_graph.json \
+        --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json \
         [--dry-run]
 """
 from __future__ import annotations
