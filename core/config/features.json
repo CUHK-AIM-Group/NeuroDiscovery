@@ -47,6 +47,58 @@
       "enabled": true,
       "description": "Moonshot / Kimi OpenAI-compatible API alias"
     },
+    "qwen": {
+      "enabled": true,
+      "description": "Qwen / DashScope OpenAI-compatible API"
+    },
+    "dashscope": {
+      "enabled": true,
+      "description": "DashScope / Qwen OpenAI-compatible API alias"
+    },
+    "baichuan": {
+      "enabled": true,
+      "description": "Baichuan OpenAI-compatible API"
+    },
+    "zhipu": {
+      "enabled": true,
+      "description": "Zhipu GLM OpenAI-compatible API"
+    },
+    "glm": {
+      "enabled": true,
+      "description": "GLM / Zhipu OpenAI-compatible API alias"
+    },
+    "doubao": {
+      "enabled": true,
+      "description": "Doubao / Ark OpenAI-compatible API"
+    },
+    "ark": {
+      "enabled": true,
+      "description": "Ark / Doubao OpenAI-compatible API alias"
+    },
+    "openrouter": {
+      "enabled": true,
+      "description": "OpenRouter OpenAI-compatible API"
+    },
+    "together": {
+      "enabled": true,
+      "description": "Together AI OpenAI-compatible API"
+    },
+    "groq": {
+      "enabled": true,
+      "description": "Groq OpenAI-compatible API"
+    },
+    "fireworks": {
+      "enabled": true,
+      "description": "Fireworks AI OpenAI-compatible API"
+    },
+    "ollama": {
+      "enabled": true,
+      "description": "Ollama OpenAI-compatible local endpoint"
+    },
+    "llamacpp": {
+      "enabled": true,
+      "description": "llama.cpp OpenAI-compatible local endpoint"
+    },
     "anthropic": {
       "enabled": true,
       "description": "Anthropic API (Claude 3.x, \u2026)"

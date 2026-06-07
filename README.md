@@ -159,7 +159,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
   - Python runtime (system / conda / Docker)
   - CUDA / GPU configuration and optional PyTorch install
   - Neuroscience toolchain paths (FSL, FreeSurfer, dcm2niix, etc.)
-  - LLM backend selection (OpenAI, DeepSeek, MiniMax, Kimi/Moonshot, Anthropic, or local model)
+  - LLM backend selection (OpenAI, DeepSeek, MiniMax, Kimi/Moonshot, Qwen/DashScope, Baichuan, Zhipu GLM, Doubao/Ark, OpenRouter, Together, Groq, Fireworks, Ollama, llama.cpp, Anthropic, or local model)
   - Default BIDS and output directories
   - Web UI dependencies and attachment parsers (PDF/DOCX/XLSX/PPTX)
 
@@ -194,6 +194,16 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
   - `deepseek`: `DEEPSEEK_API_KEY`, default endpoint `https://api.deepseek.com`
   - `minimax`: `MINIMAX_API_KEY`, default endpoint `https://api.minimaxi.com/v1`
   - `kimi` / `moonshot`: `MOONSHOT_API_KEY`, default endpoint `https://api.moonshot.cn/v1`
+  - `qwen` / `dashscope`: `DASHSCOPE_API_KEY`, default endpoint `https://dashscope.aliyuncs.com/compatible-mode/v1`
+  - `baichuan`: `BAICHUAN_API_KEY`, default endpoint `https://api.baichuan-ai.com/v1`
+  - `zhipu` / `glm`: `ZHIPUAI_API_KEY`, default endpoint `https://open.bigmodel.cn/api/paas/v4`
+  - `doubao` / `ark`: `ARK_API_KEY`, default endpoint `https://ark.cn-beijing.volces.com/api/v3`
+  - `openrouter`: `OPENROUTER_API_KEY`, default endpoint `https://openrouter.ai/api/v1`
+  - `together`: `TOGETHER_API_KEY`, default endpoint `https://api.together.xyz/v1`
+  - `groq`: `GROQ_API_KEY`, default endpoint `https://api.groq.com/openai/v1`
+  - `fireworks`: `FIREWORKS_API_KEY`, default endpoint `https://api.fireworks.ai/inference/v1`
+  - `ollama`: no API key required, default endpoint `http://localhost:11434/v1`
+  - `llamacpp`: no API key required, default endpoint `http://localhost:8080/v1`
 
     Web UI attachment parsing currently supports these file types:
     - Text/config/code: `.txt`, `.md`, `.markdown`, `.json`, `.yaml`, `.yml`, `.csv`, `.tsv`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sh`, `.bash`, `.zsh`, `.sql`, `.html`, `.css`, `.xml`, `.log`, `.rst`, `.ini`, `.toml`, `.cfg`
@@ -205,6 +215,40 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
    ```bash
   python core/agent/main.py --web --port 8080 --host 0.0.0.0 --api-key "$OPENAI_API_KEY"
    ```
+
+4. **Install NeuroClaw into other agent systems**
+
+   To make a host agent operate in NeuroClaw mode with NeuroClaw catalogs,
+   NeuroOracle, NeuroBench, model workflows, and neuroimaging skills:
+
+   | Host agent | Install command | Installed integration |
+   |---|---|---|
+   | Codex | `python installer/install_agent_integration.py --target codex` | `~/.codex/skills/neuroclaw/` |
+   | Claude Code | `python installer/install_agent_integration.py --target claude-code` | `~/.claude/skills/neuroclaw/` |
+   | Cursor | `python installer/install_agent_integration.py --target cursor --scope project` | `.cursor/rules/neuroclaw.mdc` plus generated references |
+   | OpenClaw | `python installer/install_agent_integration.py --target openclaw` | `~/.openclaw/skills/neuroclaw/` |
+   | Hermes | `python installer/install_agent_integration.py --target hermes` | `~/.hermes/skills/neuroclaw/` |
+   | WorkBuddy | `python installer/install_agent_integration.py --target workbuddy` | `~/.workbuddy/skills/neuroclaw/` |
+   | QClaw | `python installer/install_agent_integration.py --target qclaw` | `~/.qclaw/skills/neuroclaw/` |
+
+   To install the Codex and Claude Code integrations together:
+   ```bash
+   python installer/install_agent_integration.py --target both
+   ```
+
+   To generate all supported integrations:
+   ```bash
+   python installer/install_agent_integration.py --target all
+   ```
+
+   If a host agent uses a different import location, export the generated skill
+   pack and import or copy it manually:
+   ```bash
+   python installer/install_agent_integration.py --target all --export ./dist/agent-integrations
+   ```
+
+   After installation, ask the host agent to "use NeuroClaw" or "enter NeuroClaw
+   mode" for neuroimaging and autoresearch work.
 
 <div align="center">
   <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />

@@ -182,7 +182,7 @@ def default_cache_path(data_dir: Optional[Path] = None) -> Path:
     if env:
         return Path(env)
     if data_dir is None:
-        data_dir = Path(__file__).parent.parent / "data"
+        data_dir = Path(__file__).parent.parent / "data" / "full_snapshot_v2"
     return Path(data_dir) / "abstract_cache.jsonl"
 
 

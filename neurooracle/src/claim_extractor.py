@@ -1,6 +1,6 @@
 """LLM-based structured claim extraction from neuroscience paper abstracts.
 
-Uses GPT-5.5 via proxy endpoint to extract structured scientific claims
+Uses an adaptive LLM cascade via proxy endpoint to extract structured scientific claims
 as (Subject, Predicate, Object, Evidence) triples.
 """
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
 DEFAULT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")  # cascade: 5.5 -> 5.4 -> 5.3 -> 5.2
+DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "claude-sonnet-4-6")
 
 # Multi-key pool: set OPENAI_API_KEYS env var as comma-separated keys
 # e.g. export OPENAI_API_KEYS="sk-aaa,sk-bbb,sk-ccc"
@@ -35,6 +35,13 @@ _API_KEYS_RAW = os.environ.get("OPENAI_API_KEYS", "")
 API_KEY_POOL = [k.strip() for k in _API_KEYS_RAW.split(",") if k.strip()] or (
     [DEFAULT_API_KEY] if DEFAULT_API_KEY else []
 )
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 EXTRACTION_PROMPT = """Extract ALL scientific claims from this neuroscience paper abstract as JSON array.
 
@@ -194,6 +201,140 @@ CRITICAL: Choose the most precise predicate based on the study design and langua
 - PET receptor density mapping → "receptor_density_in"
 - If the abstract says "X increases Y" or "X reduces Y", use "increases" or "reduces", NOT "is_associated_with"
 
+Directional measurement comparisons — IMPORTANT:
+If a biomarker, imaging measure, cognitive score, receptor binding measure, blood
+flow measure, volume, density, activation level, or ratio is reported as increased,
+decreased, reduced, lower, higher, diminished, or elevated IN a disease/patient group,
+do NOT emit `MEASURE reduces DISEASE` or `MEASURE increases DISEASE`.
+
+Those sentences mean the MEASURE differs by disease/status. Use:
+- `MEASURE is_biomarker_of DISEASE` when the disease/status is the endpoint.
+- `MEASURE distinguishes DISEASE_OR_GROUP` when the sentence explicitly compares
+  groups or diagnostic classes.
+- `MEASURE correlates_with OUTCOME` when the endpoint is severity, survival,
+  score, performance, or another continuous clinical/cognitive outcome.
+
+Bad examples — DO NOT emit:
+- subject="microscopic fractional anisotropy", predicate="reduces", object="temporal lobe epilepsy"
+- subject="nicotinic acetylcholine receptor binding", predicate="reduces", object="Alzheimer disease"
+- subject="right hippocampal volume", predicate="reduces", object="Alzheimer disease"
+- subject="regional cerebral blood flow", predicate="reduces", object="severity of dementia"
+
+Correct examples:
+- Text: "Microscopic fractional anisotropy was reduced in TLE patients."
+  Claim: subject="microscopic fractional anisotropy", predicate="is_biomarker_of",
+  object="temporal lobe epilepsy"
+- Text: "Regional cerebral blood flow was lower and related to dementia severity."
+  Claim: subject="regional cerebral blood flow", predicate="correlates_with",
+  object="severity of dementia"
+- Text: "Hippocampal volume was reduced in Alzheimer disease compared with controls."
+  Claim: subject="hippocampal volume", predicate="distinguishes",
+  object="Alzheimer disease"
+
+Method/procedure handling — IMPORTANT:
+Methods, algorithms, pipelines, classifiers, registration/segmentation procedures,
+software tools, statistical models, and validation protocols are NOT biomedical
+entities for `subject` or `object`. Put them in `methodology` instead.
+
+When a sentence has the form "Using METHOD, we found MEASURE/MARKER relates to
+DISEASE/OUTCOME", extract the real MEASURE/MARKER as the subject/object and store
+METHOD in `methodology`.
+
+Good examples:
+- Text: "Using fluid registration, patients with Alzheimer disease showed faster
+  hippocampal atrophy."
+  Claim: subject="hippocampal atrophy", predicate="is_biomarker_of" or "distinguishes",
+  object="Alzheimer disease", methodology="fluid registration"
+- Text: "Manual segmentation showed reduced hippocampal volume in Alzheimer disease."
+  Claim: subject="hippocampal volume", predicate="reduces" or "is_biomarker_of",
+  object="Alzheimer disease", methodology="manual segmentation"
+- Text: "A support vector machine using cortical thickness distinguished MCI converters
+  from non-converters."
+  Claim: subject="cortical thickness", predicate="distinguishes", object="MCI conversion",
+  methodology="support vector machine"
+
+Bad examples — DO NOT emit claims like these:
+- subject="fluid registration", predicate="is_biomarker_of", object="Alzheimer disease"
+- subject="manual segmentation", predicate="has_adverse_effect", object="hippocampal volume"
+- subject="classifier", predicate="predicts", object="conversion"
+
+If the abstract only evaluates a method/procedure itself (e.g. reproducibility,
+accuracy, registration error, segmentation reliability) and does NOT state a biomedical
+marker-disease/outcome relationship, return no claim for that sentence rather than
+guessing a biomarker.
+
+Method-validation endpoints such as "scan-rescan consistency", "volume repeatability",
+"segmentation reproducibility", "registration error", "measurement accuracy", "gold
+standard comparison", and "inter-rater reliability" are method-performance outcomes,
+not disease biomarkers. Do NOT emit them as subject/object biomedical entities.
+Do NOT turn an objective sentence like "to validate METHOD for measuring MARKER in
+DISEASE" into a biomarker claim unless the abstract reports an actual disease/outcome
+finding for MARKER.
+The `raw_sentence` must explicitly support BOTH endpoints and the predicate. A disease
+cohort mentioned only in the sample description (e.g. "15 controls and 12 Alzheimer
+disease patients") is not enough. Do NOT infer "MARKER reduces in DISEASE" from a
+method-comparison sentence unless the sentence says the marker is reduced, increased,
+different, predictive, diagnostic, or associated with the disease/outcome.
+
+Pure imaging modality names are methods, not biomarkers. Do NOT use CT, computed
+tomography, PET, positron emission tomography, FDG-PET, amyloid PET, SPECT,
+single-photon emission tomography, single photon emission tomography,
+single-photon emission computed tomography, single photon emission computed
+tomography, MRI, magnetic resonance imaging, structural MRI, structural magnetic
+resonance imaging, fMRI, functional MRI, functional magnetic resonance imaging,
+DTI, diffusion tensor imaging, diffusion MRI, diffusion magnetic resonance imaging,
+EEG, electroencephalography, MEG, or magnetoencephalography as the subject of
+`is_biomarker_of`, `predicts`, or `distinguishes`.
+
+Instead, extract the concrete measurement produced by the modality when the abstract
+states one. Good subjects include "FDG hypometabolism", "amyloid PET SUVR",
+"entorhinal cortical thickness", "hippocampal volume", "fractional anisotropy",
+"functional connectivity", "regional cerebral blood flow", or "dopamine transporter
+binding". Put the modality itself in `methodology`.
+
+Bad examples — DO NOT emit:
+- subject="computed tomography", predicate="is_biomarker_of", object="reversible causes of dementia"
+- subject="positron emission tomography", predicate="is_biomarker_of", object="memory function"
+- subject="functional magnetic resonance imaging", predicate="predicts", object="Alzheimer disease"
+- subject="single-photon emission tomography scanning", predicate="distinguishes", object="Alzheimer disease"
+- subject="APOE", predicate="distinguishes", object="quantitative MRI measurements"
+- subject="this technique", predicate="predicts", object="Alzheimer disease"
+
+Real error examples from neuroimaging review abstracts — these sentences describe
+modalities or literature focus, not concrete biomarker findings. Return NO CLAIM
+for these sentences unless a concrete measurement is named:
+- Text: "Computed tomography is still used to determine reversible causes of dementia."
+  Wrong: subject="computed tomography", predicate="is_biomarker_of",
+  object="reversible causes of dementia"
+  Correct: no claim.
+- Text: "Of the new techniques, functional magnetic resonance imaging seems the most promising."
+  Wrong: subject="functional magnetic resonance imaging", predicate="predicts",
+  object="Alzheimer disease"
+  Correct: no claim.
+- Text: "This technique can possibly play a role in predicting Alzheimer's disease in patients with mild cognitive impairment."
+  Wrong: subject="functional magnetic resonance imaging", predicate="predicts",
+  object="Alzheimer disease"
+  Correct: no claim, because "this technique" refers to a modality and no concrete
+  measurement is named.
+- Text: "The use of single-photon emission computed tomography and positron emission
+  tomography in early differential diagnoses seems limited."
+  Wrong: subject="single-photon emission computed tomography", predicate="distinguishes",
+  object="early differential diagnoses"
+  Correct: no claim.
+- Text: "Current and future positron emission tomography studies concentrate on memory
+  function and receptor imaging."
+  Wrong: subject="positron emission tomography", predicate="predicts",
+  object="memory function"
+  Correct: no claim.
+
+Good examples:
+- subject="FDG hypometabolism", predicate="is_biomarker_of", object="Alzheimer disease",
+  methodology="FDG-PET"
+- subject="amyloid PET SUVR", predicate="predicts", object="cognitive decline",
+  methodology="amyloid PET"
+- subject="entorhinal cortical thickness", predicate="distinguishes",
+  object="MCI conversion", methodology="structural MRI"
+
 Study types: fMRI, PET, DTI, sMRI, EEG, MEG, lesion, meta_analysis, GWAS, animal_model, clinical_trial, case_control, longitudinal, cross_sectional, review, cohort, narrative_review
 
 Title: {title}
@@ -233,7 +374,20 @@ PREDICATE_ALIAS = {
     "aids":                  "is_associated_with",
     "provides":              "is_associated_with",
     "does not increase":     "is_associated_with",
+    "precedes":              "predicts",
+    "compensates_for":       "modulates",
+    "compensates for":       "modulates",
 }
+
+EXTRACTION_PREDICATES = frozenset({
+    "causes", "treats", "inhibits", "activates", "increases", "reduces", "modulates",
+    "is_biomarker_of", "is_risk_factor_for", "predicts", "distinguishes",
+    "correlates_with", "mediates",
+    "binds_to", "has_adverse_effect",
+    "gene_associated_with_disease", "gene_associated_with_anatomy",
+    "gene_enriched_in_region", "receptor_density_in",
+    "is_associated_with",
+})
 
 # Hints must start with one of these prefixes; anything else is dropped to "" by
 # `_sanitize_hint`. Mirrors the HARD RULE in EXTRACTION_PROMPT.
@@ -250,6 +404,33 @@ def _normalize_predicate(raw: str) -> str:
     return PREDICATE_ALIAS.get(p.lower(), p)
 
 
+_CONTINUOUS_ENDPOINT_RE = re.compile(
+    r"\b(severity|survival|score|scores|performance|function|outcome|"
+    r"outcomes|decline|impairment)\b",
+    re.I,
+)
+_ASSOCIATION_CUE_RE = re.compile(
+    r"\b(related to|correlat(?:e|es|ed|ion|ions)? with|associated with|"
+    r"relationship with)\b",
+    re.I,
+)
+
+
+def _normalize_directional_comparison_predicate(
+    predicate: str,
+    obj: str,
+    raw_sentence: str,
+) -> str:
+    """Avoid turning "lower X is related to severity" into "X reduces severity"."""
+    if predicate not in {"reduces", "increases"}:
+        return predicate
+    if not _CONTINUOUS_ENDPOINT_RE.search(obj or ""):
+        return predicate
+    if not _ASSOCIATION_CUE_RE.search(raw_sentence or ""):
+        return predicate
+    return "correlates_with"
+
+
 def _sanitize_hint(raw: str) -> str:
     h = (raw or "").strip()
     if not h:
@@ -258,16 +439,12 @@ def _sanitize_hint(raw: str) -> str:
 
 
 MODEL_CASCADE = [
-    "gpt-5.5",
-    "gemini-3.1-pro-preview",
     "claude-sonnet-4-6",
-    "gpt-5.4",
-    "gemini-3.5-flash",
-    "claude-opus-4-7",
     "claude-opus-4-6",
-    "gpt-5.2",
+    "claude-opus-4-7",
+    "deepseek-v3.2",
 ]
-DOWNGRADE_THRESHOLD = 1      # consecutive failures to trigger downgrade (aggressive)
+DOWNGRADE_THRESHOLD = 2      # consecutive failures to trigger downgrade
 UPGRADE_INTERVAL = 600       # seconds before attempting upgrade back to preferred model (slow recovery)
 
 
@@ -320,7 +497,9 @@ class ClaimExtractor:
     Supports multi-key round-robin to bypass per-key rate limits on proxy APIs.
     Set OPENAI_API_KEYS env var as comma-separated keys.
 
-    Each worker thread gets its own adaptive model cascade (gpt-5.5 -> 5.4 -> 5.3 -> 5.2),
+    Each worker thread gets its own adaptive model cascade, starting from the
+    strongest currently stable claim-extraction model and falling back to
+    lower-cost alternatives,
     downgrading independently on repeated failures and periodically retrying higher models.
     """
 
@@ -330,12 +509,18 @@ class ClaimExtractor:
         api_key: str = DEFAULT_API_KEY,
         model: str = DEFAULT_MODEL,
         api_keys: list[str] | None = None,
+        lock_model: bool | None = None,
     ):
         self.preferred_model = model
         self.base_url = base_url
+        self.lock_model = _env_flag("OPENAI_LOCK_MODEL", False) if lock_model is None else lock_model
 
-        self._cascade = MODEL_CASCADE if model in MODEL_CASCADE else [model] + MODEL_CASCADE
-        self._preferred_idx = self._cascade.index(model) if model in self._cascade else 0
+        if self.lock_model:
+            self._cascade = [model]
+            self._preferred_idx = 0
+        else:
+            self._cascade = MODEL_CASCADE if model in MODEL_CASCADE else [model] + MODEL_CASCADE
+            self._preferred_idx = self._cascade.index(model) if model in self._cascade else 0
 
         # Build client pool from explicit keys, env pool, or single key
         keys = api_keys or API_KEY_POOL or ([api_key] if api_key else [])
@@ -361,7 +546,10 @@ class ClaimExtractor:
         self._worker_lock = __import__("threading").Lock()
         self._worker_counter = 0
 
-        logger.info(f"initialized {len(self._clients)} LLM client(s), model cascade: {self._cascade}")
+        logger.info(
+            f"initialized {len(self._clients)} LLM client(s), model cascade: "
+            f"{self._cascade} (lock_model={self.lock_model})"
+        )
 
     def _get_worker_cascade(self) -> _WorkerCascade:
         """Get or create cascade state for the current thread."""
@@ -415,7 +603,7 @@ class ClaimExtractor:
 
         cascade = self._get_worker_cascade()
         backoff = 5.0
-        SLOW_RESPONSE_THRESHOLD = 8.0  # seconds; treat as soft failure for cascade
+        slow_response_threshold = float(os.environ.get("OPENAI_SLOW_RESPONSE_THRESHOLD", "30"))
         for attempt in range(4):
             current_model = cascade.model
             import time as _time
@@ -436,7 +624,7 @@ class ClaimExtractor:
                 claims = self._parse_response(raw_text, paper)
 
                 # Slow response = soft failure (no exception thrown but service degraded)
-                if latency > SLOW_RESPONSE_THRESHOLD:
+                if latency > slow_response_threshold:
                     cascade.record_failure()
                     logger.debug(f"slow response PMID {paper.pmid} model={current_model}: {latency:.1f}s")
                 else:
@@ -594,8 +782,16 @@ class ClaimExtractor:
         subject = item.get("subject", "").strip()
         obj = item.get("object", "").strip()
         predicate = _normalize_predicate(item.get("predicate", ""))
+        raw_sentence = item.get("raw_sentence", "")
+        predicate = _normalize_directional_comparison_predicate(predicate, obj, raw_sentence)
 
         if not subject or not obj or not predicate:
+            return None
+        if predicate not in EXTRACTION_PREDICATES:
+            logger.debug(
+                "skipped claim with invalid predicate %r: %r -> %r",
+                predicate, subject, obj,
+            )
             return None
 
         # parse numeric fields with range/comparison support
@@ -658,7 +854,7 @@ class ClaimExtractor:
             confidence=self._estimate_confidence(evidence),
             evidence=evidence,
             source_paper=paper,
-            raw_text=item.get("raw_sentence", ""),
+            raw_text=raw_sentence,
             metadata={
                 "subject_type": item.get("subject_type", ""),
                 "object_type": item.get("object_type", ""),

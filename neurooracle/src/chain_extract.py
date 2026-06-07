@@ -98,6 +98,7 @@ def _ingest_results(
             "abstract_length": len(abstract),
             "n_claims": len(result.claims) if result else 0,
             "timestamp": datetime.now().isoformat(),
+            "extraction_error": result.error if result else "missing extraction result",
         })
     _append_to_csv(paths["papers_csv"], papers_meta)
     _append_claims_to_jsonl(paths["claims"], results, disease_label, year_label)
@@ -122,6 +123,7 @@ def run_chain_extraction(
     keep_noise: bool = False,
     strict_phase1: bool = False,
     sample_rate_seen: float = 0.05,
+    lock_model: bool = False,
 ) -> dict:
     """Run chain/task-targeted PubMed extraction.
 
@@ -149,7 +151,7 @@ def run_chain_extraction(
     logger.info(f"seen-pmids index: {len(seen_pmids):,}")
 
     cache = AbstractCache(default_cache_path(paths["data_dir"]))
-    extractor = ClaimExtractor()
+    extractor = ClaimExtractor(lock_model=lock_model)
     _init_csv(paths["papers_csv"])
 
     rng = random.Random(0xCFEB)
@@ -278,6 +280,7 @@ def run_rerun_cached(
     keep_noise: bool = False,
     strict_phase1: bool = False,
     label: str = "rerun_cached",
+    lock_model: bool = False,
 ) -> dict:
     """Re-extract from the local abstract cache without hitting PubMed.
 
@@ -294,7 +297,7 @@ def run_rerun_cached(
         return {"total_papers": 0, "total_claims": 0}
 
     kg = load_graph(paths["graph"])
-    extractor = ClaimExtractor()
+    extractor = ClaimExtractor(lock_model=lock_model)
     _init_csv(paths["papers_csv"])
 
     # Build the (abstract, paper) iterator
@@ -351,6 +354,7 @@ def run_fill_sparse(
     data_dir: Optional[Path] = None,
     keep_noise: bool = False,
     strict_phase1: bool = False,
+    lock_model: bool = False,
 ) -> dict:
     """Detect sparse chains and run chain-aware extraction for each."""
     paths = _resolve_data_paths(data_dir)
@@ -375,6 +379,7 @@ def run_fill_sparse(
             data_dir=data_dir,
             keep_noise=keep_noise,
             strict_phase1=strict_phase1,
+            lock_model=lock_model,
         )
         summary["results"].append({"name": c.name, **res})
     return summary

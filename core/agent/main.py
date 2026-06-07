@@ -218,8 +218,14 @@ def _coerce_model_catalog(
                 "base_url",
                 "baseUrl",
                 "api_key_env",
+                "api_key",
+                "apiKey",
                 "local_endpoint",
                 "openai_compatible",
+                "no_api_key_required",
+                "default_headers",
+                "headers",
+                "tool_calling",
             ):
                 if opt_key in item:
                     entry[opt_key] = item[opt_key]
@@ -239,6 +245,9 @@ def _resolve_openai_api_key(cfg: dict) -> tuple[str, str | None]:
     direct = cfg.get("api_key") or cfg.get("apiKey")
     if isinstance(direct, str) and direct.strip():
         return direct.strip(), None
+
+    if bool(cfg.get("no_api_key_required")):
+        return str(cfg.get("dummy_api_key") or "neuroclaw-local"), None
 
     # Fallback: if the top-level config doesn't have a key, try to reuse a key
     # from model_overrides (common in setups that only store keys per route).
@@ -396,9 +405,15 @@ def _build_openai_client(cfg: dict):
         )
 
     base_url = cfg.get("base_url") or cfg.get("baseUrl") or None
+    default_headers = cfg.get("default_headers") or cfg.get("headers") or None
+    client_kwargs: dict[str, Any] = {"api_key": api_key}
     if base_url:
-        return openai.OpenAI(api_key=api_key, base_url=base_url)
-    return openai.OpenAI(api_key=api_key)
+        client_kwargs["base_url"] = base_url
+    if isinstance(default_headers, dict) and default_headers:
+        client_kwargs["default_headers"] = default_headers
+    if base_url:
+        return openai.OpenAI(**client_kwargs)
+    return openai.OpenAI(**client_kwargs)
 
 
 def _run_openai_tool_probe(env: dict, model: str, workspace: Path) -> int:
@@ -1218,8 +1233,14 @@ def _load_available_model_catalog() -> tuple[list[dict[str, Any]], str, str]:
                     "base_url",
                     "baseUrl",
                     "api_key_env",
+                    "api_key",
+                    "apiKey",
                     "local_endpoint",
                     "openai_compatible",
+                    "no_api_key_required",
+                    "default_headers",
+                    "headers",
+                    "tool_calling",
                 ):
                     if opt_key in item:
                         entry[opt_key] = item[opt_key]
@@ -1267,8 +1288,14 @@ def _prompt_model_selection(
                 "base_url",
                 "baseUrl",
                 "api_key_env",
+                "api_key",
+                "apiKey",
                 "local_endpoint",
                 "openai_compatible",
+                "no_api_key_required",
+                "default_headers",
+                "headers",
+                "tool_calling",
             ):
                 if opt_key in selected:
                     result[opt_key] = selected[opt_key]
@@ -3147,8 +3174,14 @@ def _run_single_benchmark_job(job: dict[str, Any]) -> dict[str, Any]:
             "base_url",
             "baseUrl",
             "api_key_env",
+            "api_key",
+            "apiKey",
             "local_endpoint",
             "openai_compatible",
+            "no_api_key_required",
+            "default_headers",
+            "headers",
+            "tool_calling",
         ):
             if key in backend_overrides:
                 llm_cfg[key] = backend_overrides[key]

@@ -725,8 +725,14 @@ def create_app() -> Any:
             "base_url",
             "baseUrl",
             "api_key_env",
+            "api_key",
+            "apiKey",
             "local_endpoint",
             "openai_compatible",
+            "no_api_key_required",
+            "default_headers",
+            "headers",
+            "tool_calling",
         ):
             if key in selected_model:
                 llm[key] = selected_model[key]

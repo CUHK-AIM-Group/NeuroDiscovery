@@ -55,7 +55,7 @@ YEAR_END = 2026
 PAPERS_PER_YEAR = 20
 NCBI_API_KEY = "1e72705978ad50249ffc129798ba3958f308"
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data" / "full_snapshot_v2"
 CHECKPOINT_FILE = DATA_DIR / "batch_checkpoint.json"
 PAPERS_CSV = DATA_DIR / "papers_metadata.csv"
 GRAPH_FILE = DATA_DIR / "knowledge_graph.json"
@@ -318,15 +318,29 @@ def _save_checkpoint(checkpoint: dict, checkpoint_file: Path = None):
 
 def _init_csv(csv_path: Path):
     """Initialize CSV file with headers."""
+    header = [
+        "pmid", "doi", "title", "authors", "year", "journal",
+        "disease", "abstract_length", "n_claims_extracted",
+        "extraction_timestamp", "extraction_error",
+    ]
     if not csv_path.exists():
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                "pmid", "doi", "title", "authors", "year", "journal",
-                "disease", "abstract_length", "n_claims_extracted",
-                "extraction_timestamp",
-            ])
+            writer.writerow(header)
+        return
+
+    with open(csv_path, "r", newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    if not rows or rows[0] == header or "extraction_error" in rows[0]:
+        return
+
+    rows[0] = rows[0] + ["extraction_error"]
+    for i in range(1, len(rows)):
+        rows[i] = rows[i] + [""]
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
 
 
 def _append_to_csv(csv_path: Path, papers_meta: list[dict]):
@@ -345,6 +359,7 @@ def _append_to_csv(csv_path: Path, papers_meta: list[dict]):
                 meta.get("abstract_length", ""),
                 meta.get("n_claims", ""),
                 meta.get("timestamp", ""),
+                meta.get("extraction_error", ""),
             ])
 
 
@@ -380,6 +395,7 @@ def run_batch_extraction(
     data_dir: Optional[Path] = None,
     keep_noise: bool = False,
     strict_phase1: bool = False,
+    lock_model: bool = False,
 ) -> dict:
     """Run batch claim extraction across multiple diseases and years.
 
@@ -392,8 +408,9 @@ def run_batch_extraction(
         broad: Use broader PubMed query.
         max_workers: Number of parallel LLM workers. Default 8.
         data_dir: Output directory for KG/checkpoint/CSV/JSONL. Defaults to
-            module-level DATA_DIR. Pass a different path to run isolated streams
-            (e.g. quick 20-papers/year vs full 500-papers/year in parallel).
+            ``neurooracle/data/full_snapshot_v2``. Pass a different path to run
+            isolated streams (e.g. quick 20-papers/year vs full 500-papers/year
+            in parallel).
 
     Returns:
         Summary dict.
@@ -439,7 +456,7 @@ def run_batch_extraction(
     abstract_cache = AbstractCache(cache_path)
 
     # init extractor
-    extractor = ClaimExtractor()
+    extractor = ClaimExtractor(lock_model=lock_model)
     logger.info(f"using {max_workers} parallel LLM workers")
 
     # stats
@@ -676,8 +693,10 @@ def main():
     parser.add_argument("--broad", action="store_true", help="Use broader PubMed query (more results)")
     parser.add_argument("--max-workers", type=int, default=8, help="Number of parallel LLM workers (default: 8)")
     parser.add_argument("--data-dir", type=str, default=None,
-                        help="Output directory for KG/checkpoint/CSV/JSONL. Use a unique "
-                             "path to run isolated streams in parallel (quick vs full).")
+                        help="Output directory for KG/checkpoint/CSV/JSONL "
+                             "(default: neurooracle/data/full_snapshot_v2). "
+                             "Use a unique path to run isolated streams in "
+                             "parallel (quick vs full).")
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--keep-noise", action="store_true",
                         help="Disable build-time noise filter; keep all auto-minted "
@@ -688,6 +707,9 @@ def main():
                              "Phase-1-curated node are dropped. Use when Phase 1 "
                              "(NeuroNames/MeSH/DisGeNET/CognitiveAtlas + UMLS) is "
                              "already considered comprehensive.")
+    parser.add_argument("--lock-model", action="store_true",
+                        help="Disable adaptive model upgrade/downgrade and keep "
+                             "the extractor pinned to OPENAI_MODEL for this run.")
     args = parser.parse_args()
 
     level = logging.DEBUG if args.verbose else logging.INFO
@@ -708,6 +730,7 @@ def main():
         data_dir=args.data_dir,
         keep_noise=args.keep_noise,
         strict_phase1=args.strict_phase1,
+        lock_model=args.lock_model,
     )
 
 

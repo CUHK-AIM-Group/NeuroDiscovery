@@ -31,8 +31,7 @@ _NOISE_PREFIXES = (
 )
 _NOISE_SUFFIXES = (
     " findings", " levels", " changes", " symptoms",
-    " deficits", " manifestations", " abnormalities",
-    " dysfunctions", " status", " outcomes", " profile",
+    " manifestations", " status", " outcomes", " profile",
     " profiles", " patterns", " features",
 )
 # Trailing "X of Y" / "X in Y" tails — captures both halves for salvage
@@ -168,16 +167,6 @@ def _salvage_noisy_name(name: str) -> str:
 # Internalizes judge_clm_endpoints.py logic: reject names that are too
 # vague to serve as hypothesis endpoints BEFORE minting a CLM_CONCEPT node.
 
-_VAGUE_ENDPOINT_SUFFIXES = (
-    " subgroup", " subgroups", " alteration", " alterations",
-    " impairment", " impairments", " deficit", " deficits",
-    " dysfunction", " disability", " decline", " deterioration",
-    " disturbance", " disturbances", " abnormality", " abnormalities",
-    " complication", " complications", " consequence", " consequences",
-    " manifestation", " manifestations", " characteristic", " characteristics",
-    " relationship", " relationships",
-)
-
 _VAGUE_ENDPOINT_EXACT = frozenset({
     "focus", "integration", "balance", "knowledge", "autonomy",
     "performance", "adaptation", "resilience", "vulnerability",
@@ -186,6 +175,30 @@ _VAGUE_ENDPOINT_EXACT = frozenset({
     "effects", "impact", "factor", "factors", "role", "function",
     "functions", "activity", "condition", "conditions", "treatment",
     "intervention", "approach", "strategy", "method",
+})
+
+_VAGUE_ENDPOINT_GENERIC_NOUNS = frozenset({
+    "ability", "abilities", "abnormality", "abnormalities",
+    "alteration", "alterations", "characteristic", "characteristics",
+    "complication", "complications", "consequence", "consequences",
+    "decline", "deficit", "deficits", "deterioration", "disability",
+    "disturbance", "disturbances", "dysfunction", "feature", "features",
+    "impairment", "impairments", "manifestation", "manifestations",
+    "mechanism", "mechanisms", "outcome", "outcomes", "process",
+    "processes", "relationship", "relationships", "subgroup", "subgroups",
+})
+
+_VAGUE_ENDPOINT_GENERIC_MODIFIERS = frozenset({
+    "acute", "aggressive", "behavioral", "brain", "cerebral", "chronic",
+    "clinical", "cognitive", "common", "cortical", "emotional", "functional",
+    "general", "global", "intact", "long", "term", "motor", "neural",
+    "neurological", "neurocognitive", "overall", "personal", "physiological",
+    "psychiatric", "psychological", "sensory", "short", "significant",
+    "social", "specific", "structural", "subjective", "verbal", "visual",
+})
+
+_VAGUE_ENDPOINT_STOPWORDS = frozenset({
+    "a", "an", "and", "by", "for", "in", "of", "or", "the", "to", "with",
 })
 
 _VAGUE_ENDPOINT_PATTERNS_RE = re.compile(
@@ -201,6 +214,26 @@ _VAGUE_ENDPOINT_PATTERNS_RE = re.compile(
     r"relationships|outcomes|subgroup|subgroups|mechanism|processes)$",
     re.I,
 )
+
+
+def _has_only_generic_endpoint_context(sl: str) -> bool:
+    """Return True when a generic endpoint noun has no specific anchor.
+
+    "deficit" and "cognitive deficit" stay blocked, but concrete phenotypes
+    such as "verbal episodic memory deficit" or "24-month MMSE decline" are
+    useful endpoints and should survive Phase-2 concept minting.
+    """
+    words = re.findall(r"[a-z0-9]+", sl)
+    if not words or words[-1] not in _VAGUE_ENDPOINT_GENERIC_NOUNS:
+        return False
+
+    context = [
+        w for w in words[:-1]
+        if w not in _VAGUE_ENDPOINT_STOPWORDS and not w.isdigit()
+    ]
+    if not context:
+        return True
+    return all(w in _VAGUE_ENDPOINT_GENERIC_MODIFIERS for w in context)
 
 
 def _is_vague_endpoint_name(name: str) -> bool:
@@ -223,12 +256,12 @@ def _is_vague_endpoint_name(name: str) -> bool:
     if sl in _VAGUE_ENDPOINT_EXACT:
         return True
 
-    # Suffix match
-    if any(sl.endswith(suf) for suf in _VAGUE_ENDPOINT_SUFFIXES):
+    # Generic endpoint noun with only broad modifiers.
+    if _has_only_generic_endpoint_context(sl):
         return True
 
     # Pattern match (adjective + generic noun)
-    if _VAGUE_ENDPOINT_PATTERNS_RE.match(sl):
+    if _VAGUE_ENDPOINT_PATTERNS_RE.match(sl) and _has_only_generic_endpoint_context(sl):
         return True
 
     return False
@@ -359,6 +392,114 @@ _PREDICATE_KEYWORDS: dict[str, list[re.Pattern]] = {
 # the assigned predicate. Keeps precise predicates but marks unsupported
 # ones as low-confidence, reducing their influence in hypothesis scoring.
 _UNSUPPORTED_PREDICATE_PENALTY = 0.5
+_BACKGROUND_CLAIM_PENALTY = 0.5
+_BACKGROUND_SKIP_PREDICATES = {"gene_associated_with_disease"}
+_BACKGROUND_SKIP_STUDY_TYPES = {"review", "narrative_review"}
+_BACKGROUND_SUSPECT_PREDICATES = {
+    "gene_associated_with_disease",
+    "is_risk_factor_for",
+    "is_biomarker_of",
+}
+_BACKGROUND_CUE_PATTERNS = (
+    re.compile(r"\bin a separate study\b", re.I),
+    re.compile(r"\bprevious(?:ly)?\b", re.I),
+    re.compile(r"\brecently implicated\b", re.I),
+    re.compile(r"\bestablished\b.{0,40}\brisk factor\b", re.I),
+    re.compile(r"\bknown\b.{0,40}\brisk factor\b", re.I),
+    re.compile(r"\bhas been associated with\b", re.I),
+    re.compile(r"\bhave been associated with\b", re.I),
+)
+
+_MODALITY_GUARD_PREDICATES = {
+    "is_biomarker_of",
+    "predicts",
+    "distinguishes",
+}
+
+_METHOD_GUARD_PREDICATES = _MODALITY_GUARD_PREDICATES | {
+    "treats",
+    "has_adverse_effect",
+}
+
+_PURE_MODALITY_NAMES = frozenset({
+    "ct",
+    "computed tomography",
+    "pet",
+    "positron emission tomography",
+    "fdg pet",
+    "fdg-pet",
+    "amyloid pet",
+    "spect",
+    "single photon emission tomography",
+    "single-photon emission tomography",
+    "single photon emission tomography scanning",
+    "single-photon emission tomography scanning",
+    "single photon emission computed tomography",
+    "single-photon emission computed tomography",
+    "mri",
+    "magnetic resonance imaging",
+    "structural mri",
+    "structural magnetic resonance imaging",
+    "fmri",
+    "functional mri",
+    "functional magnetic resonance imaging",
+    "dti",
+    "diffusion tensor imaging",
+    "diffusion mri",
+    "diffusion magnetic resonance imaging",
+    "eeg",
+    "electroencephalography",
+    "meg",
+    "magnetoencephalography",
+})
+
+_MODALITY_TERM_RE = re.compile(
+    r"\b("
+    r"ct|computed tomography|pet|positron emission tomography|fdg[-\s]?pet|"
+    r"amyloid pet|spect|single[-\s]photon emission tomography|"
+    r"single[-\s]photon emission computed tomography|"
+    r"mri|magnetic resonance imaging|structural mri|"
+    r"structural magnetic resonance imaging|fmri|functional mri|"
+    r"functional magnetic resonance imaging|dti|diffusion tensor imaging|"
+    r"diffusion mri|diffusion magnetic resonance imaging|eeg|"
+    r"electroencephalography|meg|magnetoencephalography"
+    r")\b",
+    re.I,
+)
+
+_MODALITY_MEASUREMENT_RE = re.compile(
+    r"\b("
+    r"hypometabolism|hypermetabolism|suvr|standardized uptake value|"
+    r"volume|volumetric|atrophy|thickness|thinning|surface area|"
+    r"fractional anisotropy|\bfa\b|mean diffusivity|radial diffusivity|"
+    r"axial diffusivity|connectivity|blood flow|perfusion|binding|uptake|"
+    r"receptor density|cortical thickness|white matter integrity|"
+    r"gray matter volume|grey matter volume"
+    r")\b",
+    re.I,
+)
+
+_METHOD_PROCEDURE_RE = re.compile(
+    r"\b("
+    r"manual segmentation|serial segmentation|segmentation|registration|"
+    r"classifier|classification algorithm|algorithm|pipeline|software|"
+    r"scanning|imaging technique|imaging method|neuroimaging technique|"
+    r"intraperitoneal injection|subcutaneous injection|intravenous injection|"
+    r"injection of|administration of"
+    r")\b",
+    re.I,
+)
+
+_CONTINUOUS_ENDPOINT_RE = re.compile(
+    r"\b(severity|survival|score|scores|performance|function|outcome|"
+    r"outcomes|decline|impairment)\b",
+    re.I,
+)
+_ASSOCIATION_CUE_RE = re.compile(
+    r"\b(related to|correlat(?:e|es|ed|ion|ions)? with|associated with|"
+    r"relationship with)\b",
+    re.I,
+)
 
 
 def _predicate_supported_by_text(predicate: str, raw_text: str) -> bool:
@@ -369,6 +510,83 @@ def _predicate_supported_by_text(predicate: str, raw_text: str) -> bool:
     if not patterns:
         return True
     return any(p.search(raw_text) for p in patterns)
+
+
+def _normalize_directional_association_claim(claim: Claim) -> bool:
+    """Restore association predicates after LLM over-refines "lower X related to Y"."""
+    if claim.predicate not in {"reduces", "increases"}:
+        return False
+    if not _CONTINUOUS_ENDPOINT_RE.search(claim.object_name or ""):
+        return False
+    if not _ASSOCIATION_CUE_RE.search(claim.raw_text or ""):
+        return False
+    original = claim.predicate
+    claim.predicate = "correlates_with"
+    claim.metadata["predicate_original"] = original
+    claim.metadata["predicate_normalized_reason"] = "directional association endpoint"
+    return True
+
+
+def _normalise_guard_name(name: str) -> str:
+    s = re.sub(r"[-_/]+", " ", (name or "").strip().lower())
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _modality_method_guard_reasons(claim: Claim) -> list[str]:
+    """Return reasons to skip method/modality-as-biomedical-entity claims.
+
+    This is a conservative ingestion backstop for LLM outputs. It does not
+    rewrite claims; it only skips cases where the subject is a pure modality or
+    procedure being used as if it were a biomarker, predictor, or treatment.
+    Concrete modality-derived measurements such as "FDG hypometabolism",
+    "amyloid PET SUVR", and "dopamine transporter binding" are retained.
+    """
+    reasons: list[str] = []
+
+    for role, name in (
+        ("subject", claim.subject_name),
+        ("object", claim.object_name),
+    ):
+        endpoint = _normalise_guard_name(name)
+        if claim.predicate in _MODALITY_GUARD_PREDICATES:
+            if endpoint in _PURE_MODALITY_NAMES:
+                reasons.append(f"pure imaging modality {role}")
+            elif _MODALITY_TERM_RE.search(endpoint) and not _MODALITY_MEASUREMENT_RE.search(endpoint):
+                reasons.append(f"modality {role} without concrete measurement")
+
+        if (
+            claim.predicate in _METHOD_GUARD_PREDICATES
+            and _METHOD_PROCEDURE_RE.search(endpoint)
+            and not _MODALITY_MEASUREMENT_RE.search(endpoint)
+        ):
+            reasons.append(f"method/procedure {role} without concrete measurement")
+
+    return reasons
+
+
+def _background_claim_reasons(claim: Claim) -> list[str]:
+    """Conservative detector for introduction/background-style claims.
+
+    This never invents new semantics. It only identifies claims that look like
+    prior-work restatements so ingestion can either downweight them or, for the
+    narrowest case, skip clearly background-only review summaries.
+    """
+    reasons: list[str] = []
+    if claim.predicate not in _BACKGROUND_SUSPECT_PREDICATES:
+        return reasons
+
+    raw = (claim.raw_text or "").strip()
+    if raw:
+        for pat in _BACKGROUND_CUE_PATTERNS:
+            if pat.search(raw):
+                reasons.append(f"background cue: {pat.pattern}")
+                break
+
+    study_type = (claim.evidence.study_type or "").strip().lower()
+    if study_type in _BACKGROUND_SKIP_STUDY_TYPES:
+        reasons.append(f"study_type={study_type}")
+
+    return reasons
 
 
 def refine_predicate(claim: Claim, llm_client: Optional[OpenAI] = None, model: str = "") -> str:
@@ -834,6 +1052,9 @@ def ingest_claims(
     claims_skipped_noise = 0
     claims_skipped_unresolved = 0
     predicates_refined = 0
+    claims_marked_background = 0
+    claims_skipped_background = 0
+    claims_skipped_modality_method = 0
 
     # Configure build-time noise filter + strict_phase1 mode
     global _NOISE_FILTER_ENABLED, _STRICT_PHASE1
@@ -919,6 +1140,37 @@ def ingest_claims(
 
     for claim in all_claims:
         try:
+            if _normalize_directional_association_claim(claim):
+                predicates_refined += 1
+
+            modality_method_reasons = _modality_method_guard_reasons(claim)
+            if modality_method_reasons:
+                claims_skipped_modality_method += 1
+                logger.debug(
+                    f"skipped modality/method claim {claim.id}: "
+                    f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}; "
+                    f"reasons={modality_method_reasons}"
+                )
+                continue
+
+            background_reasons = _background_claim_reasons(claim)
+            if background_reasons:
+                claim.metadata["background_suspect"] = True
+                claim.metadata["background_reasons"] = background_reasons
+                study_type = (claim.evidence.study_type or "").strip().lower()
+                if (
+                    claim.predicate in _BACKGROUND_SKIP_PREDICATES
+                    and study_type in _BACKGROUND_SKIP_STUDY_TYPES
+                ):
+                    claims_skipped_background += 1
+                    logger.debug(
+                        f"skipped background claim {claim.id}: "
+                        f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
+                    )
+                    continue
+                claim.confidence *= _BACKGROUND_CLAIM_PENALTY
+                claims_marked_background += 1
+
             # resolve entities
             claim = resolve_claim_entities(kg, claim)
 
@@ -1019,6 +1271,9 @@ def ingest_claims(
         "claims_skipped_noise": claims_skipped_noise,
         "claims_skipped_unresolved": claims_skipped_unresolved,
         "claims_skipped_dedup": claims_skipped_dedup,
+        "claims_marked_background": claims_marked_background,
+        "claims_skipped_background": claims_skipped_background,
+        "claims_skipped_modality_method": claims_skipped_modality_method,
         "entities_salvaged": _DROP_LOG.n_salvaged,
         "entities_dropped": _DROP_LOG.n_dropped,
         "papers_processed": len(results),

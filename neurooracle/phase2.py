@@ -32,9 +32,14 @@ Subcommands:
     # 7) biomarker mention scanner
     python -m neurooracle.phase2 biomarker-scan \
         --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json \
-        --claims neurooracle/data/extracted_claims.jsonl \
-        --output neurooracle/data/biomarker_mentions.json \
+        --claims neurooracle/data/full_snapshot_v2/extracted_claims.jsonl \
+        --output neurooracle/data/full_snapshot_v2/biomarker_mentions.json \
         --mode local
+
+Default Phase-2 workspace:
+    neurooracle/data/full_snapshot_v2/
+
+Override with ``--data-dir`` when you want an isolated scratch run.
 """
 
 import argparse
@@ -103,6 +108,9 @@ def _cmd_chain():
     p.add_argument("--data-dir", type=str, default=None)
     p.add_argument("--keep-noise", action="store_true")
     p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("--lock-model", action="store_true",
+                   help="Disable adaptive model upgrade/downgrade and keep "
+                        "the extractor pinned to OPENAI_MODEL for this run.")
     p.add_argument("--qc-rate", type=float, default=0.05,
                    help="Fraction of already-seen pmids to re-extract for QC (default 0.05)")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -125,6 +133,7 @@ def _cmd_chain():
         keep_noise=args.keep_noise,
         strict_phase1=args.strict_phase1,
         sample_rate_seen=args.qc_rate,
+        lock_model=args.lock_model,
     )
 
 
@@ -138,6 +147,9 @@ def _cmd_rerun_cached():
     p.add_argument("--data-dir", type=str, default=None)
     p.add_argument("--keep-noise", action="store_true")
     p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("--lock-model", action="store_true",
+                   help="Disable adaptive model upgrade/downgrade and keep "
+                        "the extractor pinned to OPENAI_MODEL for this run.")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args(sys.argv[2:])
     logging.basicConfig(
@@ -152,6 +164,7 @@ def _cmd_rerun_cached():
         data_dir=Path(args.data_dir) if args.data_dir else None,
         keep_noise=args.keep_noise,
         strict_phase1=args.strict_phase1,
+        lock_model=args.lock_model,
     )
 
 
@@ -168,6 +181,9 @@ def _cmd_fill_sparse():
     p.add_argument("--data-dir", type=str, default=None)
     p.add_argument("--keep-noise", action="store_true")
     p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("--lock-model", action="store_true",
+                   help="Disable adaptive model upgrade/downgrade and keep "
+                        "the extractor pinned to OPENAI_MODEL for this run.")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args(sys.argv[2:])
     logging.basicConfig(
@@ -185,6 +201,7 @@ def _cmd_fill_sparse():
         data_dir=Path(args.data_dir) if args.data_dir else None,
         keep_noise=args.keep_noise,
         strict_phase1=args.strict_phase1,
+        lock_model=args.lock_model,
     )
 
 

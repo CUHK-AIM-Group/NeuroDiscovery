@@ -25,6 +25,11 @@ ENV_FILE = REPO_ROOT / "neuroclaw_environment.json"
 FEATURES_FILE = REPO_ROOT / "core" / "config" / "features.json"
 DEFAULTS_FILE = Path(__file__).parent / "neuro_defaults.json"
 
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.llm.provider_profiles import OPENAI_COMPATIBLE_PROVIDERS
+
 # Minimum Python version required by NeuroClaw
 MIN_PYTHON = (3, 10)
 
@@ -64,8 +69,8 @@ def _check_existing_config() -> int:
     if (
         env_var_name
         and not os.environ.get(env_var_name)
-        and llm.get("provider")
-        in ("openai", "anthropic", "deepseek", "minimax", "kimi", "moonshot")
+        and not llm.get("no_api_key_required")
+        and llm.get("provider") in (set(OPENAI_COMPATIBLE_PROVIDERS) | {"anthropic"})
     ):
         llm_key_missing = True
 

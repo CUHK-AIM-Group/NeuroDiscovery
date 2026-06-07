@@ -118,6 +118,73 @@ python core/agent/main.py --web --port 8080 --host 0.0.0.0</code></pre>
         </div>
       </section>
 
+      <section id="agent-integrations" class="panel reveal">
+        <h2>在其他 Agent 系统中使用 NeuroClaw</h2>
+        <p class="sub">
+          将 NeuroClaw 安装为 router skill 或规则包，使宿主 agent 进入
+          NeuroClaw mode，并获得 NeuroClaw catalogs、NeuroOracle、NeuroBench、
+          模型工作流和神经影像技能。
+        </p>
+        <div class="dataset-table-wrap" aria-label="Agent 集成表格">
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>宿主 agent</th>
+                <th>安装命令</th>
+                <th>生成的集成位置</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Codex</td>
+                <td><code>python installer/install_agent_integration.py --target codex</code></td>
+                <td><code>~/.codex/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>Claude Code</td>
+                <td><code>python installer/install_agent_integration.py --target claude-code</code></td>
+                <td><code>~/.claude/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>Cursor</td>
+                <td><code>python installer/install_agent_integration.py --target cursor --scope project</code></td>
+                <td><code>.cursor/rules/neuroclaw.mdc</code> 和生成的 references</td>
+              </tr>
+              <tr>
+                <td>OpenClaw</td>
+                <td><code>python installer/install_agent_integration.py --target openclaw</code></td>
+                <td><code>~/.openclaw/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>Hermes</td>
+                <td><code>python installer/install_agent_integration.py --target hermes</code></td>
+                <td><code>~/.hermes/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>WorkBuddy</td>
+                <td><code>python installer/install_agent_integration.py --target workbuddy</code></td>
+                <td><code>~/.workbuddy/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>QClaw</td>
+                <td><code>python installer/install_agent_integration.py --target qclaw</code></td>
+                <td><code>~/.qclaw/skills/neuroclaw/</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="code-stack">
+          <pre><code>python installer/install_agent_integration.py --target both
+python installer/install_agent_integration.py --target all
+python installer/install_agent_integration.py --target all --export ./dist/agent-integrations</code></pre>
+        </div>
+        <p>
+          安装后，可以让宿主 agent “use NeuroClaw” 或 “enter NeuroClaw mode”
+          来处理神经影像和 autoresearch 任务。如果宿主 agent 使用不同的导入位置，
+          可以先导出生成的 skill pack，再手动导入或复制。
+        </p>
+      </section>
+
       <section id="verify" class="panel reveal">
         <h2>验证安装</h2>
         <p class="sub">可以用下面的检查确认环境文件和技能注册表工作正常。</p>

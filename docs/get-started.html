@@ -118,6 +118,74 @@ python core/agent/main.py --web --port 8080 --host 0.0.0.0</code></pre>
         </div>
       </section>
 
+      <section id="agent-integrations" class="panel reveal">
+        <h2>Use NeuroClaw in Other Agent Systems</h2>
+        <p class="sub">
+          Install NeuroClaw as a router skill or rule pack so the host agent can
+          enter NeuroClaw mode with NeuroClaw catalogs, NeuroOracle, NeuroBench,
+          model workflows, and neuroimaging skills.
+        </p>
+        <div class="dataset-table-wrap" aria-label="Agent integration table">
+          <table class="dataset-table">
+            <thead>
+              <tr>
+                <th>Host agent</th>
+                <th>Install command</th>
+                <th>Generated integration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Codex</td>
+                <td><code>python installer/install_agent_integration.py --target codex</code></td>
+                <td><code>~/.codex/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>Claude Code</td>
+                <td><code>python installer/install_agent_integration.py --target claude-code</code></td>
+                <td><code>~/.claude/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>Cursor</td>
+                <td><code>python installer/install_agent_integration.py --target cursor --scope project</code></td>
+                <td><code>.cursor/rules/neuroclaw.mdc</code> plus generated references</td>
+              </tr>
+              <tr>
+                <td>OpenClaw</td>
+                <td><code>python installer/install_agent_integration.py --target openclaw</code></td>
+                <td><code>~/.openclaw/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>Hermes</td>
+                <td><code>python installer/install_agent_integration.py --target hermes</code></td>
+                <td><code>~/.hermes/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>WorkBuddy</td>
+                <td><code>python installer/install_agent_integration.py --target workbuddy</code></td>
+                <td><code>~/.workbuddy/skills/neuroclaw/</code></td>
+              </tr>
+              <tr>
+                <td>QClaw</td>
+                <td><code>python installer/install_agent_integration.py --target qclaw</code></td>
+                <td><code>~/.qclaw/skills/neuroclaw/</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="code-stack">
+          <pre><code>python installer/install_agent_integration.py --target both
+python installer/install_agent_integration.py --target all
+python installer/install_agent_integration.py --target all --export ./dist/agent-integrations</code></pre>
+        </div>
+        <p>
+          After installation, ask the host agent to "use NeuroClaw" or "enter
+          NeuroClaw mode" for neuroimaging and autoresearch work. If the host
+          agent uses a different import location, export the generated skill pack
+          and import or copy it manually.
+        </p>
+      </section>
+
       <section id="verify" class="panel reveal">
         <h2>Verify Installation</h2>
         <p class="sub">Use these checks to confirm the environment file and skill registry are working as expected.</p>

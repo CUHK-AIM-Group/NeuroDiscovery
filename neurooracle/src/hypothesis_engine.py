@@ -179,6 +179,10 @@ _NOISE_WORDS = frozenset({
     "quality",
 })
 
+_NOISE_STOPWORDS = frozenset({
+    "a", "an", "and", "by", "for", "in", "of", "or", "the", "to", "with",
+})
+
 NOISE_PATTERNS = [
     re.compile(r"^[A-Z][a-z]?$"),                                  # 1-2 letter: "Id", "Ca", "Mg"
     re.compile(r"^[A-Z][a-z]{2,4}$"),                              # Short mixed-case: "Tics", "Risk"
@@ -1971,9 +1975,15 @@ class HypothesisEngine:
         for pattern in NOISE_PATTERNS:
             if pattern.match(name_clean):
                 return True
-        # check if name contains any noise word
-        words = set(re.split(r"[\s\-_,/]+", name_clean.lower()))
-        if words & _NOISE_WORDS:
+        # Token-level noise should only reject names that are essentially
+        # made of vague/process words. Phrases such as "polygenic risk score",
+        # "hippocampus volume", or "cortical thickness change" contain a
+        # generic token but are still measurable entities.
+        words = {
+            w for w in re.split(r"[\s\-_,/]+", name_clean.lower())
+            if w and w not in _NOISE_STOPWORDS
+        }
+        if words and words <= _NOISE_WORDS:
             return True
         return False
 
