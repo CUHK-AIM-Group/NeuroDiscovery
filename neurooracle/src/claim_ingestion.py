@@ -393,6 +393,9 @@ _PREDICATE_KEYWORDS: dict[str, list[re.Pattern]] = {
 # ones as low-confidence, reducing their influence in hypothesis scoring.
 _UNSUPPORTED_PREDICATE_PENALTY = 0.5
 _BACKGROUND_CLAIM_PENALTY = 0.5
+_MIN_INGEST_CLAIM_CONFIDENCE = float(
+    os.environ.get("NEUROORACLE_MIN_INGEST_CLAIM_CONFIDENCE", "0.30")
+)
 _BACKGROUND_SKIP_PREDICATES = {"gene_associated_with_disease"}
 _BACKGROUND_SKIP_STUDY_TYPES = {"review", "narrative_review"}
 _BACKGROUND_SUSPECT_PREDICATES = {
@@ -414,11 +417,17 @@ _MODALITY_GUARD_PREDICATES = {
     "is_biomarker_of",
     "predicts",
     "distinguishes",
+    "causes",
+    "increases",
+    "reduces",
+    "modulates",
+    "treats",
+    "has_adverse_effect",
 }
 
 _METHOD_GUARD_PREDICATES = _MODALITY_GUARD_PREDICATES | {
-    "treats",
-    "has_adverse_effect",
+    "correlates_with",
+    "is_associated_with",
 }
 
 _PURE_MODALITY_NAMES = frozenset({
@@ -470,11 +479,19 @@ _MODALITY_TERM_RE = re.compile(
 _MODALITY_MEASUREMENT_RE = re.compile(
     r"\b("
     r"hypometabolism|hypermetabolism|suvr|standardized uptake value|"
+    r"hypointensity|hyperintensity|signal|signal intensity|"
+    r"metabolism|metabolic|cerebral metabolism|glucose metabolism|"
     r"volume|volumetric|atrophy|thickness|thinning|surface area|"
     r"fractional anisotropy|\bfa\b|mean diffusivity|radial diffusivity|"
     r"axial diffusivity|connectivity|blood flow|perfusion|binding|uptake|"
+    r"activation|deactivation|activation pattern|deactivation pattern|"
+    r"localization|lateralization|texture|texture analysis|"
     r"receptor density|cortical thickness|white matter integrity|"
-    r"gray matter volume|grey matter volume"
+    r"gray matter volume|grey matter volume|plaque burden|plaque count|"
+    r"lesion|lesions|lesion load|infarct|infarcts|infarct count|"
+    r"white matter change|white matter changes|counts?|pittsburgh compound-b|"
+    r"pittsburgh compound b|"
+    r"\bpib\b|amyloid-beta|amyloid beta|tau"
     r")\b",
     re.I,
 )
@@ -482,10 +499,31 @@ _MODALITY_MEASUREMENT_RE = re.compile(
 _METHOD_PROCEDURE_RE = re.compile(
     r"\b("
     r"manual segmentation|serial segmentation|segmentation|registration|"
+    r"quantification method|quantification methods|methods?|"
     r"classifier|classification algorithm|algorithm|pipeline|software|"
     r"scanning|imaging technique|imaging method|neuroimaging technique|"
+    r"neuroimaging method|mapping technique|analysis technique|"
+    r"support vector machine|machine learning model|statistical model|"
     r"intraperitoneal injection|subcutaneous injection|intravenous injection|"
     r"injection of|administration of"
+    r")\b",
+    re.I,
+)
+
+_GENERIC_METHOD_ENTITY_RE = re.compile(
+    r"\b("
+    r"methods?|techniques?|algorithms?|classifiers?|pipelines?|software|"
+    r"registration|segmentation|mapping techniques?|analysis techniques?|"
+    r"diagnostic test sensitivity|diagnostic test specificity|test batter(?:y|ies)|"
+    r"magnetic resonance scans?|mri scans?|serial mri scans?|multiple serial mri scans?"
+    r")\b",
+    re.I,
+)
+
+_GENERIC_IMAGING_ENTITY_RE = re.compile(
+    r"\b("
+    r"brain imaging|structural imaging|functional imaging|neuroimaging|"
+    r"imaging biomarkers?|imaging and .*biomarkers?"
     r")\b",
     re.I,
 )
@@ -499,6 +537,36 @@ _ASSOCIATION_CUE_RE = re.compile(
     r"\b(related to|correlat(?:e|es|ed|ion|ions)? with|associated with|"
     r"relationship with)\b",
     re.I,
+)
+_DISEASE_ENDPOINT_RE = re.compile(
+    r"\b(alzheimer|dementia|schizophrenia|epilepsy|disease|syndrome|"
+    r"disorder|impairment|psychosis|stroke|sclerosis|parkinson|"
+    r"mild cognitive impairment|frontotemporal|vascular dementia)\b",
+    re.I,
+)
+_BIOMARKER_ABUNDANCE_CUE_RE = re.compile(
+    r"\b(accumulat(?:e|es|ed|ion|ions|ing)|deposition|deposits?|burden|"
+    r"levels?|abundance|expression|amount|concentration|load|plaques?|"
+    r"tangles?)\b",
+    re.I,
+)
+_MEASUREMENT_GROUP_COMPARISON_RE = re.compile(
+    r"\b(compared with|compared to|relative to|versus|vs\.?|patients? "
+    r"(?:show(?:ed|s)?|had|have|exhibited)|controls?|case-control)\b",
+    re.I,
+)
+_DISEASE_RISK_DIRECTION_CUE_RE = re.compile(
+    r"\b(risk|protect(?:s|ed|ive|ion)?|prevent(?:s|ed|ion)?|incidence|"
+    r"prevalence|development|developing|onset)\b",
+    re.I,
+)
+_MEASUREMENT_SUBJECT_TYPES = (
+    "biomarker",
+    "brain_region",
+    "network",
+    "cognitive",
+    "rating_scale",
+    "clinical_marker",
 )
 
 
@@ -516,9 +584,35 @@ def _normalize_directional_association_claim(claim: Claim) -> bool:
     """Restore association predicates after LLM over-refines "lower X related to Y"."""
     if claim.predicate not in {"reduces", "increases"}:
         return False
+    subject_type = str(claim.metadata.get("subject_type", "")).lower()
+    object_type = str(claim.metadata.get("object_type", "")).lower()
+    direction_text = getattr(claim.evidence, "direction", "") or ""
+    raw_text = " ".join([claim.raw_text or "", direction_text])
+    if (
+        any(t in subject_type for t in _MEASUREMENT_SUBJECT_TYPES)
+        and (object_type == "disease" or _DISEASE_ENDPOINT_RE.search(claim.object_name or ""))
+        and _MEASUREMENT_GROUP_COMPARISON_RE.search(raw_text)
+        and not _DISEASE_RISK_DIRECTION_CUE_RE.search(raw_text)
+    ):
+        original = claim.predicate
+        claim.predicate = "distinguishes"
+        claim.metadata["predicate_original"] = original
+        claim.metadata["predicate_normalized_reason"] = "measurement differs in disease group"
+        return True
+    if (
+        "biomarker" in subject_type
+        and (object_type == "disease" or _DISEASE_ENDPOINT_RE.search(claim.object_name or ""))
+        and _BIOMARKER_ABUNDANCE_CUE_RE.search(raw_text)
+    ):
+        original = claim.predicate
+        claim.predicate = "is_associated_with"
+        claim.confidence = min(claim.confidence, 0.5)
+        claim.metadata["predicate_original"] = original
+        claim.metadata["predicate_normalized_reason"] = "biomarker abundance in disease"
+        return True
     if not _CONTINUOUS_ENDPOINT_RE.search(claim.object_name or ""):
         return False
-    if not _ASSOCIATION_CUE_RE.search(claim.raw_text or ""):
+    if not _ASSOCIATION_CUE_RE.search(raw_text):
         return False
     original = claim.predicate
     claim.predicate = "correlates_with"
@@ -553,13 +647,20 @@ def _modality_method_guard_reasons(claim: Claim) -> list[str]:
                 reasons.append(f"pure imaging modality {role}")
             elif _MODALITY_TERM_RE.search(endpoint) and not _MODALITY_MEASUREMENT_RE.search(endpoint):
                 reasons.append(f"modality {role} without concrete measurement")
+            elif _GENERIC_IMAGING_ENTITY_RE.search(endpoint) and not _MODALITY_MEASUREMENT_RE.search(endpoint):
+                reasons.append(f"generic imaging {role} without concrete measurement")
 
         if (
             claim.predicate in _METHOD_GUARD_PREDICATES
             and _METHOD_PROCEDURE_RE.search(endpoint)
+        ):
+            reasons.append(f"method/procedure {role}")
+        elif (
+            claim.predicate in _METHOD_GUARD_PREDICATES
+            and _GENERIC_METHOD_ENTITY_RE.search(endpoint)
             and not _MODALITY_MEASUREMENT_RE.search(endpoint)
         ):
-            reasons.append(f"method/procedure {role} without concrete measurement")
+            reasons.append(f"generic method/test {role} without concrete measurement")
 
     return reasons
 
@@ -1055,6 +1156,7 @@ def ingest_claims(
     claims_marked_background = 0
     claims_skipped_background = 0
     claims_skipped_modality_method = 0
+    claims_skipped_low_confidence = 0
 
     # Configure build-time noise filter + strict_phase1 mode
     global _NOISE_FILTER_ENABLED, _STRICT_PHASE1
@@ -1171,6 +1273,21 @@ def ingest_claims(
                 claim.confidence *= _BACKGROUND_CLAIM_PENALTY
                 claims_marked_background += 1
 
+            # Predicate-evidence confidence penalty: if raw_text doesn't
+            # contain keywords supporting the predicate, reduce confidence
+            # before the low-confidence gate and before writing metadata.
+            if not _predicate_supported_by_text(claim.predicate, claim.raw_text):
+                claim.confidence *= _UNSUPPORTED_PREDICATE_PENALTY
+
+            if claim.confidence < _MIN_INGEST_CLAIM_CONFIDENCE:
+                claims_skipped_low_confidence += 1
+                logger.debug(
+                    f"skipped low-confidence claim {claim.id}: "
+                    f"confidence={claim.confidence:.3f}; "
+                    f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
+                )
+                continue
+
             # resolve entities
             claim = resolve_claim_entities(kg, claim)
 
@@ -1234,11 +1351,6 @@ def ingest_claims(
             ))
             claims_added += 1
 
-            # Predicate-evidence confidence penalty: if raw_text doesn't
-            # contain keywords supporting the predicate, reduce confidence.
-            if not _predicate_supported_by_text(claim.predicate, claim.raw_text):
-                claim.confidence *= _UNSUPPORTED_PREDICATE_PENALTY
-
             # add simplified edge
             edge = claim.to_edge()
             kg.add_edge(edge)
@@ -1274,6 +1386,7 @@ def ingest_claims(
         "claims_marked_background": claims_marked_background,
         "claims_skipped_background": claims_skipped_background,
         "claims_skipped_modality_method": claims_skipped_modality_method,
+        "claims_skipped_low_confidence": claims_skipped_low_confidence,
         "entities_salvaged": _DROP_LOG.n_salvaged,
         "entities_dropped": _DROP_LOG.n_dropped,
         "papers_processed": len(results),

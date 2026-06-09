@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from neurooracle.src.claim_extractor import ClaimExtractor, _normalize_predicate
 from neurooracle.src.claim_ingestion import _is_vague_endpoint_name, ingest_claims
+from neurooracle.src.chain_extract import _select_failed_pmids, _select_second_pass_pmids
 from neurooracle.src.graph_manager import KnowledgeGraph
 from neurooracle.src.hypothesis_engine import HypothesisEngine
 from neurooracle.src.schema import Claim, Evidence, PaperRef
@@ -19,6 +20,7 @@ def _claim(
     sample_size: int | None = None,
     subject_type: str = "gene",
     object_type: str = "disease",
+    evidence_direction: str = "",
 ) -> Claim:
     return Claim(
         id=claim_id,
@@ -31,6 +33,7 @@ def _claim(
         evidence=Evidence(
             study_type=study_type,
             sample_size=sample_size,
+            direction=evidence_direction,
         ),
         source_paper=PaperRef(
             pmid="12345",
@@ -44,6 +47,65 @@ def _claim(
             "object_type": object_type,
         },
     )
+
+
+class _FakeCache:
+    def __init__(self, abstracts: dict[str, str]):
+        self.abstracts = abstracts
+
+    def get(self, pmid: str):
+        abstract = self.abstracts.get(str(pmid))
+        if abstract is None:
+            return None
+        return abstract, PaperRef(pmid=str(pmid), title="Cached paper", year=2026)
+
+
+def test_retry_failed_selector_reads_error_rows(tmp_path):
+    source = tmp_path / "papers_metadata.csv"
+    source.write_text(
+        "pmid,n_claims_extracted,extraction_error\n"
+        "1,0,\n"
+        "2,0,Request timed out.\n"
+        "3,4,\n"
+        "4,0,Connection error\n",
+        encoding="utf-8",
+    )
+
+    assert _select_failed_pmids(source) == ["2", "4"]
+    assert _select_failed_pmids(source, max_papers=1) == ["2"]
+
+
+def test_second_pass_selector_keeps_only_likely_zero_claim_candidates(tmp_path):
+    source = tmp_path / "papers_metadata.csv"
+    source.write_text(
+        "pmid,n_claims_extracted,extraction_error\n"
+        "short,0,\n"
+        "aim_only,0,\n"
+        "candidate,0,\n"
+        "has_claims,2,\n"
+        "failed,0,Request timed out.\n",
+        encoding="utf-8",
+    )
+    cache = _FakeCache({
+        "short": "Results showed a difference.",
+        "aim_only": "To compare brain imaging methods. " * 40,
+        "candidate": "Background text. Results showed lower regional blood flow in dementia. " * 25,
+        "has_claims": "Results showed a biomarker association. " * 25,
+        "failed": "Results showed a biomarker association. " * 25,
+    })
+
+    assert _select_second_pass_pmids(
+        source,
+        cache,
+        min_abstract_chars=200,
+        require_result_cue=True,
+    ) == ["candidate"]
+    assert _select_second_pass_pmids(
+        source,
+        cache,
+        min_abstract_chars=200,
+        require_result_cue=False,
+    ) == ["aim_only", "candidate"]
 
 
 def test_claim_extractor_can_lock_model(monkeypatch):
@@ -138,6 +200,27 @@ def test_background_suspect_claim_is_downweighted_not_rewritten():
     assert stored_meta["predicate"] == "is_risk_factor_for"
     assert stored_meta["metadata"]["background_suspect"] is True
     assert stored_meta["confidence"] == 0.3
+
+
+def test_low_confidence_claim_is_skipped_after_background_penalty():
+    kg = KnowledgeGraph()
+    claim = _claim(
+        claim_id="CLM:lowconfbg",
+        subject="Alzheimer disease",
+        predicate="is_biomarker_of",
+        obj="dementia",
+        raw_text="Alzheimer disease has been associated with dementia.",
+        confidence=0.5,
+        study_type="case_control",
+        subject_type="disease",
+        object_type="clinical_outcome",
+    )
+    result = type("R", (), {"claims": [claim], "error": ""})()
+    summary = ingest_claims(kg, [result], refine_vague_predicates=False)
+    assert summary["claims_marked_background"] == 1
+    assert summary["claims_skipped_low_confidence"] == 1
+    assert summary["claims_added"] == 0
+    assert not kg.has_concept("CLM:lowconfbg")
 
 
 def test_noise_words_do_not_reject_specific_measurable_phrases():
@@ -275,6 +358,73 @@ def test_ingestion_guard_skips_modality_object_without_measurement():
     assert not kg.has_concept("CLM:modalityobject")
 
 
+def test_ingestion_guard_skips_generic_method_and_imaging_entities():
+    kg = KnowledgeGraph()
+    claims = [
+        _claim(
+            claim_id="CLM:registrationmethod",
+            subject="fully deformable registration methods",
+            predicate="increases",
+            obj="agreement between automated segmentations and expert manual segmentations",
+            raw_text="Fully deformable registration methods increased agreement between automated segmentations and expert manual segmentations.",
+            study_type="sMRI",
+            subject_type="method",
+            object_type="method_outcome",
+        ),
+        _claim(
+            claim_id="CLM:neuroimagingmethods",
+            subject="neuroimaging methods",
+            predicate="distinguishes",
+            obj="Alzheimer disease",
+            raw_text="Neuroimaging methods may help distinguish Alzheimer disease.",
+            study_type="review",
+            subject_type="biomarker",
+            object_type="disease",
+        ),
+        _claim(
+            claim_id="CLM:mriscans",
+            subject="multiple serial MRI scans",
+            predicate="reduces",
+            obj="required sample size in therapeutic trials",
+            raw_text="Multiple serial MRI scans reduced required sample size in therapeutic trials.",
+            study_type="sMRI",
+            subject_type="method",
+            object_type="method_outcome",
+        ),
+        _claim(
+            claim_id="CLM:testbattery",
+            subject="neuropsychological test battery",
+            predicate="predicts",
+            obj="Alzheimer disease",
+            raw_text="A neuropsychological test battery was evaluated for Alzheimer disease prediction.",
+            study_type="case_control",
+            subject_type="clinical_marker",
+            object_type="disease",
+        ),
+        _claim(
+            claim_id="CLM:methodcorrelation",
+            subject="automated white matter hyperintensity quantification method",
+            predicate="correlates_with",
+            obj="manual white matter hyperintensity ratings",
+            raw_text="The automated white matter hyperintensity quantification method correlated with manual white matter hyperintensity ratings.",
+            study_type="sMRI",
+            subject_type="method",
+            object_type="method_outcome",
+        ),
+    ]
+    result = type("R", (), {"claims": claims, "error": ""})()
+
+    summary = ingest_claims(kg, [result], refine_vague_predicates=False)
+
+    assert summary["claims_skipped_modality_method"] == 5
+    assert summary["claims_added"] == 0
+    assert not kg.has_concept("CLM:registrationmethod")
+    assert not kg.has_concept("CLM:neuroimagingmethods")
+    assert not kg.has_concept("CLM:mriscans")
+    assert not kg.has_concept("CLM:testbattery")
+    assert not kg.has_concept("CLM:methodcorrelation")
+
+
 def test_ingestion_guard_keeps_modality_derived_measurements():
     kg = KnowledgeGraph()
     claims = [
@@ -298,15 +448,112 @@ def test_ingestion_guard_keeps_modality_derived_measurements():
             subject_type="biomarker",
             object_type="disease",
         ),
+        _claim(
+            claim_id="CLM:brainspectperfusion",
+            subject="brain perfusion SPECT",
+            predicate="distinguishes",
+            obj="dementia",
+            raw_text="Brain perfusion SPECT distinguished dementia groups.",
+            study_type="SPECT",
+            subject_type="biomarker",
+            object_type="disease",
+        ),
+        _claim(
+            claim_id="CLM:clockdrawingscore",
+            subject="clock drawing test score",
+            predicate="is_biomarker_of",
+            obj="severity of dementia",
+            raw_text="Clock drawing test score was associated with severity of dementia.",
+            study_type="case_control",
+            subject_type="clinical_marker",
+            object_type="clinical_outcome",
+        ),
+        _claim(
+            claim_id="CLM:fdgmetabolism",
+            subject="FDG-PET cerebral metabolism",
+            predicate="predicts",
+            obj="Alzheimer disease progression",
+            raw_text="FDG-PET cerebral metabolism predicted Alzheimer disease progression.",
+            study_type="PET",
+            subject_type="biomarker",
+            object_type="disease",
+        ),
+        _claim(
+            claim_id="CLM:mriinfarctcount",
+            subject="MRI-identified cerebral infarct count",
+            predicate="predicts",
+            obj="dementia",
+            raw_text="MRI-identified cerebral infarct count predicted dementia.",
+            study_type="sMRI",
+            subject_type="biomarker",
+            object_type="disease",
+        ),
     ]
     result = type("R", (), {"claims": claims, "error": ""})()
 
     summary = ingest_claims(kg, [result], refine_vague_predicates=False)
 
     assert summary["claims_skipped_modality_method"] == 0
-    assert summary["claims_added"] == 2
+    assert summary["claims_added"] == 6
     assert kg.has_concept("CLM:fdghypometabolism")
     assert kg.has_concept("CLM:datbinding")
+    assert kg.has_concept("CLM:brainspectperfusion")
+    assert kg.has_concept("CLM:clockdrawingscore")
+    assert kg.has_concept("CLM:fdgmetabolism")
+    assert kg.has_concept("CLM:mriinfarctcount")
+
+
+def test_ingestion_normalizes_biomarker_abundance_in_disease():
+    kg = KnowledgeGraph()
+    claim = _claim(
+        claim_id="CLM:plaquesincrease",
+        subject="amyloid-beta senile plaques",
+        predicate="increases",
+        obj="Alzheimer disease",
+        raw_text="Amyloid-beta senile plaques show increased accumulation in Alzheimer disease.",
+        subject_type="biomarker",
+        object_type="disease",
+        evidence_direction="increased accumulation in AD",
+    )
+    result = type("R", (), {"claims": [claim], "error": ""})()
+
+    summary = ingest_claims(kg, [result], refine_vague_predicates=False)
+
+    assert summary["predicates_refined"] == 1
+    node = kg.get_concept("CLM:plaquesincrease")
+    assert node is not None
+    assert node.metadata["predicate"] == "is_associated_with"
+    assert node.metadata["metadata"]["predicate_original"] == "increases"
+    assert node.metadata["metadata"]["predicate_normalized_reason"] == "biomarker abundance in disease"
+
+
+def test_ingestion_normalizes_reduced_task_measurement_in_disease_group():
+    kg = KnowledgeGraph()
+    claim = _claim(
+        claim_id="CLM:taskreduced",
+        subject="word-stem completion priming",
+        predicate="reduces",
+        obj="Alzheimer disease",
+        raw_text=(
+            "Compared with normal old adults, AD patients showed reduced "
+            "priming on a word-stem completion task."
+        ),
+        confidence=0.6,
+        study_type="PET",
+        subject_type="cognitive_function",
+        object_type="disease",
+        evidence_direction="decrease",
+    )
+    result = type("R", (), {"claims": [claim], "error": ""})()
+
+    summary = ingest_claims(kg, [result], refine_vague_predicates=False)
+
+    assert summary["predicates_refined"] == 1
+    node = kg.get_concept("CLM:taskreduced")
+    assert node is not None
+    assert node.metadata["predicate"] == "distinguishes"
+    assert node.metadata["metadata"]["predicate_original"] == "reduces"
+    assert node.metadata["metadata"]["predicate_normalized_reason"] == "measurement differs in disease group"
 
 
 def test_ingestion_guard_skips_procedure_as_treatment_subject():

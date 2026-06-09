@@ -32,6 +32,7 @@ import csv
 import json
 import logging
 import random
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -268,6 +269,83 @@ def _load_seen_pmids(papers_csv: Path) -> set[str]:
     return seen
 
 
+def _row_claim_count(row: dict) -> int:
+    value = row.get("n_claims_extracted")
+    if value in (None, ""):
+        value = row.get("n_claims")
+    try:
+        return int(value or 0)
+    except Exception:
+        return 0
+
+
+def _read_paper_rows(source_csv: Path) -> list[dict]:
+    if not source_csv.exists():
+        raise FileNotFoundError(f"no source CSV at {source_csv}")
+    with open(source_csv, "r", encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+_SECOND_PASS_RESULT_CUE_RE = re.compile(
+    r"\b(results?|findings?|conclusions?|show(?:ed|s)?|found|observed|"
+    r"associated|correlated|predicted|distinguished|reduced|increased|"
+    r"higher|lower|significant|p\s*[<=>])\b",
+    re.I,
+)
+
+
+def _select_failed_pmids(source_csv: Path, *, max_papers: Optional[int] = None) -> list[str]:
+    rows = _read_paper_rows(source_csv)
+    pmids: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        pmid = (row.get("pmid") or "").strip()
+        if not pmid or pmid in seen:
+            continue
+        if (row.get("extraction_error") or "").strip():
+            seen.add(pmid)
+            pmids.append(pmid)
+            if max_papers is not None and len(pmids) >= max_papers:
+                break
+    return pmids
+
+
+def _select_second_pass_pmids(
+    source_csv: Path,
+    cache: AbstractCache,
+    *,
+    min_abstract_chars: int = 1000,
+    require_result_cue: bool = True,
+    max_papers: Optional[int] = None,
+) -> list[str]:
+    rows = _read_paper_rows(source_csv)
+    pmids: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        pmid = (row.get("pmid") or "").strip()
+        if not pmid or pmid in seen:
+            continue
+        if (row.get("extraction_error") or "").strip():
+            continue
+        if _row_claim_count(row) != 0:
+            continue
+
+        rec = cache.get(pmid)
+        if rec is None:
+            continue
+        abstract, _paper = rec
+        if len(abstract) < min_abstract_chars:
+            continue
+        if require_result_cue and not _SECOND_PASS_RESULT_CUE_RE.search(abstract):
+            continue
+
+        seen.add(pmid)
+        pmids.append(pmid)
+        if max_papers is not None and len(pmids) >= max_papers:
+            break
+    return pmids
+
+
 # ── Mode 2: rerun-cached ───────────────────────────────────────────────────────
 
 
@@ -336,6 +414,111 @@ def run_rerun_cached(
     logger.info(f"    papers re-extracted: {total_papers}")
     logger.info(f"    claims extracted:    {total_claims}")
     return {"total_papers": total_papers, "total_claims": total_claims}
+
+
+def run_retry_failed(
+    *,
+    source_csv: Path,
+    max_papers: Optional[int] = None,
+    max_workers: int = 1,
+    data_dir: Optional[Path] = None,
+    keep_noise: bool = False,
+    strict_phase1: bool = False,
+    lock_model: bool = False,
+) -> dict:
+    """Re-extract papers whose prior metadata row has an extraction error."""
+    pmids = _select_failed_pmids(source_csv, max_papers=max_papers)
+    if not pmids:
+        logger.info(f"no failed papers found in {source_csv}")
+        return {"total_papers": 0, "total_claims": 0, "pmids": []}
+
+    logger.info(f"retrying {len(pmids)} failed papers from {source_csv}")
+    result = run_rerun_cached(
+        pmids=pmids,
+        max_workers=max_workers,
+        data_dir=data_dir,
+        keep_noise=keep_noise,
+        strict_phase1=strict_phase1,
+        label="retry_failed",
+        lock_model=lock_model,
+    )
+    return {**result, "pmids": pmids}
+
+
+def run_second_pass_zero(
+    *,
+    source_csv: Path,
+    max_papers: Optional[int] = None,
+    min_abstract_chars: int = 1000,
+    require_result_cue: bool = True,
+    max_workers: int = 1,
+    data_dir: Optional[Path] = None,
+    keep_noise: bool = False,
+    strict_phase1: bool = False,
+    lock_model: bool = False,
+) -> dict:
+    """Second-pass audit of zero-claim papers likely to contain results."""
+    paths = _resolve_data_paths(data_dir)
+    cache = AbstractCache(default_cache_path(paths["data_dir"]))
+    if len(cache) == 0:
+        logger.warning("abstract cache is empty — nothing to audit")
+        return {"total_papers": 0, "total_claims": 0, "pmids": []}
+
+    pmids = _select_second_pass_pmids(
+        source_csv,
+        cache,
+        min_abstract_chars=min_abstract_chars,
+        require_result_cue=require_result_cue,
+        max_papers=max_papers,
+    )
+    if not pmids:
+        logger.info(f"no zero-claim second-pass candidates found in {source_csv}")
+        return {"total_papers": 0, "total_claims": 0, "pmids": []}
+
+    records = []
+    for pmid in pmids:
+        rec = cache.get(pmid)
+        if rec is not None:
+            abstract, paper = rec
+            records.append((pmid, abstract, paper))
+
+    kg = load_graph(paths["graph"])
+    extractor = ClaimExtractor(lock_model=lock_model)
+    _init_csv(paths["papers_csv"])
+    logger.info(
+        f"second-pass auditing {len(records)} zero-claim papers "
+        f"(min_abstract_chars={min_abstract_chars}, "
+        f"require_result_cue={require_result_cue}, workers={max_workers})"
+    )
+
+    total_papers = 0
+    total_claims = 0
+    BATCH = 200
+    for i in range(0, len(records), BATCH):
+        chunk = records[i:i + BATCH]
+        papers_list = [(abstract, paper) for _, abstract, paper in chunk]
+        results = extractor.extract_batch(
+            papers_list,
+            max_workers=max_workers,
+            second_pass=True,
+        )
+        n_p, n_c = _ingest_results(
+            kg, results, papers_list, paths,
+            disease_label="second_pass_zero", year_label=0,
+            keep_noise=keep_noise, strict_phase1=strict_phase1,
+        )
+        total_papers += n_p
+        total_claims += n_c
+        logger.info(
+            f"  second-pass chunk {i//BATCH + 1}: {n_c} claims "
+            f"(running total: {total_claims})"
+        )
+
+    save_graph(kg, paths["graph"])
+    logger.info("\n  SECOND-PASS ZERO SUMMARY")
+    logger.info(f"    papers audited:   {total_papers}")
+    logger.info(f"    claims extracted: {total_claims}")
+    return {"total_papers": total_papers, "total_claims": total_claims, "pmids": pmids}
 
 
 # ── Mode 3: fill-sparse ────────────────────────────────────────────────────────

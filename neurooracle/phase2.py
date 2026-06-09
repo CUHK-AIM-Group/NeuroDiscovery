@@ -89,6 +89,7 @@ from .src.biomarker_scan import main as biomarker_scan_main
 from .src.chain_coverage import main as coverage_main
 from .src.chain_extract import (
     run_chain_extraction, run_rerun_cached,
+    run_retry_failed, run_second_pass_zero,
     run_fill_sparse, run_backfill_cache,
 )
 
@@ -205,6 +206,71 @@ def _cmd_fill_sparse():
     )
 
 
+def _cmd_retry_failed():
+    p = argparse.ArgumentParser(description="Retry papers with extraction errors")
+    p.add_argument("--source", type=str, required=True,
+                   help="Source papers_metadata.csv containing extraction_error rows")
+    p.add_argument("--max-papers", type=int, default=None)
+    p.add_argument("--max-workers", type=int, default=1)
+    p.add_argument("--data-dir", type=str, default=None)
+    p.add_argument("--keep-noise", action="store_true")
+    p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("--lock-model", action="store_true",
+                   help="Disable adaptive model upgrade/downgrade and keep "
+                        "the extractor pinned to OPENAI_MODEL for this run.")
+    p.add_argument("-v", "--verbose", action="store_true")
+    args = p.parse_args(sys.argv[2:])
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    run_retry_failed(
+        source_csv=Path(args.source),
+        max_papers=args.max_papers,
+        max_workers=args.max_workers,
+        data_dir=Path(args.data_dir) if args.data_dir else None,
+        keep_noise=args.keep_noise,
+        strict_phase1=args.strict_phase1,
+        lock_model=args.lock_model,
+    )
+
+
+def _cmd_second_pass_zero():
+    p = argparse.ArgumentParser(description="Second-pass audit for selected zero-claim papers")
+    p.add_argument("--source", type=str, required=True,
+                   help="Source papers_metadata.csv containing zero-claim rows")
+    p.add_argument("--max-papers", type=int, default=None)
+    p.add_argument("--min-abstract-chars", type=int, default=1000)
+    p.add_argument("--include-no-result-cue", action="store_true",
+                   help="Do not require result/findings/correlation cue words")
+    p.add_argument("--max-workers", type=int, default=1)
+    p.add_argument("--data-dir", type=str, default=None)
+    p.add_argument("--keep-noise", action="store_true")
+    p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("--lock-model", action="store_true",
+                   help="Disable adaptive model upgrade/downgrade and keep "
+                        "the extractor pinned to OPENAI_MODEL for this run.")
+    p.add_argument("-v", "--verbose", action="store_true")
+    args = p.parse_args(sys.argv[2:])
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    run_second_pass_zero(
+        source_csv=Path(args.source),
+        max_papers=args.max_papers,
+        min_abstract_chars=args.min_abstract_chars,
+        require_result_cue=not args.include_no_result_cue,
+        max_workers=args.max_workers,
+        data_dir=Path(args.data_dir) if args.data_dir else None,
+        keep_noise=args.keep_noise,
+        strict_phase1=args.strict_phase1,
+        lock_model=args.lock_model,
+    )
+
+
 def _cmd_backfill_cache():
     p = argparse.ArgumentParser(description="Backfill abstract cache from papers_metadata.csv")
     p.add_argument("--source", type=str, default=None,
@@ -230,6 +296,8 @@ _SUBCOMMANDS = {
     "coverage":        coverage_main,
     "chain":           _cmd_chain,
     "rerun-cached":    _cmd_rerun_cached,
+    "retry-failed":    _cmd_retry_failed,
+    "second-pass-zero": _cmd_second_pass_zero,
     "fill-sparse":     _cmd_fill_sparse,
     "backfill-cache":  _cmd_backfill_cache,
 }

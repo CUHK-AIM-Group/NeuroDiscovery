@@ -257,6 +257,14 @@ Bad examples — DO NOT emit claims like these:
 - subject="fluid registration", predicate="is_biomarker_of", object="Alzheimer disease"
 - subject="manual segmentation", predicate="has_adverse_effect", object="hippocampal volume"
 - subject="classifier", predicate="predicts", object="conversion"
+- subject="fully deformable registration methods", predicate="increases",
+  object="agreement between automated segmentations and expert manual segmentations"
+- subject="symmetric image normalization method (SyN)", predicate="distinguishes",
+  object="frontotemporal dementia"
+- subject="spatial distribution analysis techniques", predicate="predicts",
+  object="classification of 3D medical images"
+- subject="neuroimaging methods", predicate="distinguishes", object="Alzheimer disease"
+- subject="neuropsychological test battery", predicate="predicts", object="Alzheimer disease"
 
 If the abstract only evaluates a method/procedure itself (e.g. reproducibility,
 accuracy, registration error, segmentation reliability) and does NOT state a biomedical
@@ -265,8 +273,10 @@ guessing a biomarker.
 
 Method-validation endpoints such as "scan-rescan consistency", "volume repeatability",
 "segmentation reproducibility", "registration error", "measurement accuracy", "gold
-standard comparison", and "inter-rater reliability" are method-performance outcomes,
-not disease biomarkers. Do NOT emit them as subject/object biomedical entities.
+standard comparison", "inter-rater reliability", "agreement with manual tracing",
+"classification accuracy", "sensitivity/specificity of a diagnostic test", "effect
+size", and "required sample size" are method-performance outcomes, not disease
+biomarkers. Do NOT emit them as subject/object biomedical entities.
 Do NOT turn an objective sentence like "to validate METHOD for measuring MARKER in
 DISEASE" into a biomarker claim unless the abstract reports an actual disease/outcome
 finding for MARKER.
@@ -275,6 +285,14 @@ cohort mentioned only in the sample description (e.g. "15 controls and 12 Alzhei
 disease patients") is not enough. Do NOT infer "MARKER reduces in DISEASE" from a
 method-comparison sentence unless the sentence says the marker is reduced, increased,
 different, predictive, diagnostic, or associated with the disease/outcome.
+
+Generic imaging/test labels are not concrete biomarkers. Do NOT use broad labels such
+as "brain imaging", "structural imaging", "functional imaging", "neuroimaging
+techniques", "magnetic resonance scans", "serial MRI scans", "imaging biomarkers",
+"test battery", or "diagnostic test sensitivity" as subject/object biomedical
+entities. If a concrete score or measurement is named, extract that instead; examples
+that can be valid are "clock drawing test score", "episodic memory test performance",
+"white matter hyperintensity volume", "amyloid PET SUVR", and "hippocampal atrophy".
 
 Pure imaging modality names are methods, not biomarkers. Do NOT use CT, computed
 tomography, PET, positron emission tomography, FDG-PET, amyloid PET, SPECT,
@@ -439,10 +457,16 @@ def _sanitize_hint(raw: str) -> str:
 
 
 MODEL_CASCADE = [
-    "claude-sonnet-4-6",
-    "claude-opus-4-6",
+    "claude-opus-4-5-20251101",
+    "gpt-5.4",
+    "gpt-5.2-chat",
     "claude-opus-4-7",
-    "deepseek-v3.2",
+    "gpt-5.2-chat-latest",
+    "gpt-5.2",
+    "claude-sonnet-4-6",
+    "kimi-k2.5",
+    "claude-haiku-4-5-20251001",
+    "gemini-3.5-flash",
 ]
 DOWNGRADE_THRESHOLD = 2      # consecutive failures to trigger downgrade
 UPGRADE_INTERVAL = 600       # seconds before attempting upgrade back to preferred model (slow recovery)
@@ -527,15 +551,18 @@ class ClaimExtractor:
         if not keys:
             raise ValueError("No API keys provided. Set OPENAI_API_KEYS or OPENAI_API_KEY env var.")
 
+        request_timeout = float(os.environ.get("OPENAI_REQUEST_TIMEOUT", "30"))
+        self.max_attempts = max(1, int(os.environ.get("OPENAI_EXTRACTION_MAX_ATTEMPTS", "4")))
+
         self._clients: list[OpenAI] = []
         for k in keys:
             self._clients.append(
                 OpenAI(
                     base_url=base_url,
                     api_key=k,
-                    http_client=httpx.Client(verify=False, timeout=30.0),
+                    http_client=httpx.Client(verify=False, timeout=request_timeout),
                     max_retries=0,  # disable internal retry; let cascade handle failures
-                    timeout=30.0,
+                    timeout=request_timeout,
                 )
             )
         self._client_idx = 0
@@ -548,7 +575,8 @@ class ClaimExtractor:
 
         logger.info(
             f"initialized {len(self._clients)} LLM client(s), model cascade: "
-            f"{self._cascade} (lock_model={self.lock_model})"
+            f"{self._cascade} (lock_model={self.lock_model}, "
+            f"timeout={request_timeout:.1f}s, max_attempts={self.max_attempts})"
         )
 
     def _get_worker_cascade(self) -> _WorkerCascade:
@@ -577,6 +605,7 @@ class ClaimExtractor:
         paper: PaperRef,
         full_text: str | None = None,
         full_text_max_chars: int = 16000,
+        second_pass: bool = False,
     ) -> ExtractionResult:
         """Extract claims from a single paper.
 
@@ -592,6 +621,19 @@ class ClaimExtractor:
             body = abstract if len(abstract) <= 2000 else abstract[:2000] + "..."
             source_label = "Abstract"
 
+        if second_pass:
+            body = (
+                "Second-pass zero-claim audit. This abstract previously yielded no "
+                "claims. Re-check only explicit result or conclusion statements. "
+                "Extract concrete biomedical claims if present; keep [] for aims, "
+                "background, diagnostic criteria, reviews without findings, or "
+                "method/procedure validation endpoints. Do not extract generic "
+                "disease-definition or taxonomy claims such as 'Alzheimer disease "
+                "causes dementia' unless the abstract reports a concrete measured "
+                "factor, marker, intervention, or outcome effect.\n\n"
+                + body
+            )
+
         prompt = EXTRACTION_PROMPT.format(
             abstract=f"[{source_label}] {body}",
             pmid=paper.pmid or "unknown",
@@ -604,7 +646,7 @@ class ClaimExtractor:
         cascade = self._get_worker_cascade()
         backoff = 5.0
         slow_response_threshold = float(os.environ.get("OPENAI_SLOW_RESPONSE_THRESHOLD", "30"))
-        for attempt in range(4):
+        for attempt in range(self.max_attempts):
             current_model = cascade.model
             import time as _time
             req_start = _time.time()
@@ -639,7 +681,13 @@ class ClaimExtractor:
             except Exception as e:
                 err_str = str(e)
                 cascade.record_failure()
-                if ("429" in err_str or "rate" in err_str.lower() or "forbidden" in err_str.lower() or "timed out" in err_str.lower() or "connection" in err_str.lower()) and attempt < 3:
+                if (
+                    "429" in err_str
+                    or "rate" in err_str.lower()
+                    or "forbidden" in err_str.lower()
+                    or "timed out" in err_str.lower()
+                    or "connection" in err_str.lower()
+                ) and attempt < self.max_attempts - 1:
                     import time as _time
                     logger.warning(f"request failed PMID {paper.pmid} model={current_model} (attempt {attempt+1}), backing off {backoff:.0f}s: {err_str[:80]}")
                     _time.sleep(backoff)
@@ -657,13 +705,14 @@ class ClaimExtractor:
         self,
         papers: list[tuple[str, PaperRef]],
         max_workers: int = 1,
+        second_pass: bool = False,
     ) -> list[ExtractionResult]:
         """Extract claims from multiple papers with per-worker model cascade."""
         if max_workers <= 1:
             results = []
             for i, (abstract, paper) in enumerate(papers):
                 logger.info(f"extracting claims [{i+1}/{len(papers)}] PMID={paper.pmid}")
-                result = self.extract_from_abstract(abstract, paper)
+                result = self.extract_from_abstract(abstract, paper, second_pass=second_pass)
                 logger.info(f"  extracted {len(result.claims)} claims")
                 results.append(result)
             return results
@@ -672,7 +721,7 @@ class ClaimExtractor:
 
         def _extract_one(idx: int, abstract: str, paper: PaperRef) -> tuple[int, ExtractionResult]:
             logger.info(f"extracting claims [{idx+1}/{len(papers)}] PMID={paper.pmid}")
-            result = self.extract_from_abstract(abstract, paper)
+            result = self.extract_from_abstract(abstract, paper, second_pass=second_pass)
             logger.info(f"  extracted {len(result.claims)} claims (PMID={paper.pmid})")
             return idx, result
 
