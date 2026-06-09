@@ -429,6 +429,14 @@ _METHOD_GUARD_PREDICATES = _MODALITY_GUARD_PREDICATES | {
     "correlates_with",
     "is_associated_with",
 }
+_ENDPOINT_GUARD_PREDICATES = {
+    "causes",
+    "increases",
+    "reduces",
+    "modulates",
+    "activates",
+    "inhibits",
+}
 
 _PURE_MODALITY_NAMES = frozenset({
     "ct",
@@ -568,6 +576,29 @@ _MEASUREMENT_SUBJECT_TYPES = (
     "rating_scale",
     "clinical_marker",
 )
+_DISEASE_GENERIC_TOKENS = {
+    "disease",
+    "diseases",
+    "disorder",
+    "disorders",
+    "syndrome",
+    "syndromes",
+    "development",
+    "onset",
+    "risk",
+}
+_DISEASE_ABBREVIATION_PATTERNS = (
+    ("alzheimer", re.compile(r"\b(ad|alzheimers?)\b", re.I)),
+    ("mild cognitive impairment", re.compile(r"\bmci\b", re.I)),
+    ("frontotemporal dementia", re.compile(r"\bftd\b", re.I)),
+    ("dementia with lewy bodies", re.compile(r"\bdlb\b", re.I)),
+    ("multiple sclerosis", re.compile(r"\bms\b", re.I)),
+    ("parkinson", re.compile(r"\bpd\b", re.I)),
+    ("amyotrophic lateral sclerosis", re.compile(r"\bals\b", re.I)),
+    ("major depressive disorder", re.compile(r"\bmdd\b", re.I)),
+    ("bipolar disorder", re.compile(r"\bbd\b", re.I)),
+    ("schizophrenia", re.compile(r"\bschizophren\w*\b", re.I)),
+)
 
 
 def _predicate_supported_by_text(predicate: str, raw_text: str) -> bool:
@@ -662,6 +693,45 @@ def _modality_method_guard_reasons(claim: Claim) -> list[str]:
         ):
             reasons.append(f"generic method/test {role} without concrete measurement")
 
+    return reasons
+
+
+def _endpoint_supported_by_raw_text(endpoint: str, raw_text: str) -> bool:
+    """Return True when the evidence sentence visibly contains the endpoint.
+
+    The extraction prompt requires raw_sentence to support both endpoints. This
+    backstop catches LLM-injected disease objects while allowing common disease
+    abbreviations such as AD, MCI, PD, and MS.
+    """
+    raw = _normalise_guard_name(raw_text)
+    endpoint_norm = _normalise_guard_name(endpoint)
+    if not endpoint_norm:
+        return True
+    if endpoint_norm in raw:
+        return True
+
+    for anchor, pattern in _DISEASE_ABBREVIATION_PATTERNS:
+        if anchor in endpoint_norm and pattern.search(raw_text or ""):
+            return True
+
+    tokens = [
+        t for t in re.findall(r"[a-z0-9]+", endpoint_norm)
+        if len(t) >= 4 and t not in _DISEASE_GENERIC_TOKENS
+    ]
+    if not tokens:
+        return True
+    return any(re.search(rf"\b{re.escape(t)}\w*\b", raw, re.I) for t in tokens)
+
+
+def _unsupported_endpoint_guard_reasons(claim: Claim) -> list[str]:
+    reasons: list[str] = []
+    if claim.predicate not in _ENDPOINT_GUARD_PREDICATES:
+        return reasons
+
+    object_type = str(claim.metadata.get("object_type", "")).lower()
+    if object_type == "disease" or _DISEASE_ENDPOINT_RE.search(claim.object_name or ""):
+        if not _endpoint_supported_by_raw_text(claim.object_name, claim.raw_text or ""):
+            reasons.append("disease object absent from raw evidence")
     return reasons
 
 
@@ -1157,6 +1227,7 @@ def ingest_claims(
     claims_skipped_background = 0
     claims_skipped_modality_method = 0
     claims_skipped_low_confidence = 0
+    claims_skipped_unsupported_endpoint = 0
 
     # Configure build-time noise filter + strict_phase1 mode
     global _NOISE_FILTER_ENABLED, _STRICT_PHASE1
@@ -1252,6 +1323,16 @@ def ingest_claims(
                     f"skipped modality/method claim {claim.id}: "
                     f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}; "
                     f"reasons={modality_method_reasons}"
+                )
+                continue
+
+            unsupported_endpoint_reasons = _unsupported_endpoint_guard_reasons(claim)
+            if unsupported_endpoint_reasons:
+                claims_skipped_unsupported_endpoint += 1
+                logger.debug(
+                    f"skipped unsupported-endpoint claim {claim.id}: "
+                    f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}; "
+                    f"reasons={unsupported_endpoint_reasons}"
                 )
                 continue
 
@@ -1387,6 +1468,7 @@ def ingest_claims(
         "claims_skipped_background": claims_skipped_background,
         "claims_skipped_modality_method": claims_skipped_modality_method,
         "claims_skipped_low_confidence": claims_skipped_low_confidence,
+        "claims_skipped_unsupported_endpoint": claims_skipped_unsupported_endpoint,
         "entities_salvaged": _DROP_LOG.n_salvaged,
         "entities_dropped": _DROP_LOG.n_dropped,
         "papers_processed": len(results),

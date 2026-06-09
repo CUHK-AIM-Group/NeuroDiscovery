@@ -556,6 +556,32 @@ def test_ingestion_normalizes_reduced_task_measurement_in_disease_group():
     assert node.metadata["metadata"]["predicate_normalized_reason"] == "measurement differs in disease group"
 
 
+def test_ingestion_guard_skips_disease_object_absent_from_evidence():
+    kg = KnowledgeGraph()
+    claim = _claim(
+        claim_id="CLM:injecteddisease",
+        subject="IL22",
+        predicate="increases",
+        obj="schizophrenia",
+        raw_text=(
+            "This short review examines the STAT3/AhR axis and "
+            "downregulation of IL-22 and BDNF with subsequent increase in "
+            "gut barrier permeability."
+        ),
+        confidence=0.6,
+        study_type="review",
+        subject_type="gene",
+        object_type="disease",
+    )
+    result = type("R", (), {"claims": [claim], "error": ""})()
+
+    summary = ingest_claims(kg, [result], refine_vague_predicates=False)
+
+    assert summary["claims_skipped_unsupported_endpoint"] == 1
+    assert summary["claims_added"] == 0
+    assert not kg.has_concept("CLM:injecteddisease")
+
+
 def test_ingestion_guard_skips_procedure_as_treatment_subject():
     kg = KnowledgeGraph()
     claim = _claim(
