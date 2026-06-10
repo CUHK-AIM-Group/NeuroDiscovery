@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from neurooracle.src.claim_extractor import ClaimExtractor, _normalize_predicate
-from neurooracle.src.claim_ingestion import _is_vague_endpoint_name, ingest_claims
+from neurooracle.src.claim_extractor import ClaimExtractor, EXTRACTION_PROMPT, _normalize_predicate
+from neurooracle.src.claim_ingestion import (
+    _is_vague_endpoint_name,
+    _normalize_entity_type,
+    ingest_claims,
+)
+from neurooracle.src.batch_extract import _collect_pubmed_abstract
 from neurooracle.src.chain_extract import _select_failed_pmids, _select_second_pass_pmids
 from neurooracle.src.graph_manager import KnowledgeGraph
 from neurooracle.src.hypothesis_engine import HypothesisEngine
-from neurooracle.src.schema import Claim, Evidence, PaperRef
+from neurooracle.src.schema import Claim, DomainTag, Evidence, PaperRef
 
 
 def _claim(
@@ -119,6 +124,44 @@ def test_claim_extractor_can_lock_model(monkeypatch):
     assert worker.model == "gpt-5.2"
 
 
+def test_claim_extractor_prompt_has_case1_meta_analysis_guidance():
+    assert "Transdiagnostic / meta-analysis neuroimaging results" in EXTRACTION_PROMPT
+    assert "Large consortium, ENIGMA, meta-analysis" in EXTRACTION_PROMPT
+    assert "cortical volume normative deviation" in EXTRACTION_PROMPT
+    assert "regional cortical thickness" in EXTRACTION_PROMPT
+    assert "multiple psychiatric disorders" in EXTRACTION_PROMPT
+    assert "Do NOT split one reported bilateral or" in EXTRACTION_PROMPT
+    assert "Do NOT extract explicit null findings" in EXTRACTION_PROMPT
+
+
+def test_pubmed_abstract_parser_keeps_structured_result_sections():
+    import xml.etree.ElementTree as ET
+
+    article = ET.fromstring(
+        """
+        <PubmedArticle>
+          <MedlineCitation>
+            <Article>
+              <Abstract>
+                <AbstractText Label="BACKGROUND">Introductory rationale.</AbstractText>
+                <AbstractText Label="METHODS">ENIGMA meta-analysis.</AbstractText>
+                <AbstractText Label="RESULTS">Adults with MDD had thinner cortical gray matter.</AbstractText>
+                <AbstractText Label="CONCLUSIONS">MDD showed cortical alterations.</AbstractText>
+              </Abstract>
+            </Article>
+          </MedlineCitation>
+        </PubmedArticle>
+        """
+    )
+
+    abstract = _collect_pubmed_abstract(article)
+
+    assert "BACKGROUND: Introductory rationale." in abstract
+    assert "METHODS: ENIGMA meta-analysis." in abstract
+    assert "RESULTS: Adults with MDD had thinner cortical gray matter." in abstract
+    assert "CONCLUSIONS: MDD showed cortical alterations." in abstract
+
+
 def test_claim_extractor_rejects_non_closed_predicates():
     extractor = ClaimExtractor(model="claude-sonnet-4-6", api_key="test-key", lock_model=True)
     paper = PaperRef(pmid="12345", title="Smoke paper", year=2026)
@@ -135,6 +178,27 @@ def test_claim_extractor_rejects_non_closed_predicates():
         },
         paper,
     )
+    assert claim is None
+
+
+def test_claim_extractor_skips_negated_claim_items():
+    extractor = ClaimExtractor(model="claude-sonnet-4-6", api_key="test-key", lock_model=True)
+    paper = PaperRef(pmid="12345", title="Smoke paper", year=2026)
+
+    claim = extractor._item_to_claim(
+        {
+            "subject": "cortical thickness",
+            "predicate": "distinguishes",
+            "object": "major depressive disorder",
+            "negated": True,
+            "raw_sentence": (
+                "Adolescents with MDD had no differences in cortical thickness "
+                "compared with matched controls."
+            ),
+        },
+        paper,
+    )
+
     assert claim is None
 
 
@@ -356,6 +420,57 @@ def test_ingestion_guard_skips_modality_object_without_measurement():
     assert summary["claims_skipped_modality_method"] == 1
     assert summary["claims_added"] == 0
     assert not kg.has_concept("CLM:modalityobject")
+
+
+def test_ingestion_normalizes_atom_style_entity_types():
+    kg = KnowledgeGraph()
+    claims = [
+        _claim(
+            claim_id="CLM:atomtypes1",
+            subject="FDG hypometabolism smoke marker",
+            predicate="predicts",
+            obj="global cognitive decline smoke outcome",
+            raw_text=(
+                "FDG hypometabolism smoke marker predicted global cognitive "
+                "decline smoke outcome."
+            ),
+            study_type="PET",
+            subject_type="IMAGING_MARKER",
+            object_type="OUTCOME",
+        ),
+        _claim(
+            claim_id="CLM:atomtypes2",
+            subject="APOE pathway smoke score",
+            predicate="correlates_with",
+            obj="amyloid PET smoke marker",
+            raw_text="APOE pathway smoke score correlated with amyloid PET smoke marker.",
+            study_type="PET",
+            subject_type="GENE_TARGET",
+            object_type="imaging_marker",
+        ),
+    ]
+    result = type("R", (), {"claims": claims, "error": ""})()
+
+    summary = ingest_claims(kg, [result], refine_vague_predicates=False)
+
+    assert _normalize_entity_type("IMAGING_MARKER") == "imaging_marker"
+    assert _normalize_entity_type("GENE-TARGET") == "gene_target"
+    assert _normalize_entity_type("clinical event") == "clinical_event"
+    assert summary["claims_added"] == 2
+
+    imaging_marker = kg.get_concept("CLM_CONCEPT:FDG_hypometabolism_smoke_marker")
+    outcome = kg.get_concept("CLM_CONCEPT:global_cognitive_decline_smoke_outcome")
+    gene_target = kg.get_concept("CLM_CONCEPT:APOE_pathway_smoke_score")
+    imaging_marker_2 = kg.get_concept("CLM_CONCEPT:amyloid_PET_smoke_marker")
+
+    assert imaging_marker is not None
+    assert outcome is not None
+    assert gene_target is not None
+    assert imaging_marker_2 is not None
+    assert imaging_marker.domain_tags == [DomainTag.BIOMARKER.value]
+    assert outcome.domain_tags == [DomainTag.TREATMENT_OUTCOME.value]
+    assert gene_target.domain_tags == [DomainTag.GENE.value]
+    assert imaging_marker_2.domain_tags == [DomainTag.BIOMARKER.value]
 
 
 def test_ingestion_guard_skips_generic_method_and_imaging_entities():

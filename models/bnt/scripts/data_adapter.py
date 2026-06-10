@@ -139,7 +139,10 @@ class BNTDataset(Dataset):
             elif corr.size(0) != n_roi_seen:
                 warnings.warn(f"subject {sid} has inconsistent n_roi; skipping")
                 continue
-            label = labels.get(sid, int(sid) % 2)
+            if sid in labels:
+                label = labels[sid]
+            else:
+                label = int(sid) % 2
             self.samples.append((sid, corr, label))
         self.n_roi = n_roi_seen
 

@@ -231,6 +231,73 @@ Correct examples:
   Claim: subject="hippocampal volume", predicate="distinguishes",
   object="Alzheimer disease"
 
+Transdiagnostic / meta-analysis neuroimaging results — IMPORTANT:
+Large consortium, ENIGMA, meta-analysis, mega-analysis, multi-site, and cross-disorder
+abstracts often report valid biomedical claims as group contrasts, effect sizes,
+shared profiles, or moderator associations. These ARE claims when a concrete imaging
+measurement is named.
+
+Extract these claim types:
+- Group contrast: if a concrete imaging measurement is thinner, smaller, larger,
+  lower, higher, altered, abnormal, or different in a disorder/patient group compared
+  with controls or another disorder, use `distinguishes`.
+- Cross-disorder/shared profile: if the same imaging measurement/profile is shared
+  across multiple psychiatric disorders, use `is_associated_with` or `distinguishes`
+  with object "multiple psychiatric disorders", "psychiatric disorders", or the
+  explicitly named disorder set.
+- Symptom/dimension association: if a concrete imaging measurement, normative
+  deviation, connectivity measure, or cortical/subcortical measure correlates with
+  psychopathology dimensions, symptom severity, illness duration, age at onset,
+  medication dose, cognitive performance, or functional outcome, use `correlates_with`
+  unless the abstract says it predicts a future outcome.
+  Use the imaging measurement as subject and the clinical/demographic moderator as
+  object. For example, "age correlated with temporal pole thickness" should be
+  subject="temporal pole cortical thickness", object="age", not subject="age".
+- Normative model deviations are valid imaging markers when they are tied to a
+  concrete brain measurement (e.g. "cortical volume normative deviation").
+- Keep one claim per biological finding. Do NOT split one reported bilateral or
+  left/right effect into duplicate claims unless the abstract gives different
+  directions or different biological interpretations for each side.
+- Do NOT extract explicit null findings ("no differences", "not associated",
+  "did not predict", "no significant effect") as positive claims. Return no claim
+  for that result unless the abstract's main contribution is specifically a
+  negative association and you set `negated=true`.
+
+Good Case Study 1 examples:
+- Text: "Individuals with schizophrenia showed widespread thinner cortex and smaller
+  surface area compared with controls, with largest effects in frontal and temporal
+  regions."
+  Claims:
+  subject="cortical thickness", predicate="distinguishes", object="schizophrenia",
+  effect_size="-0.530/-0.516 if reported", direction="bilaterally reduced in schizophrenia"
+  subject="cortical surface area", predicate="distinguishes", object="schizophrenia",
+  effect_size="-0.251/-0.254 if reported", direction="bilaterally reduced in schizophrenia"
+- Text: "Regional cortical thickness was negatively correlated with medication dose,
+  symptom severity, and duration of illness."
+  Claims:
+  subject="regional cortical thickness", predicate="correlates_with",
+  object="medication dose"
+  subject="regional cortical thickness", predicate="correlates_with",
+  object="symptom severity"
+  subject="regional cortical thickness", predicate="correlates_with",
+  object="duration of illness"
+- Text: "Adults with bipolar disorder had thinner frontal, temporal, and parietal
+  cortices."
+  Claim: subject="frontal, temporal, and parietal cortical thickness",
+  predicate="distinguishes", object="bipolar disorder", direction="reduced in bipolar disorder"
+- Text: "Normative deviations in cortical volume explained transdiagnostic dimensions
+  of psychopathology better than raw cortical volume."
+  Claim: subject="cortical volume normative deviation", predicate="predicts" or
+  "correlates_with", object="transdiagnostic psychopathology dimensions"
+- Text: "A shared cortical thickness profile across six psychiatric disorders was
+  associated with pyramidal-cell gene expression."
+  Claim: subject="shared cortical thickness profile", predicate="is_associated_with",
+  object="multiple psychiatric disorders"
+
+Do NOT skip a sentence just because it is from a meta-analysis or consortium paper.
+Do NOT use "meta-analysis", "ENIGMA", "multi-site sample", "classifier", or the
+statistical model as subject/object; put those in `methodology` or `population`.
+
 Method/procedure handling — IMPORTANT:
 Methods, algorithms, pipelines, classifiers, registration/segmentation procedures,
 software tools, statistical models, and validation protocols are NOT biomedical
@@ -834,6 +901,9 @@ class ClaimExtractor:
         raw_sentence = item.get("raw_sentence", "")
         predicate = _normalize_directional_comparison_predicate(predicate, obj, raw_sentence)
 
+        if bool(item.get("negated", False)):
+            logger.debug("skipped negated claim: %r -> %r", subject, obj)
+            return None
         if not subject or not obj or not predicate:
             return None
         if predicate not in EXTRACTION_PREDICATES:

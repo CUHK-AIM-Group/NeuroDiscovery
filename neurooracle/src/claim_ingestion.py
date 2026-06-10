@@ -862,10 +862,52 @@ ENTITY_TYPE_TO_DOMAIN = {
     "biomarker": DomainTag.BIOMARKER,
     "cognitive_function": DomainTag.COGNITIVE_FUNCTION,
     # 7-atom aligned types (new, emitted by atom-aware extractor)
+    "imaging_marker":  DomainTag.BIOMARKER,
+    "imaging_feature": DomainTag.IMAGING_FEATURE,
+    "clinical_marker": DomainTag.BIOMARKER,
+    "gene_target":     DomainTag.GENE,
+    "outcome":         DomainTag.TREATMENT_OUTCOME,
+    "clinical_outcome": DomainTag.TREATMENT_OUTCOME,
+    "clinical_event":  DomainTag.TREATMENT_OUTCOME,
     "rating_scale":    DomainTag.TREATMENT_OUTCOME,
     "adverse_event":   DomainTag.TREATMENT_OUTCOME,
     "individual_data": DomainTag.DATASET_VARIABLE,
 }
+
+
+_ENTITY_TYPE_ALIASES = {
+    "imagingmarker": "imaging_marker",
+    "imaging_marker": "imaging_marker",
+    "imaging_feature": "imaging_feature",
+    "imagingfeature": "imaging_feature",
+    "clinicalmarker": "clinical_marker",
+    "clinical_marker": "clinical_marker",
+    "genetarget": "gene_target",
+    "gene_target": "gene_target",
+    "outcome": "outcome",
+    "clinicaloutcome": "clinical_outcome",
+    "clinical_outcome": "clinical_outcome",
+    "clinicalevent": "clinical_event",
+    "clinical_event": "clinical_event",
+    "individualdata": "individual_data",
+    "individual_data": "individual_data",
+}
+
+
+def _normalize_entity_type(entity_type: str) -> str:
+    """Normalize LLM-emitted entity types before domain-tag mapping.
+
+    Claim extraction now emits both legacy fine-grained labels
+    (``biomarker``, ``rating_scale``) and atom-level labels
+    (``IMAGING_MARKER``, ``OUTCOME``, ``GENE_TARGET``). Keep both forms
+    domain-compatible so newly minted CLM_CONCEPT nodes do not default to
+    disease.
+    """
+    if not entity_type:
+        return ""
+    normalized = str(entity_type).strip().lower()
+    normalized = re.sub(r"[\s\-]+", "_", normalized)
+    return _ENTITY_TYPE_ALIASES.get(normalized, normalized)
 
 
 # Min length for short-string matches. Below this, only exact (case-insensitive)
@@ -989,6 +1031,7 @@ def resolve_entity(
     """
     if not entity_name:
         return None
+    normalized_entity_type = _normalize_entity_type(entity_type)
 
     # Build index on first call
     if not _resolution_idx._built:
@@ -1031,7 +1074,7 @@ def resolve_entity(
                     break
 
     # 5. prefer domain-matching candidate when entity_type is known
-    expected_domain = ENTITY_TYPE_TO_DOMAIN.get(entity_type) if entity_type else None
+    expected_domain = ENTITY_TYPE_TO_DOMAIN.get(normalized_entity_type) if normalized_entity_type else None
     if candidates and expected_domain is not None:
         typed = [c for c in candidates if expected_domain.value in c.domain_tags]
         if typed:
@@ -1103,7 +1146,7 @@ def resolve_entity(
             return node.id
 
     # 7. mint a new concept
-    domain = ENTITY_TYPE_TO_DOMAIN.get(entity_type, DomainTag.DISEASE)
+    domain = ENTITY_TYPE_TO_DOMAIN.get(normalized_entity_type, DomainTag.DISEASE)
     new_id = f"CLM_CONCEPT:{entity_name.replace(' ', '_')}"
     kg.add_concept(ConceptNode(
         id=new_id,

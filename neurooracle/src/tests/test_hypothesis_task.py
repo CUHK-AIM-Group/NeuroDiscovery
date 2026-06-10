@@ -21,6 +21,9 @@ from neurooracle import (
     CANONICAL_TASKS,
     CANONICAL_CHAINS,
 )
+from neurooracle.src.case_studies import CASE2, _case2_pin_atom_pools
+from neurooracle.src.graph_manager import KnowledgeGraph
+from neurooracle.src.schema import ConceptNode, Edge
 
 
 KG_CANDIDATES = [
@@ -167,3 +170,86 @@ def test_chain_returns_empty_when_segment_unreachable(engine: HypothesisEngine):
         max_chains=10,
     )
     assert hyps == []
+
+
+def test_case2_chain_can_use_claim_backed_clm_anchors():
+    kg = KnowledgeGraph()
+    for node in [
+        ConceptNode(id="GENE:CASE", preferred_name="CASEGENE", domain_tags=["gene"]),
+        ConceptNode(id="GENE:OTHER", preferred_name="OTHERGENE", domain_tags=["gene"]),
+        ConceptNode(id="GENESET:PATH", preferred_name="Case pathway", domain_tags=["gene"]),
+        ConceptNode(
+            id="CLM_CONCEPT:fdg_hypometabolism_marker",
+            preferred_name="FDG hypometabolism marker",
+            domain_tags=["biomarker"],
+            source_vocab="claim_extraction",
+        ),
+        ConceptNode(
+            id="CLM_CONCEPT:mmse_decline",
+            preferred_name="24-month MMSE decline",
+            domain_tags=["cognitive_function"],
+            source_vocab="claim_extraction",
+        ),
+        ConceptNode(
+            id="CLM:gene_im",
+            preferred_name="CASEGENE predicts FDG hypometabolism marker",
+            domain_tags=["claim"],
+            metadata={
+                "source_paper": {"pmid": "1"},
+                "raw_text": "CASEGENE predicted FDG hypometabolism.",
+            },
+        ),
+        ConceptNode(
+            id="CLM:im_outcome",
+            preferred_name="FDG hypometabolism predicts MMSE decline",
+            domain_tags=["claim"],
+            metadata={
+                "source_paper": {"pmid": "2"},
+                "raw_text": "FDG hypometabolism predicted 24-month MMSE decline.",
+            },
+        ),
+    ]:
+        kg.add_concept(node)
+
+    kg.add_edge(Edge("GENE:CASE", "GENESET:PATH", "part_of", source="test"))
+    kg.add_edge(Edge("GENE:OTHER", "GENESET:PATH", "part_of", source="test"))
+    kg.add_edge(Edge(
+        "GENE:CASE",
+        "CLM_CONCEPT:fdg_hypometabolism_marker",
+        "predicts",
+        source="claim:1",
+        confidence=0.8,
+        metadata={"claim_id": "CLM:gene_im"},
+    ))
+    kg.add_edge(Edge(
+        "CLM_CONCEPT:fdg_hypometabolism_marker",
+        "CLM_CONCEPT:mmse_decline",
+        "predicts",
+        source="claim:2",
+        confidence=0.8,
+        metadata={"claim_id": "CLM:im_outcome"},
+    ))
+
+    engine = HypothesisEngine(kg)
+    _case2_pin_atom_pools(engine, CASE2)
+    # The hub-to-hub filter marks every node as top-degree in this tiny
+    # synthetic graph. Keep this unit test focused on Case Study 2 claim-backed anchor
+    # routing; live smoke tests still exercise the normal hub filter.
+    engine._hub_id_set = set()
+
+    hyps = engine.batch_generate_for_chain(
+        CASE2.chain,
+        max_hops_per_segment=1,
+        max_paths_per_segment=2,
+        max_seeds=2,
+        max_chains=10,
+        min_evidence_per_node=0,
+    )
+
+    assert hyps
+    h = hyps[0]
+    assert h.source_id == "GENE:CASE"
+    assert h.target_id == "CLM_CONCEPT:mmse_decline"
+    assert h.metadata["mediator_ids"] == ["CLM_CONCEPT:fdg_hypometabolism_marker"]
+    assert set(h.supporting_claims) == {"CLM:gene_im", "CLM:im_outcome"}
+

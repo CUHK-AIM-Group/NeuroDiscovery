@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Autoresearch cycle for a registered Nature-paper case study.
 # Usage: bash neurooracle/run_case_study.sh <case_study_name> [run_id] [stages]
-#   case_study_name : cs2_transdiagnostic | cs3_pathway_mediation | cs_gamma_hindcasting
+#   case_study_name : case1_transdiagnostic | case2_pathway_mediation | case3_hindcasting
 #   run_id          : optional sub-directory tag (default: 001)
 #   stages          : comma list, default "batch,novelty,critic,plausibility"
 set -euo pipefail
@@ -13,7 +13,7 @@ if [ -f .env.keys ]; then
     set -a; source .env.keys; set +a
 fi
 
-CASE_NAME="${1:?case study name required (cs2_transdiagnostic | cs3_pathway_mediation | cs_gamma_hindcasting)}"
+CASE_NAME="${1:?case study name required (case1_transdiagnostic | case2_pathway_mediation | case3_hindcasting)}"
 RUN_ID="${2:-001}"
 STAGES="${3:-batch,novelty,critic,plausibility}"
 

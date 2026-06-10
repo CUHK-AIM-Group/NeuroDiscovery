@@ -347,13 +347,13 @@ CANONICAL_TASKS: tuple[Task, ...] = (
         example="Stroke acute lesion → 6-month NIHSS",
     ),
 
-    # ── E. Cross-disease structure (CS2: Transdiagnostic Brain Atlas) ──
+    # ── E. Cross-disease structure (Case Study 1: Transdiagnostic Brain Atlas) ──
     # Shape-only entry: hypothesis generation goes through a separate
     # cluster-mining generator (HypothesisEngine.find_transdiagnostic_clusters,
     # implemented in step 2), not the standard path-based batch_generate.
     # Listed here so the task name is reachable via task_by_name() and so
     # downstream consumers (NeuroBench, leaderboards, novelty cache keys)
-    # see CS2 hypotheses tagged consistently with the rest.
+    # see Case Study 1 hypotheses tagged consistently with the rest.
     Task(
         name="transdiagnostic_clustering",
         inputs=frozenset({Atom.IMAGING_MARKER}),
@@ -413,13 +413,13 @@ CANONICAL_CHAINS: tuple[TaskChain, ...] = (
         ),
         example="MCI → hippocampal volume → 24-month MMSE decline",
     ),
-    # E. Pathway-level polygenic mediation (CS3)
+    # E. Pathway-level polygenic mediation (Case Study 2)
     # Three-atom chain: GENE → IM → OUTCOME, longitudinal modifier.
     # The disease anchor is implicit in OUTCOME (the rating scales themselves
     # are disease-bound: ADAS-Cog ≈ AD, MADRS ≈ MDD, PANSS ≈ Schizophrenia).
     # Adding DISEASE as an explicit fourth atom forces a `scale → disease →
     # other scale` tail that the critic flags as definitional rather than
-    # mechanistic. The CS3 case-study config is responsible for restricting
+    # mechanistic. The Case Study 2 config is responsible for restricting
     # GENE-pool nodes to pathway-aggregated entries — done via a pre-hook.
     TaskChain(
         name="pathway_polygenic_mediation",

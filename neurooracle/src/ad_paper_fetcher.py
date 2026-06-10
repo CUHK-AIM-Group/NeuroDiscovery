@@ -114,7 +114,19 @@ def _parse_pubmed_article(article: dict) -> tuple[str, PaperRef]:
     # abstract
     abstract_sections = article_data.get("Abstract", {}).get("AbstractText", [])
     if isinstance(abstract_sections, list):
-        abstract = " ".join(str(s) for s in abstract_sections)
+        parts = []
+        for section in abstract_sections:
+            text = str(section).strip()
+            if not text:
+                continue
+            label = ""
+            attrs = getattr(section, "attributes", None)
+            if isinstance(attrs, dict):
+                label = str(attrs.get("Label") or attrs.get("NlmCategory") or "").strip()
+            if label and not text.lower().startswith(label.lower()):
+                text = f"{label}: {text}"
+            parts.append(text)
+        abstract = " ".join(parts)
     else:
         abstract = str(abstract_sections)
 
@@ -234,8 +246,20 @@ def _parse_pubmed_xml_element(elem) -> tuple[str, PaperRef]:
     title_el = elem.find(".//ArticleTitle")
     title = title_el.text if title_el is not None else ""
 
-    abstract_el = elem.find(".//AbstractText")
-    abstract = abstract_el.text if abstract_el is not None else ""
+    abstract_parts = []
+    for abstract_el in elem.findall(".//Abstract/AbstractText"):
+        text = " ".join("".join(abstract_el.itertext()).split())
+        if not text:
+            continue
+        label = (
+            abstract_el.attrib.get("Label")
+            or abstract_el.attrib.get("NlmCategory")
+            or ""
+        ).strip()
+        if label and not text.lower().startswith(label.lower()):
+            text = f"{label}: {text}"
+        abstract_parts.append(text)
+    abstract = " ".join(abstract_parts)
     if not abstract:
         return "", PaperRef()
 

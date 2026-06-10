@@ -96,6 +96,29 @@ def _search_pubmed(query: str, max_results: int) -> list[str]:
     return []
 
 
+def _element_text(element) -> str:
+    """Return collapsed text from an XML element, including nested tags."""
+    return " ".join("".join(element.itertext()).split())
+
+
+def _collect_pubmed_abstract(article) -> str:
+    """Collect all PubMed AbstractText sections from a PubmedArticle element."""
+    parts: list[str] = []
+    for abstract_el in article.findall(".//Abstract/AbstractText"):
+        text = _element_text(abstract_el)
+        if not text:
+            continue
+        label = (
+            abstract_el.attrib.get("Label")
+            or abstract_el.attrib.get("NlmCategory")
+            or ""
+        ).strip()
+        if label and not text.lower().startswith(label.lower()):
+            text = f"{label}: {text}"
+        parts.append(text)
+    return " ".join(parts)
+
+
 def _fetch_pubmed_details(
     pmids: list[str],
     cache: Optional[AbstractCache] = None,
@@ -162,8 +185,7 @@ def _fetch_pubmed_details(
                 title_el = article.find(".//ArticleTitle")
                 title = title_el.text if title_el is not None else ""
 
-                abstract_el = article.find(".//AbstractText")
-                abstract = abstract_el.text if abstract_el is not None else ""
+                abstract = _collect_pubmed_abstract(article)
                 if not abstract or not abstract.strip():
                     continue
 

@@ -283,7 +283,7 @@ def test_canonical_chains_present_for_all_registered_families():
 
 
 def test_pathway_polygenic_mediation_keeps_disease_implicit_in_outcome():
-    """CS3 is intentionally G -> IM -> O, with disease encoded by outcome."""
+    """Case Study 2 is intentionally G -> IM -> O, with disease encoded by outcome."""
     c = chain_by_name("pathway_polygenic_mediation")
     assert c.signature == "G->IM->O[longitudinal]"
     assert c.chain == (Atom.GENE_TARGET, Atom.IMAGING_MARKER, Atom.OUTCOME)
@@ -304,3 +304,4 @@ def test_canonical_chains_have_resolvable_atom_pools():
 def test_chain_by_name_unknown_raises():
     with pytest.raises(KeyError):
         chain_by_name("does_not_exist")
+

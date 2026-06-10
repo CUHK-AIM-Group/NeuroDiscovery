@@ -39,6 +39,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from models.scripts.hypothesis_roi_mapper import build_hypothesis_roi_pairs, get_roi_names
+from neurooracle.src.outcome_grounding import hcp_label_for_target, target_to_hcp_label_mapping
 
 FMRI_ROOT = ROOT / "data" / "braingnn_input"
 
@@ -63,6 +64,7 @@ TARGET_TO_HCP_LABEL = {
     "Social Skills": "friendship",
     "personal relationships": "friendship",
 }
+TARGET_TO_HCP_LABEL.update(target_to_hcp_label_mapping())
 
 
 def load_fc_matrix(atlas: str, sid: str) -> np.ndarray | None:
@@ -151,8 +153,8 @@ def main():
     # Filter to targets that have HCP label mappings
     valid_tasks = []
     for target, pairs in target_groups.items():
-        if target in TARGET_TO_HCP_LABEL:
-            hcp_label = TARGET_TO_HCP_LABEL[target]
+        hcp_label = TARGET_TO_HCP_LABEL.get(target) or hcp_label_for_target(target)
+        if hcp_label:
             label_file = ROOT / "data" / f"hcp_{hcp_label}_labels.csv"
             if label_file.exists():
                 valid_tasks.append({

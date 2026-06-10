@@ -6,9 +6,9 @@ three case studies that anchor the Nature paper do not all map cleanly onto a
 single canonical task, so this module records the extra routing metadata the
 generic engine needs:
 
-- CS2 uses a cluster-mining generator over ROI x modality x sign buckets.
-- CS3 uses a canonical chain plus case-specific atom-pool restrictions.
-- CS-gamma is reserved for hindcasting over a frozen historical KG snapshot.
+- Case Study 1 uses a cluster-mining generator over ROI x modality x sign buckets.
+- Case Study 2 uses a canonical chain plus case-specific atom-pool restrictions.
+- Case Study 3 is reserved for hindcasting over a frozen historical KG snapshot.
 
 This module declares each case study as a :class:`CaseStudy` config: the
 generator family it dispatches to, the underlying canonical task / chain
@@ -16,14 +16,18 @@ generator family it dispatches to, the underlying canonical task / chain
 the generic engine to case-specific constraints. The CLI's ``case-study``
 subcommand reads this registry and routes execution accordingly.
 
-At the current rollout state, CS2 and CS3 are wired into the case-study
-orchestrator. CS-gamma remains a reserved generator family until the
+At the current rollout state, Case Study 1 and Case Study 2 are wired into the
+case-study orchestrator. Case Study 3 remains a reserved generator family until the
 historical claim / snapshot pipeline is finalized.
 """
 
 from __future__ import annotations
 
+import re
+import csv
+from collections import Counter
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 from .atoms import (
@@ -40,8 +44,8 @@ from .atoms import (
 # stage [1/4] (raw hypothesis generation) for a given case study.
 GENERATOR_TASK              = "task"               # CANONICAL_TASKS via batch_generate_for_task
 GENERATOR_CHAIN             = "chain"              # CANONICAL_CHAINS via batch_generate_for_chain
-GENERATOR_CLUSTER_MINING    = "cluster_mining"    # CS2 via find_transdiagnostic_clusters
-GENERATOR_ATOM_SUBSTITUTION = "atom_substitution"  # CS-gamma hindcasting (reserved)
+GENERATOR_CLUSTER_MINING    = "cluster_mining"    # Case Study 1 via find_transdiagnostic_clusters
+GENERATOR_ATOM_SUBSTITUTION = "atom_substitution"  # Case Study 3 hindcasting (reserved)
 
 _KNOWN_GENERATORS = frozenset({
     GENERATOR_TASK,
@@ -49,6 +53,47 @@ _KNOWN_GENERATORS = frozenset({
     GENERATOR_CLUSTER_MINING,
     GENERATOR_ATOM_SUBSTITUTION,
 })
+
+NEUROSTORM_ATLAS_ROOT = Path(r"C:\Users\45846\Documents\Code\NeuroSTORM\datasets\atlas")
+
+
+def _load_neurostorm_atlas_labels() -> tuple[tuple[str, ...], dict[str, tuple[str, ...]], tuple[str, ...]]:
+    labels: set[str] = set()
+    label_sources: dict[str, set[str]] = {}
+    atlas_names: list[str] = []
+    if not NEUROSTORM_ATLAS_ROOT.exists():
+        return tuple(), {}, tuple()
+    for atlas_dir in sorted(NEUROSTORM_ATLAS_ROOT.iterdir()):
+        if not atlas_dir.is_dir() or not (atlas_dir / "atlas.nii.gz").is_file():
+            continue
+        atlas_names.append(atlas_dir.name)
+        labels_csv = atlas_dir / "labels.csv"
+        if not labels_csv.is_file():
+            continue
+        with labels_csv.open(encoding="utf-8", errors="ignore", newline="") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or line.casefold().startswith("index,"):
+                    continue
+                try:
+                    row = next(csv.reader([line]))
+                except Exception:
+                    continue
+                if len(row) < 2:
+                    continue
+                label = row[1].strip()
+                if not label or label.casefold() == "background":
+                    continue
+                labels.add(label)
+                label_sources.setdefault(label, set()).add(atlas_dir.name)
+    return (
+        tuple(sorted(labels)),
+        {label: tuple(sorted(srcs)) for label, srcs in sorted(label_sources.items())},
+        tuple(atlas_names),
+    )
+
+
+CASE1_ATLAS_LABELS, CASE1_ATLAS_LABEL_SOURCES, CASE1_ATLAS_NAMES = _load_neurostorm_atlas_labels()
 
 
 # ── Per-stage parameter blocks ───────────────────────────────────────────────
@@ -127,18 +172,18 @@ class CaseStudy:
         / GENERATOR_ATOM_SUBSTITUTION.
     task / chain:
         The canonical Task or TaskChain backing the generator. Exactly one
-        is set for GENERATOR_TASK / GENERATOR_CHAIN. CS2 still pins a Task
-        for downstream tagging; CS-γ pins a chain as its schema anchor.
+        is set for GENERATOR_TASK / GENERATOR_CHAIN. Case Study 1 still pins a
+        Task for downstream tagging; Case Study 3 pins a chain as its schema anchor.
     stage_params:
         Per-stage parameter overrides. Defaults match run_cycle.sh.
     pre_hooks / post_hooks:
         Optional callables invoked around stage [1/4]. Each receives the
         active :class:`HypothesisEngine` and the case study itself; they
-        may mutate engine state (e.g. _path_ignore_ids for CS3's
+        may mutate engine state (e.g. _path_ignore_ids for Case Study 2's
         pathway-only GENE pool) or rewrap generated hypotheses.
     extras:
         Generator-specific config dict that doesn't fit anywhere else
-        (snapshot paths for CS-γ, cluster-mining knobs for CS2, ...).
+        (snapshot paths for Case Study 3, cluster-mining knobs for Case Study 1, ...).
     """
     name: str
     chinese_name: str
@@ -167,50 +212,150 @@ class CaseStudy:
 
 # ── Pre_hooks ────────────────────────────────────────────────────────────────
 
-def _cs3_pin_atom_pools(engine, case) -> None:
-    """CS3: force the chain to actually traverse IM:*/OUTCOME:* anchors.
+_CASE2_IMAGING_MARKER_RE = re.compile(
+    r"("
+    r"\b(PET|MRI|fMRI|SPECT|DTI|FDG|SUVR|ALFF|ReHo)\b|"
+    r"amyloid|tau|hypometabolism|atrophy|volume|thickness|surface area|"
+    r"fractional anisotropy|diffusivity|perfusion|cerebral blood flow|"
+    r"connectivity|network|white matter|gray matter|grey matter|"
+    r"cortical|hippocamp|entorhinal|parahippocamp|amygdala|cingulate|"
+    r"frontal|temporal|parietal|occipital|striatal|thalam"
+    r")",
+    re.I,
+)
+
+_CASE2_NON_IMAGING_BIOMARKER_RE = re.compile(
+    r"\b(CSF|blood|plasma|serum|gut|microbiome|bile|cytokine|proteomic|"
+    r"inflammatory|metabolic|short-chain fatty acids?)\b",
+    re.I,
+)
+
+_CASE2_OUTCOME_RE = re.compile(
+    r"("
+    r"ADAS|MMSE|MoCA|CDR|HAMD|HAM-D|MADRS|UPDRS|PACC|CBI|inventory|"
+    r"scale|score|decline|impairment|deficit|performance|cognition|"
+    r"cognitive|memory|executive|attention|language|behavior|behaviour|"
+    r"depression|symptom|severity|conversion|progression|response"
+    r")",
+    re.I,
+)
+
+
+def _case2_is_claim_backed_clm(nid: str, node, claim_incident: Counter) -> bool:
+    return (
+        node is not None
+        and nid.startswith("CLM_CONCEPT:")
+        and claim_incident.get(nid, 0) > 0
+    )
+
+
+def _case2_pin_atom_pools(engine, case) -> None:
+    """Case Study 2: route the chain through claim-dense G -> IM -> O anchors.
 
     Without this, ``batch_generate_for_chain`` accepts any node whose
     ``domain_tags`` overlap the atom's domain set — for IMAGING_MARKER that
     includes ``neuroanatomy``, so raw region CUIs (Hippocampus, etc.) end up
     serving as the marker anchor and the new IM:* atom layer is never
-    reached. CS3 also wants gene anchors restricted to GENESET-aware genes
-    (the ``gene_pool_filter='pathway_aggregated'`` flag) and outcome anchors
-    pinned to the OUTCOME:* rating-scale atoms (not the broader
-    dataset_variable hubs).
+    reached. Case Study 2 now keeps those curated IM:*/OUTCOME:* anchors, but also
+    admits high-confidence CLM_CONCEPT claim entities when they look like
+    concrete imaging markers or clinical/cognitive outcomes. Gene seeds stay
+    pathway-aware, with Phase-2 claim-backed genes ranked first.
     """
     # Genes that participate in any GENESET (the "pathway_aggregated" pool).
     pathway_genes: set[str] = set()
+    claim_incident: Counter[str] = Counter()
+    gene_claim_scores: Counter[str] = Counter()
+    imaging_domains = {"biomarker", "connectivity", "imaging_feature", "neuroanatomy"}
+    outcome_domains = {"treatment_outcome", "dataset_variable", "cognitive_function"}
+
     for u, v, d in engine.G.edges(data=True):
         if d.get("relation_type") == "part_of" and v.startswith("GENESET:"):
             pathway_genes.add(u)
+        if not d.get("metadata", {}).get("claim_id"):
+            continue
+        claim_incident[u] += 1
+        claim_incident[v] += 1
+        u_node = engine._index.get(u)
+        v_node = engine._index.get(v)
+        u_domains = set(u_node.domain_tags or []) if u_node else set()
+        v_domains = set(v_node.domain_tags or []) if v_node else set()
+        if "gene" in u_domains:
+            gene_claim_scores[u] += 1
+            if v_domains & imaging_domains:
+                gene_claim_scores[u] += 3
+            if v_domains & outcome_domains:
+                gene_claim_scores[u] += 2
+        if "gene" in v_domains:
+            gene_claim_scores[v] += 1
+            if u_domains & imaging_domains:
+                gene_claim_scores[v] += 3
+            if u_domains & outcome_domains:
+                gene_claim_scores[v] += 2
 
     def _im_filter(nid, node):
-        return nid.startswith("IM:")
+        if nid.startswith("IM:"):
+            return True
+        if not _case2_is_claim_backed_clm(nid, node, claim_incident):
+            return False
+        domains = set(node.domain_tags or [])
+        if not (domains & imaging_domains):
+            return False
+        name = node.preferred_name or ""
+        if domains & {"connectivity", "imaging_feature"}:
+            return True
+        if _CASE2_NON_IMAGING_BIOMARKER_RE.search(name) and not re.search(
+            r"\b(PET|MRI|fMRI|SPECT|DTI|FDG|SUVR)\b|amyloid|tau|brain|cortical|"
+            r"hippocamp|connectivity|atrophy|hypometabolism",
+            name,
+            re.I,
+        ):
+            return False
+        return bool(_CASE2_IMAGING_MARKER_RE.search(name))
 
     def _gene_filter(nid, node):
         if node is None:
             return False
+        if nid.startswith("GENESET:") or nid.startswith("CLM_CONCEPT:"):
+            return False
         if "gene" not in (node.domain_tags or []):
             return False
-        # only keep genes that show up in a pathway / GENESET; falls back to
-        # all gene CUIs if the GENESET layer somehow didn't load.
-        return (nid in pathway_genes) if pathway_genes else True
+        # Keep pathway genes as the Case Study 2 backbone, but allow claim-backed genes
+        # into the seed pool too. The ranker below tries claim-backed genes
+        # first, so the run starts in the dense case-study evidence region.
+        return ((nid in pathway_genes) if pathway_genes else True) or nid in gene_claim_scores
 
     def _outcome_filter(nid, node):
-        return nid.startswith("OUTCOME:")
+        if nid.startswith("OUTCOME:"):
+            return True
+        if not _case2_is_claim_backed_clm(nid, node, claim_incident):
+            return False
+        domains = set(node.domain_tags or [])
+        if not (domains & outcome_domains):
+            return False
+        return bool(_CASE2_OUTCOME_RE.search(node.preferred_name or ""))
+
+    def _gene_ranker(nid, node):
+        return gene_claim_scores.get(nid, 0)
 
     engine._chain_atom_filters = {
         Atom.IMAGING_MARKER: _im_filter,
         Atom.GENE_TARGET:    _gene_filter,
         Atom.OUTCOME:        _outcome_filter,
     }
+    engine._chain_atom_extra_domains = {
+        Atom.OUTCOME: frozenset({"cognitive_function"}),
+    }
+    engine._chain_atom_rankers = {
+        Atom.GENE_TARGET: _gene_ranker,
+    }
+    engine._chain_prefer_claim_backed_paths = True
+    engine._chain_claimless_path_fraction = 0.15
 
 
 # ── Concrete case studies (frozen for the Nature paper) ──────────────────────
 
-CS2 = CaseStudy(
-    name="cs2_transdiagnostic",
+CASE1 = CaseStudy(
+    name="case1_transdiagnostic",
     chinese_name="跨诊断精神疾病脑影像图谱",
     english_name="Transdiagnostic Brain Atlas of Psychiatric Disorders",
     generator=GENERATOR_CLUSTER_MINING,
@@ -225,11 +370,27 @@ CS2 = CaseStudy(
         "min_diseases_per_cluster": 3,
         "max_clusters": 20,
         "modality_partitioned": True,
+        "disease_include_names": (
+            "Anorexia Nervosa",
+            "Attention Deficit Disorder with Hyperactivity",
+            "Bipolar Disorder",
+            "Major Depressive Disorder",
+            "Obsessive-Compulsive Disorder",
+            "Schizophrenia",
+            "Schizoaffective Disorder",
+            "Post-Traumatic Stress Disorder",
+            "Anxiety Disorders",
+            "Generalized Anxiety Disorder",
+            "Substance Use Disorders",
+        ),
+        "atlas_names": CASE1_ATLAS_NAMES,
+        "atlas_label_names": CASE1_ATLAS_LABELS,
+        "atlas_label_sources": CASE1_ATLAS_LABEL_SOURCES,
     },
 )
 
-CS3 = CaseStudy(
-    name="cs3_pathway_mediation",
+CASE2 = CaseStudy(
+    name="case2_pathway_mediation",
     chinese_name="多基因通路影像中介",
     english_name="Pathway-Level Polygenic Mediation through Brain Imaging",
     generator=GENERATOR_CHAIN,
@@ -243,14 +404,14 @@ CS3 = CaseStudy(
         critic=CriticParams(top=100, max_rounds=2, threshold=0.55),
         plausibility=PlausibilityParams(top=100),
     ),
-    pre_hooks=(_cs3_pin_atom_pools,),
+    pre_hooks=(_case2_pin_atom_pools,),
     extras={
         "gene_pool_filter": "pathway_aggregated",
     },
 )
 
-CS_GAMMA = CaseStudy(
-    name="cs_gamma_hindcasting",
+CASE3 = CaseStudy(
+    name="case3_hindcasting",
     chinese_name="假设回溯预测",
     english_name="Hypothesis Hindcasting",
     generator=GENERATOR_ATOM_SUBSTITUTION,
@@ -270,7 +431,7 @@ CS_GAMMA = CaseStudy(
 )
 
 
-CASE_STUDIES: tuple[CaseStudy, ...] = (CS2, CS3, CS_GAMMA)
+CASE_STUDIES: tuple[CaseStudy, ...] = (CASE1, CASE2, CASE3)
 
 
 def case_study_by_name(name: str) -> CaseStudy:
@@ -278,7 +439,7 @@ def case_study_by_name(name: str) -> CaseStudy:
     for cs in CASE_STUDIES:
         if cs.name == name:
             return cs
-    valid = ", ".join(c.name for c in CASE_STUDIES)
+    valid = ", ".join(list_case_study_names())
     raise KeyError(f"unknown case study: {name!r} (valid: {valid})")
 
 
@@ -293,9 +454,9 @@ __all__ = [
     "PlausibilityParams",
     "StageParams",
     "CaseStudy",
-    "CS2",
-    "CS3",
-    "CS_GAMMA",
+    "CASE1",
+    "CASE2",
+    "CASE3",
     "CASE_STUDIES",
     "case_study_by_name",
     "list_case_study_names",

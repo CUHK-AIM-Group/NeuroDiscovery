@@ -29,7 +29,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import networkx as nx
 
@@ -1073,12 +1073,24 @@ class HypothesisEngine:
         )
         # Per-atom anchor-pool filters for batch_generate_for_chain. CS pre_hooks
         # install entries here to restrict which nodes can serve as a given
-        # chain atom anchor (e.g. CS3 forces IMAGING_MARKER to IM:*-prefix
+        # chain atom anchor (e.g. Case Study 2 forces IMAGING_MARKER to IM:*-prefix
         # atoms only, so the chain truly traverses the marker layer instead
         # of falling back to raw neuroanatomy CUIs that share the domain tag).
         # Filter signature: (node_id, ConceptNode) -> bool. None / missing
         # entry = no extra filter beyond ATOM_TO_DOMAINS membership.
         self._chain_atom_filters: dict = {}
+        # Optional case-study hooks can widen a chain atom's domain pool
+        # without changing the global atom algebra (e.g. Case Study 2 lets concrete
+        # CLM_CONCEPT cognitive phenotypes serve as OUTCOME anchors).
+        self._chain_atom_extra_domains: dict = {}
+        # Optional per-atom seed/anchor rankers. Higher score is tried first.
+        self._chain_atom_rankers: dict = {}
+        # Optional chain-level preference for paths that contain at least one
+        # edge backed directly by a Phase-2 claim. This is deliberately a
+        # preference, not a hard requirement, so sparse but biologically useful
+        # bridge paths can still survive as a small fallback set.
+        self._chain_prefer_claim_backed_paths: bool = False
+        self._chain_claimless_path_fraction: float = 0.15
         # Build claims index for frequency_boost: (subj, pred, obj) → [claim_meta, ...]
         self._claims_by_triple: dict[tuple[str, str, str], list[dict]] = {}
         for nid, node in self._index.items():
@@ -1133,6 +1145,71 @@ class HypothesisEngine:
             if self._node_non_tree_degree(nid) < min_evidence_per_node:
                 return False
         return True
+
+    def _path_claim_edge_count(self, raw_path: list[str]) -> int:
+        """Count edges in ``raw_path`` that carry a direct Phase-2 claim id."""
+        n = 0
+        for i in range(len(raw_path) - 1):
+            src_id, tgt_id = raw_path[i], raw_path[i + 1]
+            if not self.G.has_edge(src_id, tgt_id):
+                continue
+            edge_data = self.G.edges[src_id, tgt_id]
+            if edge_data.get("metadata", {}).get("claim_id"):
+                n += 1
+        return n
+
+    def _sort_chain_candidates(
+        self,
+        candidates: list[tuple[list[str], list[int]]],
+    ) -> list[tuple[list[str], list[int]]]:
+        """Order chain candidates, optionally preferring claim-backed paths."""
+        if not self._chain_prefer_claim_backed_paths:
+            return candidates
+        return sorted(
+            candidates,
+            key=lambda item: (self._path_claim_edge_count(item[0]), len(item[0])),
+            reverse=True,
+        )
+
+    def _select_chain_survivors(
+        self,
+        candidates: list[tuple[list[str], list[int]]],
+        max_chains: int,
+    ) -> list[tuple[list[str], list[int]]]:
+        """Keep mostly claim-backed chain paths with a small claimless fallback."""
+        if not self._chain_prefer_claim_backed_paths:
+            return candidates[:max_chains]
+
+        ordered = self._sort_chain_candidates(candidates)
+        claim_backed = [
+            item for item in ordered
+            if self._path_claim_edge_count(item[0]) > 0
+        ]
+        claimless = [
+            item for item in ordered
+            if self._path_claim_edge_count(item[0]) == 0
+        ]
+        if not claim_backed:
+            return ordered[:max_chains]
+
+        fallback_quota = 0
+        if claimless:
+            fallback_quota = max(1, int(max_chains * self._chain_claimless_path_fraction))
+            fallback_quota = min(fallback_quota, len(claimless))
+        primary_quota = max_chains - fallback_quota
+        survivors = claim_backed[:primary_quota]
+        if len(survivors) < primary_quota:
+            fallback_quota += primary_quota - len(survivors)
+        survivors.extend(claimless[:fallback_quota])
+        if len(survivors) < max_chains:
+            used = {tuple(path) for path, _anchors in survivors}
+            for item in ordered:
+                if tuple(item[0]) in used:
+                    continue
+                survivors.append(item)
+                if len(survivors) >= max_chains:
+                    break
+        return survivors[:max_chains]
 
     # ── batch generation ───────────────────────────────────────────────
 
@@ -1580,7 +1657,9 @@ class HypothesisEngine:
         # Per-atom domain pools, with claim/PATH_IGNORE nodes excluded.
         atom_node_pools: list[set[str]] = []
         for atom in atoms:
-            doms = ATOM_TO_DOMAINS[atom]
+            doms = ATOM_TO_DOMAINS[atom] | frozenset(
+                self._chain_atom_extra_domains.get(atom, frozenset())
+            )
             extra_filter = self._chain_atom_filters.get(atom)
             pool = {
                 nid for nid, data in self.G.nodes(data=True)
@@ -1612,7 +1691,17 @@ class HypothesisEngine:
             n for n in atom_node_pools[0]
             if n in self.G
         ]
-        seeds.sort(key=lambda n: self.G.degree(n), reverse=True)
+        seed_ranker: Optional[Callable] = self._chain_atom_rankers.get(atoms[0])
+        if seed_ranker is not None:
+            seeds.sort(
+                key=lambda n: (
+                    seed_ranker(n, self._index.get(n)),
+                    self.G.degree(n),
+                ),
+                reverse=True,
+            )
+        else:
+            seeds.sort(key=lambda n: self.G.degree(n), reverse=True)
         seeds = seeds[:max_seeds]
 
         # ``frontier`` holds (path, anchor_indices) pairs. We track anchor
@@ -1637,7 +1726,7 @@ class HypothesisEngine:
                     continue
 
                 # Candidate next-anchor nodes within next atom's pool.
-                kept_for_this_partial = 0
+                partial_candidates: list[tuple[list[str], list[int]]] = []
                 for tgt, sub_path in reachable.items():
                     if tgt == head or tgt not in next_pool:
                         continue
@@ -1669,10 +1758,10 @@ class HypothesisEngine:
                         continue
                     new_path = partial + sub_path[1:]
                     new_anchors = anchors + [len(new_path) - 1]
-                    extended.append((new_path, new_anchors))
-                    kept_for_this_partial += 1
-                    if kept_for_this_partial >= max_paths_per_segment:
-                        break
+                    partial_candidates.append((new_path, new_anchors))
+
+                partial_candidates = self._sort_chain_candidates(partial_candidates)
+                extended.extend(partial_candidates[:max_paths_per_segment])
 
                 if len(extended) >= max_chains * 4:
                     # safety brake — segment expansion combinatorially explodes
@@ -1688,7 +1777,7 @@ class HypothesisEngine:
             frontier = extended
 
         # Build hypotheses from the surviving full chains.
-        survivors = frontier[:max_chains]
+        survivors = self._select_chain_survivors(frontier, max_chains)
         logger.info(
             f"chain '{chain.name}' [{chain.signature}]: "
             f"{len(survivors)} mediation path(s) from {len(seeds)} seed(s)"
@@ -2343,8 +2432,12 @@ class HypothesisEngine:
         modality_partitioned: bool = True,
         min_abs_d: float = 0.05,
         max_fdr_p: float = 0.05,
+        disease_include_names: tuple[str, ...] | None = None,
+        disease_exclude_names: tuple[str, ...] | None = None,
+        atlas_label_names: tuple[str, ...] | None = None,
+        atlas_label_sources: dict[str, tuple[str, ...]] | None = None,
     ) -> list[Hypothesis]:
-        """CS2 generator — mine ENIGMA case-control edges into transdiagnostic
+        """Case Study 1 generator — mine ENIGMA case-control edges into transdiagnostic
         (region, modality, sign) clusters that span ≥ ``min_diseases_per_cluster``
         diseases.
 
@@ -2364,6 +2457,19 @@ class HypothesisEngine:
         """
         from collections import defaultdict
 
+        include_names = {x.casefold() for x in (disease_include_names or ())}
+        exclude_names = {x.casefold() for x in (disease_exclude_names or ())}
+        atlas_norm = {
+            self._normalize_region_label(x)
+            for x in (atlas_label_names or ())
+            if self._normalize_region_label(x)
+        }
+        atlas_source_norm = {
+            self._normalize_region_label(label): tuple(sorted(set(atlases)))
+            for label, atlases in (atlas_label_sources or {}).items()
+            if self._normalize_region_label(label)
+        }
+
         bucket: dict[tuple[str, str, int], list[dict]] = defaultdict(list)
         for u, v, d in self.G.edges(data=True):
             m = d.get("metadata") or {}
@@ -2379,10 +2485,18 @@ class HypothesisEngine:
                 continue
             if abs(cd) < min_abs_d or fp > max_fdr_p:
                 continue
+            disease = self._index.get(u)
+            disease_name = disease.preferred_name if disease else str(u)
+            disease_key = disease_name.casefold()
+            if include_names and disease_key not in include_names:
+                continue
+            if exclude_names and disease_key in exclude_names:
+                continue
             sign = 1 if cd > 0 else -1
             mod_key = modality if modality_partitioned else "_any"
             bucket[(v, mod_key, sign)].append({
                 "disease_id": u,
+                "disease_name": disease_name,
                 "region_id": v,
                 "cohens_d": cd,
                 "fdr_p": fp,
@@ -2402,6 +2516,12 @@ class HypothesisEngine:
 
             region_node = self._index.get(region_id)
             region_name = region_node.preferred_name if region_node else region_id
+            region_norm = self._normalize_region_label(region_name)
+            matching_atlases = self._matching_atlases_for_region(
+                region_norm, atlas_norm, atlas_source_norm
+            )
+            if atlas_norm and not matching_atlases:
+                continue
             modality = entries[0]["modality"] if mod_key == "_any" else mod_key
 
             entries.sort(key=lambda e: abs(e["cohens_d"]), reverse=True)
@@ -2450,7 +2570,7 @@ class HypothesisEngine:
                 id=f"cluster_{region_id}_{mod_key}_{sign_label}",
                 hypothesis_type="transdiagnostic_cluster",
                 source_id=anchor_disease,
-                source_name=f"Transdiagnostic cluster ({len(kept)} disorders)",
+                source_name=f"Shared across {len(kept)} disorders: {disease_listing}",
                 target_id=region_id,
                 target_name=f"{region_name} ({modality}, {sign_label})",
                 path=links,
@@ -2465,11 +2585,13 @@ class HypothesisEngine:
                     f"are directly testable on UKB / ENIGMA-cohort imaging."
                 ),
                 metadata={
-                    "case_study": "cs2_transdiagnostic",
+                    "case_study": "case1_transdiagnostic",
                     "cluster_region_id": region_id,
                     "cluster_region_name": region_name,
                     "cluster_modality": modality,
                     "cluster_sign": sign_label,
+                    "atlas_constrained": bool(atlas_norm),
+                    "matching_atlases": matching_atlases,
                     "diseases": sorted({l.from_name for l in links}),
                     "disease_ids": sorted({l.from_id for l in links}),
                     "n_diseases": len(kept),
@@ -2497,6 +2619,43 @@ class HypothesisEngine:
             f"{min_diseases_per_cluster} diseases"
         )
         return clusters
+
+    @staticmethod
+    def _normalize_region_label(label: str) -> str:
+        s = (label or "").casefold()
+        s = s.replace("_", " ").replace("-", " ")
+        s = re.sub(r"\b(left|right|lh|rh|l|r)\b", " ", s)
+        s = re.sub(r"\bcortex\b", " ", s)
+        s = re.sub(r"[^a-z0-9]+", " ", s)
+        return re.sub(r"\s+", " ", s).strip()
+
+    @staticmethod
+    def _matching_atlases_for_region(
+        region_norm: str,
+        atlas_norm: set[str],
+        atlas_source_norm: dict[str, tuple[str, ...]],
+    ) -> list[str]:
+        if not region_norm or not atlas_norm:
+            return []
+        matches: set[str] = set()
+        region_tokens = set(region_norm.split())
+        for label_norm, atlases in atlas_source_norm.items():
+            if not label_norm:
+                continue
+            label_tokens = set(label_norm.split())
+            direct = (
+                region_norm == label_norm
+                or region_norm in label_norm
+                or label_norm in region_norm
+            )
+            token_overlap = (
+                len(region_tokens) >= 2
+                and len(label_tokens) >= 2
+                and len(region_tokens & label_tokens) >= min(len(region_tokens), 2)
+            )
+            if direct or token_overlap:
+                matches.update(atlases)
+        return sorted(matches)
 
     def batch_generate_imaging(
         self,

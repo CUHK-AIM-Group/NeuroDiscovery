@@ -243,7 +243,7 @@ class NeuroClawFCDataset(InMemoryDataset):
                 if self.label_dtype == "float":
                     # no fallback for regression — skip subjects without label
                     continue
-                # smoke-test fallback for classification: parity of last digit
+                # smoke-test fallback for numeric subject IDs.
                 label = int(sid) % 2
 
             try:

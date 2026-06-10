@@ -344,7 +344,7 @@ def _inject_gms_and_genesets(
     return dict(counts)
 
 
-# ── bridges that close CS2/CS3 directed traversal ────────────────────────
+# ── bridges that close Case Study 1/2 directed traversal ─────────────────
 
 def _bridge_region_to_im(kg: KnowledgeGraph) -> dict:
     """Mirror IM --is_imaging_feature_of--> region as region --has_imaging_feature--> IM.
@@ -373,7 +373,7 @@ def _bridge_im_to_outcome(kg: KnowledgeGraph) -> dict:
     no-op. We re-emit (IM:* --predicts--> OUTCOME:scale) for every IM
     whose region set overlaps the bridge's region anchor (resolved by id
     or name). Without this, no IM:* node has an out-edge to OUTCOME:*,
-    blocking CS2's D → IM → O closure. Idempotent.
+    blocking Case Study 1's D -> IM -> O closure. Idempotent.
     """
     counts = Counter()
 
