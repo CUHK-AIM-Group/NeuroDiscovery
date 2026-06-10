@@ -184,6 +184,23 @@ python installer/install_agent_integration.py --target all --export ./dist/agent
           agent uses a different import location, export the generated skill pack
           and import or copy it manually.
         </p>
+        <p>
+          To let Codex, Claude Code, Cursor, or another host agent use its own
+          built-in model instead of a NeuroClaw LLM API key for autoresearch,
+          start the file-based host-agent loop:
+        </p>
+        <div class="code-stack">
+          <pre><code>python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5</code></pre>
+        </div>
+        <p>
+          The host agent reads <code>tasks/round_XXX_task.json</code>, acts as
+          NeuroClaw's hypothesis generator, critic, and experiment supervisor,
+          writes <code>host_outputs/round_XXX_result.json</code>, and advances
+          the loop with:
+        </p>
+        <div class="code-stack">
+          <pre><code>python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir neurooracle/data/host_agent_runs/case1</code></pre>
+        </div>
       </section>
 
       <section id="verify" class="panel reveal">

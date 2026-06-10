@@ -250,6 +250,20 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
    After installation, ask the host agent to "use NeuroClaw" or "enter NeuroClaw
    mode" for neuroimaging and autoresearch work.
 
+   To let Codex, Claude Code, Cursor, or another host agent use its own built-in
+   model instead of a NeuroClaw LLM API key for autoresearch, start the
+   file-based host-agent loop:
+   ```bash
+   python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5
+   ```
+
+   The host agent reads `tasks/round_XXX_task.json`, acts as NeuroClaw's
+   hypothesis generator, critic, and experiment supervisor, writes
+   `host_outputs/round_XXX_result.json`, and advances the loop with:
+   ```bash
+   python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir neurooracle/data/host_agent_runs/case1
+   ```
+
 <div align="center">
   <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
 </div>

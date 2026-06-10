@@ -194,8 +194,8 @@ case-study autoresearch.
 Prefer the case-study-driven autoresearch route when a graph already exists:
 
 ```bash
-bash neurooracle/run_case_study.sh cs2_transdiagnostic
-bash neurooracle/run_case_study.sh cs3_pathway_mediation
+bash neurooracle/run_case_study.sh case1_transdiagnostic
+bash neurooracle/run_case_study.sh case2_pathway_mediation
 ```
 
 Or call the CLI directly:
@@ -203,6 +203,31 @@ Or call the CLI directly:
 ```bash
 python -m neurooracle.src.hypothesis_cli --graph <graph.json> case-study <case_id> --output-dir <runs/case_id>
 ```
+
+## Host-Agent AutoResearch
+
+Use this when the host agent should replace the configured LLM API with its own
+built-in model for hypothesis generation, critic review, experiment
+supervision, and next-round planning.
+
+```bash
+python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir <runs/host_agent_case1> --max-rounds 5
+```
+
+Then the host agent should:
+
+1. Read `<runs/host_agent_case1>/tasks/round_001_task.json`.
+2. Use its own reasoning model to act as NeuroClaw's generator, critic, and
+   experiment supervisor.
+3. Run the deterministic NeuroOracle command in the task file when useful.
+4. Write JSON to the task's `expected_result_path`.
+5. Run:
+
+```bash
+python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir <runs/host_agent_case1>
+```
+
+Repeat until `run_state.json` is `complete` or `blocked`.
 
 ## Graph Build And Claim Extraction
 
@@ -226,6 +251,97 @@ python -m neurooracle.phase2 --diseases "Alzheimer's disease" --year-start 2025 
   graph, abstracts, or case-study files are required.
 """
     _write_generated(ref_dir / "autoresearch.md", text)
+
+
+def _write_host_agent_autoresearch_reference(ref_dir: Path) -> None:
+    text = f"""{GENERATED_MARKER}
+# NeuroClaw Host-Agent AutoResearch
+
+Use this reference when Codex, Claude Code, Cursor, OpenClaw, Hermes,
+WorkBuddy, or QClaw should use its own built-in model instead of a configured
+LLM API for NeuroClaw autoresearch.
+
+## Core Idea
+
+The host agent is the reasoning backend. NeuroClaw provides the repository,
+knowledge graph, NeuroOracle commands, NeuroBench checks, task files, result
+schemas, and run-state validation.
+
+Do not try to call the host agent as a Python API. Instead, run a file-based
+loop:
+
+1. NeuroClaw creates a JSON task.
+2. The host agent reads the task and uses its own model to reason.
+3. The host agent runs local NeuroClaw commands when useful.
+4. The host agent writes a JSON result.
+5. NeuroClaw validates the result and creates the next task.
+
+## Start A Run
+
+```bash
+python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5
+```
+
+Optional:
+
+```bash
+python -m neurooracle.src.hypothesis_cli host-agent-init case2_pathway_mediation --output-dir neurooracle/data/host_agent_runs/case2 --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json --kge neurooracle/data/full_snapshot_v2/kge_complex.pt --deterministic-stages batch,novelty
+```
+
+## Per-Round Loop
+
+For each round:
+
+1. Read `run_state.json` and the current `tasks/round_XXX_task.json`.
+2. Inspect or run the task's `deterministic_neurooracle_command`.
+3. Act as:
+   - hypothesis generator
+   - statistical critic
+   - clinical critic
+   - methodological critic
+   - experiment supervisor
+4. Write JSON to `host_outputs/round_XXX_result.json`.
+5. Advance the run:
+
+```bash
+python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir neurooracle/data/host_agent_runs/case1
+```
+
+Check state:
+
+```bash
+python -m neurooracle.src.hypothesis_cli host-agent-status --run-dir neurooracle/data/host_agent_runs/case1
+```
+
+## Required Result Shape
+
+The task file includes `expected_result_template`. Keep the same top-level keys:
+
+- `schema_version`
+- `task_id`
+- `round`
+- `status`
+- `hypotheses`
+- `critic_review`
+- `experiment_plan`
+- `result_supervision`
+- `next_round`
+
+Use `status=complete` or `next_round.decision=stop` to end successfully. Use
+`status=blocked` or `next_round.decision=blocked` only when the run cannot make
+meaningful progress without missing data, missing tools, or user policy input.
+
+## Guardrails
+
+- Do not fabricate graph edges, PubMed support, command outputs, NeuroBench
+  scores, or experiment results.
+- Preserve exact commands, checked artifacts, and failure reasons in the JSON.
+- Prefer deterministic NeuroOracle and NeuroBench commands for evidence; use
+  host-agent reasoning for synthesis, criticism, supervision, and next actions.
+- Keep generated claims separate from the main KG unless the user explicitly
+  asks for graph injection.
+"""
+    _write_generated(ref_dir / "host_agent_autoresearch.md", text)
 
 
 def _write_model_workflows(ref_dir: Path) -> None:
@@ -260,6 +376,116 @@ def _write_model_workflows(ref_dir: Path) -> None:
     _write_generated(ref_dir / "model_workflows.md", "\n".join(lines) + "\n")
 
 
+def _write_install_prompt_reference(ref_dir: Path) -> None:
+    text = f"""{GENERATED_MARKER}
+# NeuroClaw Host-Agent Installation Prompt
+
+Use this reference when a user wants Codex, Claude Code, Cursor, OpenClaw,
+Hermes, WorkBuddy, or QClaw to install NeuroClaw for them and then operate in
+NeuroClaw mode.
+
+## Copy-Paste Prompt For Codex / Claude Code
+
+```text
+Please install NeuroClaw on this machine and then install the NeuroClaw agent
+integration for this host agent.
+
+Repository: https://github.com/CUHK-AIM-Group/NeuroClaw
+Preferred local path: <choose or ask me>
+Target host agent: <codex | claude-code | cursor | openclaw | hermes | workbuddy | qclaw | all>
+
+Before running the installer, inspect this machine and prepare the setup
+answers. Do not guess silently. Use safe defaults when they are obvious, and ask
+me only for missing information that cannot be discovered.
+
+Discover or confirm:
+1. Python runtime:
+   - Find a real Python executable, not a broken launcher/alias.
+   - Verify Python >= 3.10.
+   - If conda/mamba exists, decide whether to use or create a `neuroclaw` env.
+   - If Python is missing or unsuitable, ask whether to use conda or Docker.
+2. Docker:
+   - Check `docker --version` and whether Docker can run containers.
+   - Use Docker only if I ask for it or local Python/toolchain setup is not
+     suitable.
+3. GPU/CUDA:
+   - Check `nvidia-smi` and/or `nvcc --version`.
+   - Record CPU-only if no GPU/CUDA is available.
+4. Neuroimaging toolchain:
+   - Check `FSLDIR`, `fsl`, and FSL `bin` path.
+   - Check `FREESURFER_HOME` and `recon-all`.
+   - Check `dcm2niix`.
+   - Check optional MATLAB/SPM only if relevant.
+   - Check whether fMRIPrep/QSIPrep should be run through Docker containers.
+5. LLM backend:
+   - Ask which provider to use if not already configured.
+   - Supported provider choices include OpenAI, DeepSeek, MiniMax, Kimi/Moonshot,
+     Qwen/DashScope, Baichuan, Zhipu GLM, Doubao/Ark, OpenRouter, Together,
+     Groq, Fireworks, Ollama, llama.cpp, Anthropic, and local model.
+   - Ask for the API key environment variable name, but do not print or store
+     secrets unless I explicitly provide them for this session.
+6. Data directories:
+   - Ask for or choose default BIDS root and output root.
+   - If I do not specify them, use `~/data/bids` and `~/data/outputs`.
+
+Then install:
+1. Clone or update the NeuroClaw repository.
+2. Run the setup wizard or write `neuroclaw_environment.json` from the discovered
+   answers.
+3. Validate with `python installer/setup.py --check`.
+4. Install the host-agent integration with:
+
+   `python installer/install_agent_integration.py --target <target>`
+
+5. Verify that the generated NeuroClaw skill/rule exists and that
+   `references/skill_catalog.md`, `references/autoresearch.md`,
+   `references/host_agent_autoresearch.md`, `references/neurobench_catalog.md`,
+   and `references/model_workflows.md` were generated.
+6. Tell me the exact Python executable, setup type, Docker choice, CUDA/GPU
+   status, FSL path, FreeSurfer path, dcm2niix path, LLM provider, BIDS root,
+   output root, and installed integration path.
+
+After installation, enter NeuroClaw mode for neuroimaging and autoresearch
+tasks.
+```
+
+## Minimal Local Install Commands
+
+Use these after the setup information above is known:
+
+```bash
+git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
+cd NeuroClaw
+python installer/setup.py
+python installer/setup.py --check
+python installer/install_agent_integration.py --target codex
+```
+
+For all supported host agents:
+
+```bash
+python installer/install_agent_integration.py --target all
+```
+
+For manual import into a host agent with a custom location:
+
+```bash
+python installer/install_agent_integration.py --target all --export ./dist/agent-integrations
+```
+
+## Notes For Host Agents
+
+- Prefer inspecting the machine first over asking the user a long questionnaire.
+- Ask the user only for secrets, missing paths, or policy choices such as Docker
+  versus local Python when the local state is ambiguous.
+- Never claim NeuroClaw is installed until `installer/setup.py --check` passes
+  or you clearly explain why it could not be run.
+- A newly installed skill may require a new host-agent thread/session before it
+  appears in the active skill list.
+"""
+    _write_generated(ref_dir / "install_prompt.md", text)
+
+
 def _router_skill_text() -> str:
     return f"""---
 name: neuroclaw
@@ -292,10 +518,14 @@ When this skill is active, behave as NeuroClaw:
 ## Reference Order
 
 1. Read `references/skill_catalog.md` to choose a workflow skill.
-2. Read `references/autoresearch.md` for NeuroOracle and autoresearch.
-3. Read `references/neurobench_catalog.md` for benchmark tasks.
-4. Read `references/model_workflows.md` for model training/evaluation.
-5. Read the selected full `SKILL.md` or script from the NeuroClaw repository.
+2. Read `references/install_prompt.md` when the user wants this host agent to
+   install NeuroClaw or enter NeuroClaw mode from a fresh machine.
+3. Read `references/autoresearch.md` for NeuroOracle and autoresearch.
+4. Read `references/host_agent_autoresearch.md` when this host agent should use
+   its own model as NeuroClaw's generator, critic, and experiment supervisor.
+5. Read `references/neurobench_catalog.md` for benchmark tasks.
+6. Read `references/model_workflows.md` for model training/evaluation.
+7. Read the selected full `SKILL.md` or script from the NeuroClaw repository.
 
 ## Common Commands
 
@@ -303,9 +533,11 @@ When this skill is active, behave as NeuroClaw:
 python core/agent/main.py --web
 python core/agent/main.py --benchmark
 python core/agent/main.py --score-benchmark
-bash neurooracle/run_case_study.sh cs2_transdiagnostic
+bash neurooracle/run_case_study.sh case1_transdiagnostic
+python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5
 python -m neurooracle.phase1
 python -m neurooracle.phase2 --broad --max-workers 12
+python installer/install_agent_integration.py --target codex
 ```
 
 ## Guardrails
@@ -317,6 +549,12 @@ python -m neurooracle.phase2 --broad --max-workers 12
 - For long jobs, state expected inputs, outputs, and runtime assumptions first.
 - If external datasets, licensed tools, API keys, or large compute are missing,
   say exactly what is missing and provide the closest reproducible dry-run path.
+- If asked to install NeuroClaw, first inspect Python, Docker, CUDA/GPU, FSL,
+  FreeSurfer, dcm2niix, LLM provider/API-key environment variable, BIDS root,
+  and output root. Use `references/install_prompt.md` as the checklist.
+- If asked to use this host agent's built-in model for autoresearch, use
+  `references/host_agent_autoresearch.md` and the host-agent JSON loop. Do not
+  route that work through NeuroClaw's configured LLM API unless requested.
 """
 
 
@@ -367,7 +605,9 @@ NeuroClaw repository:
 Before reading the full repository, inspect the generated references:
 
 - `{_repo_path(ref_dir / "skill_catalog.md")}`
+- `{_repo_path(ref_dir / "install_prompt.md")}`
 - `{_repo_path(ref_dir / "autoresearch.md")}`
+- `{_repo_path(ref_dir / "host_agent_autoresearch.md")}`
 - `{_repo_path(ref_dir / "neurobench_catalog.md")}`
 - `{_repo_path(ref_dir / "model_workflows.md")}`
 
@@ -385,8 +625,10 @@ def _install_skill(target: str, scope: str) -> Path:
         root.mkdir(parents=True, exist_ok=True)
         _write_generated(root / "neuroclaw.mdc", _cursor_rule_text(ref_dir))
         _write_skill_catalog(ref_dir)
+        _write_install_prompt_reference(ref_dir)
         _write_neurobench_catalog(ref_dir)
         _write_autoresearch_reference(ref_dir)
+        _write_host_agent_autoresearch_reference(ref_dir)
         _write_model_workflows(ref_dir)
         return root
 
@@ -394,8 +636,10 @@ def _install_skill(target: str, scope: str) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     _write_generated(root / "SKILL.md", _router_skill_text())
     _write_skill_catalog(ref_dir)
+    _write_install_prompt_reference(ref_dir)
     _write_neurobench_catalog(ref_dir)
     _write_autoresearch_reference(ref_dir)
+    _write_host_agent_autoresearch_reference(ref_dir)
     _write_model_workflows(ref_dir)
     return root
 

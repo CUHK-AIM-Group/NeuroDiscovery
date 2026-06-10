@@ -1,6 +1,7 @@
 # Runtime & build
 __pycache__/
 .pytest_cache/
+*.egg-info/
 *.py[cod]
 *.pyo
 *.log
@@ -9,6 +10,7 @@ output/
 deploy/
 benchmark-env/
 hcp_env/
+.tmp_*
 
 # Data
 data/
@@ -63,3 +65,5 @@ _lggnn.json
 export_tables.py
 *.pdf
 skills/brain_gnn/scripts/lifespan_age_FINAL_SUMMARY.md
+neurodiscovery.tex
+neuroclaw.tex

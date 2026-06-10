@@ -183,6 +183,22 @@ python installer/install_agent_integration.py --target all --export ./dist/agent
           来处理神经影像和 autoresearch 任务。如果宿主 agent 使用不同的导入位置，
           可以先导出生成的 skill pack，再手动导入或复制。
         </p>
+        <p>
+          如果希望 Codex、Claude Code、Cursor 或其他宿主 agent 使用自己的内置模型，
+          而不是 NeuroClaw 配置中的 LLM API key 来做 autoresearch，可以启动基于文件协议的
+          host-agent 循环：
+        </p>
+        <div class="code-stack">
+          <pre><code>python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5</code></pre>
+        </div>
+        <p>
+          宿主 agent 会读取 <code>tasks/round_XXX_task.json</code>，以 NeuroClaw 的身份承担假设生成、
+          critic 审核和实验监督，写入 <code>host_outputs/round_XXX_result.json</code>，
+          然后用下面的命令推进下一轮：
+        </p>
+        <div class="code-stack">
+          <pre><code>python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir neurooracle/data/host_agent_runs/case1</code></pre>
+        </div>
       </section>
 
       <section id="verify" class="panel reveal">

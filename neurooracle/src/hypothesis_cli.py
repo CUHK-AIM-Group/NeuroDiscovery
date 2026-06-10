@@ -1054,6 +1054,10 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
                 min_diseases_per_cluster=int(extras.get("min_diseases_per_cluster", 3)),
                 max_clusters=int(extras.get("max_clusters", 20)),
                 modality_partitioned=bool(extras.get("modality_partitioned", True)),
+                disease_include_names=tuple(extras.get("disease_include_names", ())),
+                disease_exclude_names=tuple(extras.get("disease_exclude_names", ())),
+                atlas_label_names=tuple(extras.get("atlas_label_names", ())),
+                atlas_label_sources=dict(extras.get("atlas_label_sources", {})),
             )
             print(f"  -> {len(clusters)} cluster(s)")
             for c in clusters:
@@ -1076,7 +1080,7 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
         elif case.generator == GENERATOR_ATOM_SUBSTITUTION:
             raise NotImplementedError(
                 f"case-study '{case.name}' uses generator='atom_substitution'; "
-                "implementation lands in step 3 (CS-γ hindcasting)."
+                "implementation lands in Case Study 3 hindcasting."
             )
 
         else:
@@ -1345,7 +1349,7 @@ def main():
                         help="RNG seed for batched family rotation")
 
     # case-study (Nature paper rollout — orchestrates the 4-stage cycle for
-    # one of CS2 / CS3 / CS-γ; reads stage params from case_studies.py)
+    # one of Case Study 1 / 2 / 3; reads stage params from case_studies.py)
     from .case_studies import list_case_study_names
     p_cs = sub.add_parser("case-study",
                           help="Run autoresearch cycle for a registered Nature-paper case study")
@@ -1363,12 +1367,70 @@ def main():
                       help="KG path passed to plausibility stage (default: --graph)")
     p_cs.add_argument("--snapshot-2022-kg",
                       default=None,
-                      help="(CS-γ only) Path to 2022 KG snapshot; overrides extras default")
+                      help="(Case Study 3 only) Path to 2022 KG snapshot; overrides extras default")
     p_cs.add_argument("--snapshot-2022-kge",
                       default=None,
-                      help="(CS-γ only) Path to 2022 KGE checkpoint; overrides extras default")
+                      help="(Case Study 3 only) Path to 2022 KGE checkpoint; overrides extras default")
+
+    # host-agent autoresearch: file-based protocol for Codex / Claude Code /
+    # Cursor and similar host agents that provide their own model.
+    p_ha_init = sub.add_parser(
+        "host-agent-init",
+        help="Create a host-agent-driven autoresearch run and first task",
+    )
+    p_ha_init.add_argument("case_study", choices=list(list_case_study_names()),
+                           help="Which case study to run")
+    p_ha_init.add_argument("--output-dir", required=True,
+                           help="Directory for host-agent run_state, tasks, and outputs")
+    p_ha_init.add_argument("--graph", dest="ha_graph", default=None,
+                           help="KG path for deterministic NeuroOracle support stages")
+    p_ha_init.add_argument("--kge", default="neurooracle/data/full_snapshot_v2/kge_complex.pt",
+                           help="KGE checkpoint for deterministic plausibility support")
+    p_ha_init.add_argument("--max-rounds", type=int, default=5,
+                           help="Maximum host-agent autoresearch rounds")
+    p_ha_init.add_argument("--deterministic-stages", default="batch,novelty",
+                           help="Case-study stages the host agent may run for support artifacts")
+
+    p_ha_next = sub.add_parser(
+        "host-agent-next",
+        help="Validate current host-agent output and create the next task",
+    )
+    p_ha_next.add_argument("--run-dir", required=True,
+                           help="Host-agent autoresearch run directory")
+
+    p_ha_status = sub.add_parser(
+        "host-agent-status",
+        help="Print host-agent autoresearch run_state.json",
+    )
+    p_ha_status.add_argument("--run-dir", required=True,
+                             help="Host-agent autoresearch run directory")
 
     args = parser.parse_args()
+
+    if args.command == "host-agent-init":
+        from .host_agent_autoresearch import init_run
+        graph_p = args.ha_graph or args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
+        result = init_run(
+            case_study=args.case_study,
+            output_dir=args.output_dir,
+            graph_path=graph_p,
+            kge_path=args.kge,
+            max_rounds=args.max_rounds,
+            deterministic_stages=args.deterministic_stages,
+        )
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "host-agent-next":
+        from .host_agent_autoresearch import advance_run
+        result = advance_run(args.run_dir)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+
+    if args.command == "host-agent-status":
+        from .host_agent_autoresearch import load_status
+        print(json.dumps(load_status(args.run_dir), indent=2, ensure_ascii=False))
+        return
 
     # Commands that don't need the full HypothesisEngine — short-circuit so we
     # don't spend ~1 min loading the KG into a NetworkX graph for nothing.
