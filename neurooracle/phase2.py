@@ -92,6 +92,8 @@ from .src.chain_extract import (
     run_retry_failed, run_second_pass_zero,
     run_fill_sparse, run_backfill_cache,
 )
+from .src.case_targeted_extract import run_case_targeted_extraction
+from .src.case1_manual_claims import run_manual_case1_claim_ingestion
 
 
 def _cmd_chain():
@@ -135,6 +137,67 @@ def _cmd_chain():
         strict_phase1=args.strict_phase1,
         sample_rate_seen=args.qc_rate,
         lock_model=args.lock_model,
+    )
+
+
+def _cmd_case_targeted():
+    p = argparse.ArgumentParser(description="Case-study-targeted Phase-2 extraction")
+    p.add_argument("--preset", type=str, default="case2_pathway_mediation",
+                   choices=[
+                       "case1_transdiagnostic",
+                       "case2_pathway_mediation",
+                       "case2_supplemental_classic",
+                   ],
+                   help="Curated query preset to run")
+    p.add_argument("--year-start", type=int, default=2010)
+    p.add_argument("--year-end", type=int, default=2026)
+    p.add_argument("--target-papers", type=int, default=200,
+                   help="Stop searching after this many new papers are selected")
+    p.add_argument("--max-results", type=int, default=100,
+                   help="Max source results per curated query")
+    p.add_argument("--source", type=str, default="pubmed",
+                   choices=[
+                       "pubmed",
+                       "openalex",
+                       "europepmc",
+                       "arxiv",
+                       "biorxiv",
+                       "medrxiv",
+                       "anysearch",
+                   ],
+                   help="Literature source to search")
+    p.add_argument("--collect-only", action="store_true",
+                   help="Only collect/cache abstracts and metadata; do not extract claims or write the graph")
+    p.add_argument("--max-workers", type=int, default=2)
+    p.add_argument("--data-dir", type=str, default=None)
+    p.add_argument("--include-seen", action="store_true",
+                   help="Allow PMIDs already present in papers_metadata.csv")
+    p.add_argument("--keep-noise", action="store_true")
+    p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("--lock-model", action="store_true",
+                   help="Disable adaptive model upgrade/downgrade and keep "
+                        "the extractor pinned to OPENAI_MODEL for this run.")
+    p.add_argument("-v", "--verbose", action="store_true")
+    args = p.parse_args(sys.argv[2:])
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    run_case_targeted_extraction(
+        preset=args.preset,
+        year_start=args.year_start,
+        year_end=args.year_end,
+        target_papers=args.target_papers,
+        max_results_per_query=args.max_results,
+        source=args.source,
+        max_workers=args.max_workers,
+        data_dir=Path(args.data_dir) if args.data_dir else None,
+        keep_noise=args.keep_noise,
+        strict_phase1=args.strict_phase1,
+        include_seen=args.include_seen,
+        lock_model=args.lock_model,
+        collect_only=args.collect_only,
     )
 
 
@@ -291,15 +354,40 @@ def _cmd_backfill_cache():
     )
 
 
+def _cmd_manual_case1():
+    p = argparse.ArgumentParser(description="Ingest hand-curated Case Study 1 transdiagnostic claims")
+    p.add_argument("--data-dir", type=str, default=None)
+    p.add_argument("--pmids", nargs="+", default=None,
+                   help="Optional subset of curated PMIDs to ingest")
+    p.add_argument("--keep-noise", action="store_true")
+    p.add_argument("--strict-phase1", action="store_true")
+    p.add_argument("-v", "--verbose", action="store_true")
+    args = p.parse_args(sys.argv[2:])
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    summary = run_manual_case1_claim_ingestion(
+        data_dir=Path(args.data_dir) if args.data_dir else None,
+        pmids=args.pmids,
+        keep_noise=args.keep_noise,
+        strict_phase1=args.strict_phase1,
+    )
+    print(summary)
+
+
 _SUBCOMMANDS = {
     "biomarker-scan":  biomarker_scan_main,
     "coverage":        coverage_main,
     "chain":           _cmd_chain,
+    "case-targeted":   _cmd_case_targeted,
     "rerun-cached":    _cmd_rerun_cached,
     "retry-failed":    _cmd_retry_failed,
     "second-pass-zero": _cmd_second_pass_zero,
     "fill-sparse":     _cmd_fill_sparse,
     "backfill-cache":  _cmd_backfill_cache,
+    "manual-case1":    _cmd_manual_case1,
 }
 
 
