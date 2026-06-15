@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const repo = path.resolve(__dirname, '..', '..');
 const stagingDir = path.join(repo, 'neurooracle', 'data', 'phase2_staging', 'general_neuromed_manual_20260610');
@@ -30,6 +31,46 @@ function readJsonl(file) {
     .split(/\r?\n/)
     .filter(Boolean)
     .map((line) => JSON.parse(line));
+}
+
+function stableAnchorId(name) {
+  const normalized = String(name || '').trim().toLowerCase();
+  const slug = normalized
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 96) || 'unnamed';
+  const hash = crypto.createHash('sha1').update(normalized).digest('hex').slice(0, 12);
+  return `CLM_CONCEPT:${slug}_${hash}`;
+}
+
+function normalizeClaimShape(raw, exactNameToId) {
+  const claim = JSON.parse(JSON.stringify(raw));
+  claim.id = claim.id || claim.claim_id;
+  if (!claim.id) throw new Error('Manual claim is missing both id and claim_id.');
+
+  claim.metadata = claim.metadata || {};
+  claim.metadata.subject_type = claim.metadata.subject_type || claim.subject_type || '';
+  claim.metadata.object_type = claim.metadata.object_type || claim.object_type || 'OUTCOME';
+  claim.metadata.curation_scope = claim.metadata.curation_scope || 'general_neuromed_manual_strict_neuroscience';
+
+  const subjectNameKey = String(claim.subject_name || '').trim().toLowerCase();
+  const objectNameKey = String(claim.object_name || '').trim().toLowerCase();
+  claim.subject_id = claim.subject_id || exactNameToId.get(subjectNameKey) || stableAnchorId(claim.subject_name);
+  claim.object_id = claim.object_id || exactNameToId.get(objectNameKey) || stableAnchorId(claim.object_name);
+
+  claim.source_paper = claim.source_paper || {
+    pmid: claim.pmid || '',
+    doi: claim.doi || '',
+    title: claim.title || '',
+    year: claim.year || null,
+    journal: claim.journal || '',
+  };
+  claim.raw_text = claim.raw_text
+    || (typeof claim.evidence === 'string' ? claim.evidence : '')
+    || claim.evidence?.rationale
+    || claim.evidence?.methodology
+    || '';
+  return claim;
 }
 
 function conceptNode(id, name, domainTags, sourceVocab, metadata = {}, definition = '') {
@@ -184,8 +225,14 @@ function main() {
   graph.concepts = graph.concepts || {};
   graph.edges = graph.edges || [];
 
+  const exactNameToId = new Map();
+  for (const [id, node] of Object.entries(graph.concepts)) {
+    const key = String(node.preferred_name || '').trim().toLowerCase();
+    if (key && !exactNameToId.has(key)) exactNameToId.set(key, id);
+  }
+
   const rawClaims = readJsonl(args.claims);
-  const claims = rawClaims.map(canonicalizeClaim);
+  const claims = rawClaims.map((claim) => canonicalizeClaim(normalizeClaimShape(claim, exactNameToId)));
   const existingConcepts = new Set(Object.keys(graph.concepts));
   const existingEdges = new Set(graph.edges.map(edgeKey));
   const existingExtractedIds = fs.existsSync(args.extracted)

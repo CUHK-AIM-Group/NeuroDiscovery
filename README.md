@@ -38,10 +38,6 @@ Neuroimaging datasets demand specialized preprocessing, and preprocessing qualit
 
 NeuroClaw prioritizes **data processing** and **model configuration/execution**. It ships with independent GUI and CLI interfaces for day-to-day use, and can also be installed as a reusable skill library inside agent projects such as OpenClaw, Hermes, and Claude Code.
 
-**Notes**
-- We constructed **NeuroBench** to benchmark multi-agent performance across neuroimaging workflows, especially raw data processing and model execution, and plan to refine and evaluate existing medical and general claw systems.
-- Each SKILL.md ends with the author information; please open an issue to the corresponding author if you have questions.
-
 ---
 
 ## 🚀 Updates
@@ -69,6 +65,9 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 - **Preprocessing Constraint Awareness**: Dataset-specific modality availability and preprocessing requirements are considered during orchestration
 
 #### Supported Dataset Overview
+
+<details>
+<summary><strong>Show supported dataset table</strong></summary>
 
 | Dataset | Supported Modalities | Additional Data | Cohort Scale | Official Link |
 | :---: | --- | --- | --- | :--- |
@@ -101,6 +100,8 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | TCP | rs-fMRI | Psychiatric diagnostic interviews; cognitive and clinical assessments | 245 transdiagnostic participants | https://openneuro.org/datasets/ds004215 |
 | UCLA CNP | T1w; dMRI; rs-fMRI; task-fMRI | Diagnostic groups; neuropsychological and phenotypic assessments | 272 participants in OpenNeuro ds000030 | https://openneuro.org/datasets/ds000030 |
 | UK Biobank | T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI | Genotype/genomic data; questionnaires; hospital records; environmental data; sociodemographic data; physical measures | ~50,000 participants with multimodal imaging data | https://www.ukbiobank.ac.uk/ |
+
+</details>
 
 ### 🎯 Executability and Reproducibility
 - **Automatic Dependency Management**: No manual installation needed; the system detects and resolves dependencies
@@ -142,84 +143,96 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 > The bundled installer configures everything, including your Python environment,
 > CUDA version, neuroimaging toolchain, and LLM backend.
 
-### Installation Steps
+### Installation Options
 
-1. **Clone the Repository**
+<details>
+<summary><strong>Standalone NeuroClaw installation (GUI and CLI)</strong></summary>
+
+1. **Clone the repository**
    ```bash
    git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
    cd NeuroClaw
    ```
 
-2. **Run the Setup Wizard**
+2. **Run the setup wizard**
    ```bash
    python installer/setup.py
    ```
-  This installs the standalone NeuroClaw environment for both the GUI and CLI workflows.
-  The wizard will walk you through:
-  - Python runtime (system / conda / Docker)
-  - CUDA / GPU configuration and optional PyTorch install
-  - Neuroscience toolchain paths (FSL, FreeSurfer, dcm2niix, etc.)
-  - LLM backend selection (OpenAI, DeepSeek, MiniMax, Kimi/Moonshot, Qwen/DashScope, Baichuan, Zhipu GLM, Doubao/Ark, OpenRouter, Together, Groq, Fireworks, Ollama, llama.cpp, Anthropic, or local model)
-  - Default BIDS and output directories
-  - Web UI dependencies and attachment parsers (PDF/DOCX/XLSX/PPTX)
 
-   Settings are saved to `neuroclaw_environment.json` and loaded automatically on every future session.
-   Setup does not ask for an API key. Pass the key only at runtime with `--api-key`, or export the configured environment variable before startup.
+   This installs the standalone NeuroClaw environment for both GUI and CLI workflows. The wizard will walk you through:
+   - Python runtime (system / conda / Docker)
+   - CUDA / GPU configuration and optional PyTorch install
+   - Neuroscience toolchain paths (FSL, FreeSurfer, dcm2niix, etc.)
+   - LLM backend selection (OpenAI, DeepSeek, MiniMax, Kimi/Moonshot, Qwen/DashScope, Baichuan, Zhipu GLM, Doubao/Ark, OpenRouter, Together, Groq, Fireworks, Ollama, llama.cpp, Anthropic, or local model)
+   - Default BIDS and output directories
+   - Web UI dependencies and attachment parsers (PDF/DOCX/XLSX/PPTX)
+
+   Settings are saved to `neuroclaw_environment.json` and loaded automatically on every future session. Setup does not ask for an API key. Pass the key only at runtime with `--api-key`, or export the configured environment variable before startup.
 
    For a quick non-interactive setup with auto-detected defaults:
    ```bash
    python installer/setup.py --non-interactive
    ```
 
-    If you skipped optional Web UI dependencies, install them manually:
-    ```bash
-    pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx
-    ```
+   If you skipped optional Web UI dependencies, install them manually:
+   ```bash
+   pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx
+   ```
 
 3. **Start NeuroClaw**
-   
-   *Option A — Interactive REPL (terminal)*
+
+   Interactive REPL:
    ```bash
    python core/agent/main.py --api-key "$OPENAI_API_KEY"
    ```
 
-   *Option B — Browser Web UI (recommended)*
+   Browser Web UI:
    ```bash
    python core/agent/main.py --web --api-key "$OPENAI_API_KEY"
    ```
+
    Then open **http://localhost:7080** in your browser. The Web UI features a chat interface, skills sidebar, markdown rendering, and code syntax highlighting.
 
-  If you prefer environment variables, export the provider-specific key first and start NeuroClaw without `--api-key`.
-  Built-in OpenAI-compatible provider profiles:
-  - `deepseek`: `DEEPSEEK_API_KEY`, default endpoint `https://api.deepseek.com`
-  - `minimax`: `MINIMAX_API_KEY`, default endpoint `https://api.minimaxi.com/v1`
-  - `kimi` / `moonshot`: `MOONSHOT_API_KEY`, default endpoint `https://api.moonshot.cn/v1`
-  - `qwen` / `dashscope`: `DASHSCOPE_API_KEY`, default endpoint `https://dashscope.aliyuncs.com/compatible-mode/v1`
-  - `baichuan`: `BAICHUAN_API_KEY`, default endpoint `https://api.baichuan-ai.com/v1`
-  - `zhipu` / `glm`: `ZHIPUAI_API_KEY`, default endpoint `https://open.bigmodel.cn/api/paas/v4`
-  - `doubao` / `ark`: `ARK_API_KEY`, default endpoint `https://ark.cn-beijing.volces.com/api/v3`
-  - `openrouter`: `OPENROUTER_API_KEY`, default endpoint `https://openrouter.ai/api/v1`
-  - `together`: `TOGETHER_API_KEY`, default endpoint `https://api.together.xyz/v1`
-  - `groq`: `GROQ_API_KEY`, default endpoint `https://api.groq.com/openai/v1`
-  - `fireworks`: `FIREWORKS_API_KEY`, default endpoint `https://api.fireworks.ai/inference/v1`
-  - `ollama`: no API key required, default endpoint `http://localhost:11434/v1`
-  - `llamacpp`: no API key required, default endpoint `http://localhost:8080/v1`
+   If you prefer environment variables, export the provider-specific key first and start NeuroClaw without `--api-key`.
 
-    Web UI attachment parsing currently supports these file types:
-    - Text/config/code: `.txt`, `.md`, `.markdown`, `.json`, `.yaml`, `.yml`, `.csv`, `.tsv`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sh`, `.bash`, `.zsh`, `.sql`, `.html`, `.css`, `.xml`, `.log`, `.rst`, `.ini`, `.toml`, `.cfg`
-    - Documents: `.pdf`, `.docx`, `.xlsx`, `.pptx`
+   Built-in OpenAI-compatible provider profiles:
+   - `deepseek`: `DEEPSEEK_API_KEY`, default endpoint `https://api.deepseek.com`
+   - `minimax`: `MINIMAX_API_KEY`, default endpoint `https://api.minimaxi.com/v1`
+   - `kimi` / `moonshot`: `MOONSHOT_API_KEY`, default endpoint `https://api.moonshot.cn/v1`
+   - `qwen` / `dashscope`: `DASHSCOPE_API_KEY`, default endpoint `https://dashscope.aliyuncs.com/compatible-mode/v1`
+   - `baichuan`: `BAICHUAN_API_KEY`, default endpoint `https://api.baichuan-ai.com/v1`
+   - `zhipu` / `glm`: `ZHIPUAI_API_KEY`, default endpoint `https://open.bigmodel.cn/api/paas/v4`
+   - `doubao` / `ark`: `ARK_API_KEY`, default endpoint `https://ark.cn-beijing.volces.com/api/v3`
+   - `openrouter`: `OPENROUTER_API_KEY`, default endpoint `https://openrouter.ai/api/v1`
+   - `together`: `TOGETHER_API_KEY`, default endpoint `https://api.together.xyz/v1`
+   - `groq`: `GROQ_API_KEY`, default endpoint `https://api.groq.com/openai/v1`
+   - `fireworks`: `FIREWORKS_API_KEY`, default endpoint `https://api.fireworks.ai/inference/v1`
+   - `ollama`: no API key required, default endpoint `http://localhost:11434/v1`
+   - `llamacpp`: no API key required, default endpoint `http://localhost:8080/v1`
 
-    The file picker in the Web UI only allows these supported formats.
+   Web UI attachment parsing currently supports these file types:
+   - Text/config/code: `.txt`, `.md`, `.markdown`, `.json`, `.yaml`, `.yml`, `.csv`, `.tsv`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sh`, `.bash`, `.zsh`, `.sql`, `.html`, `.css`, `.xml`, `.log`, `.rst`, `.ini`, `.toml`, `.cfg`
+   - Documents: `.pdf`, `.docx`, `.xlsx`, `.pptx`
 
-   To use a custom port or bind to all interfaces (e.g., for remote access):
+   The file picker in the Web UI only allows these supported formats.
+
+   To use a custom port or bind to all interfaces:
    ```bash
-  python core/agent/main.py --web --port 8080 --host 0.0.0.0 --api-key "$OPENAI_API_KEY"
+   python core/agent/main.py --web --port 8080 --host 0.0.0.0 --api-key "$OPENAI_API_KEY"
    ```
 
-4. **Install NeuroClaw into other agent systems**
+</details>
 
-   To make a host agent operate in NeuroClaw mode with NeuroClaw catalogs,
-   NeuroOracle, NeuroBench, model workflows, and neuroimaging skills:
+<details>
+<summary><strong>Install NeuroClaw into Claude Code, Codex, Cursor, and other agents</strong></summary>
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
+   cd NeuroClaw
+   ```
+
+2. **Install the host-agent integration**
 
    | Host agent | Install command | Installed integration |
    |---|---|---|
@@ -231,38 +244,36 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
    | WorkBuddy | `python installer/install_agent_integration.py --target workbuddy` | `~/.workbuddy/skills/neuroclaw/` |
    | QClaw | `python installer/install_agent_integration.py --target qclaw` | `~/.qclaw/skills/neuroclaw/` |
 
-   To install the Codex and Claude Code integrations together:
+   Install Codex and Claude Code together:
    ```bash
    python installer/install_agent_integration.py --target both
    ```
 
-   To generate all supported integrations:
+   Generate all supported integrations:
    ```bash
    python installer/install_agent_integration.py --target all
    ```
 
-   If a host agent uses a different import location, export the generated skill
-   pack and import or copy it manually:
+   Export skill packs for manual import:
    ```bash
    python installer/install_agent_integration.py --target all --export ./dist/agent-integrations
    ```
 
-   After installation, ask the host agent to "use NeuroClaw" or "enter NeuroClaw
-   mode" for neuroimaging and autoresearch work.
+3. **Use NeuroClaw from the host agent**
 
-   To let Codex, Claude Code, Cursor, or another host agent use its own built-in
-   model instead of a NeuroClaw LLM API key for autoresearch, start the
-   file-based host-agent loop:
+   After installation, ask the host agent to "use NeuroClaw" or "enter NeuroClaw mode" for neuroimaging and autoresearch work.
+
+   To let Codex, Claude Code, Cursor, or another host agent use its own built-in model instead of a NeuroClaw LLM API key for autoresearch, start the file-based host-agent loop:
    ```bash
    python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5
    ```
 
-   The host agent reads `tasks/round_XXX_task.json`, acts as NeuroClaw's
-   hypothesis generator, critic, and experiment supervisor, writes
-   `host_outputs/round_XXX_result.json`, and advances the loop with:
+   The host agent reads `tasks/round_XXX_task.json`, acts as NeuroClaw's hypothesis generator, critic, and experiment supervisor, writes `host_outputs/round_XXX_result.json`, and advances the loop with:
    ```bash
    python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir neurooracle/data/host_agent_runs/case1
    ```
+
+</details>
 
 <div align="center">
   <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
@@ -341,132 +352,34 @@ The benchmark reports include the solution thinking, skills used, skill-call cou
 
 ```
 NeuroClaw/
-├── README.md                       # This file
-├── USER.md                         # User-defined configurations and preferences
-├── SOUL.md                         # System behavior guidelines and principles
+├── README.md / README_zh.md        # Project documentation
+├── USER.md / SOUL.md               # User preferences and agent behavior guidelines
 │
-├── core/                           # Self-contained NeuroClaw engine (no OpenClaw required)
-│   ├── agent/                      # LLM conversation loop and tool-call dispatcher
-│   │   └── main.py                 # Entry point; --web flag starts the Web UI
-│   ├── web/                        # Browser-based Web UI (FastAPI + WebSocket)
-│   │   ├── server.py               # FastAPI app: WebSocket chat, /api/skills, /api/env
-│   │   └── static/
-│   │       └── index.html          # Dark-theme chat interface (markdown + syntax highlight)
-│   ├── skill_loader/               # Skill scanner: reads skills/*/SKILL.md and registers tools
-│   │   └── loader.py
-│   ├── tool-runtime/               # Executes handler.js / Python handlers
-│   │   └── runtime.py
-│   ├── session/                    # Session persistence and context-window compression
-│   │   └── manager.py
-│   ├── checkpoint/                 # Shadow-git filesystem checkpoint manager
-│   │   ├── __init__.py
-│   │   └── manager.py
-│   └── config/
-│       └── features.json           # Feature toggles (disable WhatsApp/Slack/etc.; enable web_ui)
+├── core/                           # Standalone NeuroClaw engine
+│   ├── agent/                      # CLI/Web agent entry points
+│   ├── web/                        # FastAPI Web UI
+│   ├── skill_loader/               # Reads skills/*/SKILL.md
+│   └── config/                     # Feature toggles and runtime settings
 │
-├── installer/                      # Custom setup wizard (replaces OpenClaw's default installer)
-│   ├── setup.py                    # Entry point: python installer/setup.py
-│   ├── config_wizard.py            # Interactive 6-step configuration wizard (incl. Web UI deps)
-│   └── neuro_defaults.json         # Neuroscience-specific default template
+├── installer/                      # Setup wizard and host-agent integration installer
+│   ├── setup.py
+│   ├── config_wizard.py
+│   └── install_agent_integration.py
 │
-├── skills/                         # 86 skills: base (38) / subagent (42) / interface (6)
-│   ├── abide-skill/
-│   ├── aibl-skill/
-│   ├── abcd-skill/
-│   ├── academic-research-hub/
-│   ├── adhd200-skill/
-│   ├── adni-skill/
-│   ├── aomic-skill/
-│   ├── asl-skill/
-│   ├── bids-organizer/
-│   ├── beautiful-log/
-│   ├── bnt/
-│   ├── bold5000-skill/
-│   ├── brain-visualization/
-│   ├── brain_gnn/
-│   ├── claw-shell/
-│   ├── cobre-skill/
-│   ├── camcan-skill/
-│   ├── combraintf/
-│   ├── conda-env-manager/
-│   ├── conn-tool/
-│   ├── dcm2nii/
-│   ├── dependency-planner/
-│   ├── detrending/
-│   ├── dictlearning/
-│   ├── dipy-tool/
-│   ├── dmt-har-med-skill/
-│   ├── docker-env-manager/
-│   ├── dwi-skill/
-│   ├── eeg-skill/
-│   ├── experiment-controller/
-│   ├── filtering/
-│   ├── fm_app/
-│   ├── fmri-skill/
-│   ├── fmriprep-tool/
-│   ├── freesurfer-tool/
-│   ├── fsl-tool/
-│   ├── git-essentials/
-│   ├── git-workflows/
-│   ├── glm/
-│   ├── harmonization-tool/
-│   ├── harness-core/
-│   ├── hbn-skill/
-│   ├── hcpa-skill/
-│   ├── hcpd-skill/
-│   ├── hcpep-skill/
-│   ├── hcpya-skill/
-│   ├── hcppipeline-tool/
-│   ├── hierarchical/
-│   ├── ibgnn/
-│   ├── ica/
-│   ├── ixi-skill/
-│   ├── kmeans/
-│   ├── knowledge-graph-builder/
-│   ├── lggnn/
-│   ├── method-design/
-│   ├── mne-eeg-tool/
-│   ├── meg-skill/
-│   ├── mnd-skill/
-│   ├── mschallenge-skill/
-│   ├── multi-search-engine/
-│   ├── neurostorm/
-│   ├── nibabel-skill/
-│   ├── nifd-skill/
-│   ├── nsd-skill/
-│   ├── nii2dcm/
-│   ├── nilearn-tool/
-│   ├── oasis-skill/
-│   ├── overleaf-skill/
-│   ├── paper-writing/
-│   ├── pet-skill/
-│   ├── pnc-skill/
-│   ├── ppmi-skill/
-│   ├── qsiprep-tool/
-│   ├── research-idea/
-│   ├── rest-mneta-mdd-skill/
-│   ├── run_models/
-│   ├── seed-iv-skill/
-│   ├── seed-vig-skill/
-│   ├── skill-updater/
-│   ├── smri-skill/
-│   ├── spacenet/
-│   ├── svm/
-│   ├── tcp-skill/
-│   ├── ukb-skill/
-│   ├── ucla-cnp-skill/
-│   └── wmh-segmentation/
+├── skills/                         # Skill library
+│   ├── base skills                 # Environment, search, BIDS, Git, conversion
+│   ├── interface skills            # Research idea, method design, experiments, writing
+│   └── subagent skills             # Tool, model, dataset, and modality workflows
 │
-├── neurobench/                    # NeuroBench evaluation tasks (T01-T120)
-│   ├── T00_installer_validation/   # Validates installer output
-│   └── …
+├── models/                         # Brain model adapters and training/evaluation scripts
+├── neurooracle/                    # Knowledge graph and autoresearch pipeline
 │
-├── materials/                      # Research materials, benchmark run results, and model outputs
-│   ├── CVPR_2026/
-│   └── benchmark_results/
+├── neurobench/                     # NeuroBench evaluation tasks (T01-T120)
+│
+├── docs/                           # Project website pages
+├── materials/                      # Research materials and benchmark outputs
 │
 └── LICENSE                         # License
-
 ```
 
 ---

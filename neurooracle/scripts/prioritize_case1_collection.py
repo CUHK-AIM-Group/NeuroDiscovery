@@ -143,6 +143,15 @@ def load_manual_pmids(path: Path) -> set[str]:
     return pmids
 
 
+def load_reviewed_no_claim_pmids(path: Path) -> set[str]:
+    pmids: set[str] = set()
+    for row in read_jsonl(path):
+        pmid = str(row.get("pmid") or "").strip()
+        if pmid:
+            pmids.add(pmid)
+    return pmids
+
+
 def load_extracted_case1_pmids(path: Path) -> set[str]:
     pmids: set[str] = set()
     for row in read_jsonl(path):
@@ -173,7 +182,12 @@ def matches_for_group(text: str, group: PatternGroup) -> list[str]:
     return found
 
 
-def score_record(row: dict, abstract_row: dict | None, curated_pmids: set[str]) -> dict:
+def score_record(
+    row: dict,
+    abstract_row: dict | None,
+    curated_pmids: set[str],
+    reviewed_no_claim_pmids: set[str],
+) -> dict:
     title = row.get("title") or ""
     abstract = (abstract_row or {}).get("abstract") or ""
     text = f"{title}\n{abstract}".lower()
@@ -234,6 +248,9 @@ def score_record(row: dict, abstract_row: dict | None, curated_pmids: set[str]) 
     if pmid in curated_pmids:
         status = "already_curated"
         score -= 500
+    elif pmid in reviewed_no_claim_pmids:
+        status = "already_reviewed_no_claim"
+        score -= 450
     elif score >= 95 and has_imaging and has_psychiatric:
         status = "ready_for_manual_curation"
     elif score >= 65 and has_imaging and has_psychiatric:
@@ -280,9 +297,11 @@ def main() -> None:
     abstract_cache = data_dir / "abstract_cache.jsonl"
     manual_claims = data_dir / "manual_case1_claims.jsonl"
     extracted_claims = data_dir / "extracted_claims.jsonl"
+    reviewed_no_claims = data_dir / "manual_case1_reviewed_no_claim.jsonl"
 
     abstracts = load_abstracts(abstract_cache)
     curated_pmids = load_manual_pmids(manual_claims) | load_extracted_case1_pmids(extracted_claims)
+    reviewed_no_claim_pmids = load_reviewed_no_claim_pmids(reviewed_no_claims)
 
     with collection_csv.open("r", encoding="utf-8", newline="") as f:
         collection_rows = list(csv.DictReader(f))
@@ -295,7 +314,7 @@ def main() -> None:
             continue
         seen_ids.add(pmid)
         abstract_row = abstracts.get(pmid)
-        score = score_record(row, abstract_row, curated_pmids)
+        score = score_record(row, abstract_row, curated_pmids, reviewed_no_claim_pmids)
         abstract = (abstract_row or {}).get("abstract") or ""
         ranked_rows.append({
             **score,
@@ -367,6 +386,7 @@ def main() -> None:
         f"- Collection metadata: `{collection_csv}`",
         f"- Abstract cache: `{abstract_cache}`",
         f"- Curated PMID anchors excluded/deprioritized: {len(curated_pmids)}",
+        f"- Reviewed/no-claim PMID anchors excluded/deprioritized: {len(reviewed_no_claim_pmids)}",
         "",
         "## Outputs",
         "",

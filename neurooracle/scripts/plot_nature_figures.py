@@ -1,8 +1,8 @@
 """Generate Nature-style NeuroOracle figure mockups.
 
 The script creates synthetic result tables and publication-style mock figures
-for Fig.2-Fig.6. Fig.1 is intentionally omitted because it is already drafted as
-the framework figure.
+for four main Nature-style figures: KG, Case Study 1, Case Study 2, and Case
+Study 3.
 
 Later, replace the ``make_mock_data`` outputs with real result tables while
 keeping the plotting functions unchanged.
@@ -123,8 +123,8 @@ def save_fig(fig: plt.Figure, out_dir: Path, name: str) -> None:
 
 def panel_label(ax: plt.Axes, label: str) -> None:
     ax.text(
-        -0.10,
-        1.10,
+        -0.18,
+        1.20,
         label,
         transform=ax.transAxes,
         fontsize=30,
@@ -137,7 +137,10 @@ def panel_label(ax: plt.Axes, label: str) -> None:
 def write_tables(data: MockData, out_dir: Path) -> None:
     tables_dir = out_dir / "sample_tables"
     tables_dir.mkdir(parents=True, exist_ok=True)
+    included_groups = {"figure2", "figure4", "figure5", "figure6"}
     for group_name, group in data.__dict__.items():
+        if group_name not in included_groups:
+            continue
         for table_name, table in group.items():
             table.to_csv(tables_dir / f"{group_name}_{table_name}.csv", index=False)
 
@@ -190,6 +193,183 @@ def wrapped_network_labels(labels: Iterable[str]) -> dict[str, str]:
         "memory impairment": "Memory",
     }
     return {label: mapping.get(label, label) for label in labels}
+
+
+def draw_result_brain(ax: plt.Axes, center: tuple[float, float], scale: float, activation: float) -> None:
+    x0, y0 = center
+    brain = patches.Ellipse(
+        (x0, y0),
+        1.25 * scale,
+        0.78 * scale,
+        facecolor="#F1F3F5",
+        edgecolor="#333333",
+        linewidth=0.8,
+        zorder=1,
+    )
+    ax.add_patch(brain)
+    rng = np.random.default_rng(int(activation * 1000))
+    for _ in range(9):
+        xs = np.linspace(-0.48, 0.48, 30) * scale + x0
+        phase = rng.uniform(0, 2 * np.pi)
+        ys = (0.11 * np.sin(np.linspace(0, 2.8 * np.pi, 30) + phase) + rng.uniform(-0.18, 0.18)) * scale + y0
+        ax.plot(xs, ys, color="#9AA3AA", lw=0.55, alpha=0.75, clip_path=brain, zorder=2)
+    for dx, dy, val in [(-0.24, 0.12, activation), (0.10, -0.03, 0.62), (0.25, 0.16, 0.42)]:
+        color = DIVERGING_CMAP(0.5 + 0.5 * val)
+        ax.scatter(x0 + dx * scale, y0 + dy * scale, s=110 * scale, color=color, edgecolor="white", linewidth=0.4, zorder=3)
+
+
+def draw_kg_result_module(ax: plt.Axes, domain_conn: pd.DataFrame, evidence_state: pd.DataFrame) -> None:
+    ax.axis("off")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_title("Evidence-map result motif", pad=10)
+    heat_ax = ax.inset_axes([0.06, 0.37, 0.62, 0.57], transform=ax.transAxes)
+    matrix = domain_conn.drop(columns="domain").to_numpy()
+    labels = ["Clin", "Brain", "IM", "Gene", "Out", "Data"]
+    heat_ax.imshow(matrix, aspect="auto", cmap=DIVERGING_CMAP, vmin=0, vmax=1)
+    heat_ax.set_xticks(np.arange(len(labels)))
+    heat_ax.set_yticks(np.arange(len(labels)))
+    heat_ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=7.4)
+    heat_ax.set_yticklabels(labels, fontsize=7.4)
+    heat_ax.tick_params(length=0)
+    heat_ax.set_title("domain connectivity", fontsize=10, pad=3)
+    for spine in heat_ax.spines.values():
+        spine.set_linewidth(0.8)
+
+    src_ax = ax.inset_axes([0.08, 0.06, 0.36, 0.22], transform=ax.transAxes)
+    src_ax.bar([0], [1.45], color=COLORS["blue_mid"], width=0.52)
+    src_ax.bar([0], [0.55], bottom=[1.45], color=COLORS["green"], width=0.52)
+    state_mean = evidence_state.groupby("state")["fraction"].mean()
+    bottom = 0
+    for state, color in [
+        ("Emerging", COLORS["blue"]),
+        ("Sparse", "#BFA98A"),
+        ("Contradicted", COLORS["salmon"]),
+        ("Supported", COLORS["green"]),
+    ]:
+        val = float(state_mean.loc[state] * 2.0)
+        src_ax.bar([1.0], [val], bottom=[bottom], color=color, width=0.52)
+        bottom += val
+    src_ax.set_xticks([0, 1.0])
+    src_ax.set_xticklabels(["Sources", "State"], fontsize=8.4)
+    src_ax.set_ylim(0, 2.1)
+    src_ax.set_ylabel("Curated db", fontsize=8.2)
+    src_ax.tick_params(axis="y", labelsize=7.4)
+
+    legend_items = [
+        ("Supported", COLORS["green"]),
+        ("Contradicted", COLORS["salmon"]),
+        ("Sparse", "#BFA98A"),
+        ("Emerging", COLORS["blue"]),
+    ]
+    for i, (label, color) in enumerate(legend_items):
+        y = 0.26 - 0.055 * i
+        ax.scatter(0.58, y, s=32, marker="s", color=color, transform=ax.transAxes, clip_on=False)
+        ax.text(0.64, y, label, va="center", fontsize=8.2, transform=ax.transAxes, clip_on=False)
+
+
+def draw_cross_disorder_result_module(ax: plt.Axes, shared: pd.DataFrame) -> None:
+    ax.axis("off")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_title("Cross-disorder neuroimaging clusters", pad=16)
+    labels = [
+        ("salience", (0.28, 0.76), 0.95),
+        ("hippocampus-\namygdala", (0.72, 0.76), 0.72),
+        ("striatal / DRD2", (0.30, 0.36), 0.84),
+        ("fronto-striatal", (0.72, 0.36), 0.68),
+    ]
+    for label, center, act in labels:
+        draw_result_brain(ax, center, 0.34, act)
+        ax.text(center[0], center[1] - 0.19, label, ha="center", va="top", fontsize=9.6)
+    grad = np.linspace(0, 1, 128).reshape(1, -1)
+    cb_ax = ax.inset_axes([0.26, 0.03, 0.48, 0.045], transform=ax.transAxes)
+    cb_ax.imshow(grad, aspect="auto", cmap=DIVERGING_CMAP)
+    cb_ax.set_xticks([0, 64, 127])
+    cb_ax.set_xticklabels(["blue", "white", "red"], fontsize=8.4)
+    cb_ax.set_yticks([])
+    cb_ax.set_title("shared alteration direction", fontsize=8.8, pad=2)
+
+
+def draw_case2_result_module(ax: plt.Axes, chains: pd.DataFrame) -> None:
+    ax.axis("off")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_title("Gene-IM-outcome mediation motif", pad=10)
+    y = 0.76
+    nodes = [
+        (0.16, "piR\nAPOE e4", COLORS["green_light"], COLORS["green_dark"]),
+        (0.50, "Cortical\nthickness", "#F2F2F2", COLORS["dark"]),
+        (0.84, "Clin\ncognitive\ndecline", COLORS["purple_light"], COLORS["purple_dark"]),
+    ]
+    for x, text, face, edge in nodes:
+        circ = patches.Circle((x, y), 0.085, facecolor=face, edgecolor=edge, linewidth=1.2)
+        ax.add_patch(circ)
+        ax.text(x, y, text, ha="center", va="center", fontsize=8.8, fontweight="bold")
+    for x0, x1, color, lw in [(0.245, 0.415, COLORS["dark"], 1.9), (0.585, 0.755, COLORS["dark"], 1.9)]:
+        ax.annotate("", xy=(x1, y), xytext=(x0, y), arrowprops=dict(arrowstyle="-|>", lw=lw, color=color, mutation_scale=14))
+    ax.annotate(
+        "",
+        xy=(0.75, y + 0.10),
+        xytext=(0.25, y + 0.10),
+        arrowprops=dict(arrowstyle="-|>", lw=1.1, color=COLORS["grey"], linestyle="--", connectionstyle="arc3,rad=0.15"),
+    )
+    ax.text(0.50, 0.92, "direct genetic effect", ha="center", va="center", fontsize=8.2, color=COLORS["grey"])
+    ax.text(0.50, 0.60, "IM-mediated path", ha="center", va="center", fontsize=10.2, fontweight="bold", color=COLORS["green_dark"])
+
+    forest_ax = ax.inset_axes([0.16, 0.07, 0.68, 0.36], transform=ax.transAxes)
+    rows = chains.sort_values("indirect_effect", ascending=False).head(4).iloc[::-1]
+    yy = np.arange(len(rows))
+    forest_ax.errorbar(
+        rows["indirect_effect"],
+        yy,
+        xerr=[rows["indirect_effect"] - rows["ci_low"], rows["ci_high"] - rows["indirect_effect"]],
+        fmt="s",
+        color=COLORS["green"],
+        ecolor=COLORS["dark"],
+        elinewidth=1.2,
+        capsize=2,
+        markersize=5,
+    )
+    forest_ax.axvline(0, color=COLORS["dark"], lw=0.8)
+    forest_ax.set_yticks(yy)
+    forest_ax.set_yticklabels(["indirect", "IM", "IM", "95% CI"], fontsize=8.0)
+    forest_ax.set_xlabel("normal x-y proportions", fontsize=8.2)
+    forest_ax.tick_params(axis="x", labelsize=7.8)
+    forest_ax.set_xlim(-0.05, 0.52)
+    forest_ax.set_title("mediation forest plot -> outcome", fontsize=9.4, pad=2)
+
+
+def draw_case3_result_module(ax: plt.Axes, precision: pd.DataFrame) -> None:
+    ax.axis("off")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_title("Future evidence after freeze year", pad=10)
+    ax.plot([0.08, 0.92], [0.75, 0.75], color=COLORS["dark"], lw=1.8, transform=ax.transAxes, clip_on=False)
+    ax.annotate("", xy=(0.94, 0.75), xytext=(0.88, 0.75), xycoords=ax.transAxes, arrowprops=dict(arrowstyle="-|>", color=COLORS["dark"], lw=1.8))
+    for x, label in [(0.22, "Past\nfrozen KG"), (0.52, "Present\nmodel state"), (0.82, "Future\nevidence")]:
+        ax.plot([x, x], [0.71, 0.79], color=COLORS["dark"], lw=1.4, transform=ax.transAxes)
+        ax.text(x, 0.64, label, ha="center", va="top", fontsize=9.4, transform=ax.transAxes)
+    future_box = patches.Rectangle((0.69, 0.69), 0.22, 0.18, transform=ax.transAxes, facecolor="#BDE3E2", edgecolor="none", alpha=0.9)
+    ax.add_patch(future_box)
+    ax.scatter([0.52], [0.75], s=72, color="#77B7B2", edgecolor=COLORS["dark"], transform=ax.transAxes, zorder=3)
+
+    curve_ax = ax.inset_axes([0.17, 0.08, 0.70, 0.40], transform=ax.transAxes)
+    curve_ax.plot(precision["rank_k"] / 5, precision["NeuroOracle"], color="#0B7A75", lw=2.6, label="NeuroDiscovery")
+    curve_ax.plot(precision["rank_k"] / 5, precision["Random path"], color=COLORS["grey"], lw=2.1, label="baseline")
+    curve_ax.set_xlim(0, 10)
+    curve_ax.set_ylim(0, 1.0)
+    curve_ax.set_xlabel("Years after freeze", fontsize=8.8)
+    curve_ax.set_ylabel("Future-supported\nhypotheses", fontsize=8.8)
+    curve_ax.tick_params(labelsize=8.2)
+    curve_ax.text(0.05, 0.86, "NeuroDiscovery", color="#0B7A75", transform=curve_ax.transAxes, fontsize=9.4)
+    curve_ax.annotate(
+        "future\nliterature\nsupport",
+        xy=(5.2, 0.32),
+        xytext=(6.1, 0.58),
+        arrowprops=dict(arrowstyle="-|>", color=COLORS["dark"], lw=1.0),
+        fontsize=8.3,
+    )
 
 
 def make_mock_data() -> MockData:
@@ -392,44 +572,102 @@ def make_mock_data() -> MockData:
 
     fig4 = {"region_effects": region_effects, "shared_scores": shared}
 
-    chains = [
-        ("Complement cascade", "microglial PET signal", "cognitive decline"),
-        ("Dopamine pathway", "frontostriatal FC", "psychosis severity"),
-        ("Inflammatory pathway", "insula connectivity", "negative symptoms"),
-        ("Synaptic plasticity", "hippocampal volume", "memory impairment"),
-        ("Myelination pathway", "white-matter FA", "executive dysfunction"),
-        ("Stress response", "amygdala reactivity", "anxiety burden"),
+    chain_rows = [
+        ("AD", "APOE/lipid transport", "amyloid PET burden", "cognitive decline", 26, 142, 0.34, 0.22, 0.46, 0.62, 5),
+        ("AD", "Complement cascade", "microglial PET signal", "memory impairment", 19, 118, 0.27, 0.15, 0.40, 0.74, 4),
+        ("SCZ", "Dopamine pathway", "frontostriatal FC", "psychosis severity", 22, 136, 0.31, 0.18, 0.43, 0.81, 5),
+        ("SCZ", "Synaptic plasticity", "DMN RSFC", "functional disability", 17, 96, 0.22, 0.10, 0.34, 0.69, 5),
+        ("BD", "Calcium signaling", "amygdala reactivity", "mood instability", 14, 82, 0.19, 0.06, 0.32, 0.65, 4),
+        ("MDD", "Inflammatory pathway", "insula connectivity", "negative affect", 16, 128, 0.29, 0.17, 0.41, 0.79, 5),
+        ("MDD", "Stress response", "frontolimbic FC", "anxiety burden", 12, 92, 0.21, 0.08, 0.33, 0.77, 4),
+        ("OCD", "Glutamate signaling", "cortico-striatal FC", "compulsivity", 9, 74, 0.18, 0.05, 0.30, 0.83, 3),
+        ("ADHD", "Catecholamine pathway", "frontoparietal FC", "executive dysfunction", 11, 88, 0.20, 0.07, 0.32, 0.80, 4),
+        ("BD", "Myelination pathway", "white-matter FA", "executive dysfunction", 10, 76, 0.17, 0.04, 0.29, 0.58, 4),
     ]
-    chain_rows = []
-    for i, (gene, marker, outcome) in enumerate(chains, 1):
-        chain_rows.append(
-            {
-                "chain": f"C{i}",
-                "gene_pathway": gene,
-                "imaging_marker": marker,
-                "outcome": outcome,
-                "paper_count": int(RNG.integers(18, 130)),
-                "claim_count": int(RNG.integers(25, 260)),
-                "novelty": float(RNG.uniform(0.42, 0.86)),
-                "support": float(RNG.uniform(0.50, 0.91)),
-            }
+    chain_table = pd.DataFrame(
+        chain_rows,
+        columns=[
+            "disease",
+            "gene_pathway",
+            "imaging_marker",
+            "outcome",
+            "direct_claims",
+            "mediated_claims",
+            "indirect_effect",
+            "ci_low",
+            "ci_high",
+            "targetability",
+            "disease_coverage",
+        ],
+    )
+    chain_table["total_claims"] = chain_table["direct_claims"] + chain_table["mediated_claims"]
+    chain_table["mediated_fraction"] = chain_table["mediated_claims"] / chain_table["total_claims"]
+    chain_table["support_score"] = np.clip(
+        0.35
+        + 0.22 * chain_table["mediated_fraction"]
+        + 0.18 * (chain_table["mediated_claims"] / chain_table["mediated_claims"].max())
+        + 0.18 * chain_table["targetability"],
+        0,
+        1,
+    )
+
+    pathway_mode = (
+        chain_table.groupby("disease")[["direct_claims", "mediated_claims"]]
+        .sum()
+        .reset_index()
+        .sort_values("mediated_claims", ascending=True)
+    )
+    pathway_mode["mediated_fraction"] = pathway_mode["mediated_claims"] / (
+        pathway_mode["direct_claims"] + pathway_mode["mediated_claims"]
+    )
+
+    marker_short = {
+        "amyloid PET burden": "Amyloid\nPET",
+        "microglial PET signal": "Microglial\nPET",
+        "frontostriatal FC": "FStr\nFC",
+        "DMN RSFC": "DMN\nRSFC",
+        "amygdala reactivity": "Amygdala\nreact.",
+        "insula connectivity": "Insula\nFC",
+        "frontolimbic FC": "FLimbic\nFC",
+        "cortico-striatal FC": "CStr\nFC",
+        "frontoparietal FC": "FPar\nFC",
+        "white-matter FA": "WM\nFA",
+    }
+    bridge = chain_table[["disease", "imaging_marker", "mediated_claims", "support_score"]].copy()
+    bridge["marker_short"] = bridge["imaging_marker"].map(marker_short)
+    bridge["bridge_score"] = np.clip(
+        0.30 + 0.45 * bridge["support_score"] + 0.25 * (bridge["mediated_claims"] / bridge["mediated_claims"].max()),
+        0,
+        1,
+    )
+
+    target_priority = (
+        chain_table.groupby("imaging_marker")
+        .agg(
+            support_score=("support_score", "mean"),
+            mediated_claims=("mediated_claims", "sum"),
+            targetability=("targetability", "mean"),
+            disease_coverage=("disease_coverage", "max"),
         )
-    chain_table = pd.DataFrame(chain_rows)
-    med_rows = []
-    for chain in chain_table["chain"]:
-        indirect = float(RNG.normal(0.22, 0.08))
-        se = float(RNG.uniform(0.04, 0.09))
-        med_rows.append(
-            {
-                "chain": chain,
-                "effect": indirect,
-                "ci_low": indirect - 1.96 * se,
-                "ci_high": indirect + 1.96 * se,
-                "p_value": float(10 ** RNG.uniform(-4, -1)),
-            }
-        )
-    mediation = pd.DataFrame(med_rows)
-    fig5 = {"chains": chain_table, "mediation": mediation}
+        .reset_index()
+    )
+    target_priority["priority_score"] = np.clip(
+        0.30 * target_priority["support_score"]
+        + 0.25 * (target_priority["mediated_claims"] / target_priority["mediated_claims"].max())
+        + 0.30 * target_priority["targetability"]
+        + 0.15 * (target_priority["disease_coverage"] / target_priority["disease_coverage"].max()),
+        0,
+        1,
+    )
+    target_priority["marker_short"] = target_priority["imaging_marker"].map(marker_short)
+    target_priority = target_priority.sort_values("priority_score", ascending=True)
+
+    fig5 = {
+        "chains": chain_table,
+        "pathway_mode": pathway_mode,
+        "im_bridge": bridge,
+        "target_priority": target_priority,
+    }
 
     ks = np.arange(1, 51)
     precision = pd.DataFrame(
@@ -487,13 +725,14 @@ def plot_figure2(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
     claims_over_time = data["claims_over_time"]
     evidence_state = data["evidence_state"]
 
-    fig = plt.figure(figsize=FIGURE_SIZE, constrained_layout=True)
-    gs = fig.add_gridspec(2, 3, width_ratios=[1.05, 1.25, 1.1], height_ratios=[1.0, 1.0])
+    fig = plt.figure(figsize=FIGURE_SIZE_TALL, constrained_layout=True)
+    gs = fig.add_gridspec(2, 4, width_ratios=[1.02, 1.08, 1.02, 1.18], height_ratios=[1.0, 1.0])
     ax_a = fig.add_subplot(gs[0, 0])
     ax_b = fig.add_subplot(gs[0, 1])
     ax_c = fig.add_subplot(gs[0, 2])
-    ax_d = fig.add_subplot(gs[1, 0:2])
-    ax_e = fig.add_subplot(gs[1, 2])
+    ax_f = fig.add_subplot(gs[0, 3])
+    ax_d = fig.add_subplot(gs[1, 0:3])
+    ax_e = fig.add_subplot(gs[1, 3])
 
     x = np.arange(len(scale))
     bottom = np.zeros(len(scale))
@@ -574,18 +813,14 @@ def plot_figure2(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
     ax_e.set_xlim(0, 1)
     ax_e.set_xlabel("Fraction of claims")
     ax_e.set_title("Evidence state by domain")
-    ax_e.legend(
-        loc="center left",
-        bbox_to_anchor=(1.03, 0.50),
-        ncol=1,
-        handlelength=1.0,
-        handletextpad=0.45,
-        borderaxespad=0,
-    )
+    ax_e.legend(loc="lower right", ncol=1, fontsize=9.2, handlelength=1.0, handletextpad=0.45)
     ax_e.invert_yaxis()
     panel_label(ax_e, "e")
 
-    save_fig(fig, out_dir, "fig2_evidence_landscape")
+    draw_kg_result_module(ax_f, domain_conn, evidence_state)
+    panel_label(ax_f, "f")
+
+    save_fig(fig, out_dir, "fig1_knowledge_graph")
 
 
 def draw_simple_sankey(ax: plt.Axes, left: Iterable[str], mid: Iterable[str], right: Iterable[str]) -> None:
@@ -825,120 +1060,158 @@ def plot_figure4(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
     ax_d.set_title("Cross-disorder shared strength")
     panel_label(ax_d, "d")
 
-    draw_mock_brain(ax_e, shared)
-    ax_e.set_title("Mapped shared regions")
+    draw_cross_disorder_result_module(ax_e, shared)
     panel_label(ax_e, "e")
 
-    save_fig(fig, out_dir, "fig4_case1_transdiagnostic")
+    save_fig(fig, out_dir, "fig2_case1_transdiagnostic")
 
 
 def plot_figure5(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
     chains = data["chains"]
-    mediation = data["mediation"].merge(chains[["chain", "gene_pathway", "imaging_marker", "outcome"]], on="chain")
+    pathway_mode = data["pathway_mode"]
+    bridge = data["im_bridge"]
+    priority = data["target_priority"]
 
-    fig = plt.figure(figsize=FIGURE_SIZE, constrained_layout=True)
-    gs = fig.add_gridspec(2, 3, width_ratios=[1.15, 1.15, 1.0])
+    fig = plt.figure(figsize=FIGURE_SIZE_TALL, constrained_layout=True)
+    gs = fig.add_gridspec(2, 3, width_ratios=[1.35, 1.05, 1.05], height_ratios=[1.0, 1.05])
     ax_a = fig.add_subplot(gs[0, 0])
     ax_b = fig.add_subplot(gs[0, 1])
     ax_c = fig.add_subplot(gs[0, 2])
     ax_d = fig.add_subplot(gs[1, 0:2])
     ax_e = fig.add_subplot(gs[1, 2])
 
-    draw_simple_sankey(
-        ax_a,
-        ["Complement", "Dopamine", "Inflammation"],
-        ["PET\nsignal", "Frontostriatal\nFC", "Insula\nFC"],
-        ["Cognition", "Psychosis", "Symptoms"],
-    )
-    ax_a.set_title("Pathway-imaging-outcome chains")
-    panel_label(ax_a, "a")
+    def fig3_label(ax: plt.Axes, label: str) -> None:
+        ax.text(
+            -0.12,
+            1.075,
+            label,
+            transform=ax.transAxes,
+            fontsize=28,
+            fontweight="bold",
+            va="bottom",
+            ha="right",
+        )
 
-    x = np.arange(len(chains))
-    ax_b.scatter(chains["support"], chains["novelty"], s=chains["claim_count"] * 1.35, color=COLORS["purple"], alpha=0.72, edgecolor="white")
-    for i, row in chains.iterrows():
-        ax_b.text(row["support"] + 0.006, row["novelty"] + 0.006, row["chain"], fontsize=12)
-    ax_b.set_xlim(0.45, 0.95)
-    ax_b.set_ylim(0.35, 0.95)
-    ax_b.set_xlabel("Evidence support")
-    ax_b.set_ylabel("Novelty")
-    ax_b.set_title("Chain evidence profile")
-    panel_label(ax_b, "b")
+    gene_short = {
+        "APOE/lipid transport": "APOE",
+        "Complement cascade": "Complement",
+        "Dopamine pathway": "Dopamine",
+        "Inflammatory pathway": "Inflammation",
+        "Synaptic plasticity": "Synaptic",
+        "Calcium signaling": "Calcium",
+        "Stress response": "Stress",
+        "Catecholamine pathway": "Catecholamine",
+        "Glutamate signaling": "Glutamate",
+        "Myelination pathway": "Myelination",
+    }
+    marker_short = {
+        "amyloid PET burden": "Amyloid PET",
+        "microglial PET signal": "Microglial PET",
+        "frontostriatal FC": "FStr FC",
+        "DMN RSFC": "DMN RSFC",
+        "insula connectivity": "Insula FC",
+        "amygdala reactivity": "Amygdala",
+        "frontolimbic FC": "FLimbic FC",
+        "frontoparietal FC": "FPar FC",
+        "cortico-striatal FC": "CStr FC",
+        "white-matter FA": "WM FA",
+    }
+    outcome_short = {
+        "cognitive decline": "cognition",
+        "memory impairment": "memory",
+        "psychosis severity": "psychosis",
+        "functional disability": "disability",
+        "negative affect": "negative affect",
+        "mood instability": "mood",
+        "anxiety burden": "anxiety",
+        "compulsivity": "compulsivity",
+        "executive dysfunction": "executive",
+    }
 
-    mediation = mediation.sort_values("effect")
-    y = np.arange(len(mediation))
-    ax_c.errorbar(
-        mediation["effect"],
+    draw_case2_result_module(ax_a, chains)
+    fig3_label(ax_a, "a")
+
+    y = np.arange(len(pathway_mode))
+    totals = pathway_mode["direct_claims"] + pathway_mode["mediated_claims"]
+    direct_frac = pathway_mode["direct_claims"] / totals
+    mediated_frac = pathway_mode["mediated_claims"] / totals
+    ax_b.barh(y, direct_frac, color=COLORS["grey"], height=0.72, label="Direct")
+    ax_b.barh(y, mediated_frac, left=direct_frac, color=COLORS["green"], height=0.72, label="IM-mediated")
+    ax_b.set_yticks(y)
+    ax_b.set_yticklabels(pathway_mode["disease"])
+    ax_b.set_xlim(0, 1)
+    ax_b.set_xlabel("Fraction of claim evidence")
+    ax_b.set_title("Path composition by disease", pad=12)
+    ax_b.legend(frameon=False, loc="lower right", fontsize=10.5)
+    ax_b.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
+    fig3_label(ax_b, "b")
+
+    disease_order = ["AD", "SCZ", "MDD", "BD", "ADHD", "OCD"]
+    marker_order = [x.replace("\n", "") for x in priority.sort_values("priority_score", ascending=False)["marker_short"].tolist()]
+    for _, row in bridge.iterrows():
+        marker_plot = row["marker_short"].replace("\n", "")
+        ax_c.scatter(
+            marker_order.index(marker_plot),
+            disease_order.index(row["disease"]),
+            s=34 + row["mediated_claims"] * 2.1,
+            c=row["bridge_score"],
+            cmap=GREEN_CMAP,
+            vmin=0.45,
+            vmax=0.92,
+            edgecolor="white",
+            linewidth=0.75,
+        )
+    ax_c.set_xticks(np.arange(len(marker_order)))
+    ax_c.set_xticklabels(marker_order, rotation=55, ha="right", fontsize=9.4)
+    ax_c.set_yticks(np.arange(len(disease_order)))
+    ax_c.set_yticklabels(disease_order)
+    ax_c.set_title("Disease-IM bridge strength", pad=12)
+    ax_c.grid(color="#EAEAEA", linewidth=0.8)
+    fig3_label(ax_c, "c")
+
+    forest = chains.sort_values("indirect_effect", ascending=True).tail(8)
+    y = np.arange(len(forest))
+    labels = [
+        f"{gene_short[row.gene_pathway]} -> {marker_short[row.imaging_marker]} -> {outcome_short[row.outcome]}"
+        for row in forest.itertuples()
+    ]
+    ax_d.errorbar(
+        forest["indirect_effect"],
         y,
-        xerr=[mediation["effect"] - mediation["ci_low"], mediation["ci_high"] - mediation["effect"]],
+        xerr=[forest["indirect_effect"] - forest["ci_low"], forest["ci_high"] - forest["indirect_effect"]],
         fmt="o",
-        color=COLORS["orange"],
+        color=COLORS["green_dark"],
         ecolor=COLORS["grey"],
-        capsize=3,
-        elinewidth=1.8,
-        markersize=5.5,
+        capsize=3.5,
+        elinewidth=2.0,
+        markersize=7,
+        zorder=3,
     )
-    ax_c.axvline(0, color=COLORS["dark"], lw=0.8)
-    ax_c.set_yticks(y)
-    ax_c.set_yticklabels(mediation["chain"])
-    ax_c.set_xlabel("Indirect effect")
-    ax_c.set_title("Mediation effect estimates")
-    panel_label(ax_c, "c")
+    ax_d.axvline(0, color=COLORS["dark"], lw=1.0)
+    ax_d.set_yticks(y)
+    ax_d.set_yticklabels(labels, fontsize=10.2)
+    ax_d.set_xlabel("Standardized indirect effect via IM")
+    ax_d.set_title("Claim-supported mediation effects", pad=12)
+    ax_d.set_xlim(-0.05, 0.52)
+    ax_d.grid(axis="x", color="#EAEAEA", linewidth=0.8)
+    fig3_label(ax_d, "d")
 
-    evidence_matrix = chains.set_index("chain")[["paper_count", "claim_count", "support", "novelty"]]
-    evidence_matrix["paper_count"] = evidence_matrix["paper_count"] / evidence_matrix["paper_count"].max()
-    evidence_matrix["claim_count"] = evidence_matrix["claim_count"] / evidence_matrix["claim_count"].max()
-    heatmap(
-        ax_d,
-        evidence_matrix.to_numpy(),
-        ["Papers", "Claims", "Support", "Novelty"],
-        evidence_matrix.index.tolist(),
-        cmap=SEQ_CMAP,
-        vmin=0,
-        vmax=1,
-        cbar_label="Normalized value",
-    )
-    ax_d.set_title("Chain ranking evidence matrix")
-    panel_label(ax_d, "d")
+    p = priority.tail(8)
+    y = np.arange(len(p))
+    colors = [COLORS["green_dark"] if v > 0.72 else COLORS["green"] for v in p["priority_score"]]
+    ax_e.barh(y, p["priority_score"], color=colors, height=0.62)
+    ax_e.scatter(p["targetability"], y, color=COLORS["orange_dark"], s=64, zorder=3, edgecolor="white", linewidth=0.6, label="Targetability")
+    for i, row in enumerate(p.itertuples()):
+        ax_e.text(1.015, i, f"{int(row.disease_coverage)} diseases", va="center", ha="left", fontsize=10.5)
+    ax_e.set_yticks(y)
+    ax_e.set_yticklabels(p["marker_short"])
+    ax_e.set_xlim(0, 1.18)
+    ax_e.set_xlabel("IM target priority score")
+    ax_e.set_title("Treatment-facing IM priorities", pad=12)
+    ax_e.legend(frameon=False, loc="lower right", fontsize=10.5)
+    fig3_label(ax_e, "e")
 
-    G = nx.DiGraph()
-    chain_subset = chains.head(4).reset_index(drop=True)
-    for _, row in chain_subset.iterrows():
-        G.add_edge(row["gene_pathway"], row["imaging_marker"], weight=row["support"])
-        G.add_edge(row["imaging_marker"], row["outcome"], weight=row["support"])
-    y_positions = np.linspace(0.78, -0.78, len(chain_subset))
-    pos = {}
-    for y_pos, (_, row) in zip(y_positions, chain_subset.iterrows()):
-        pos[row["gene_pathway"]] = (-1.15, y_pos)
-        pos[row["imaging_marker"]] = (0.0, y_pos)
-        pos[row["outcome"]] = (1.15, y_pos)
-    node_colors = []
-    for node in G.nodes:
-        if any(node == x for x in chains["gene_pathway"]):
-            node_colors.append(DOMAIN_COLORS["Gene/pathway"])
-        elif any(node == x for x in chains["imaging_marker"]):
-            node_colors.append(DOMAIN_COLORS["Imaging marker"])
-        else:
-            node_colors.append(DOMAIN_COLORS["Outcome"])
-    nx.draw_networkx_edges(G, pos, ax=ax_e, arrows=True, arrowstyle="-|>", width=1.8, alpha=0.42, edge_color=COLORS["grey"])
-    nx.draw_networkx_nodes(G, pos, ax=ax_e, node_color=node_colors, node_size=680, edgecolors="white", linewidths=1.0)
-    nx.draw_networkx_labels(
-        G,
-        pos,
-        labels=wrapped_network_labels(G.nodes),
-        ax=ax_e,
-        font_size=10.8,
-        font_family="DejaVu Sans",
-        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.78, "pad": 0.2},
-    )
-    xs = np.array([xy[0] for xy in pos.values()])
-    ys = np.array([xy[1] for xy in pos.values()])
-    ax_e.set_xlim(-1.65, 1.65)
-    ax_e.set_ylim(-1.05, 1.05)
-    ax_e.axis("off")
-    ax_e.set_title("Claim-backed chain subgraph")
-    panel_label(ax_e, "e")
-
-    save_fig(fig, out_dir, "fig5_case2_mediation")
+    save_fig(fig, out_dir, "fig3_case2_pathway_mediation")
 
 
 def plot_figure6(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
@@ -956,18 +1229,7 @@ def plot_figure6(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
     ax_e = fig.add_subplot(gs[1, 1])
     ax_f = fig.add_subplot(gs[1, 2])
 
-    for col, color in [
-        ("NeuroOracle", COLORS["green"]),
-        ("Degree heuristic", COLORS["blue"]),
-        ("Keyword co-occurrence", COLORS["orange"]),
-        ("Random path", COLORS["grey"]),
-    ]:
-        ax_a.plot(precision["rank_k"], precision[col], lw=2, label=col, color=color)
-    ax_a.set_xlabel("Rank K")
-    ax_a.set_ylabel("Future-supported fraction")
-    ax_a.set_ylim(0, 0.85)
-    ax_a.set_title("Future evidence enrichment")
-    ax_a.legend()
+    draw_case3_result_module(ax_a, precision)
     panel_label(ax_a, "a")
 
     pivot = freeze.pivot(index="freeze_year", columns="horizon_years", values="hit_rate")
@@ -1034,23 +1296,19 @@ def plot_figure6(data: dict[str, pd.DataFrame], out_dir: Path) -> None:
     ax_f.set_title("Hindcasting failure modes")
     panel_label(ax_f, "f")
 
-    save_fig(fig, out_dir, "fig6_case3_hindcasting")
+    save_fig(fig, out_dir, "fig4_case3_hindcasting")
 
 
 def write_plan(out_dir: Path) -> None:
     plan = """# NeuroOracle Nature Figure Plan
 
-Fig.1 Framework overview: keep the existing system schematic.
+Fig.1 Knowledge graph: evidence-map scale, domain connectivity, disease-marker evidence density, temporal claim growth, evidence state by domain, and compact evidence-map result motif.
 
-Fig.2 Evidence landscape: evidence scale, domain connectivity, disease-marker evidence density, temporal claim growth, and a claim-backed subgraph.
+Fig.2 Case Study 1: disease-by-region effect-size heatmap, forest plots, shared alteration ranking, and cross-disorder neuroimaging cluster motif.
 
-Fig.3 Hypothesis generation and ranking: evidence-to-hypothesis flow, scoring heatmap, ranked hypotheses, generator ablation, multi-seed stability, and critic rejection reasons.
+Fig.3 Case Study 2: gene-IM-outcome mediation motif, direct genetic effects versus IM-mediated paths, disease-level path composition, disease-IM bridge strength, mediated effect estimates, and treatment-facing IM prioritization.
 
-Fig.4 Case Study 1: disease-by-region effect-size heatmap, forest plots, shared alteration ranking, and mapped transdiagnostic brain regions.
-
-Fig.5 Case Study 2: pathway-imaging-outcome chains, chain evidence profile, mediation effects, ranking matrix, and claim-backed chain subgraph.
-
-Fig.6 Case Study 3: hindcasting precision curves, freeze-year robustness, baseline comparison, lead-time distribution, recovered examples, and failure modes.
+Fig.4 Case Study 3: freeze-year-to-future-evidence motif, hindcasting precision curves, freeze-year robustness, baseline comparison, lead-time distribution, recovered examples, and failure modes.
 """
     (out_dir / "FIGURE_PLAN.md").write_text(plan, encoding="utf-8")
 
@@ -1060,7 +1318,7 @@ def main() -> None:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("neurooracle/data/figures/nature_mock"),
+        default=Path("neurooracle/data/figures/nature_four"),
         help="Directory for mock figures and sample tables.",
     )
     args = parser.parse_args()
@@ -1071,7 +1329,6 @@ def main() -> None:
     write_tables(data, args.out_dir)
     write_plan(args.out_dir)
     plot_figure2(data.figure2, args.out_dir)
-    plot_figure3(data.figure3, args.out_dir)
     plot_figure4(data.figure4, args.out_dir)
     plot_figure5(data.figure5, args.out_dir)
     plot_figure6(data.figure6, args.out_dir)
