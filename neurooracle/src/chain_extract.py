@@ -72,6 +72,7 @@ def _resolve_data_paths(data_dir: Optional[Path]):
         "data_dir": ddir,
         "checkpoint": ddir / "batch_checkpoint.json",
         "papers_csv": ddir / "papers_metadata.csv",
+        "collection_csv": ddir / "collection_metadata.csv",
         "graph": ddir / "knowledge_graph.json",
         "claims": ddir / "extracted_claims.jsonl",
     }
@@ -107,6 +108,51 @@ def _ingest_results(
     return len(papers_list), batch_claims
 
 
+def _init_collection_csv(csv_path: Path) -> None:
+    """Initialize task/chain collect-only metadata CSV."""
+    if csv_path.exists():
+        return
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "pmid", "doi", "title", "authors", "year", "journal",
+            "source", "label", "query_year", "abstract_length", "collected_at",
+        ])
+
+
+def _append_collection_metadata(
+    csv_path: Path,
+    papers_list: list[tuple[str, PaperRef]],
+    *,
+    label: str,
+    query_year: int,
+    source: str = "pubmed",
+) -> int:
+    """Append collect-only paper metadata rows."""
+    if not papers_list:
+        return 0
+    _init_collection_csv(csv_path)
+    now = datetime.now().isoformat()
+    with open(csv_path, "a", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        for abstract, ref in papers_list:
+            writer.writerow([
+                ref.pmid,
+                ref.doi,
+                ref.title,
+                ref.authors,
+                ref.year,
+                ref.journal,
+                source,
+                label,
+                query_year,
+                len(abstract or ""),
+                now,
+            ])
+    return len(papers_list)
+
+
 # ── Mode 1: chain-aware extraction ─────────────────────────────────────────────
 
 
@@ -125,6 +171,7 @@ def run_chain_extraction(
     strict_phase1: bool = False,
     sample_rate_seen: float = 0.05,
     lock_model: bool = False,
+    collect_only: bool = False,
 ) -> dict:
     """Run chain/task-targeted PubMed extraction.
 
@@ -152,13 +199,18 @@ def run_chain_extraction(
     logger.info(f"seen-pmids index: {len(seen_pmids):,}")
 
     cache = AbstractCache(default_cache_path(paths["data_dir"]))
-    extractor = ClaimExtractor(lock_model=lock_model)
-    _init_csv(paths["papers_csv"])
+    extractor = None if collect_only else ClaimExtractor(lock_model=lock_model)
+    if collect_only:
+        _init_collection_csv(paths["collection_csv"])
+        seen_pmids.update(_load_seen_pmids(paths["collection_csv"]))
+    else:
+        _init_csv(paths["papers_csv"])
 
     rng = random.Random(0xCFEB)
 
     total_papers = 0
     total_claims = 0
+    total_collected = 0
     skipped_seen = 0
     resampled = 0
     qc_pmids: list[str] = []
@@ -204,7 +256,7 @@ def run_chain_extraction(
             else:
                 new_pmids.append(p)
         # QC sample of seen pmids
-        sample_n = int(round(len(seen_in_batch) * sample_rate_seen))
+        sample_n = 0 if collect_only else int(round(len(seen_in_batch) * sample_rate_seen))
         if sample_n > 0:
             qc_sample = rng.sample(seen_in_batch, min(sample_n, len(seen_in_batch)))
         else:
@@ -224,7 +276,20 @@ def run_chain_extraction(
         if not papers:
             continue
 
+        if collect_only:
+            total_collected += _append_collection_metadata(
+                paths["collection_csv"],
+                papers,
+                label=label,
+                query_year=year,
+                source="pubmed",
+            )
+            total_papers += len(papers)
+            logger.info(f"  {year}: collected {len(papers)} papers (total: {total_collected})")
+            continue
+
         # Extract + ingest
+        assert extractor is not None
         results = extractor.extract_batch(papers, max_workers=max_workers)
         n_papers, n_claims = _ingest_results(
             kg, results, papers, paths,
@@ -238,20 +303,28 @@ def run_chain_extraction(
         # Save graph after each year for safety
         save_graph(kg, paths["graph"])
 
-    save_graph(kg, paths["graph"])
+    if not collect_only:
+        save_graph(kg, paths["graph"])
     logger.info(f"\n  CHAIN-EXTRACTION SUMMARY for {label}")
-    logger.info(f"    new papers extracted: {total_papers}")
-    logger.info(f"    new claims extracted: {total_claims}")
+    if collect_only:
+        logger.info(f"    papers collected:      {total_collected}")
+        logger.info(f"    collection metadata:   {paths['collection_csv']}")
+    else:
+        logger.info(f"    new papers extracted: {total_papers}")
+        logger.info(f"    new claims extracted: {total_claims}")
     logger.info(f"    seen-pmids skipped:    {skipped_seen}")
     logger.info(f"    QC re-extracted:       {resampled}")
 
     return {
         "label": label,
+        "mode": "collect-only" if collect_only else "extract",
         "total_papers": total_papers,
         "total_claims": total_claims,
+        "total_collected": total_collected,
         "skipped_seen": skipped_seen,
         "resampled": resampled,
         "qc_pmids": qc_pmids,
+        "collection_metadata": str(paths["collection_csv"]) if collect_only else "",
     }
 
 

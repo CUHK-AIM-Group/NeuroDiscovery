@@ -145,11 +145,24 @@ def test_store_skips_stray_files(tmp_path: Path) -> None:
     assert isinstance(entries, list)
 
 
-def test_default_memory_root_under_home(tmp_path: Path) -> None:
+def test_default_memory_root_uses_shared_local_memory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NEUROCLAW_MEMORY_ROOT", raising=False)
+    monkeypatch.delenv("NEUROCLAW_MEMORY_DEVICE", raising=False)
+    monkeypatch.setenv("COMPUTERNAME", "TestMachine")
     root = default_memory_root(tmp_path)
-    assert ".neuroclaw" in str(root)
-    assert "projects" in str(root)
-    assert root.name == "memory"
+    assert root == Path.home() / ".neuroclaw" / "memory" / "TestMachine"
+
+
+def test_default_memory_root_allows_device_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NEUROCLAW_MEMORY_ROOT", raising=False)
+    monkeypatch.setenv("NEUROCLAW_MEMORY_DEVICE", "Test Device")
+    assert default_memory_root(tmp_path) == Path.home() / ".neuroclaw" / "memory" / "Test Device"
+
+
+def test_default_memory_root_allows_env_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    custom = tmp_path / "custom-memory"
+    monkeypatch.setenv("NEUROCLAW_MEMORY_ROOT", str(custom))
+    assert default_memory_root(tmp_path) == custom
 
 
 # ── MemoryExtractor ───────────────────────────────────────────────────────

@@ -52,6 +52,7 @@ function normalizeClaimShape(raw, exactNameToId) {
   claim.metadata.subject_type = claim.metadata.subject_type || claim.subject_type || '';
   claim.metadata.object_type = claim.metadata.object_type || claim.object_type || 'OUTCOME';
   claim.metadata.curation_scope = claim.metadata.curation_scope || 'general_neuromed_manual_strict_neuroscience';
+  claim.paper_scope = normalizePaperScope(claim.paper_scope || claim.metadata.paper_scope || ['general']);
 
   const subjectNameKey = String(claim.subject_name || '').trim().toLowerCase();
   const objectNameKey = String(claim.object_name || '').trim().toLowerCase();
@@ -71,6 +72,21 @@ function normalizeClaimShape(raw, exactNameToId) {
     || claim.evidence?.methodology
     || '';
   return claim;
+}
+
+function normalizePaperScope(scope) {
+  const raw = Array.isArray(scope) ? scope : [scope];
+  const out = [];
+  for (const item of raw) {
+    let value = String(item || '').trim().toLowerCase();
+    if (!value) continue;
+    if (['cs1', 'case_1', 'case-1', 'case study 1', 'case1_transdiagnostic'].includes(value)) value = 'case1';
+    else if (['cs2', 'case_2', 'case-2', 'case study 2'].includes(value)) value = 'case2';
+    else if (['cs3', 'case_3', 'case-3', 'case study 3', 'hindcasting'].includes(value)) value = 'case3';
+    else if (['general_neuromed', 'manual_general', 'base', 'full_v2_base'].includes(value)) value = 'general';
+    if (['general', 'case1', 'case2', 'case3'].includes(value) && !out.includes(value)) out.push(value);
+  }
+  return out.length ? out : ['general'];
 }
 
 function conceptNode(id, name, domainTags, sourceVocab, metadata = {}, definition = '') {

@@ -975,7 +975,7 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
     from .case_studies import (
         case_study_by_name,
         GENERATOR_TASK, GENERATOR_CHAIN,
-        GENERATOR_CLUSTER_MINING, GENERATOR_ATOM_SUBSTITUTION,
+        GENERATOR_CASE1_CANDIDATE, GENERATOR_ATOM_SUBSTITUTION,
     )
 
     case = case_study_by_name(case_study_name)
@@ -1043,25 +1043,26 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
             for hook in case.post_hooks:
                 hook(engine, case, raw_out)
 
-        elif case.generator == GENERATOR_CLUSTER_MINING:
+        elif case.generator == GENERATOR_CASE1_CANDIDATE:
             kg = load_graph(Path(graph_path))
             engine = HypothesisEngine(kg)
             for hook in case.pre_hooks:
                 hook(engine, case)
             extras = case.extras or {}
-            print(f"  cluster mining: task={case.task.name if case.task else '?'}")
-            clusters = engine.find_transdiagnostic_clusters(
-                min_diseases_per_cluster=int(extras.get("min_diseases_per_cluster", 3)),
-                max_clusters=int(extras.get("max_clusters", 20)),
-                modality_partitioned=bool(extras.get("modality_partitioned", True)),
-                disease_include_names=tuple(extras.get("disease_include_names", ())),
-                disease_exclude_names=tuple(extras.get("disease_exclude_names", ())),
+            print(f"  case1 candidate-space generation: task={case.task.name if case.task else '?'}")
+            hypotheses = engine.generate_case1_hypotheses(
+                methods=tuple(extras.get("generation_methods", ())),
+                disease_names=tuple(extras.get("disease_include_names", ())),
+                atlas_rois=tuple(extras.get("atlas_rois", ())),
                 atlas_label_names=tuple(extras.get("atlas_label_names", ())),
                 atlas_label_sources=dict(extras.get("atlas_label_sources", {})),
+                feature_space=tuple(extras.get("feature_space", ())),
+                max_per_method=extras.get("max_hypotheses_per_method", bp.target_per_task),
+                random_seed=int(extras.get("random_seed", 0)) or None,
             )
-            print(f"  -> {len(clusters)} cluster(s)")
-            for c in clusters:
-                meta = c.metadata or {}
+            print(f"  -> {len(hypotheses)} candidate hypothesis(es)")
+            for h in hypotheses:
+                meta = h.metadata or {}
                 if case.task is not None:
                     meta["task_name"] = case.task.name
                     meta["task_signature"] = case.task.signature
@@ -1071,8 +1072,8 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
                         else None
                     )
                 meta["case_study"] = case.name
-                c.metadata = meta
-            engine.save_hypotheses(clusters, str(raw_out))
+                h.metadata = meta
+            engine.save_hypotheses(hypotheses, str(raw_out))
             print(f"Saved to {raw_out}")
             for hook in case.post_hooks:
                 hook(engine, case, raw_out)

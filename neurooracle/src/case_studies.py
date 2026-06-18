@@ -6,7 +6,9 @@ three case studies that anchor the Nature paper do not all map cleanly onto a
 single canonical task, so this module records the extra routing metadata the
 generic engine needs:
 
-- Case Study 1 uses a cluster-mining generator over ROI x modality x sign buckets.
+- Case Study 1 uses a candidate-space generator over disease x ROI x feature
+  hypotheses, with exhaustive, random-walk, LLM-brainstorm, and NeuroDiscovery
+  strategies.
 - Case Study 2 uses a canonical chain plus case-specific atom-pool restrictions.
 - Case Study 3 is reserved for hindcasting over a frozen historical KG snapshot.
 
@@ -44,25 +46,65 @@ from .atoms import (
 # stage [1/4] (raw hypothesis generation) for a given case study.
 GENERATOR_TASK              = "task"               # CANONICAL_TASKS via batch_generate_for_task
 GENERATOR_CHAIN             = "chain"              # CANONICAL_CHAINS via batch_generate_for_chain
-GENERATOR_CLUSTER_MINING    = "cluster_mining"    # Case Study 1 via find_transdiagnostic_clusters
+GENERATOR_CASE1_CANDIDATE   = "case1_candidate_space"  # CS1 disease x ROI x feature search
 GENERATOR_ATOM_SUBSTITUTION = "atom_substitution"  # Case Study 3 hindcasting (reserved)
 
 _KNOWN_GENERATORS = frozenset({
     GENERATOR_TASK,
     GENERATOR_CHAIN,
-    GENERATOR_CLUSTER_MINING,
+    GENERATOR_CASE1_CANDIDATE,
     GENERATOR_ATOM_SUBSTITUTION,
 })
 
 NEUROSTORM_ATLAS_ROOT = Path(r"C:\Users\45846\Documents\Code\NeuroSTORM\datasets\atlas")
 
 
-def _load_neurostorm_atlas_labels() -> tuple[tuple[str, ...], dict[str, tuple[str, ...]], tuple[str, ...]]:
+def _clean_atlas_label_cell(cell: str) -> str:
+    cell = (cell or "").strip()
+    if not cell:
+        return ""
+    matches = re.findall(r'\["([^"]+)":\s*[0-9.]+\]', cell)
+    candidates = [m.strip() for m in matches] if matches else [cell]
+    for candidate in candidates:
+        folded = candidate.casefold().strip()
+        if not folded or folded in {"none", "background", "volume", "center of mass"}:
+            continue
+        if re.fullmatch(r"\d+(\.\d+)?", folded):
+            continue
+        if re.fullmatch(r"\(?\s*-?\d+(\.\d+)?\s*;\s*-?\d+(\.\d+)?\s*;\s*-?\d+(\.\d+)?\s*\)?", folded):
+            continue
+        if re.fullmatch(r"roi[_\s-]*\d+", folded):
+            continue
+        return candidate
+    return ""
+
+
+def _fallback_atlas_roi_label(atlas_name: str, roi_index: str, row: list[str]) -> str:
+    for cell in row[1:]:
+        value = (cell or "").strip()
+        folded = value.casefold()
+        if not value or folded in {"none", "background", "volume", "center of mass"}:
+            continue
+        if re.fullmatch(r"\(?\s*-?\d+(\.\d+)?\s*;\s*-?\d+(\.\d+)?\s*;\s*-?\d+(\.\d+)?\s*\)?", folded):
+            continue
+        if re.fullmatch(r"\d+(\.\d+)?", folded) or re.fullmatch(r"roi[_\s-]*\d+", folded):
+            break
+        return value
+    return f"{atlas_name} ROI {roi_index}"
+
+
+def _load_neurostorm_atlas_labels() -> tuple[
+    tuple[str, ...],
+    dict[str, tuple[str, ...]],
+    tuple[str, ...],
+    tuple[dict[str, str], ...],
+]:
     labels: set[str] = set()
     label_sources: dict[str, set[str]] = {}
     atlas_names: list[str] = []
+    atlas_rois: list[dict[str, str]] = []
     if not NEUROSTORM_ATLAS_ROOT.exists():
-        return tuple(), {}, tuple()
+        return tuple(), {}, tuple(), tuple()
     for atlas_dir in sorted(NEUROSTORM_ATLAS_ROOT.iterdir()):
         if not atlas_dir.is_dir() or not (atlas_dir / "atlas.nii.gz").is_file():
             continue
@@ -73,7 +115,13 @@ def _load_neurostorm_atlas_labels() -> tuple[tuple[str, ...], dict[str, tuple[st
         with labels_csv.open(encoding="utf-8", errors="ignore", newline="") as f:
             for raw_line in f:
                 line = raw_line.strip()
-                if not line or line.startswith("#") or line.casefold().startswith("index,"):
+                folded_line = line.casefold()
+                if (
+                    not line
+                    or line.startswith("#")
+                    or folded_line.startswith("index,")
+                    or folded_line.startswith("roi number,")
+                ):
                     continue
                 try:
                     row = next(csv.reader([line]))
@@ -81,19 +129,185 @@ def _load_neurostorm_atlas_labels() -> tuple[tuple[str, ...], dict[str, tuple[st
                     continue
                 if len(row) < 2:
                     continue
-                label = row[1].strip()
+                label = ""
+                for cell in row[1:]:
+                    label = _clean_atlas_label_cell(cell)
+                    if label:
+                        break
+                roi_index = row[0].strip()
+                if not roi_index:
+                    continue
+                if not label:
+                    label = _fallback_atlas_roi_label(atlas_dir.name, roi_index, row)
                 if not label or label.casefold() == "background":
                     continue
+                fallback_name = f"{atlas_dir.name} ROI {roi_index}"
+                display_name = label if label == fallback_name else f"{fallback_name}: {label}"
                 labels.add(label)
                 label_sources.setdefault(label, set()).add(atlas_dir.name)
+                atlas_rois.append({
+                    "atlas_name": atlas_dir.name,
+                    "roi_index": roi_index,
+                    "label": label,
+                    "name": display_name,
+                })
     return (
         tuple(sorted(labels)),
         {label: tuple(sorted(srcs)) for label, srcs in sorted(label_sources.items())},
         tuple(atlas_names),
+        tuple(atlas_rois),
     )
 
 
-CASE1_ATLAS_LABELS, CASE1_ATLAS_LABEL_SOURCES, CASE1_ATLAS_NAMES = _load_neurostorm_atlas_labels()
+(
+    CASE1_ATLAS_LABELS,
+    CASE1_ATLAS_LABEL_SOURCES,
+    CASE1_ATLAS_NAMES,
+    CASE1_ATLAS_ROIS,
+) = _load_neurostorm_atlas_labels()
+
+
+# Case Study 1 is framed as a search over an executable hypothesis space:
+# disease x atlas/region x feature. Direction is not part of the generator;
+# validation estimates whether the disease group is higher or lower, and
+# cross-disease clusters are summarized after validation.
+CASE1_FEATURE_SPACE: tuple[dict[str, Any], ...] = (
+    {
+        "id": "roi_alff",
+        "name": "ROI ALFF",
+        "family": "roi_activity",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("roi_timeseries",),
+        "primary": True,
+    },
+    {
+        "id": "roi_falff",
+        "name": "ROI fALFF",
+        "family": "roi_activity",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("roi_timeseries",),
+        "primary": True,
+    },
+    {
+        "id": "roi_temporal_variance",
+        "name": "ROI temporal variance",
+        "family": "roi_activity",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("roi_timeseries",),
+        "primary": True,
+    },
+    {
+        "id": "roi_mean_whole_brain_fc",
+        "name": "ROI mean whole-brain FC",
+        "family": "seed_fc",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix",),
+        "primary": True,
+    },
+    {
+        "id": "roi_within_network_fc",
+        "name": "ROI within-network FC",
+        "family": "seed_fc",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix", "network_labels"),
+        "primary": True,
+    },
+    {
+        "id": "roi_between_network_fc",
+        "name": "ROI between-network FC",
+        "family": "seed_fc",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix", "network_labels"),
+        "primary": True,
+    },
+    {
+        "id": "roi_node_strength",
+        "name": "ROI node strength",
+        "family": "graph",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix",),
+        "primary": True,
+    },
+    {
+        "id": "roi_node_degree",
+        "name": "ROI node degree",
+        "family": "graph",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix", "edge_threshold"),
+        "primary": True,
+    },
+    {
+        "id": "roi_participation_coefficient",
+        "name": "ROI participation coefficient",
+        "family": "graph",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix", "network_labels"),
+        "primary": True,
+    },
+    {
+        "id": "roi_local_efficiency",
+        "name": "ROI local efficiency",
+        "family": "graph",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("fc_matrix", "edge_threshold"),
+        "primary": True,
+    },
+    {
+        "id": "roi_fc_variability",
+        "name": "ROI FC variability",
+        "family": "dynamic_fc",
+        "modality": "fMRI",
+        "level": "ROI",
+        "requires": ("roi_timeseries", "sliding_window_fc"),
+        "primary": True,
+    },
+    {
+        "id": "subject_state_occupancy",
+        "name": "Subject state occupancy",
+        "family": "dynamic_fc",
+        "modality": "fMRI",
+        "level": "subject",
+        "requires": ("roi_timeseries", "dynamic_state_model"),
+        "primary": True,
+    },
+    {
+        "id": "roi_cortical_thickness",
+        "name": "ROI cortical thickness",
+        "family": "structural",
+        "modality": "sMRI",
+        "level": "ROI",
+        "requires": ("T1w", "FreeSurfer_or_equivalent"),
+        "primary": False,
+    },
+    {
+        "id": "roi_surface_area",
+        "name": "ROI surface area",
+        "family": "structural",
+        "modality": "sMRI",
+        "level": "ROI",
+        "requires": ("T1w", "FreeSurfer_or_equivalent"),
+        "primary": False,
+    },
+    {
+        "id": "roi_gray_matter_volume",
+        "name": "ROI gray-matter volume",
+        "family": "structural",
+        "modality": "sMRI",
+        "level": "ROI",
+        "requires": ("T1w", "FreeSurfer_or_equivalent"),
+        "primary": False,
+    },
+)
 
 
 # ── Per-stage parameter blocks ───────────────────────────────────────────────
@@ -168,7 +382,7 @@ class CaseStudy:
         echoes both in the run log so figure / paper text stays in sync
         with whatever the orchestrator actually generated.
     generator:
-        One of GENERATOR_TASK / GENERATOR_CHAIN / GENERATOR_CLUSTER_MINING
+        One of GENERATOR_TASK / GENERATOR_CHAIN / GENERATOR_CASE1_CANDIDATE
         / GENERATOR_ATOM_SUBSTITUTION.
     task / chain:
         The canonical Task or TaskChain backing the generator. Exactly one
@@ -358,7 +572,7 @@ CASE1 = CaseStudy(
     name="case1_transdiagnostic",
     chinese_name="跨诊断精神疾病脑影像图谱",
     english_name="Transdiagnostic Brain Atlas of Psychiatric Disorders",
-    generator=GENERATOR_CLUSTER_MINING,
+    generator=GENERATOR_CASE1_CANDIDATE,
     task=task_by_name("transdiagnostic_clustering"),
     stage_params=StageParams(
         batch=BatchParams(max_paths=6, max_seeds=60, target_per_task=80),
@@ -367,9 +581,20 @@ CASE1 = CaseStudy(
         plausibility=PlausibilityParams(top=60),
     ),
     extras={
-        "min_diseases_per_cluster": 3,
-        "max_clusters": 20,
-        "modality_partitioned": True,
+        "generation_methods": (
+            "exhaustive",
+            "random_walk",
+            "llm_brainstorm",
+            "neurodiscovery",
+        ),
+        "max_hypotheses_per_method": {
+            "exhaustive": 40,
+            "random_walk": 40,
+            "llm_brainstorm": 40,
+            "neurodiscovery": 40,
+        },
+        "candidate_unit": "disease_region_feature",
+        "random_seed": 20260615,
         "disease_include_names": (
             "Anorexia Nervosa",
             "Attention Deficit Disorder with Hyperactivity",
@@ -384,8 +609,10 @@ CASE1 = CaseStudy(
             "Substance Use Disorders",
         ),
         "atlas_names": CASE1_ATLAS_NAMES,
+        "atlas_rois": CASE1_ATLAS_ROIS,
         "atlas_label_names": CASE1_ATLAS_LABELS,
         "atlas_label_sources": CASE1_ATLAS_LABEL_SOURCES,
+        "feature_space": CASE1_FEATURE_SPACE,
     },
 )
 
@@ -462,6 +689,6 @@ __all__ = [
     "list_case_study_names",
     "GENERATOR_TASK",
     "GENERATOR_CHAIN",
-    "GENERATOR_CLUSTER_MINING",
+    "GENERATOR_CASE1_CANDIDATE",
     "GENERATOR_ATOM_SUBSTITUTION",
 ]

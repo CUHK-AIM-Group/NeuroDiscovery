@@ -3421,8 +3421,9 @@ class AgentSession:
             self._checkpoint_mgr = None  # type: ignore[assignment]
 
         # Cross-session memory store (user/feedback/project/reference facts).
-        # Lives under ~/.neuroclaw/projects/<workspace_hash>/memory/ so it is
-        # per-workspace, user-local, and never written into the project repo.
+        # Lives under the shared local memory directory unless
+        # overridden by NEUROCLAW_MEMORY_ROOT, and is never written into the
+        # project repo.
         try:
             from core.memory import MemoryStore, default_memory_root
             self._memory_store = MemoryStore(root=default_memory_root(self.workspace))

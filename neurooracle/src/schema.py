@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+from .paper_scope import infer_paper_scope_from_claim_dict, normalize_paper_scope
+
 
 class DomainTag(str, Enum):
     """High-level domain classification for concepts."""
@@ -363,9 +365,16 @@ class Claim:
     evidence: Evidence = field(default_factory=Evidence)
     source_paper: PaperRef = field(default_factory=PaperRef)
     raw_text: str = ""                   # original sentence from paper
+    paper_scope: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
+        claim_data = {
+            "id": self.id,
+            "metadata": self.metadata,
+            "paper_scope": self.paper_scope,
+        }
+        paper_scope = self.paper_scope or infer_paper_scope_from_claim_dict(claim_data)
         return {
             "id": self.id,
             "subject_id": self.subject_id,
@@ -378,6 +387,7 @@ class Claim:
             "evidence": self.evidence.to_dict(),
             "source_paper": self.source_paper.to_dict(),
             "raw_text": self.raw_text,
+            "paper_scope": paper_scope,
             "metadata": self.metadata,
         }
 
@@ -388,6 +398,10 @@ class Claim:
             d["evidence"] = Evidence.from_dict(d["evidence"])
         if "source_paper" in d and isinstance(d["source_paper"], dict):
             d["source_paper"] = PaperRef.from_dict(d["source_paper"])
+        if "paper_scope" in d:
+            d["paper_scope"] = normalize_paper_scope(d["paper_scope"])
+        else:
+            d["paper_scope"] = infer_paper_scope_from_claim_dict(d)
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
 
     def to_edge(self) -> Edge:

@@ -14,6 +14,7 @@ from openai import OpenAI
 
 from .claim_extractor import ClaimExtractor, ExtractionResult
 from .graph_manager import KnowledgeGraph
+from .paper_scope import infer_paper_scope_from_claim_dict
 from .schema import CLAIM_PREDICATES, Claim, ConceptNode, DomainTag, Edge, PaperRef
 
 logger = logging.getLogger(__name__)
@@ -1465,6 +1466,7 @@ def ingest_claims(
             _seen_pairs[pair_key] = claim.predicate
 
             # add claim node
+            claim.paper_scope = claim.paper_scope or infer_paper_scope_from_claim_dict(claim.to_dict())
             kg.add_concept(ConceptNode(
                 id=claim.id,
                 preferred_name=f"{claim.subject_name} {claim.predicate} {claim.object_name}",

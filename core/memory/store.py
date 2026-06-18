@@ -1,4 +1,4 @@
-"""Persistent fact-based memory storage.
+r"""Persistent fact-based memory storage.
 
 Each memory is one markdown file with YAML frontmatter:
 
@@ -14,13 +14,15 @@ Each memory is one markdown file with YAML frontmatter:
 Files live in ``<root>/<name>.md``. ``<root>/MEMORY.md`` is an auto-generated
 index of one line per file, designed to be injected into the system prompt.
 
-Storage root defaults to ``~/.neuroclaw/projects/<sha256(workspace)[:16]>/memory/``
-so memory is per-workspace, user-local, and never written into the project repo.
+Storage root defaults to ``~/.neuroclaw/memory/<device>`` so all local agents
+write under one user-owned memory directory outside the project repo on this
+device. Set ``NEUROCLAW_MEMORY_ROOT`` to override the full location, or
+``NEUROCLAW_MEMORY_DEVICE`` to override the device folder.
 """
 from __future__ import annotations
 
-import hashlib
 import logging
+import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -41,13 +43,16 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
 def default_memory_root(workspace: Path) -> Path:
-    """Return the per-workspace memory root under the user home directory.
+    """Return the shared local memory root.
 
-    Layout: ``~/.neuroclaw/projects/<sha256(workspace)[:16]>/memory/``
+    ``workspace`` is accepted for API compatibility with older callers.
     """
-    ws = Path(workspace).resolve()
-    digest = hashlib.sha256(str(ws).encode("utf-8")).hexdigest()[:16]
-    return Path.home() / ".neuroclaw" / "projects" / digest / "memory"
+    override = os.environ.get("NEUROCLAW_MEMORY_ROOT")
+    if override:
+        return Path(override).expanduser()
+    device = os.environ.get("NEUROCLAW_MEMORY_DEVICE") or os.environ.get("COMPUTERNAME") or "local"
+    device = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "-", device.strip()).strip(". ") or "local"
+    return Path.home() / ".neuroclaw" / "memory" / device
 
 
 def slugify(text: str) -> str:

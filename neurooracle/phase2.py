@@ -109,6 +109,8 @@ def _cmd_chain():
     p.add_argument("--n-subqueries", type=int, default=3)
     p.add_argument("--max-workers", type=int, default=12)
     p.add_argument("--data-dir", type=str, default=None)
+    p.add_argument("--collect-only", action="store_true",
+                   help="Only collect/cache abstracts and metadata; do not extract claims or write the graph")
     p.add_argument("--keep-noise", action="store_true")
     p.add_argument("--strict-phase1", action="store_true")
     p.add_argument("--lock-model", action="store_true",
@@ -137,6 +139,7 @@ def _cmd_chain():
         strict_phase1=args.strict_phase1,
         sample_rate_seen=args.qc_rate,
         lock_model=args.lock_model,
+        collect_only=args.collect_only,
     )
 
 

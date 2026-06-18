@@ -675,6 +675,7 @@ def _claim_from_spec(spec: ManualClaimSpec, paper: PaperRef, ordinal: int) -> Cl
         ),
         source_paper=paper,
         raw_text=spec.raw_sentence,
+        paper_scope=["case1"],
         metadata={
             "subject_type": spec.subject_type,
             "object_type": spec.object_type,

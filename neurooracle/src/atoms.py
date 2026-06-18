@@ -348,9 +348,9 @@ CANONICAL_TASKS: tuple[Task, ...] = (
     ),
 
     # ── E. Cross-disease structure (Case Study 1: Transdiagnostic Brain Atlas) ──
-    # Shape-only entry: hypothesis generation goes through a separate
-    # cluster-mining generator (HypothesisEngine.find_transdiagnostic_clusters,
-    # implemented in step 2), not the standard path-based batch_generate.
+    # Shape-only entry: hypothesis generation goes through the Case Study 1
+    # candidate-space generator (disease x atlas/ROI x feature), not the
+    # standard path-based batch_generate.
     # Listed here so the task name is reachable via task_by_name() and so
     # downstream consumers (NeuroBench, leaderboards, novelty cache keys)
     # see Case Study 1 hypotheses tagged consistently with the rest.

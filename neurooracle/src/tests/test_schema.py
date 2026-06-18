@@ -231,6 +231,36 @@ def test_claim_roundtrip():
     assert restored.source_paper.pmid == "98765"
 
 
+def test_claim_to_dict_infers_paper_scope_from_curation_scope():
+    claim = Claim(
+        id="CLM:003",
+        subject_id="IM:hippocampal_volume",
+        subject_name="hippocampal volume",
+        predicate="predicts",
+        object_id="OUT:cognitive_decline",
+        object_name="cognitive decline",
+        metadata={"curation_scope": "case1_transdiagnostic"},
+    )
+
+    d = claim.to_dict()
+
+    assert d["paper_scope"] == ["case1"]
+    assert Claim.from_dict(d).paper_scope == ["case1"]
+
+
+def test_claim_to_dict_defaults_unscoped_claims_to_general():
+    claim = Claim(
+        id="CLM:004",
+        subject_id="GENE:APOE",
+        subject_name="APOE",
+        predicate="is_associated_with",
+        object_id="MSH:alzheimer",
+        object_name="Alzheimer Disease",
+    )
+
+    assert claim.to_dict()["paper_scope"] == ["general"]
+
+
 def test_domain_tag_values():
     """Test DomainTag enum values."""
     assert DomainTag.NEUROANATOMY.value == "neuroanatomy"

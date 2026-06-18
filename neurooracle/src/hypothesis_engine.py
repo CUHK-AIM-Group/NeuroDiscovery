@@ -26,6 +26,10 @@ from __future__ import annotations
 import json
 import logging
 import math
+import hashlib
+import heapq
+import itertools
+import random
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -819,6 +823,16 @@ DATASET_FEATURES = {
         "rfmri_fc":     {"modality": "fMRI", "tool": "rfMRI",       "level": "connectivity"},
         "rfmri_roi_ts": {"modality": "fMRI", "tool": "rfMRI",       "level": "ROI"},
         "tfmri_task":   {"modality": "fMRI", "tool": "task fMRI",   "level": "activation"},
+    },
+    "TCP": {
+        # Transdiagnostic Connectome Project — BIDS release includes T1w/T2w
+        # anatomical scans, resting-state fMRI, and task fMRI.
+        "smri_cortical_thickness": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "smri_subcortical_volume": {"modality": "sMRI", "tool": "FreeSurfer", "level": "ROI"},
+        "smri_myelin":             {"modality": "sMRI", "tool": "T1w/T2w",    "level": "ROI"},
+        "rfmri_fc":                {"modality": "fMRI", "tool": "rfMRI",      "level": "connectivity"},
+        "rfmri_roi_ts":            {"modality": "fMRI", "tool": "rfMRI",      "level": "ROI"},
+        "tfmri_task":              {"modality": "fMRI", "tool": "task fMRI",  "level": "activation"},
     },
     # ── Visual decoding (fMRI) ──────────────────────────────────────────
     # NSD & BOLD5000: image-stimulus visual task fMRI, no rest.
@@ -2425,200 +2439,674 @@ class HypothesisEngine:
 
     # ── imaging-driven batch generation ──────────────────────────────
 
-    def find_transdiagnostic_clusters(
+    def generate_case1_hypotheses(
         self,
-        min_diseases_per_cluster: int = 3,
-        max_clusters: int = 20,
-        modality_partitioned: bool = True,
-        min_abs_d: float = 0.05,
-        max_fdr_p: float = 0.05,
-        disease_include_names: tuple[str, ...] | None = None,
-        disease_exclude_names: tuple[str, ...] | None = None,
-        atlas_label_names: tuple[str, ...] | None = None,
+        methods: tuple[str, ...] = (
+            "exhaustive",
+            "random_walk",
+            "llm_brainstorm",
+            "neurodiscovery",
+        ),
+        disease_names: tuple[str, ...] = (),
+        atlas_rois: tuple[dict, ...] = (),
+        atlas_label_names: tuple[str, ...] = (),
         atlas_label_sources: dict[str, tuple[str, ...]] | None = None,
+        feature_space: tuple[dict, ...] = (),
+        max_per_method: int | dict[str, int] = 40,
+        random_seed: int | None = None,
     ) -> list[Hypothesis]:
-        """Case Study 1 generator — mine ENIGMA case-control edges into transdiagnostic
-        (region, modality, sign) clusters that span ≥ ``min_diseases_per_cluster``
-        diseases.
+        """Generate Case Study 1 hypotheses as executable experiment candidates.
 
-        Each ENIGMA edge in the v2 KG carries metadata
-        ``{cohens_d, fdr_p, modality, comparison, n_controls, n_patients,
-        hemisphere_kept}``. We bucket edges by ``(region_id, modality, sign(d))``
-        and emit a cluster Hypothesis whenever the bucket pools effects from at
-        least ``min_diseases_per_cluster`` distinct comparisons that pass the
-        ``min_abs_d`` / ``max_fdr_p`` significance gates.
+        The candidate tuple is:
 
-        The hypothesis is encoded as a star (not a sequential chain): ``path``
-        carries one ``HypothesisLink`` per disease→region edge, which is enough
-        for the critic / novelty stages to read the supporting evidence even
-        though the links don't form a connected chain. ``hypothesis_type`` is
-        ``"transdiagnostic_cluster"`` so post_process can route around the
-        chain-style filters.
+        ``disease x atlas/ROI x feature``.
+
+        Direction is intentionally absent. Validation estimates the sign from
+        data, so a negative association means the disease group is lower and a
+        positive association means it is higher. Cross-disease clusters are a
+        downstream summary over validated single-disease candidates, not a
+        generator-time assumption. Four generation strategies are supported:
+
+        - ``exhaustive``: stable enumeration baseline. It can cover the full
+          disease x region x feature space when uncapped.
+        - ``random_walk``: stochastic, KG-aware sampling from disease/region
+          neighborhoods when evidence exists, with random fallback.
+        - ``llm_brainstorm``: a replaceable LLM-style prior sampler. It does not
+          call an external API here; it encodes broad neuroscience templates so
+          the pipeline stays runnable when model endpoints are unstable.
+        - ``neurodiscovery``: NeuroOracle-guided ranking of the same candidate
+          space using claim/edge support and executability.
         """
-        from collections import defaultdict
+        methods = tuple(methods or ("exhaustive", "random_walk", "llm_brainstorm", "neurodiscovery"))
+        allowed = {"exhaustive", "random_walk", "llm_brainstorm", "neurodiscovery"}
+        unknown = sorted(set(methods) - allowed)
+        if unknown:
+            raise ValueError(f"unknown Case Study 1 generation method(s): {unknown}")
 
-        include_names = {x.casefold() for x in (disease_include_names or ())}
-        exclude_names = {x.casefold() for x in (disease_exclude_names or ())}
-        atlas_norm = {
-            self._normalize_region_label(x)
-            for x in (atlas_label_names or ())
-            if self._normalize_region_label(x)
+        diseases = self._case1_collect_diseases(disease_names)
+        regions = self._case1_collect_regions(
+            atlas_rois=atlas_rois,
+            atlas_label_names=atlas_label_names,
+            atlas_label_sources=atlas_label_sources or {},
+        )
+        features = [dict(f) for f in feature_space if f.get("id")]
+        if not diseases:
+            raise ValueError("Case Study 1 needs at least one disease option")
+        if not regions:
+            raise ValueError("Case Study 1 needs at least one atlas/ROI option")
+        if not features:
+            raise ValueError("Case Study 1 needs at least one feature option")
+        support = self._case1_collect_support(diseases, regions)
+        total_candidates = self._case1_total_candidate_count(
+            n_diseases=len(diseases),
+            n_regions=len(regions),
+            n_features=len(features),
+        )
+        rng = random.Random(random_seed)
+        limits = self._case1_method_limits(methods, max_per_method)
+
+        by_method: dict[str, list[Hypothesis]] = {}
+        for method in methods:
+            limit = limits.get(method, 0)
+            if limit == 0:
+                by_method[method] = []
+                continue
+            if method == "exhaustive":
+                hyps = self._case1_generate_exhaustive(
+                    diseases, regions, features, support, limit, total_candidates
+                )
+            elif method == "random_walk":
+                hyps = self._case1_generate_random_walk(
+                    diseases, regions, features, support, limit, rng, total_candidates
+                )
+            elif method == "llm_brainstorm":
+                hyps = self._case1_generate_llm_brainstorm(
+                    diseases, regions, features, support, limit, rng, total_candidates
+                )
+            else:
+                hyps = self._case1_generate_neurodiscovery(
+                    diseases, regions, features, support, limit, total_candidates
+                )
+            by_method[method] = hyps
+
+        out: list[Hypothesis] = []
+        for method in methods:
+            out.extend(by_method.get(method, ()))
+
+        logger.info(
+            "case1 candidate generation: %d diseases x %d regions x %d features "
+            "-> %d possible candidates, emitted %d hypotheses across %s",
+            len(diseases),
+            len(regions),
+            len(features),
+            total_candidates,
+            len(out),
+            ", ".join(methods),
+        )
+        return out
+
+    @staticmethod
+    def _case1_method_limits(methods: tuple[str, ...], max_per_method: int | dict[str, int]) -> dict[str, int]:
+        if isinstance(max_per_method, dict):
+            return {m: int(max_per_method.get(m, 0)) for m in methods}
+        return {m: int(max_per_method) for m in methods}
+
+    @staticmethod
+    def _case1_total_candidate_count(
+        n_diseases: int,
+        n_regions: int,
+        n_features: int,
+    ) -> int:
+        return n_diseases * n_regions * n_features
+
+    def _case1_collect_diseases(self, disease_names: tuple[str, ...]) -> list[dict]:
+        by_norm: dict[str, ConceptNode] = {}
+        for node in self._index.values():
+            domains = set(node.domain_tags or [])
+            if "disease" not in domains:
+                continue
+            keys = [node.preferred_name, *list(node.aliases or [])]
+            for key in keys:
+                norm = self._normalize_case1_name(key)
+                if norm and norm not in by_norm:
+                    by_norm[norm] = node
+
+        diseases: list[dict] = []
+        seen: set[str] = set()
+        for name in disease_names:
+            norm = self._normalize_case1_name(name)
+            node = by_norm.get(norm)
+            if node is None:
+                for key, candidate in by_norm.items():
+                    if norm and (norm in key or key in norm):
+                        node = candidate
+                        break
+            if node is not None:
+                did = node.id
+                dname = node.preferred_name
+            else:
+                did = f"CASE1:DISEASE:{self._slug(name)}"
+                dname = name
+            if did in seen:
+                continue
+            seen.add(did)
+            diseases.append({"id": did, "name": dname, "norm": norm})
+        return diseases
+
+    def _case1_collect_regions(
+        self,
+        atlas_rois: tuple[dict, ...] = (),
+        atlas_label_names: tuple[str, ...] = (),
+        atlas_label_sources: dict[str, tuple[str, ...]] | None = None,
+    ) -> list[dict]:
+        atlas_label_sources = atlas_label_sources or {}
+        node_by_norm: dict[str, ConceptNode] = {}
+        for node in self._index.values():
+            if "neuroanatomy" not in (node.domain_tags or []):
+                continue
+            norm = self._normalize_region_label(node.preferred_name)
+            if norm and norm not in node_by_norm:
+                node_by_norm[norm] = node
+
+        regions: list[dict] = []
+        if atlas_rois:
+            for spec in atlas_rois:
+                atlas_name = str(spec.get("atlas_name", "unknown_atlas"))
+                roi_index = str(spec.get("roi_index", ""))
+                label = str(spec.get("label", "") or spec.get("name", "")).strip()
+                if not roi_index or not label:
+                    continue
+                norm = self._normalize_region_label(label)
+                node = node_by_norm.get(norm)
+                rid = f"CASE1:ROI:{self._slug(atlas_name)}:{self._slug(roi_index)}"
+                regions.append({
+                    "id": rid,
+                    "name": str(spec.get("name") or f"{atlas_name} ROI {roi_index}: {label}"),
+                    "norm": norm,
+                    "atlas_names": (atlas_name,),
+                    "atlas_name": atlas_name,
+                    "roi_index": roi_index,
+                    "atlas_label": label,
+                    "kg_node_id": node.id if node else "",
+                })
+        elif atlas_label_names:
+            for label in atlas_label_names:
+                norm = self._normalize_region_label(label)
+                if not norm:
+                    continue
+                atlases = tuple(atlas_label_sources.get(label, ())) or ("unknown_atlas",)
+                node = node_by_norm.get(norm)
+                for atlas_name in atlases:
+                    rid = f"CASE1:ROI:{self._slug(atlas_name)}:{self._slug(label)}"
+                    regions.append({
+                        "id": rid,
+                        "name": f"{atlas_name}: {node.preferred_name if node else label}",
+                        "norm": norm,
+                        "atlas_names": (atlas_name,),
+                        "atlas_name": atlas_name,
+                        "roi_index": "",
+                        "atlas_label": label,
+                        "kg_node_id": node.id if node else "",
+                    })
+        else:
+            for norm, node in sorted(node_by_norm.items(), key=lambda x: x[1].preferred_name)[:500]:
+                regions.append({
+                    "id": node.id,
+                    "name": node.preferred_name,
+                    "norm": norm,
+                    "atlas_names": tuple(),
+                    "atlas_name": "",
+                    "roi_index": "",
+                    "atlas_label": node.preferred_name,
+                    "kg_node_id": node.id,
+                })
+        return sorted(regions, key=lambda r: (r.get("atlas_name", ""), self._roi_sort_key(r.get("roi_index", "")), r["name"]))
+
+    @staticmethod
+    def _roi_sort_key(value: str) -> tuple[int, str]:
+        value = str(value or "")
+        try:
+            return (int(float(value)), value)
+        except ValueError:
+            return (10**9, value)
+
+    def _case1_collect_support(self, diseases: list[dict], regions: list[dict]) -> dict:
+        disease_by_id = {d["id"]: d for d in diseases}
+        region_norms = {r["norm"] for r in regions}
+        support: dict[str, dict] = {
+            "by_region": {},
+            "by_disease": {},
         }
-        atlas_source_norm = {
-            self._normalize_region_label(label): tuple(sorted(set(atlases)))
-            for label, atlases in (atlas_label_sources or {}).items()
-            if self._normalize_region_label(label)
-        }
 
-        bucket: dict[tuple[str, str, int], list[dict]] = defaultdict(list)
-        for u, v, d in self.G.edges(data=True):
-            m = d.get("metadata") or {}
-            cohens_d = m.get("cohens_d")
-            modality = m.get("modality")
-            fdr_p = m.get("fdr_p")
-            if cohens_d is None or modality is None or fdr_p is None:
-                continue
-            try:
-                cd = float(cohens_d)
-                fp = float(fdr_p)
-            except (TypeError, ValueError):
-                continue
-            if abs(cd) < min_abs_d or fp > max_fdr_p:
-                continue
-            disease = self._index.get(u)
-            disease_name = disease.preferred_name if disease else str(u)
-            disease_key = disease_name.casefold()
-            if include_names and disease_key not in include_names:
-                continue
-            if exclude_names and disease_key in exclude_names:
-                continue
-            sign = 1 if cd > 0 else -1
-            mod_key = modality if modality_partitioned else "_any"
-            bucket[(v, mod_key, sign)].append({
-                "disease_id": u,
-                "disease_name": disease_name,
-                "region_id": v,
-                "cohens_d": cd,
-                "fdr_p": fp,
-                "comparison": m.get("comparison", ""),
-                "rel": d.get("relation_type", "unknown"),
-                "modality": modality,
-                "hemi": m.get("hemisphere_kept", ""),
-                "n_controls": m.get("n_controls"),
-                "n_patients": m.get("n_patients"),
-            })
-
-        clusters: list[Hypothesis] = []
-        for (region_id, mod_key, sign), entries in bucket.items():
-            distinct_diseases = {(e["disease_id"], e["comparison"]) for e in entries}
-            if len(distinct_diseases) < min_diseases_per_cluster:
+        for u, v, edge_data in self.G.edges(data=True):
+            disease_id = ""
+            region_id = ""
+            original_direction = "forward"
+            if u in disease_by_id:
+                disease_id = u
+                region_id = v
+            elif v in disease_by_id:
+                disease_id = v
+                region_id = u
+                original_direction = "reverse"
+            else:
                 continue
 
             region_node = self._index.get(region_id)
-            region_name = region_node.preferred_name if region_node else region_id
-            region_norm = self._normalize_region_label(region_name)
-            matching_atlases = self._matching_atlases_for_region(
-                region_norm, atlas_norm, atlas_source_norm
-            )
-            if atlas_norm and not matching_atlases:
+            if region_node is None:
                 continue
-            modality = entries[0]["modality"] if mod_key == "_any" else mod_key
+            if "neuroanatomy" not in (region_node.domain_tags or []):
+                continue
+            region_norm = self._normalize_region_label(region_node.preferred_name)
+            if region_norms and region_norm not in region_norms:
+                continue
 
-            entries.sort(key=lambda e: abs(e["cohens_d"]), reverse=True)
-            kept_first: dict[str, dict] = {}
-            for e in entries:
-                key = e["comparison"] or e["disease_id"]
-                if key not in kept_first:
-                    kept_first[key] = e
-            kept = list(kept_first.values())
-
-            links: list[HypothesisLink] = []
-            for e in kept:
-                disease = self._index.get(e["disease_id"])
-                disease_name = disease.preferred_name if disease else e["disease_id"]
-                links.append(HypothesisLink(
-                    from_id=e["disease_id"],
-                    from_name=disease_name,
-                    to_id=region_id,
-                    to_name=region_name,
-                    relation_type=e["rel"],
-                    confidence=min(1.0, abs(e["cohens_d"])),
-                    evidence={
-                        "cohens_d": e["cohens_d"],
-                        "fdr_p": e["fdr_p"],
-                        "modality": e["modality"],
-                        "comparison": e["comparison"],
-                        "hemisphere": e["hemi"],
-                        "n_controls": e["n_controls"],
-                        "n_patients": e["n_patients"],
-                    },
-                ))
-
-            anchor_disease = links[0].from_id
-            anchor_name = links[0].from_name
-            mean_abs_d = sum(abs(l.confidence) for l in links) / max(1, len(links))
-            sign_label = "increase" if sign > 0 else "decrease"
-
-            disease_listing = ", ".join(sorted({l.from_name for l in links}))
-            explanation = (
-                f"Transdiagnostic {sign_label} of {region_name} {modality} "
-                f"shared across {len(kept)} disorders: {disease_listing}. "
-                f"Mean |Cohen's d| = {mean_abs_d:.2f}."
-            )
-
-            h = Hypothesis(
-                id=f"cluster_{region_id}_{mod_key}_{sign_label}",
-                hypothesis_type="transdiagnostic_cluster",
-                source_id=anchor_disease,
-                source_name=f"Shared across {len(kept)} disorders: {disease_listing}",
-                target_id=region_id,
-                target_name=f"{region_name} ({modality}, {sign_label})",
-                path=links,
-                confidence_score=min(1.0, mean_abs_d),
-                evidence_score=min(1.0, math.log1p(len(kept)) / math.log(12)),
-                novelty_score=0.5,
-                testability_score=0.8,
-                supporting_claims=[],
-                explanation=explanation,
-                testability_reason=(
-                    f"ENIGMA case-control effects on {region_name} ({modality}) "
-                    f"are directly testable on UKB / ENIGMA-cohort imaging."
-                ),
-                metadata={
-                    "case_study": "case1_transdiagnostic",
-                    "cluster_region_id": region_id,
-                    "cluster_region_name": region_name,
-                    "cluster_modality": modality,
-                    "cluster_sign": sign_label,
-                    "atlas_constrained": bool(atlas_norm),
-                    "matching_atlases": matching_atlases,
-                    "diseases": sorted({l.from_name for l in links}),
-                    "disease_ids": sorted({l.from_id for l in links}),
-                    "n_diseases": len(kept),
-                    "mean_abs_d": mean_abs_d,
-                    "max_abs_d": max(abs(l.confidence) for l in links),
+            disease = disease_by_id[disease_id]
+            claim_id = (edge_data.get("metadata") or {}).get("claim_id", "")
+            claim_node = self._index.get(claim_id) if claim_id else None
+            evidence = {}
+            source_paper = {}
+            raw_text = ""
+            if claim_node is not None and claim_node.metadata:
+                evidence = claim_node.metadata.get("evidence", {}) or {}
+                source_paper = claim_node.metadata.get("source_paper", {}) or {}
+                raw_text = claim_node.metadata.get("raw_text", "") or ""
+            link = HypothesisLink(
+                from_id=disease_id,
+                from_name=disease["name"],
+                to_id=region_id,
+                to_name=region_node.preferred_name,
+                relation_type=edge_data.get("relation_type", "is_associated_with"),
+                confidence=float(edge_data.get("confidence", 0.5) or 0.5),
+                claim_id=claim_id,
+                raw_text=raw_text,
+                evidence={
+                    **evidence,
+                    "original_edge_direction": original_direction,
+                    **(edge_data.get("metadata") or {}),
                 },
+                source_paper=source_paper,
             )
-            h.composite_score = (
-                0.5 * h.evidence_score
-                + 0.3 * h.confidence_score
-                + 0.2 * h.testability_score
+            by_region = support["by_region"].setdefault(
+                region_norm,
+                {"disease_ids": set(), "links_by_disease": {}, "claim_ids": set(), "n_edges": 0},
             )
-            clusters.append(h)
+            by_region["disease_ids"].add(disease_id)
+            by_region["links_by_disease"].setdefault(disease_id, []).append(link)
+            by_region["n_edges"] += 1
+            if claim_id:
+                by_region["claim_ids"].add(claim_id)
+            support["by_disease"].setdefault(disease_id, []).append((region_norm, link))
+        return support
 
-        clusters.sort(
-            key=lambda c: (c.metadata["n_diseases"], c.metadata["mean_abs_d"]),
-            reverse=True,
-        )
-        if max_clusters and max_clusters > 0:
-            clusters = clusters[:max_clusters]
+    def _case1_generate_exhaustive(
+        self,
+        diseases: list[dict],
+        regions: list[dict],
+        features: list[dict],
+        support: dict,
+        limit: int,
+        total_candidates: int,
+    ) -> list[Hypothesis]:
+        out: list[Hypothesis] = []
+        for disease in diseases:
+            for region in regions:
+                for feature in features:
+                    out.append(self._case1_make_hypothesis(
+                        "exhaustive", disease, region, feature, support, total_candidates
+                    ))
+                    if limit > 0 and len(out) >= limit:
+                        return out
+        return out
 
-        logger.info(
-            f"transdiagnostic clustering: {len(bucket)} (region,modality,sign) "
-            f"buckets -> {len(clusters)} clusters spanning >= "
-            f"{min_diseases_per_cluster} diseases"
+    def _case1_generate_random_walk(
+        self,
+        diseases: list[dict],
+        regions: list[dict],
+        features: list[dict],
+        support: dict,
+        limit: int,
+        rng: random.Random,
+        total_candidates: int,
+    ) -> list[Hypothesis]:
+        out: list[Hypothesis] = []
+        seen: set[tuple] = set()
+        by_disease = support.get("by_disease", {})
+        attempts = max(200, limit * 30)
+        for _ in range(attempts):
+            if limit > 0 and len(out) >= limit:
+                break
+            disease = rng.choice(diseases)
+            supported_regions = by_disease.get(disease["id"], [])
+            if supported_regions and rng.random() < 0.7:
+                region_norm, _ = rng.choice(supported_regions)
+                region = next((r for r in regions if r["norm"] == region_norm), rng.choice(regions))
+            else:
+                region = rng.choice(regions)
+            feature = rng.choice(features)
+            key = self._case1_tuple_key(disease, region, feature)
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(self._case1_make_hypothesis(
+                "random_walk", disease, region, feature, support, total_candidates
+            ))
+        return out
+
+    def _case1_generate_llm_brainstorm(
+        self,
+        diseases: list[dict],
+        regions: list[dict],
+        features: list[dict],
+        support: dict,
+        limit: int,
+        rng: random.Random,
+        total_candidates: int,
+    ) -> list[Hypothesis]:
+        templates = (
+            {
+                "disease_terms": ("schizophrenia", "bipolar", "depressive"),
+                "region_terms": ("anterior cingulate", "insula", "prefrontal", "striat"),
+                "feature_families": ("seed_fc", "graph", "dynamic_fc"),
+            },
+            {
+                "disease_terms": ("adhd", "anxiety", "post traumatic", "substance"),
+                "region_terms": ("salience", "cingulate", "thalam", "frontoparietal"),
+                "feature_families": ("seed_fc", "graph", "roi_activity"),
+            },
+            {
+                "disease_terms": ("obsessive", "anorexia", "anxiety"),
+                "region_terms": ("orbitofrontal", "caudate", "striat", "insula"),
+                "feature_families": ("seed_fc", "graph"),
+            },
+            {
+                "disease_terms": ("schizophrenia", "depressive", "bipolar", "adhd"),
+                "region_terms": ("default mode", "hippocamp", "temporal", "parietal"),
+                "feature_families": ("roi_activity", "seed_fc", "dynamic_fc"),
+            },
         )
-        return clusters
+        out: list[Hypothesis] = []
+        seen: set[tuple] = set()
+        attempts = max(200, limit * 25)
+        for _ in range(attempts):
+            if limit > 0 and len(out) >= limit:
+                break
+            tmpl = rng.choice(templates)
+            group_pool = [
+                d for d in diseases
+                if any(term in d["name"].casefold() for term in tmpl["disease_terms"])
+            ] or diseases
+            disease = rng.choice(group_pool)
+            region_pool = [
+                r for r in regions
+                if any(term in r["norm"] for term in tmpl["region_terms"])
+            ] or regions
+            feature_pool = [
+                f for f in features
+                if f.get("family") in tmpl["feature_families"]
+            ] or features
+            region = rng.choice(region_pool)
+            feature = rng.choice(feature_pool)
+            key = self._case1_tuple_key(disease, region, feature)
+            if key in seen:
+                continue
+            seen.add(key)
+            h = self._case1_make_hypothesis(
+                "llm_brainstorm", disease, region, feature, support, total_candidates
+            )
+            h.metadata["llm_brainstorm_template"] = tmpl
+            out.append(h)
+        return out
+
+    def _case1_generate_neurodiscovery(
+        self,
+        diseases: list[dict],
+        regions: list[dict],
+        features: list[dict],
+        support: dict,
+        limit: int,
+        total_candidates: int,
+    ) -> list[Hypothesis]:
+        heap: list[tuple[float, int, dict, dict, dict]] = []
+        heap_limit = limit * 2000 if limit > 0 else 0
+        counter = 0
+        for disease in diseases:
+            for region in regions:
+                base = self._case1_support_score(disease, region, support)
+                region_bonus = self._case1_region_prior(region)
+                for feature in features:
+                    feature_bonus = self._case1_feature_prior(feature)
+                    score = 0.62 * base + 0.23 * feature_bonus + 0.15 * region_bonus
+                    item = (score, counter, disease, region, feature)
+                    counter += 1
+                    if heap_limit <= 0:
+                        heapq.heappush(heap, item)
+                    elif len(heap) < heap_limit:
+                        heapq.heappush(heap, item)
+                    elif score > heap[0][0]:
+                        heapq.heapreplace(heap, item)
+        picked = sorted(heap, key=lambda x: (x[0], x[1]), reverse=True)
+        if limit > 0:
+            diversified: list[tuple[float, int, dict, dict, dict]] = []
+            per_region: dict[str, int] = {}
+            per_disease_region: dict[tuple, int] = {}
+            for item in picked:
+                _, _, disease, region, _ = item
+                region_key = region.get("norm") or region["id"]
+                dr_key = (disease["id"], region_key)
+                if per_disease_region.get(dr_key, 0) >= 2:
+                    continue
+                if per_region.get(region_key, 0) >= 8:
+                    continue
+                diversified.append(item)
+                per_disease_region[dr_key] = per_disease_region.get(dr_key, 0) + 1
+                per_region[region_key] = per_region.get(region_key, 0) + 1
+                if len(diversified) >= limit:
+                    break
+            if len(diversified) < limit:
+                used = {item[1] for item in diversified}
+                for item in picked:
+                    if item[1] in used:
+                        continue
+                    diversified.append(item)
+                    if len(diversified) >= limit:
+                        break
+            picked = diversified
+        return [
+            self._case1_make_hypothesis(
+                "neurodiscovery", disease, region, feature, support, total_candidates
+            )
+            for _, _, disease, region, feature in picked
+        ]
+
+    def _case1_make_hypothesis(
+        self,
+        method: str,
+        disease: dict,
+        region: dict,
+        feature: dict,
+        support: dict,
+        total_candidates: int,
+    ) -> Hypothesis:
+        signature = "|".join([method, disease["id"], region["id"], feature["id"]])
+        digest = hashlib.sha1(signature.encode("utf-8")).hexdigest()[:12]
+        source_id = disease["id"]
+        source_name = disease["name"]
+        target_id = f"CASE1:CANDIDATE:{self._slug(region['id'])}:{self._slug(feature['id'])}"
+        target_name = f"{region['name']} | {feature['name']}"
+
+        region_support = support.get("by_region", {}).get(region["norm"], {})
+        links: list[HypothesisLink] = []
+        claim_ids: set[str] = set()
+        supported_links = list(
+            (region_support.get("links_by_disease") or {}).get(disease["id"], [])
+        )
+        if supported_links:
+            link = supported_links[0]
+            claim_ids.update(l.claim_id for l in supported_links if l.claim_id)
+            links.append(HypothesisLink(
+                from_id=disease["id"],
+                from_name=disease["name"],
+                to_id=target_id,
+                to_name=target_name,
+                relation_type=link.relation_type,
+                confidence=link.confidence,
+                claim_id=link.claim_id,
+                raw_text=link.raw_text,
+                evidence={
+                    **(link.evidence or {}),
+                    "kg_region_id": link.to_id,
+                    "kg_region_name": link.to_name,
+                    "candidate_feature_id": feature["id"],
+                },
+                source_paper=link.source_paper,
+            ))
+        else:
+            links.append(HypothesisLink(
+                from_id=disease["id"],
+                from_name=disease["name"],
+                to_id=target_id,
+                to_name=target_name,
+                relation_type="candidate_disease_region_feature_test",
+                confidence=0.35,
+                evidence={
+                    "candidate_feature_id": feature["id"],
+                    "candidate_region": region["name"],
+                    "claim_backed": False,
+                },
+            ))
+
+        support_score = self._case1_support_score(disease, region, support)
+        covered = 1 if disease["id"] in set(region_support.get("disease_ids", set())) else 0
+        feature_prior = self._case1_feature_prior(feature)
+        method_conf_bonus = {
+            "exhaustive": 0.35,
+            "random_walk": 0.42,
+            "llm_brainstorm": 0.48,
+            "neurodiscovery": 0.58,
+        }[method]
+        confidence = min(0.98, method_conf_bonus + 0.35 * support_score + 0.10 * feature_prior)
+        evidence = min(0.98, 0.18 + 0.72 * support_score)
+        novelty = {
+            "exhaustive": 0.55,
+            "random_walk": 0.68,
+            "llm_brainstorm": 0.63,
+            "neurodiscovery": 0.62,
+        }[method]
+        testability = 0.92 if feature.get("primary", False) else 0.78
+        if feature.get("level") == "subject":
+            testability -= 0.08
+
+        explanation = (
+            f"Test whether {feature['name']} in {region['name']} differs for "
+            f"{disease['name']} patients. "
+            "The generator does not assume direction; validation estimates the sign."
+        )
+        h = Hypothesis(
+            id=f"case1_{method}_{digest}",
+            hypothesis_type="case1_candidate",
+            source_id=source_id,
+            source_name=source_name,
+            target_id=target_id,
+            target_name=target_name,
+            path=links,
+            confidence_score=confidence,
+            evidence_score=evidence,
+            novelty_score=novelty,
+            testability_score=max(0.01, testability),
+            supporting_claims=sorted(claim_ids),
+            explanation=explanation,
+            testability_reason=(
+                f"Executable as a disease-group comparison on atlas {', '.join(region.get('atlas_names') or ()) or 'KG'} "
+                f"using feature {feature['id']} ({feature.get('requires', ())})."
+            ),
+            metadata={
+                "case_study": "case1_transdiagnostic",
+                "generation_method": method,
+                "candidate_tuple": {
+                    "disease_id": disease["id"],
+                    "disease_name": disease["name"],
+                    "disease_ids": (disease["id"],),
+                    "diseases": (disease["name"],),
+                    "region_id": region["id"],
+                    "region_name": region["name"],
+                    "atlas_names": tuple(region.get("atlas_names") or ()),
+                    "atlas_name": region.get("atlas_name", ""),
+                    "roi_index": region.get("roi_index", ""),
+                    "atlas_label": region.get("atlas_label", region["name"]),
+                    "feature_id": feature["id"],
+                    "feature_name": feature["name"],
+                    "feature_family": feature.get("family", ""),
+                    "feature_modality": feature.get("modality", ""),
+                    "feature_level": feature.get("level", ""),
+                    "feature_requires": tuple(feature.get("requires", ())),
+                },
+                "direction_assumption": "none; infer sign during validation",
+                "total_candidate_space": total_candidates,
+                "support_score": support_score,
+                "supporting_disease_count": covered,
+                "supporting_claim_count": len(claim_ids),
+                "feature_prior": feature_prior,
+            },
+        )
+        h.composite_score = self._composite_score(h)
+        return h
+
+    @staticmethod
+    def _case1_tuple_key(disease: dict, region: dict, feature: dict) -> tuple:
+        return (
+            disease["id"],
+            region["id"],
+            feature["id"],
+        )
+
+    def _case1_support_score(self, disease: dict, region: dict, support: dict) -> float:
+        region_support = support.get("by_region", {}).get(region["norm"], {})
+        if not region_support:
+            return 0.02
+        disease_links = (region_support.get("links_by_disease") or {}).get(disease["id"], [])
+        if not disease_links:
+            return 0.02
+        coverage = 1.0 if disease_links else 0.0
+        n_edges = len(disease_links)
+        n_claims = len({link.claim_id for link in disease_links if link.claim_id})
+        density = min(1.0, math.log1p(n_edges + n_claims) / math.log(20))
+        return min(1.0, 0.68 * coverage + 0.32 * density)
+
+    @staticmethod
+    def _case1_feature_prior(feature: dict) -> float:
+        family = feature.get("family", "")
+        if family in {"seed_fc", "graph"}:
+            return 0.92
+        if family == "roi_activity":
+            return 0.84
+        if family == "dynamic_fc":
+            return 0.76
+        if family == "structural":
+            return 0.68
+        return 0.55
+
+    @staticmethod
+    def _case1_region_prior(region: dict) -> float:
+        name = f"{region.get('name', '')} {region.get('norm', '')}".casefold()
+        high_value = (
+            "cingulate", "insula", "prefrontal", "striat", "caudate",
+            "hippocamp", "amygdala", "thalam", "default mode", "salience",
+            "frontoparietal", "orbitofrontal",
+        )
+        return 0.9 if any(term in name for term in high_value) else 0.5
+
+    @staticmethod
+    def _normalize_case1_name(label: str) -> str:
+        s = (label or "").casefold()
+        s = re.sub(r"[^a-z0-9]+", " ", s)
+        return re.sub(r"\s+", " ", s).strip()
+
+    @staticmethod
+    def _slug(label: str) -> str:
+        s = (label or "").casefold()
+        s = re.sub(r"[^a-z0-9]+", "_", s)
+        return re.sub(r"_+", "_", s).strip("_") or "x"
 
     @staticmethod
     def _normalize_region_label(label: str) -> str:
