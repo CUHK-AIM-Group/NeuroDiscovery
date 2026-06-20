@@ -13,6 +13,7 @@
 </p>
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#-quick-start)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-86-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
@@ -42,6 +43,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 ## 🚀 Updates
 
+- **[2026.06.20]**: NeuroClaw now provides Windows and macOS desktop clients, while Linux remains supported through the repository and command-line/web workflows.
 - **[2026.05.23]**: NeuroBench now covers both data processing and model training/evaluation.
 - **[2026.05.20]**: 7 atoms × 15 canonical tasks + 4 mediation chains in `neurooracle.atoms`.
 - **[2026.05.15]**: NeuroOracle launched: knowledge-graph explorer plus hypothesis engine with live demo at https://huggingface.co/spaces/zxcvb20001/NeuroOracle.

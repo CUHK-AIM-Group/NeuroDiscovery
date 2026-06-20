@@ -154,13 +154,13 @@ if (-not $SkipBackend) {
       llm_backend = [ordered]@{
         provider = "openai"
         model = "gpt-5.5"
-        base_url = "http://localhost:8080/v1"
-        api_key_env = "SUB2API_OPENAI_API_KEY"
+        base_url = "https://api.openai.com/v1"
+        api_key_env = "OPENAI_API_KEY"
         available_models = @(
           [ordered]@{
             provider = "openai"
             model = "gpt-5.5"
-            label = "sub2api / gpt-5.5"
+            label = "OpenAI / gpt-5.5"
           }
         )
       }

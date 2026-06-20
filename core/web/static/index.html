@@ -155,7 +155,7 @@
       pointer-events: none;
     }
     .model-trigger {
-      min-width: 112px;
+      min-width: 132px;
       max-width: 220px;
       height: 36px;
       border: 1px solid color-mix(in oklab, var(--border), transparent 28%);
@@ -170,6 +170,21 @@
       cursor: pointer;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
       transition: background var(--ease), border-color var(--ease), box-shadow var(--ease);
+    }
+    .model-trigger.autoresearch-active {
+      background: color-mix(in oklab, var(--surface-soft), #f8f2da 34%);
+      border-color: color-mix(in oklab, #d8aa30, var(--border) 45%);
+    }
+    .model-trigger-autoresearch {
+      display: none;
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      color: #6f7b88;
+    }
+    .model-trigger.autoresearch-active .model-trigger-autoresearch {
+      display: block;
+      color: #6f7b88;
     }
     .model-trigger:hover,
     .model-trigger.open {
@@ -206,7 +221,7 @@
       position: absolute;
       right: 0;
       bottom: calc(100% + 9px);
-      width: min(340px, calc(100vw - 40px));
+      width: min(360px, calc(100vw - 40px));
       max-height: 370px;
       overflow: hidden;
       border: 1px solid color-mix(in oklab, var(--border), transparent 8%);
@@ -224,6 +239,25 @@
       font-size: 12px;
       font-weight: 650;
     }
+    .model-menu-back {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 9px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .model-menu-back:hover {
+      background: color-mix(in oklab, var(--surface-soft), transparent 12%);
+      color: var(--text);
+    }
     .model-menu-list {
       display: grid;
       gap: 2px;
@@ -231,7 +265,8 @@
       overflow-y: auto;
       padding-right: 2px;
     }
-    .model-menu-item {
+    .model-menu-item,
+    .model-menu-route {
       width: 100%;
       border: 0;
       border-radius: 10px;
@@ -246,7 +281,8 @@
       cursor: pointer;
     }
     .model-menu-item:hover,
-    .model-menu-item.active {
+    .model-menu-item.active,
+    .model-menu-route:hover {
       background: color-mix(in oklab, var(--surface-soft), transparent 12%);
     }
     .model-menu-name {
@@ -256,6 +292,9 @@
       white-space: nowrap;
       font-size: 14px;
       font-weight: 650;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .model-menu-sub {
       margin-top: 2px;
@@ -267,6 +306,17 @@
       font-size: 16px;
       min-width: 18px;
       text-align: center;
+    }
+    .model-menu-chevron {
+      color: var(--text-muted);
+      font-size: 22px;
+      line-height: 1;
+    }
+    .model-menu-autoresearch-icon {
+      width: 19px;
+      height: 19px;
+      color: #6f7b88;
+      flex-shrink: 0;
     }
 
     .spacer { flex: 1; }
@@ -1493,34 +1543,55 @@
     }
     .settings-actions {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       margin-top: 18px;
     }
     .settings-save {
+      flex: 0 0 132px;
+      width: 132px;
+      height: 48px;
       border: 0;
       border-radius: 10px;
       background: var(--accent);
       color: #fff;
-      padding: 10px 14px;
+      padding: 0 14px;
       font-weight: 760;
+      line-height: 1;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       box-shadow: 0 10px 18px color-mix(in oklab, var(--accent), transparent 78%);
     }
     .settings-save:hover { background: var(--accent-strong); }
     .settings-restart {
+      flex: 0 0 132px;
+      width: 132px;
+      height: 48px;
       border: 1px solid var(--border);
       border-radius: 10px;
       background: var(--surface);
       color: var(--text);
-      padding: 10px 14px;
+      padding: 0 14px;
       font-weight: 760;
+      line-height: 1;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
     }
     .settings-restart:hover { background: var(--surface-soft); }
     .settings-status {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding-top: 8px;
       color: var(--text-muted);
       font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
     }
     .settings-readonly {
       color: var(--text-muted);
@@ -2321,7 +2392,7 @@
 <div id="app">
   <header>
     <div class="brand">
-      <img class="brand-logo" src="/materials/logo.png" alt="NeuroClaw logo">
+      <img class="brand-logo" src="/static/logo.png" alt="NeuroClaw logo">
       <div class="brand-name">NeuroClaw</div>
     </div>
     <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true">
@@ -2484,7 +2555,7 @@
 
       <div id="messages">
         <div id="welcome">
-          <img class="welcome-logo" src="/materials/logo.png" alt="NeuroClaw logo">
+          <img class="welcome-logo" src="/static/logo.png" alt="NeuroClaw logo">
           <div class="start-kicker">Research desk ready</div>
           <h2>What should NeuroClaw inspect?</h2>
           <p>Start with a dataset, a pipeline question, or a research idea.</p>
@@ -2500,6 +2571,7 @@
           <div class="model-badge">
             <span id="model-label">Model</span>
             <button id="model-menu-btn" class="model-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" title="Select model">
+              <svg class="model-trigger-autoresearch" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M17.8 6.3A7.5 7.5 0 0 0 4.7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.2 17.7A7.5 7.5 0 0 0 19.3 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.8 3.6v2.9h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.2 20.4v-2.9h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="model-trigger-main" id="model-trigger-main">Model</span>
               <span class="model-trigger-meta" id="model-trigger-meta">Ready</span>
               <svg class="model-trigger-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
@@ -2667,6 +2739,19 @@
   const TEXT_SCALE_MAX = 1.5;
   const TEXT_SCALE_STEP = 0.1;
   const TEXT_SCALE_DEFAULT = 1.1;
+  const AUTO_RESEARCH_MODE_OFF = 'off';
+  const AUTO_RESEARCH_MODE_ON = 'on';
+  const AUTO_RESEARCH_PROMPT = [
+    '[AutoResearch mode: ON]',
+    'Before doing substantive work, first confirm the research setup with the user.',
+    'Ask the user to confirm, modify, or provide these items:',
+    '1. Task definition: the objective, exact inputs, expected outputs, and success criteria.',
+    '2. Dataset location: where the data lives, where labels/metadata live, relevant file formats, and train/validation/test splits if applicable.',
+    '3. Preprocessing: whether preprocessing is needed, what has already been preprocessed, and which pipeline or checks should be used.',
+    '4. AutoResearch effort: light = 10 research loops, standard = 30 loops, deep = 50 loops, or a user-specified loop count.',
+    'Do not start the AutoResearch loop until the user confirms these items.',
+    'After confirmation, run the agreed loop count and report each loop with findings, decisions, and next actions.'
+  ].join('\n');
   const PROJECT_CHAT_PREVIEW_LIMIT = 5;
   const MAX_ATTACHMENT_FILE_BYTES = 15 * 1024 * 1024;
   const MAX_EMBED_CHARS = 12000;
@@ -2688,6 +2773,11 @@
     fslDir: '',
     language: 'English',
     proxyUrl: 'http://127.0.0.1:7897',
+    llmProvider: 'openai',
+    llmModel: 'gpt-5.5',
+    llmBaseUrl: 'https://api.openai.com/v1',
+    llmApiKey: '',
+    llmApiKeyEnv: 'OPENAI_API_KEY',
     repoRoot: 'C:\\Users\\45846\\Documents\\Code\\neuroclaw',
   };
   const DEFAULT_LOCAL_SETTINGS = {
@@ -2736,6 +2826,19 @@
         { key: 'host', scope: 'desktop', label: 'Backend host', desc: 'Local host address used by the embedded client.', type: 'text' },
         { key: 'port', scope: 'desktop', label: 'Backend port', desc: 'Local backend port. Current ROG setup uses 7080.', type: 'number' },
         { key: 'proxyUrl', scope: 'desktop', label: 'Download proxy', desc: 'Proxy used by backend downloads, for example http://127.0.0.1:7897.', type: 'text' },
+      ],
+    },
+    {
+      id: 'llm',
+      group: 'Runtime',
+      title: 'LLM Backend',
+      note: 'These values configure the model endpoint used by the local NeuroClaw backend.',
+      rows: [
+        { key: 'llmProvider', scope: 'desktop', label: 'LLM provider', desc: 'Provider adapter used by the backend.', type: 'select', options: ['openai', 'deepseek', 'qwen', 'openrouter', 'anthropic', 'ollama', 'llamacpp'] },
+        { key: 'llmModel', scope: 'desktop', label: 'LLM model', desc: 'Model name sent to the provider endpoint.', type: 'text' },
+        { key: 'llmBaseUrl', scope: 'desktop', label: 'LLM base URL', desc: 'OpenAI-compatible API address, for example https://api.openai.com/v1 or a local proxy.', type: 'text' },
+        { key: 'llmApiKey', scope: 'desktop', label: 'LLM API key', desc: 'Stored locally in the desktop config and passed only to the local backend process.', type: 'password' },
+        { key: 'llmApiKeyEnv', scope: 'desktop', label: 'API key env var', desc: 'Optional environment variable name used by the backend when API key is blank.', type: 'text' },
       ],
     },
     {
@@ -2810,6 +2913,8 @@
     activeModelProvider: '',
     activeModel: '',
     modelMenuOpen: false,
+    modelMenuPanel: 'root',
+    autoResearchMode: AUTO_RESEARCH_MODE_OFF,
     settingsSection: 'general',
     settingsSearch: '',
     desktopConfig: { ...DEFAULT_DESKTOP_CONFIG },
@@ -2823,7 +2928,7 @@
     neurooracleFrameLoaded: false,
   };
 
-  const ASSISTANT_AVATAR_SRC = '/materials/logo.png';
+  const ASSISTANT_AVATAR_SRC = '/static/logo.png';
   const USER_AVATAR_OPTIONS = [
     { id: 'brainy', name: 'Brainy', emoji: '🧠', bg: '#d9ecff' },
     { id: 'cat', name: 'Cat', emoji: '🐱', bg: '#ffe7c4' },
@@ -2963,7 +3068,7 @@
     'Search settings': '搜索设置',
     'Desktop Settings': '桌面设置',
     'Settings': '设置',
-    'Configure the Windows desktop runtime, local dependency paths, and common software preferences.': '配置 Windows 桌面运行时、本地依赖路径和常用软件偏好。',
+    'Configure the desktop runtime, local dependency paths, LLM backend, and common software preferences.': '配置桌面运行时、本地依赖路径、LLM 后端和常用软件偏好。',
     'Save settings': '保存设置',
     'Restart now': '立即重启',
     'Restart is only available in the desktop app.': '重启功能仅在桌面应用中可用。',
@@ -2991,6 +3096,8 @@
     'Agent runtime': 'Agent 运行方式',
     'Choose how the desktop app starts the local backend.': '选择桌面应用如何启动本地后端。',
     'Built-in Python': '内置 Python',
+    'Conda environment': 'Conda 环境',
+    'Custom Python': '指定 Python',
     'Custom python.exe': '指定 python.exe',
     'bundled': '内置 Python',
     'conda': 'Windows 原生 + conda',
@@ -3015,6 +3122,25 @@
     'Local host address used by the embedded client.': '嵌入式客户端使用的本地主机地址。',
     'Backend port': '后端端口',
     'Local backend port. Current ROG setup uses 7080.': '本地后端端口。当前 ROG 配置使用 7080。',
+    'Download proxy': '下载代理',
+    'Proxy used by backend downloads, for example http://127.0.0.1:7897.': '后端下载使用的代理，例如 http://127.0.0.1:7897。',
+    'LLM Backend': 'LLM 后端',
+    'These values configure the model endpoint used by the local NeuroClaw backend.': '这些值用于配置本地 NeuroClaw 后端调用的模型接口。',
+    'LLM provider': 'LLM 提供方',
+    'Provider adapter used by the backend.': '后端使用的提供方适配器。',
+    'OpenAI-compatible': 'OpenAI 兼容',
+    'Qwen / DashScope': 'Qwen / DashScope',
+    'Anthropic': 'Anthropic',
+    'Ollama': 'Ollama',
+    'llama.cpp': 'llama.cpp',
+    'LLM model': 'LLM 模型',
+    'Model name sent to the provider endpoint.': '发送给提供方接口的模型名称。',
+    'LLM base URL': 'LLM 接口地址',
+    'OpenAI-compatible API address, for example https://api.openai.com/v1 or a local proxy.': 'OpenAI 兼容 API 地址，例如 https://api.openai.com/v1 或本地代理。',
+    'LLM API key': 'LLM API Key',
+    'Stored locally in the desktop config and passed only to the local backend process.': '保存在本地桌面配置中，仅传给本地后端进程。',
+    'API key env var': 'API Key 环境变量',
+    'Optional environment variable name used by the backend when API key is blank.': 'API Key 留空时，后端读取的可选环境变量名。',
     'Toolchains': '工具链',
     'Optional paths for neuroimaging and analysis tools. Leave blank until a workflow needs them.': '神经影像和分析工具的可选路径。工作流需要时再填写。',
     'FSL installation root passed to the backend process.': '传递给后端进程的 FSL 安装根目录。',
@@ -3050,13 +3176,19 @@
     'Log folder': '日志文件夹',
     'Desktop launcher logs.': '桌面启动器日志。',
     'No settings match this search.': '没有匹配的设置。',
-    'Saved. Interface changes apply now; backend runtime paths apply next launch.': '已保存。界面设置立即生效；后端运行路径下次启动生效。',
+    'Saved. Interface changes apply now; backend runtime and LLM settings apply next launch.': '已保存。界面设置立即生效；后端运行和 LLM 设置下次启动生效。',
     'Saved local settings, but desktop config failed:': '本地设置已保存，但桌面配置保存失败：',
     'Saved locally. Desktop launcher config is available inside the Electron app.': '已保存到本地。桌面启动配置需要在 Electron 应用中使用。',
     'Chat request failed': '对话请求失败',
     'Network error': '网络错误',
     'Models': '模型',
     'Model': '模型',
+    'Back': '返回',
+    'AutoResearch': 'AutoResearch',
+    'On': '开启',
+    'Off': '关闭',
+    'Confirm setup, then run research loops': '先确认设置，再运行研究循环',
+    'Standard chat without research loops': '不运行研究循环的标准对话',
     'Offline': '离线',
     'No models available.': '暂无可用模型。',
     'Model unavailable': '模型不可用',
@@ -3181,7 +3313,7 @@
     setPlaceholder('#settings-search', 'Search settings');
     setText('#settings-page .page-eyebrow', 'Desktop Settings');
     setText('#settings-page .page-title', 'Settings');
-    setText('#settings-page .page-subtitle', 'Configure the Windows desktop runtime, local dependency paths, and common software preferences.');
+    setText('#settings-page .page-subtitle', 'Configure the desktop runtime, local dependency paths, LLM backend, and common software preferences.');
     setText('#settings-save-btn', 'Save settings');
     setText('#settings-restart-btn', 'Restart now');
 
@@ -3235,20 +3367,38 @@
     }
   }
 
+  function autoResearchIcon(className = 'model-menu-autoresearch-icon') {
+    return `<svg class="${escapeAttr(className)}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M17.8 6.3A7.5 7.5 0 0 0 4.7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.2 17.7A7.5 7.5 0 0 0 19.3 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.8 3.6v2.9h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.2 20.4v-2.9h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  function isAutoResearchActive() {
+    return state.autoResearchMode === AUTO_RESEARCH_MODE_ON;
+  }
+
+  function autoResearchLabel(mode = state.autoResearchMode) {
+    return mode === AUTO_RESEARCH_MODE_ON ? 'On' : 'Off';
+  }
+
   function syncModelTrigger() {
     const choice = currentModelChoice();
     const model = String(choice.model || '').trim();
     const provider = String(choice.provider || '').trim();
     if (modelTriggerMainEl) modelTriggerMainEl.textContent = compactModelName(model);
-    if (modelTriggerMetaEl) modelTriggerMetaEl.textContent = provider || 'Model';
+    if (modelTriggerMetaEl) modelTriggerMetaEl.textContent = isAutoResearchActive() ? tr('On') : tr('Off');
     if (modelMenuBtn) {
       modelMenuBtn.disabled = !model || modelSelect.disabled;
-      modelMenuBtn.title = model ? `${provider ? provider + ' / ' : ''}${model}` : tr('Model unavailable');
+      modelMenuBtn.classList.toggle('autoresearch-active', isAutoResearchActive());
+      modelMenuBtn.title = model
+        ? `${provider ? provider + ' / ' : ''}${model} · ${tr('AutoResearch')}: ${tr(autoResearchLabel())}`
+        : tr('Model unavailable');
     }
   }
 
   function setModelMenuOpen(open) {
     state.modelMenuOpen = Boolean(open) && !modelSelect.disabled;
+    if (state.modelMenuOpen && !['root', 'models', 'autoresearch'].includes(state.modelMenuPanel)) {
+      state.modelMenuPanel = 'root';
+    }
     if (modelMenuEl) modelMenuEl.classList.toggle('open', state.modelMenuOpen);
     if (modelMenuBtn) {
       modelMenuBtn.classList.toggle('open', state.modelMenuOpen);
@@ -3259,12 +3409,68 @@
   function renderModelMenu() {
     if (!modelMenuEl) return;
     const items = Array.isArray(state.availableModels) ? state.availableModels : [];
-    if (!items.length) {
-      modelMenuEl.innerHTML = `<div class="model-menu-title">${escapeHtml(tr('Models'))}</div><div class="skill-empty-state">${escapeHtml(tr('No models available.'))}</div>`;
+    const current = currentModelChoice();
+    const currentModel = String(current.model || '').trim();
+    const currentProvider = String(current.provider || '').trim();
+
+    if (state.modelMenuPanel === 'root') {
+      modelMenuEl.innerHTML = `
+        <div class="model-menu-list">
+          <button class="model-menu-route" type="button" data-model-panel="models">
+            <span>
+              <span class="model-menu-name">${escapeHtml(compactModelName(currentModel))}</span>
+              <span class="model-menu-sub">${escapeHtml(currentProvider || tr('Model'))} / ${escapeHtml(currentModel || tr('Model unavailable'))}</span>
+            </span>
+            <span class="model-menu-chevron">›</span>
+          </button>
+          <button class="model-menu-route" type="button" data-model-panel="autoresearch">
+            <span>
+              <span class="model-menu-name">${isAutoResearchActive() ? autoResearchIcon() : ''}${escapeHtml(tr('AutoResearch'))}</span>
+              <span class="model-menu-sub">${escapeHtml(tr(isAutoResearchActive() ? 'Confirm setup, then run research loops' : 'Standard chat without research loops'))}</span>
+            </span>
+            <span class="model-menu-chevron">›</span>
+          </button>
+        </div>
+      `;
       return;
     }
-    const current = currentModelChoice();
+
+    if (state.modelMenuPanel === 'autoresearch') {
+      const options = [
+        { mode: AUTO_RESEARCH_MODE_OFF, label: 'Off', sub: 'Standard chat without research loops' },
+        { mode: AUTO_RESEARCH_MODE_ON, label: 'On', sub: 'Confirm setup, then run research loops' },
+      ];
+      modelMenuEl.innerHTML = `
+        <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
+        <div class="model-menu-title">${escapeHtml(tr('AutoResearch'))}</div>
+        <div class="model-menu-list">
+          ${options.map(option => {
+            const active = state.autoResearchMode === option.mode;
+            return `
+              <button class="model-menu-item ${active ? 'active' : ''}" type="button" role="option" aria-selected="${active ? 'true' : 'false'}" data-autoresearch-mode="${escapeAttr(option.mode)}">
+                <span>
+                  <span class="model-menu-name">${option.mode === AUTO_RESEARCH_MODE_ON ? autoResearchIcon() : ''}${escapeHtml(tr(option.label))}</span>
+                  <span class="model-menu-sub">${escapeHtml(tr(option.sub))}</span>
+                </span>
+                <span class="model-menu-check">${active ? '✓' : ''}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      `;
+      return;
+    }
+
+    if (!items.length) {
+      modelMenuEl.innerHTML = `
+        <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
+        <div class="model-menu-title">${escapeHtml(tr('Models'))}</div>
+        <div class="skill-empty-state">${escapeHtml(tr('No models available.'))}</div>
+      `;
+      return;
+    }
     modelMenuEl.innerHTML = `
+      <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
       <div class="model-menu-title">${escapeHtml(tr('Models'))}</div>
       <div class="model-menu-list">
         ${items.map(item => {
@@ -3469,6 +3675,7 @@
       theme: state.theme,
       textScale: state.textScale,
       sidebarCollapsed: state.sidebarCollapsed,
+      autoResearchMode: state.autoResearchMode,
     }));
   }
 
@@ -3516,6 +3723,11 @@
         }
         if (parsed && typeof parsed.sidebarCollapsed === 'boolean') {
           state.sidebarCollapsed = parsed.sidebarCollapsed;
+        }
+        if (parsed && (parsed.autoResearchMode === AUTO_RESEARCH_MODE_ON || parsed.autoResearchMode === AUTO_RESEARCH_MODE_OFF)) {
+          state.autoResearchMode = parsed.autoResearchMode;
+        } else if (parsed && parsed.autoResearchMode === 'high') {
+          state.autoResearchMode = AUTO_RESEARCH_MODE_ON;
         }
       }
     } catch (_e) {}
@@ -3604,8 +3816,20 @@
     if (row.key === 'runtimeMode') {
       const labels = {
         bundled: 'Built-in Python',
-        conda: 'Windows native + conda',
-        python: 'Custom python.exe',
+        conda: 'Conda environment',
+        python: 'Custom Python',
+      };
+      return labels[String(option)] || String(option);
+    }
+    if (row.key === 'llmProvider') {
+      const labels = {
+        openai: 'OpenAI-compatible',
+        deepseek: 'DeepSeek',
+        qwen: 'Qwen / DashScope',
+        openrouter: 'OpenRouter',
+        anthropic: 'Anthropic',
+        ollama: 'Ollama',
+        llamacpp: 'llama.cpp',
       };
       return labels[String(option)] || String(option);
     }
@@ -3636,9 +3860,10 @@
       const active = Boolean(value);
       return `<button class="settings-toggle${active ? ' active' : ''}" type="button" role="switch" aria-checked="${active ? 'true' : 'false'}" ${common}></button>`;
     }
-    const inputType = row.type === 'number' ? 'number' : 'text';
+    const inputType = row.type === 'number' ? 'number' : row.type === 'password' ? 'password' : 'text';
     const pathClass = row.path ? ' settings-path' : '';
-    return `<input class="settings-control${pathClass}" type="${inputType}" value="${escapeAttr(value)}" ${common}>`;
+    const sensitiveAttrs = row.type === 'password' ? ' autocomplete="off" spellcheck="false"' : '';
+    return `<input class="settings-control${pathClass}" type="${inputType}" value="${escapeAttr(value)}" ${common}${sensitiveAttrs}>`;
   }
 
   function rowMatchesSettingsSearch(row, section) {
@@ -3758,7 +3983,7 @@
         if (settingsRestartBtn && result && result.restartRequired) {
           settingsRestartBtn.hidden = false;
         }
-        setSettingsStatus(uiText('Saved. Interface changes apply now; backend runtime paths apply next launch.', '已保存。界面设置立即生效；后端运行路径下次启动生效。'));
+        setSettingsStatus(uiText('Saved. Interface changes apply now; backend runtime and LLM settings apply next launch.', '已保存。界面设置立即生效；后端运行和 LLM 设置下次启动生效。'));
       } catch (err) {
         setSettingsStatus(`${uiText('Saved local settings, but desktop config failed:', '本地设置已保存，但桌面配置保存失败：')} ${err && err.message ? err.message : err}`, true);
       }
@@ -4891,6 +5116,16 @@
     }
   }
 
+  function finishRequestUi() {
+    state.waiting = false;
+    state.waitingSessionId = null;
+    removeTypingIndicator();
+    inputEl.disabled = false;
+    setSendButtonMode('send');
+    state.requestController = null;
+    setStatus('connected', tr('Ready'));
+  }
+
   function upsertExecutionIndicator(commandText, startedAt) {
     let el = document.getElementById('execution-indicator');
     const label = String(commandText || '').trim() || uiText('Running', '执行中');
@@ -5009,7 +5244,8 @@
 
     const skillText = buildSkillInstruction(selectedSkills);
     const attachmentText = await buildAttachmentText(state.pendingFiles);
-    const finalText = [text, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
+    const modeText = isAutoResearchActive() ? AUTO_RESEARCH_PROMPT : '';
+    const finalText = [text, modeText, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
     const displayText = text || (hasFiles ? tr('Uploaded files') : tr('Use selected skills'));
     const userMsgTime = nowISO();
 
@@ -5054,7 +5290,7 @@
         }),
       });
       const data = await resp.json();
-      removeTypingIndicator();
+      finishRequestUi();
 
       if (!resp.ok || data.type === 'error') {
         showError(data.message || tr('Chat request failed'));
@@ -5089,17 +5325,12 @@
         loadCheckpoints();
       }
     } catch (err) {
-      removeTypingIndicator();
+      finishRequestUi();
       if (!(err && err.name === 'AbortError')) {
         showError((err && err.message) ? err.message : tr('Network error'));
       }
     } finally {
-      state.waiting = false;
-      state.waitingSessionId = null;
-      inputEl.disabled = false;
-      setSendButtonMode('send');
-      state.requestController = null;
-      setStatus('connected', tr('Ready'));
+      finishRequestUi();
       inputEl.focus();
       scrollToBottom();
     }
@@ -5146,7 +5377,7 @@
         body: JSON.stringify({ message: promptText, history: priorHistory, selected_skills: [] }),
       });
       const data = await resp.json();
-      removeTypingIndicator();
+      finishRequestUi();
       if (!resp.ok || data.type === 'error') {
         showError(data.message || tr('Chat request failed'));
       } else {
@@ -5168,17 +5399,12 @@
         renderActiveSession();
       }
     } catch (err) {
-      removeTypingIndicator();
+      finishRequestUi();
       if (!(err && err.name === 'AbortError')) {
         showError((err && err.message) ? err.message : tr('Network error'));
       }
     } finally {
-      state.waiting = false;
-      state.waitingSessionId = null;
-      inputEl.disabled = false;
-      setSendButtonMode('send');
-      state.requestController = null;
-      setStatus('connected', tr('Ready'));
+      finishRequestUi();
       inputEl.focus();
       scrollToBottom();
     }
@@ -5190,13 +5416,7 @@
         state.requestController.abort();
       } catch (_e) {}
     }
-    removeTypingIndicator();
-    state.waiting = false;
-    state.waitingSessionId = null;
-    inputEl.disabled = false;
-    setSendButtonMode('send');
-    state.requestController = null;
-    setStatus('connected', tr('Ready'));
+    finishRequestUi();
     inputEl.focus();
   }
 
@@ -6148,11 +6368,39 @@
     modelMenuBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!state.modelMenuOpen) state.modelMenuPanel = 'root';
       renderModelMenu();
       setModelMenuOpen(!state.modelMenuOpen);
     });
 
     modelMenuEl.addEventListener('click', async (e) => {
+      const panelBtn = e.target.closest('[data-model-panel]');
+      if (panelBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const panel = panelBtn.dataset.modelPanel;
+        if (['root', 'models', 'autoresearch'].includes(panel)) {
+          state.modelMenuPanel = panel;
+          renderModelMenu();
+        }
+        return;
+      }
+
+      const modeBtn = e.target.closest('[data-autoresearch-mode]');
+      if (modeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const mode = modeBtn.dataset.autoresearchMode === AUTO_RESEARCH_MODE_ON
+          ? AUTO_RESEARCH_MODE_ON
+          : AUTO_RESEARCH_MODE_OFF;
+        state.autoResearchMode = mode;
+        savePrefs();
+        syncModelTrigger();
+        renderModelMenu();
+        setModelMenuOpen(false);
+        return;
+      }
+
       const item = e.target.closest('[data-model-provider][data-model-name]');
       if (!item) return;
       e.preventDefault();

@@ -9,6 +9,8 @@ const APP_NAME = 'NeuroClaw';
 const STARTUP_TIMEOUT_MS = 90_000;
 const BUNDLED_RUNTIME_VERSION = '0.2.0';
 
+app.setName(APP_NAME);
+
 let mainWindow = null;
 let backendProcess = null;
 let backendStartedByDesktop = false;
@@ -237,6 +239,23 @@ function bundledCondaUnpackExe(runtimeRoot = userRuntimeRoot()) {
   return path.join(runtimeRoot, 'python', 'bin', 'conda-unpack');
 }
 
+function ensureExecutableIfExists(filePath) {
+  if (process.platform === 'win32' || !fs.existsSync(filePath)) return;
+  const stats = fs.statSync(filePath);
+  if (!stats.isFile()) return;
+  const permissionMode = stats.mode & 0o777;
+  const executableMode = permissionMode | 0o755;
+  if (permissionMode !== executableMode) {
+    fs.chmodSync(filePath, executableMode);
+  }
+}
+
+function ensureBundledRuntimeExecutables(runtimeRoot = userRuntimeRoot()) {
+  if (process.platform === 'win32') return;
+  ensureExecutableIfExists(bundledPythonExe(runtimeRoot));
+  ensureExecutableIfExists(bundledCondaUnpackExe(runtimeRoot));
+}
+
 function bundledBackendRoot(runtimeRoot = userRuntimeRoot()) {
   return path.join(runtimeRoot, 'backend');
 }
@@ -262,13 +281,22 @@ function runBundledCondaUnpack(runtimeRoot) {
   const unpackExe = bundledCondaUnpackExe(runtimeRoot);
   const marker = path.join(runtimeRoot, '.conda-unpack-complete');
   if (!fs.existsSync(unpackExe) || fs.existsSync(marker)) return;
-  const proc = require('node:child_process').spawnSync(unpackExe, [], {
+  ensureExecutableIfExists(unpackExe);
+  const pythonExe = bundledPythonExe(runtimeRoot);
+  const command = process.platform === 'win32' ? unpackExe : pythonExe;
+  const args = process.platform === 'win32' ? [] : [unpackExe];
+  const env = {
+    ...process.env,
+    PATH: `${path.dirname(pythonExe)}${path.delimiter}${process.env.PATH || ''}`,
+  };
+  const proc = require('node:child_process').spawnSync(command, args, {
     cwd: path.join(runtimeRoot, 'python'),
+    env,
     windowsHide: true,
     encoding: 'utf8',
   });
   if (proc.status !== 0) {
-    throw new Error(`Bundled Python post-install failed: ${proc.stderr || proc.stdout || `exit ${proc.status}`}`);
+    throw new Error(`Bundled Python post-install failed (${command} ${args.join(' ')}): ${proc.stderr || proc.stdout || `exit ${proc.status}`}`);
   }
   fs.writeFileSync(marker, new Date().toISOString(), 'utf8');
 }
@@ -287,6 +315,7 @@ function ensureBundledRuntime() {
     copyDirectoryFresh(path.join(sourceRoot, 'backend'), path.join(runtimeRoot, 'backend'));
     fs.writeFileSync(marker, BUNDLED_RUNTIME_VERSION, 'utf8');
   }
+  ensureBundledRuntimeExecutables(runtimeRoot);
   runBundledCondaUnpack(runtimeRoot);
   return {
     pythonExe: bundledPythonExe(runtimeRoot),
@@ -320,6 +349,10 @@ function defaultPythonExe(home) {
   ]);
 }
 
+function defaultLlmBaseUrl() {
+  return process.env.NEUROCLAW_LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+}
+
 function defaultConfig() {
   const home = os.homedir();
   const hasBundledRuntime = app.isPackaged && bundledRuntimeSourceExists();
@@ -333,24 +366,59 @@ function defaultConfig() {
     fslDir: process.env.FSLDIR || '',
     language: process.env.NEUROCLAW_LANGUAGE || 'English',
     proxyUrl: process.env.NEUROCLAW_PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897',
+    llmProvider: process.env.NEUROCLAW_LLM_PROVIDER || 'openai',
+    llmModel: process.env.NEUROCLAW_LLM_MODEL || 'gpt-5.5',
+    llmBaseUrl: defaultLlmBaseUrl(),
+    llmApiKey: process.env.NEUROCLAW_LLM_API_KEY || '',
+    llmApiKeyEnv: process.env.NEUROCLAW_LLM_API_KEY_ENV || 'OPENAI_API_KEY',
     repoRoot: process.env.NEUROCLAW_REPO_ROOT || (hasBundledRuntime ? bundledBackendRoot() : (app.isPackaged ? path.join(home, 'Documents', 'Code', 'NeuroClaw') : repoRoot())),
   };
+}
+
+function normalizeConfig(config) {
+  const next = { ...config };
+  const provider = String(next.llmProvider || 'openai').trim().toLowerCase();
+  const apiKeyEnv = String(next.llmApiKeyEnv || '').trim();
+  const baseUrl = String(next.llmBaseUrl || '').trim();
+  if (provider === 'openai' && apiKeyEnv === 'SUB2API_OPENAI_API_KEY') {
+    next.llmApiKeyEnv = 'OPENAI_API_KEY';
+    if (!baseUrl || baseUrl === 'http://localhost:8080/v1') {
+      next.llmBaseUrl = defaultLlmBaseUrl();
+    }
+  }
+  return next;
 }
 
 function loadConfig() {
   const defaults = defaultConfig();
   try {
     const raw = fs.readFileSync(userConfigPath(), 'utf8');
-    return { ...defaults, ...JSON.parse(raw) };
+    return normalizeConfig({ ...defaults, ...JSON.parse(raw) });
   } catch (_err) {
-    return defaults;
+    return normalizeConfig(defaults);
   }
 }
 
 function saveConfig(nextConfig) {
   const defaults = defaultConfig();
   const current = loadConfig();
-  const allowed = ['host', 'port', 'runtimeMode', 'pythonExe', 'condaExe', 'condaEnv', 'repoRoot', 'fslDir', 'language', 'proxyUrl'];
+  const allowed = [
+    'host',
+    'port',
+    'runtimeMode',
+    'pythonExe',
+    'condaExe',
+    'condaEnv',
+    'repoRoot',
+    'fslDir',
+    'language',
+    'proxyUrl',
+    'llmProvider',
+    'llmModel',
+    'llmBaseUrl',
+    'llmApiKey',
+    'llmApiKeyEnv',
+  ];
   const clean = { ...current };
   for (const key of allowed) {
     if (Object.prototype.hasOwnProperty.call(nextConfig || {}, key)) {
@@ -360,6 +428,138 @@ function saveConfig(nextConfig) {
   fs.mkdirSync(path.dirname(userConfigPath()), { recursive: true });
   fs.writeFileSync(userConfigPath(), JSON.stringify({ ...defaults, ...clean }, null, 2), 'utf8');
   return loadConfig();
+}
+
+function defaultApiKeyEnvForProvider(provider) {
+  const key = String(provider || '').trim().toLowerCase();
+  const envByProvider = {
+    anthropic: 'ANTHROPIC_API_KEY',
+    deepseek: 'DEEPSEEK_API_KEY',
+    qwen: 'DASHSCOPE_API_KEY',
+    dashscope: 'DASHSCOPE_API_KEY',
+    kimi: 'MOONSHOT_API_KEY',
+    moonshot: 'MOONSHOT_API_KEY',
+    openrouter: 'OPENROUTER_API_KEY',
+    together: 'TOGETHER_API_KEY',
+    groq: 'GROQ_API_KEY',
+    fireworks: 'FIREWORKS_API_KEY',
+    ollama: '',
+    llamacpp: '',
+  };
+  return Object.prototype.hasOwnProperty.call(envByProvider, key) ? envByProvider[key] : 'OPENAI_API_KEY';
+}
+
+function providerNeedsNoApiKey(provider) {
+  return ['ollama', 'llamacpp', 'local'].includes(String(provider || '').trim().toLowerCase());
+}
+
+function readJsonObject(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (_err) {
+    return {};
+  }
+}
+
+function prependSelectedModel(models, selectedModel) {
+  const out = [];
+  const seen = new Set();
+  for (const item of [selectedModel, ...(Array.isArray(models) ? models : [])]) {
+    if (!item || typeof item !== 'object') continue;
+    const provider = String(item.provider || selectedModel.provider || 'openai').trim() || 'openai';
+    const model = String(item.model || item.id || item.name || '').trim();
+    if (!model) continue;
+    const key = `${provider.toLowerCase()}\u0000${model}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...item, provider, model, label: item.label || `${provider} / ${model}` });
+  }
+  return out;
+}
+
+function applyDesktopLlmConfig(config) {
+  const provider = String(config.llmProvider || '').trim() || 'openai';
+  const model = String(config.llmModel || '').trim() || 'gpt-5.5';
+  const baseUrl = String(config.llmBaseUrl || '').trim();
+  const apiKey = String(config.llmApiKey || '').trim();
+  const apiKeyEnv = String(config.llmApiKeyEnv || '').trim() || defaultApiKeyEnvForProvider(provider);
+  const envPath = path.join(config.repoRoot, 'neuroclaw_environment.json');
+  const envConfig = readJsonObject(envPath);
+
+  envConfig.setup_type = envConfig.setup_type || (config.runtimeMode === 'bundled' ? 'bundled' : 'desktop');
+  envConfig.python_path = envConfig.python_path || (config.runtimeMode === 'bundled' ? 'bundled' : config.pythonExe || '');
+  envConfig.conda_env = envConfig.conda_env || (config.runtimeMode === 'conda' ? config.condaEnv || '' : '');
+  envConfig.cuda = envConfig.cuda && typeof envConfig.cuda === 'object' ? envConfig.cuda : { device: 'cpu' };
+  envConfig.toolchain = envConfig.toolchain && typeof envConfig.toolchain === 'object' ? envConfig.toolchain : {};
+  envConfig.compression_mode = envConfig.compression_mode || 'stub';
+
+  const llm = envConfig.llm_backend && typeof envConfig.llm_backend === 'object' && !Array.isArray(envConfig.llm_backend)
+    ? envConfig.llm_backend
+    : {};
+
+  llm.provider = provider;
+  llm.model = model;
+  if (provider === 'local') {
+    if (baseUrl) llm.local_endpoint = baseUrl;
+    delete llm.base_url;
+    delete llm.baseUrl;
+  } else if (baseUrl) {
+    llm.base_url = baseUrl;
+    delete llm.baseUrl;
+  } else {
+    delete llm.base_url;
+    delete llm.baseUrl;
+  }
+
+  if (apiKeyEnv) {
+    llm.api_key_env = apiKeyEnv;
+  } else {
+    delete llm.api_key_env;
+  }
+  if (apiKey) {
+    llm.api_key = apiKey;
+    delete llm.apiKey;
+  } else {
+    delete llm.api_key;
+    delete llm.apiKey;
+  }
+
+  if (providerNeedsNoApiKey(provider)) {
+    llm.no_api_key_required = true;
+    llm.dummy_api_key = llm.dummy_api_key || 'neuroclaw-local';
+  } else {
+    delete llm.no_api_key_required;
+    delete llm.dummy_api_key;
+  }
+  llm.openai_compatible = provider !== 'anthropic' && provider !== 'local';
+
+  const selectedModel = {
+    provider,
+    model,
+    label: `${provider} / ${model}`,
+  };
+  if (baseUrl) {
+    if (provider === 'local') selectedModel.local_endpoint = baseUrl;
+    else selectedModel.base_url = baseUrl;
+  }
+  if (apiKeyEnv) selectedModel.api_key_env = apiKeyEnv;
+  if (llm.openai_compatible) selectedModel.openai_compatible = true;
+  if (providerNeedsNoApiKey(provider)) selectedModel.no_api_key_required = true;
+  llm.available_models = prependSelectedModel(llm.available_models, selectedModel);
+
+  envConfig.llm_backend = llm;
+  fs.writeFileSync(envPath, JSON.stringify(envConfig, null, 2), 'utf8');
+  log(`Applied desktop LLM config provider="${provider}" model="${model}" baseUrl="${baseUrl || 'default'}" to "${envPath}"`);
+}
+
+function applyLlmProcessEnv(env, config) {
+  const apiKey = String(config.llmApiKey || '').trim();
+  if (!apiKey) return;
+  const provider = String(config.llmProvider || '').trim() || 'openai';
+  const apiKeyEnv = String(config.llmApiKeyEnv || '').trim() || defaultApiKeyEnvForProvider(provider);
+  if (apiKeyEnv) env[apiKeyEnv] = apiKey;
 }
 
 function ensureLogStream() {
@@ -472,11 +672,13 @@ function resolveRuntimeConfig(config) {
 async function ensureBackend() {
   const config = resolveRuntimeConfig(loadConfig());
   validateConfig(config);
+  applyDesktopLlmConfig(config);
   backendUrl = `http://${config.host}:${config.port}`;
 
   if (await requestDesktopCompatible(backendUrl)) {
-    log(`Reusing existing NeuroClaw backend at ${backendUrl}`);
-    backendStartedByDesktop = false;
+    const isDesktopManagedBackend = Boolean(backendProcess && !backendProcess.killed);
+    log(`Reusing ${isDesktopManagedBackend ? 'desktop-managed' : 'existing'} NeuroClaw backend at ${backendUrl}`);
+    backendStartedByDesktop = isDesktopManagedBackend;
     return { url: backendUrl, reused: true };
   }
   if (await requestHealth(backendUrl)) {
@@ -497,6 +699,7 @@ async function ensureBackend() {
   const env = { ...process.env };
   if (config.fslDir) env.FSLDIR = config.fslDir;
   if (config.language && config.language !== 'System default') env.NEUROCLAW_LANGUAGE = config.language;
+  applyLlmProcessEnv(env, config);
   if (config.proxyUrl) {
     env.NEUROCLAW_PROXY_URL = config.proxyUrl;
     env.HTTP_PROXY = config.proxyUrl;
@@ -518,14 +721,35 @@ async function ensureBackend() {
   backendStartedByDesktop = true;
   log(`Started backend pid=${backendProcess.pid} command="${command} ${args.join(' ')}" cwd="${config.repoRoot}"`);
 
-  backendProcess.stdout.on('data', (chunk) => log(`[backend stdout] ${chunk.toString().trimEnd()}`));
-  backendProcess.stderr.on('data', (chunk) => log(`[backend stderr] ${chunk.toString().trimEnd()}`));
-  backendProcess.on('exit', (code, signal) => {
-    log(`Backend exited code=${code} signal=${signal || ''}`);
-    backendProcess = null;
+  let backendOutputTail = '';
+  function captureBackendOutput(streamName, chunk) {
+    const text = chunk.toString();
+    const cleanText = text.trimEnd();
+    if (cleanText) log(`[backend ${streamName}] ${cleanText}`);
+    backendOutputTail = `${backendOutputTail}${text}`.slice(-4000);
+  }
+
+  backendProcess.stdout.on('data', (chunk) => captureBackendOutput('stdout', chunk));
+  backendProcess.stderr.on('data', (chunk) => captureBackendOutput('stderr', chunk));
+
+  const backendExit = new Promise((resolve, reject) => {
+    backendProcess.once('error', (err) => {
+      reject(new Error(`Failed to start NeuroClaw backend: ${err.message || err}`));
+    });
+    backendProcess.once('exit', (code, signal) => {
+      log(`Backend exited code=${code} signal=${signal || ''}`);
+      backendProcess = null;
+      reject(new Error([
+        `NeuroClaw backend exited before it was ready (code=${code}, signal=${signal || 'none'}).`,
+        backendOutputTail.trim(),
+      ].filter(Boolean).join('\n\n')));
+    });
   });
 
-  const ready = await waitForBackend(backendUrl, STARTUP_TIMEOUT_MS);
+  const ready = await Promise.race([
+    waitForBackend(backendUrl, STARTUP_TIMEOUT_MS),
+    backendExit,
+  ]);
   if (!ready) {
     throw new Error(`NeuroClaw backend did not become ready at ${backendUrl} within ${STARTUP_TIMEOUT_MS / 1000}s`);
   }
@@ -673,27 +897,79 @@ function sendMenuAction(action) {
   }
 }
 
+function newChatMenuItem(accelerator = 'CmdOrCtrl+N') {
+  return {
+    label: desktopText('New Chat', '新建对话'),
+    accelerator,
+    click: () => sendMenuAction('new-chat'),
+  };
+}
+
+function settingsMenuItem(accelerator = null) {
+  const item = {
+    label: desktopText('Settings...', '设置...'),
+    click: () => sendMenuAction('open-settings'),
+  };
+  if (accelerator) item.accelerator = accelerator;
+  return item;
+}
+
+function aboutMenuItem() {
+  return {
+    label: desktopText('About NeuroClaw', '关于 NeuroClaw'),
+    click: () => dialog.showMessageBox({
+      type: 'info',
+      title: desktopText(`About ${APP_NAME}`, `关于 ${APP_NAME}`),
+      message: `${APP_NAME} Desktop`,
+      detail: desktopText(
+        `Version ${app.getVersion()}\nBackend: ${backendUrl || 'not started'}`,
+        `版本 ${app.getVersion()}\n后端：${backendUrl || '未启动'}`,
+      ),
+    }),
+  };
+}
+
 function setApplicationMenu() {
-  const template = [
-    {
-      label: APP_NAME,
-      submenu: [
-        {
-          label: desktopText('New Chat', '新建对话'),
-          accelerator: 'CmdOrCtrl+N',
-          click: () => sendMenuAction('new-chat'),
-        },
+  const isMac = process.platform === 'darwin';
+  const appSubmenu = isMac
+    ? [
+        aboutMenuItem(),
         { type: 'separator' },
-        {
-          label: desktopText('Settings...', '设置...'),
-          click: () => sendMenuAction('open-settings'),
-        },
+        settingsMenuItem('Cmd+,'),
+        { type: 'separator' },
+        { label: desktopText('Services', '服务'), role: 'services' },
+        { type: 'separator' },
+        { label: desktopText(`Hide ${APP_NAME}`, `隐藏 ${APP_NAME}`), role: 'hide' },
+        { label: desktopText('Hide Others', '隐藏其他'), role: 'hideOthers' },
+        { label: desktopText('Show All', '全部显示'), role: 'unhide' },
+        { type: 'separator' },
+        { label: desktopText(`Quit ${APP_NAME}`, `退出 ${APP_NAME}`), accelerator: 'Cmd+Q', role: 'quit' },
+      ]
+    : [
+        newChatMenuItem(),
+        { type: 'separator' },
+        settingsMenuItem(),
         { type: 'separator' },
         { label: desktopText('Reload', '重新加载'), role: 'reload', accelerator: 'CmdOrCtrl+R' },
         { type: 'separator' },
         { label: desktopText('Exit', '退出'), role: 'quit' },
-      ],
+      ];
+
+  const template = [
+    {
+      label: APP_NAME,
+      submenu: appSubmenu,
     },
+    ...(isMac
+      ? [{
+          label: desktopText('File', '文件'),
+          submenu: [
+            newChatMenuItem(),
+            { type: 'separator' },
+            { label: desktopText('Close Window', '关闭窗口'), role: 'close' },
+          ],
+        }]
+      : []),
     {
       label: desktopText('Edit', '编辑'),
       submenu: [
@@ -719,21 +995,21 @@ function setApplicationMenu() {
         { label: desktopText('Toggle Full Screen', '切换全屏'), role: 'togglefullscreen' },
       ],
     },
+    ...(isMac
+      ? [{
+          label: desktopText('Window', '窗口'),
+          submenu: [
+            { label: desktopText('Minimize', '最小化'), role: 'minimize' },
+            { label: desktopText('Zoom', '缩放'), role: 'zoom' },
+            { type: 'separator' },
+            { label: desktopText('Bring All to Front', '全部置于前台'), role: 'front' },
+          ],
+        }]
+      : []),
     {
       label: desktopText('Help', '帮助'),
       submenu: [
-        {
-          label: desktopText('About NeuroClaw', '关于 NeuroClaw'),
-          click: () => dialog.showMessageBox({
-            type: 'info',
-            title: desktopText(`About ${APP_NAME}`, `关于 ${APP_NAME}`),
-            message: `${APP_NAME} Desktop`,
-            detail: desktopText(
-              `Version ${app.getVersion()}\nBackend: ${backendUrl || 'not started'}`,
-              `版本 ${app.getVersion()}\n后端：${backendUrl || '未启动'}`,
-            ),
-          }),
-        },
+        aboutMenuItem(),
       ],
     },
   ];

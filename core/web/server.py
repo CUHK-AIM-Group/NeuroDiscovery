@@ -826,11 +826,17 @@ def create_app() -> Any:
         llm = env.get("llm_backend", {})
         provider = llm.get("provider", "unknown")
         api_key_env = llm.get("api_key_env", "")
-        api_key_present = bool(api_key_env and __import__('os').environ.get(api_key_env))
+        direct_api_key = llm.get("api_key") or llm.get("apiKey")
+        api_key_present = bool(
+            llm.get("no_api_key_required")
+            or (isinstance(direct_api_key, str) and direct_api_key.strip())
+            or (api_key_env and __import__('os').environ.get(api_key_env))
+        )
         available_models = _runtime_available_models(llm if isinstance(llm, dict) else {})
         return {
             "provider": provider,
             "model": llm.get("model", "unknown"),
+            "base_url": llm.get("base_url") or llm.get("baseUrl") or llm.get("local_endpoint") or "",
             "available_models": available_models,
             "cuda_device": env.get("cuda", {}).get("device", "cpu"),
             "setup_type": env.get("setup_type", "unknown"),

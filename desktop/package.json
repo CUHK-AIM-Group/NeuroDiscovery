@@ -1,7 +1,7 @@
 {
   "name": "neuroclaw-desktop",
   "version": "0.2.0",
-  "description": "NeuroClaw Windows desktop shell",
+  "description": "NeuroClaw cross-platform desktop shell",
   "main": "main.js",
   "author": "NeuroClaw",
   "license": "MIT",
@@ -11,8 +11,12 @@
     "start": "electron .",
     "pack": "electron-builder --dir",
     "prepare:runtime:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-bundled-runtime.ps1",
+    "prepare:runtime:mac": "bash scripts/prepare-bundled-runtime-mac.sh",
     "dist:win": "electron-builder --win nsis portable",
-    "dist:mac": "electron-builder --mac dmg zip"
+    "dist:mac": "npm run prepare:runtime:mac && electron-builder --mac dmg zip",
+    "dist:mac:skip-runtime": "electron-builder --mac dmg zip",
+    "dist:mac:arm64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --arm64",
+    "dist:mac:x64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --x64"
   },
   "devDependencies": {
     "electron": "^39.2.7",
