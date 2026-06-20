@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeuroClaw · Knowledge Graph Explorer</title>
+<title>NeuroOracle · Knowledge Graph Explorer</title>
 <script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sigma@3.0.0/dist/sigma.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/graphology-layout-forceatlas2@0.10.1/worker.min.js"></script>
@@ -78,24 +78,10 @@ body {
   top: 0;
   z-index: 10;
 }
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  font-weight: 600;
-  font-size: 16px;
-}
-.header-brand .logo-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0a84ff, #8b5cf6);
-}
 .header-sub {
   font-size: 13px;
-  color: var(--text-muted);
-  border-left: 1px solid var(--border);
-  padding-left: 18px;
+  color: var(--text);
+  font-weight: 650;
 }
 .stats-line {
   margin-left: auto;
@@ -110,6 +96,12 @@ body {
   height: 3px;
   border-radius: 50%;
   background: var(--text-subtle);
+}
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 .icon-btn {
   background: transparent;
@@ -127,6 +119,27 @@ body {
 .icon-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+.icon-btn.primary {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.icon-btn.primary:hover {
+  color: #fff;
+  filter: brightness(0.97);
+}
+.icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+.update-status {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 .lang-toggle { font-weight: 600; letter-spacing: 0.04em; }
 .back-btn {
@@ -859,17 +872,17 @@ body {
 <body>
 
 <header class="header">
-  <div class="header-brand">
-    <span class="logo-dot"></span>
-    NeuroClaw
-  </div>
   <div class="header-sub" data-i18n="header_sub">Knowledge Graph Explorer</div>
   <div class="stats-line" id="statsLine">
     <span class="spinner" style="display:inline-block;width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></span>
     <span data-i18n="loading">Loading…</span>
   </div>
-  <button class="icon-btn lang-toggle" id="langBtn" title="Switch language">EN</button>
-  <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
+  <div class="header-actions">
+    <span class="update-status" id="graphUpdateStatus" data-i18n="update_idle">Graph updates</span>
+    <button class="icon-btn primary" id="graphCheckUpdateBtn" type="button" data-i18n="check_updates">Check graph updates</button>
+    <button class="icon-btn primary" id="graphUpdateBtn" type="button" data-i18n="update_graph" style="display:none;">Update graph</button>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" data-i18n-title="toggle_theme">☾</button>
+  </div>
 </header>
 
 <div id="coldStartBanner" class="cold-start-banner" style="display:none;" data-i18n="cold_start">
@@ -884,20 +897,20 @@ body {
              placeholder="Search biomarker / outcome / concept (≥2 chars)" autocomplete="off">
       <select class="domain-select" id="atomSelect" style="width:100%;margin-top:6px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
         <option value=""                data-i18n="atom_all">All</option>
-        <option value="disease">Disease</option>
-        <option value="drug">Drug</option>
-        <option value="imaging_marker">Imaging marker</option>
-        <option value="gene_target">Gene / target</option>
-        <option value="cognitive_task">Cognitive task</option>
-        <option value="outcome">Outcome</option>
-        <option value="individual_data">Individual data</option>
+        <option value="disease" data-i18n="atom_disease">Disease</option>
+        <option value="drug" data-i18n="atom_drug">Drug</option>
+        <option value="imaging_marker" data-i18n="atom_imaging_marker">Imaging marker</option>
+        <option value="gene_target" data-i18n="atom_gene_target">Gene / target</option>
+        <option value="cognitive_task" data-i18n="atom_cognitive_task">Cognitive task</option>
+        <option value="outcome" data-i18n="atom_outcome">Outcome</option>
+        <option value="individual_data" data-i18n="atom_individual_data">Individual data</option>
       </select>
       <div class="task-row" style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;">
         <select id="taskSelect" style="flex:1;min-width:160px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
-          <option value="">— Task / Chain —</option>
+          <option value="" data-i18n="task_chain">— Task / Chain —</option>
         </select>
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);">
-          <input type="checkbox" id="strictChainToggle" disabled> strict chain
+          <input type="checkbox" id="strictChainToggle" disabled> <span data-i18n="strict_chain">strict chain</span>
         </label>
       </div>
     </div>
@@ -908,7 +921,7 @@ body {
 
   <main class="graph-pane">
     <div class="graph-controls">
-      <button class="icon-btn back-btn" id="backBtn" disabled title="Back to previous node">
+      <button class="icon-btn back-btn" id="backBtn" disabled title="Back to previous node" data-i18n-title="back_title">
         <span style="font-size:15px;line-height:1;">‹</span>
         <span data-i18n="back">Back</span>
       </button>
@@ -944,10 +957,10 @@ body {
           <option value="44">XXL</option>
         </select>
       </label>
-      <label><span>Layout</span>
+      <label><span data-i18n="layout">Layout</span>
         <select id="layoutSelect">
-          <option value="ring">Ring</option>
-          <option value="force" selected>Force</option>
+          <option value="ring" data-i18n="layout_ring">Ring</option>
+          <option value="force" selected data-i18n="layout_force">Force</option>
         </select>
       </label>
       <span class="graph-info" id="graphInfo" data-i18n="hint_select">Select a node to start exploring</span>
@@ -1007,6 +1020,8 @@ const state = {
   cachedNeighborhood: null,
   history: [],          // stack of previous node IDs for Back navigation
   transitioning: false, // guard to prevent overlapping zoom animations
+  graphUpdate: null,
+  graphDownloadPoller: null,
 };
 
 const ATOM_COLORS = {
@@ -1050,6 +1065,20 @@ const I18N = {
     search_placeholder: "Search biomarker / outcome / concept (≥2 chars)",
     search_hint: "Enter a keyword to search concepts",
     atom_all: "All",
+    atom_disease: "Disease",
+    atom_drug: "Drug",
+    atom_imaging_marker: "Imaging marker",
+    atom_gene_target: "Gene / target",
+    atom_cognitive_task: "Cognitive task",
+    atom_outcome: "Outcome",
+    atom_individual_data: "Individual data",
+    toggle_theme: "Toggle theme",
+    task_chain: "— Task / Chain —",
+    strict_chain: "strict chain",
+    back_title: "Back to previous node",
+    layout: "Layout",
+    layout_ring: "Ring",
+    layout_force: "Force",
     back: "Back",
     depth: "Depth",
     neighbors: "Neighbors",
@@ -1116,6 +1145,16 @@ const I18N = {
     paths_reason_timeout: "timed out",
     paths_reason_max_paths: "display limit",
     load_failed: "load failed",
+    update_idle: "Graph updates",
+    check_updates: "Check graph updates",
+    update_graph: "Update graph",
+    checking_updates: "Checking HuggingFace…",
+    update_available: "New graph available",
+    up_to_date: "Graph is up to date",
+    update_failed: "Update check failed",
+    downloading_graph: "Downloading graph…",
+    download_complete: "Graph updated",
+    download_confirm: "Download the latest NeuroOracle graph from HuggingFace now?",
   },
   zh: {
     header_sub: "知识图谱浏览器",
@@ -1124,6 +1163,20 @@ const I18N = {
     search_placeholder: "搜索 biomarker / outcome / 概念（≥2 字符）",
     search_hint: "输入关键词，快速检索概念",
     atom_all: "全部",
+    atom_disease: "疾病",
+    atom_drug: "药物",
+    atom_imaging_marker: "影像标志物",
+    atom_gene_target: "基因 / 靶点",
+    atom_cognitive_task: "认知任务",
+    atom_outcome: "结局",
+    atom_individual_data: "个体数据",
+    toggle_theme: "切换主题",
+    task_chain: "— 任务 / 链 —",
+    strict_chain: "严格链",
+    back_title: "返回上一个节点",
+    layout: "布局",
+    layout_ring: "环形",
+    layout_force: "力导向",
     back: "返回",
     depth: "深度",
     neighbors: "邻域",
@@ -1190,12 +1243,31 @@ const I18N = {
     paths_reason_timeout: "搜索超时",
     paths_reason_max_paths: "达到显示上限",
     load_failed: "加载失败",
+    update_idle: "图谱更新",
+    check_updates: "检查图谱更新",
+    update_graph: "更新图谱",
+    checking_updates: "正在检查 HuggingFace…",
+    update_available: "发现新版图谱",
+    up_to_date: "图谱已是最新",
+    update_failed: "更新检查失败",
+    downloading_graph: "正在下载图谱…",
+    download_complete: "图谱已更新",
+    download_confirm: "现在从 HuggingFace 下载最新版 NeuroOracle 图谱吗？",
   },
 };
 const t = (key, ...args) => {
   const v = I18N[state.lang]?.[key] ?? I18N.en[key] ?? key;
   return typeof v === "function" ? v(...args) : v;
 };
+const UI_LANGUAGE_KEY = "neuroclaw.web.language.v1";
+
+function appLanguage() {
+  const configured = localStorage.getItem(UI_LANGUAGE_KEY) || localStorage.getItem("neuroclaw-lang") || "";
+  const normalized = configured.toLowerCase();
+  if (normalized.includes("chinese") || normalized.includes("中文") || normalized === "zh") return "zh";
+  if (normalized.includes("english") || normalized === "en") return "en";
+  return navigator.language && navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
 
 // ── DOM helpers ──────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
@@ -1340,11 +1412,9 @@ $("themeBtn").addEventListener("click", () => {
 
 // ── Language ─────────────────────────────────────────────────────────
 (function initLang() {
-  const saved = localStorage.getItem("neuroclaw-lang");
-  state.lang = saved === "zh" ? "zh" : "en";
+  state.lang = appLanguage();
   document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
   applyI18n();
-  $("langBtn").textContent = state.lang === "zh" ? "中" : "EN";
 })();
 function applyI18n() {
   document.querySelectorAll("[data-i18n]").forEach((n) => {
@@ -1362,20 +1432,133 @@ function applyI18n() {
     const v = t(key);
     if (typeof v === "string") n.setAttribute("title", v);
   });
+  renderGraphUpdateStatus(state.graphUpdate);
 }
-$("langBtn").addEventListener("click", () => {
-  state.lang = state.lang === "en" ? "zh" : "en";
-  localStorage.setItem("neuroclaw-lang", state.lang);
+function syncLanguageFromApp() {
+  const next = appLanguage();
+  if (next === state.lang) return;
+  state.lang = next;
   document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
-  $("langBtn").textContent = state.lang === "zh" ? "中" : "EN";
   applyI18n();
-  // re-render detail pane and stats with new lang
   pollStatsRender();
   if (state.currentNode) {
     if (state.focusEdge) loadEdgeSources(state.focusEdge.source, state.focusEdge.target);
     else loadDetail(state.currentNode);
   }
+}
+window.addEventListener("storage", (event) => {
+  if (event.key === UI_LANGUAGE_KEY) syncLanguageFromApp();
 });
+
+function renderGraphUpdateStatus(status = null) {
+  state.graphUpdate = status || null;
+  const statusEl = $("graphUpdateStatus");
+  const checkBtn = $("graphCheckUpdateBtn");
+  const updateBtn = $("graphUpdateBtn");
+  if (!statusEl || !checkBtn || !updateBtn) return;
+
+  checkBtn.disabled = false;
+  updateBtn.disabled = false;
+  updateBtn.style.display = "none";
+
+  if (!status) {
+    statusEl.textContent = t("update_idle");
+    return;
+  }
+  if (status.type === "checking") {
+    statusEl.textContent = t("checking_updates");
+    checkBtn.disabled = true;
+    return;
+  }
+  if (status.type === "downloading") {
+    const pct = typeof status.percent === "number" ? ` ${Math.round(status.percent)}%` : "";
+    statusEl.textContent = `${t("downloading_graph")}${pct}`;
+    checkBtn.disabled = true;
+    updateBtn.disabled = true;
+    return;
+  }
+  if (status.type === "error") {
+    statusEl.textContent = status.message ? `${t("update_failed")}: ${status.message}` : t("update_failed");
+    return;
+  }
+  if (status.update_available) {
+    statusEl.textContent = t("update_available");
+    updateBtn.style.display = "inline-flex";
+    return;
+  }
+  statusEl.textContent = t("up_to_date");
+}
+
+async function checkGraphUpdate() {
+  renderGraphUpdateStatus({ type: "checking" });
+  try {
+    const resp = await fetch("/api/neurooracle/graph/update-status");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const status = await resp.json();
+    renderGraphUpdateStatus(status);
+    return status;
+  } catch (err) {
+    renderGraphUpdateStatus({ type: "error", message: err && err.message ? err.message : "" });
+    return null;
+  }
+}
+
+async function pollGraphDownload() {
+  try {
+    const resp = await fetch("/api/neurooracle/graph/status");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const status = await resp.json();
+    const download = status && status.download ? status.download : {};
+    if (download.running) {
+      const total = Number(download.total_bytes || 0);
+      const done = Number(download.downloaded_bytes || 0);
+      const filesDone = Number(download.files_done || 0);
+      const filesTotal = Math.max(1, Number(download.files_total || 1));
+      const currentPct = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0;
+      const percent = Math.max(0, Math.min(100, ((filesDone + currentPct) / filesTotal) * 100));
+      renderGraphUpdateStatus({ type: "downloading", percent });
+      return;
+    }
+    if (state.graphDownloadPoller) {
+      clearInterval(state.graphDownloadPoller);
+      state.graphDownloadPoller = null;
+    }
+    if (download.error) {
+      renderGraphUpdateStatus({ type: "error", message: download.error });
+      return;
+    }
+    renderGraphUpdateStatus({ update_available: false });
+    $("graphUpdateStatus").textContent = t("download_complete");
+    setTimeout(() => window.location.reload(), 800);
+  } catch (err) {
+    if (state.graphDownloadPoller) {
+      clearInterval(state.graphDownloadPoller);
+      state.graphDownloadPoller = null;
+    }
+    renderGraphUpdateStatus({ type: "error", message: err && err.message ? err.message : "" });
+  }
+}
+
+async function updateGraphFromHuggingFace() {
+  if (!confirm(t("download_confirm"))) return;
+  renderGraphUpdateStatus({ type: "downloading", percent: 0 });
+  try {
+    const resp = await fetch("/api/neurooracle/graph/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force: true }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (state.graphDownloadPoller) clearInterval(state.graphDownloadPoller);
+    state.graphDownloadPoller = setInterval(pollGraphDownload, 1000);
+    await pollGraphDownload();
+  } catch (err) {
+    renderGraphUpdateStatus({ type: "error", message: err && err.message ? err.message : "" });
+  }
+}
+
+$("graphCheckUpdateBtn").addEventListener("click", () => checkGraphUpdate());
+$("graphUpdateBtn").addEventListener("click", () => updateGraphFromHuggingFace());
 
 // ── Font-size control ────────────────────────────────────────────────
 (function initFont() {

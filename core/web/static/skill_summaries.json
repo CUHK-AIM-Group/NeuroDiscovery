@@ -1,0 +1,346 @@
+{
+  "abcd-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the ABCD Study dataset, including download via NIMH Data Archive, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'ABCD Study', 'ABCD data', 'process A...",
+    "zh": "该技能用于 abcd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the ABCD Study dataset, including download via NIMH Data Archive, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'ABCD Study', 'ABCD data', 'process A..."
+  },
+  "abide-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the ABIDE (Autism Brain Imaging Data Exchange) dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ABIDE', 'ABIDE data', 'process ABIDE...",
+    "zh": "该技能用于 abide-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the ABIDE (Autism Brain Imaging Data Exchange) dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ABIDE', 'ABIDE data', 'process ABIDE..."
+  },
+  "academic-research-hub": {
+    "en": "Use this skill when users need to search academic papers, download research documents, extract citations, or gather scholarly information. Triggers include: requests to \\\"find papers on\\\", \\\"search research about\\\", \\\"download academic articles\\\", \\\"get cit...",
+    "zh": "该技能用于 academic-research-hub 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill when users need to search academic papers, download research documents, extract citations, or gather scholarly information. Triggers include: requests to \\\"find papers on\\\", \\\"search research about\\\", \\\"download academic articles\\\", \\\"get cit..."
+  },
+  "adhd200-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the ADHD-200 dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ADHD-200', 'ADHD200', 'process ADHD data', 'ADHD fMRI', or any request...",
+    "zh": "该技能用于 adhd200-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the ADHD-200 dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ADHD-200', 'ADHD200', 'process ADHD data', 'ADHD fMRI', or any request..."
+  },
+  "adni-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroClaw dataset-orchestration layer for ADNI.",
+    "zh": "该技能用于 adni-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroClaw dataset-orchestration layer for ADNI."
+  },
+  "aibl-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the AIBL (Australian Imaging, Biomarkers and Lifestyle) dataset, including data access guidance, BIDS organization, and multimodal processing of sMRI and PET (PiB, FDG, tau). Triggers include...",
+    "zh": "该技能用于 aibl-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the AIBL (Australian Imaging, Biomarkers and Lifestyle) dataset, including data access guidance, BIDS organization, and multimodal processing of sMRI and PET (PiB, FDG, tau). Triggers include..."
+  },
+  "aomic-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the AOMIC (Amsterdam Open MRI Collection) dataset, including data access, BIDS organization, and multimodal processing of sMRI, rs-fMRI, and task-fMRI. Triggers include: 'AOMIC', 'AOMIC data'...",
+    "zh": "该技能用于 aomic-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the AOMIC (Amsterdam Open MRI Collection) dataset, including data access, BIDS organization, and multimodal processing of sMRI, rs-fMRI, and task-fMRI. Triggers include: 'AOMIC', 'AOMIC data'..."
+  },
+  "asl-skill": {
+    "en": "Use this skill whenever the user wants to process Arterial Spin Labeling (ASL) perfusion MRI data including CBF (cerebral blood flow) quantification, ASL preprocessing (motion correction, partial volume correction, M0 normalization), or ASL-based brain perf...",
+    "zh": "该技能用于 asl-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process Arterial Spin Labeling (ASL) perfusion MRI data including CBF (cerebral blood flow) quantification, ASL preprocessing (motion correction, partial volume correction, M0 normalization), or ASL-based brain perf..."
+  },
+  "beautiful-log": {
+    "en": "Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroClaw <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored...",
+    "zh": "该技能用于 beautiful-log 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroClaw <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored..."
+  },
+  "bids-organizer": {
+    "en": "Use this skill whenever the user wants to automatically organize raw neuroimaging data (DICOM, NIfTI, EEG, etc.) into a valid BIDS (Brain Imaging Data Structure) dataset. Triggers include: 'organize to BIDS', 'BIDS organizer', 'convert to BIDS', 'BIDS conve...",
+    "zh": "该技能用于 bids-organizer 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to automatically organize raw neuroimaging data (DICOM, NIfTI, EEG, etc.) into a valid BIDS (Brain Imaging Data Structure) dataset. Triggers include: 'organize to BIDS', 'BIDS organizer', 'convert to BIDS', 'BIDS conve..."
+  },
+  "bnt": {
+    "en": "Use this model doc whenever the user wants to run BrainNetworkTransformer for fMRI phenotype prediction, including data loading, training, and evaluation. BNT uses dense FC matrices (no PyG dependency) with DEC pooling + interpretable transformer encoder.",
+    "zh": "该技能用于 bnt 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run BrainNetworkTransformer for fMRI phenotype prediction, including data loading, training, and evaluation. BNT uses dense FC matrices (no PyG dependency) with DEC pooling + interpretable transformer encoder."
+  },
+  "bold5000-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the BOLD5000 dataset, including download, BIDS organization, and processing of task-fMRI data with visual image stimuli. Triggers include: 'BOLD5000', 'BOLD 5000', 'process BOLD5000', 'visual...",
+    "zh": "该技能用于 bold5000-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the BOLD5000 dataset, including download, BIDS organization, and processing of task-fMRI data with visual image stimuli. Triggers include: 'BOLD5000', 'BOLD 5000', 'process BOLD5000', 'visual..."
+  },
+  "brain-visualization": {
+    "en": "Use this skill whenever the user wants to visualize neuroimaging analysis results, including 3D brain connectivity networks, atlas-based regional activation summaries, or FreeSurfer cortical surface meshes with anatomical colors. Triggers include: 'brain vi...",
+    "zh": "该技能用于 brain-visualization 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to visualize neuroimaging analysis results, including 3D brain connectivity networks, atlas-based regional activation summaries, or FreeSurfer cortical surface meshes with anatomical colors. Triggers include: 'brain vi..."
+  },
+  "braingnn": {
+    "en": "Use this model doc whenever the user wants to run BrainGNN for fMRI phenotype prediction, including graph construction, training, and evaluation. This document focuses on model-level usage and delegates upstream preprocessing to fmri-skill (and optionally h...",
+    "zh": "该技能用于 braingnn 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run BrainGNN for fMRI phenotype prediction, including graph construction, training, and evaluation. This document focuses on model-level usage and delegates upstream preprocessing to fmri-skill (and optionally h..."
+  },
+  "camcan-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Cam-CAN (Cambridge Centre for Ageing and Neuroscience) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, task-fMRI, and MEG, phenotype extraction, and QC integra...",
+    "zh": "该技能用于 camcan-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Cam-CAN (Cambridge Centre for Ageing and Neuroscience) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, task-fMRI, and MEG, phenotype extraction, and QC integra..."
+  },
+  "claw-shell": {
+    "en": "Use this skill whenever any NeuroClaw skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', '...",
+    "zh": "该技能用于 claw-shell 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', '..."
+  },
+  "cobre-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the COBRE dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data for schizophrenia research. Triggers include: 'COBRE', 'process COBRE', 'COBRE schizophrenia'...",
+    "zh": "该技能用于 cobre-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the COBRE dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data for schizophrenia research. Triggers include: 'COBRE', 'process COBRE', 'COBRE schizophrenia'..."
+  },
+  "combraintf": {
+    "en": "Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroClaw auto-d...",
+    "zh": "该技能用于 combraintf 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroClaw auto-d..."
+  },
+  "conda-env-manager": {
+    "en": "Use this skill whenever the user wants to create, activate, list, export, update, clone, remove, or otherwise manage conda environments, or when a deep-learning / model skill requires a clean, isolated conda environment (e.g. 'create conda env for torch 2.3...",
+    "zh": "该技能用于 conda-env-manager 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to create, activate, list, export, update, clone, remove, or otherwise manage conda environments, or when a deep-learning / model skill requires a clean, isolated conda environment (e.g. 'create conda env for torch 2.3..."
+  },
+  "conn-tool": {
+    "en": "Use this skill whenever the user wants to perform advanced functional connectivity (ROI-to-ROI, seed-to-voxel, ICA) or effective connectivity (PPI, gPPI, DCM) analysis using the CONN Toolbox. Triggers include: 'conn', 'CONN toolbox', 'functional connectivit...",
+    "zh": "该技能用于 conn-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to perform advanced functional connectivity (ROI-to-ROI, seed-to-voxel, ICA) or effective connectivity (PPI, gPPI, DCM) analysis using the CONN Toolbox. Triggers include: 'conn', 'CONN toolbox', 'functional connectivit..."
+  },
+  "dcm2nii": {
+    "en": "Use this skill whenever the user wants to convert DICOM files or folders to NIfTI format (.nii or .nii.gz), extract neuroimaging volumes from clinical DICOM series (MRI, CT, PET, etc.), prepare raw DICOM data for research processing pipelines, anonymize whi...",
+    "zh": "该技能用于 dcm2nii 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to convert DICOM files or folders to NIfTI format (.nii or .nii.gz), extract neuroimaging volumes from clinical DICOM series (MRI, CT, PET, etc.), prepare raw DICOM data for research processing pipelines, anonymize whi..."
+  },
+  "dependency-planner": {
+    "en": "Use this skill whenever a NeuroClaw skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler,...",
+    "zh": "该技能用于 dependency-planner 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever a NeuroClaw skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler,..."
+  },
+  "detrending": {
+    "en": "Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical detrending methods. This is a non-deep-learning preprocessing route focused on removing low-frequency drift and linear trends from time series before downstre...",
+    "zh": "该技能用于 detrending 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical detrending methods. This is a non-deep-learning preprocessing route focused on removing low-frequency drift and linear trends from time series before downstre..."
+  },
+  "dictlearning": {
+    "en": "Use this model doc whenever the user wants to perform resting-state network decomposition using DictLearning. This is a non-deep-learning unsupervised route focused on sparse component extraction, network map discovery, and subject-level time series from re...",
+    "zh": "该技能用于 dictlearning 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform resting-state network decomposition using DictLearning. This is a non-deep-learning unsupervised route focused on sparse component extraction, network map discovery, and subject-level time series from re..."
+  },
+  "dipy-tool": {
+    "en": "Use this skill whenever any NeuroClaw diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool...",
+    "zh": "该技能用于 dipy-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool..."
+  },
+  "dmt-har-med-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the DMT-HAR-MED dataset (ds006644), including download, BIDS organization, and processing of rs-fMRI data from a psychedelic intervention study. Triggers include: 'DMT-HAR-MED', 'DMT HAR MED'...",
+    "zh": "该技能用于 dmt-har-med-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the DMT-HAR-MED dataset (ds006644), including download, BIDS organization, and processing of rs-fMRI data from a psychedelic intervention study. Triggers include: 'DMT-HAR-MED', 'DMT HAR MED'..."
+  },
+  "docker-env-manager": {
+    "en": "Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroClaw skill (e.g. wmh-segmentation, freesurfer-processor in...",
+    "zh": "该技能用于 docker-env-manager 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroClaw skill (e.g. wmh-segmentation, freesurfer-processor in..."
+  },
+  "dwi-skill": {
+    "en": "Use this skill whenever the user wants to preprocess diffusion MRI / DWI data, compute diffusion metrics (FA/MD/AD/RD, etc.), extract ROI-wise diffusion features, or run tractography/connectome-related workflows. Triggers include: 'DWI', 'DTI', 'diffusion M...",
+    "zh": "该技能用于 dwi-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to preprocess diffusion MRI / DWI data, compute diffusion metrics (FA/MD/AD/RD, etc.), extract ROI-wise diffusion features, or run tractography/connectome-related workflows. Triggers include: 'DWI', 'DTI', 'diffusion M..."
+  },
+  "eeg-skill": {
+    "en": "Use this skill whenever the user wants to load, preprocess, epoch, filter, or extract features from EEG data (resting-state, task-based, BCI, clinical, motor imagery, emotion, epilepsy, fatigue, etc.). Triggers include: 'eeg', 'EEG preprocessing', 'EEG feat...",
+    "zh": "该技能用于 eeg-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to load, preprocess, epoch, filter, or extract features from EEG data (resting-state, task-based, BCI, clinical, motor imagery, emotion, epilepsy, fatigue, etc.). Triggers include: 'eeg', 'EEG preprocessing', 'EEG feat..."
+  },
+  "experiment-controller": {
+    "en": "Use this skill whenever the user wants to execute experiments based on a finalized method and record results. Triggers include: 'run experiment', 'experiment controller', 'implement experiment', 'run model', 'execute training', 'experiment-controller', 'rec...",
+    "zh": "该技能用于 experiment-controller 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to execute experiments based on a finalized method and record results. Triggers include: 'run experiment', 'experiment controller', 'implement experiment', 'run model', 'execute training', 'experiment-controller', 'rec..."
+  },
+  "filtering": {
+    "en": "Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical temporal filtering methods. This is a non-deep-learning preprocessing route focused on temporal cleaning, frequency selection, and preparation of cleaner time...",
+    "zh": "该技能用于 filtering 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical temporal filtering methods. This is a non-deep-learning preprocessing route focused on temporal cleaning, frequency selection, and preparation of cleaner time..."
+  },
+  "fm_app": {
+    "en": "Use this model doc whenever the user wants to run FM-APP for phenotype prediction using fMRI ROI features and optional sMRI features. This document provides model-level usage and delegates preprocessing to fmri-skill and smri-skill.",
+    "zh": "该技能用于 fm_app 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run FM-APP for phenotype prediction using fMRI ROI features and optional sMRI features. This document provides model-level usage and delegates preprocessing to fmri-skill and smri-skill."
+  },
+  "fmri-skill": {
+    "en": "Use this skill whenever the user wants to perform fMRI preprocessing, first-level analysis, ROI extraction, functional connectivity, effective connectivity, or atlas-based alignment to MNI152 space using either fMRIPrep, HCP-style pipelines, or CONN Toolbox...",
+    "zh": "该技能用于 fmri-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to perform fMRI preprocessing, first-level analysis, ROI extraction, functional connectivity, effective connectivity, or atlas-based alignment to MNI152 space using either fMRIPrep, HCP-style pipelines, or CONN Toolbox..."
+  },
+  "fmriprep-tool": {
+    "en": "Use this skill whenever the user wants to perform standardized preprocessing of functional MRI (fMRI) and anatomical MRI data using fMRIPrep. Triggers include: 'fmriprep', 'fMRIPrep', 'fMRI preprocessing', 'BIDS fMRI', 'run fmriprep', 'preprocess bold', 'BO...",
+    "zh": "该技能用于 fmriprep-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to perform standardized preprocessing of functional MRI (fMRI) and anatomical MRI data using fMRIPrep. Triggers include: 'fmriprep', 'fMRIPrep', 'fMRI preprocessing', 'BIDS fMRI', 'run fmriprep', 'preprocess bold', 'BO..."
+  },
+  "freesurfer-tool": {
+    "en": "Use this skill whenever the user wants to process structural MRI data (T1w, T2w, FLAIR, etc.) with FreeSurfer, especially for cortical/subcortical segmentation, surface reconstruction, parcellation, cortical thickness, volume statistics, or full recon-all p...",
+    "zh": "该技能用于 freesurfer-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process structural MRI data (T1w, T2w, FLAIR, etc.) with FreeSurfer, especially for cortical/subcortical segmentation, surface reconstruction, parcellation, cortical thickness, volume statistics, or full recon-all p..."
+  },
+  "fsl-tool": {
+    "en": "Use this skill whenever the user wants to process neuroimaging data with FSL (FMRIB Software Library), covering structural MRI, functional MRI (fMRI), and diffusion MRI (dMRI/DTI). Triggers include: 'use FSL', 'FSL processing', 'fsl_anat', 'FEAT', 'MELODIC'...",
+    "zh": "该技能用于 fsl-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process neuroimaging data with FSL (FMRIB Software Library), covering structural MRI, functional MRI (fMRI), and diffusion MRI (dMRI/DTI). Triggers include: 'use FSL', 'FSL processing', 'fsl_anat', 'FEAT', 'MELODIC'..."
+  },
+  "git-essentials": {
+    "en": "Essential Git commands and workflows for version control, branching, and collaboration.",
+    "zh": "该技能用于 git-essentials 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Essential Git commands and workflows for version control, branching, and collaboration."
+  },
+  "git-workflows": {
+    "en": "Advanced git operations beyond add/commit/push. Use when rebasing, bisecting bugs, using worktrees for parallel development, recovering with reflog, managing subtrees/submodules, resolving merge conflicts, cherry-picking across branches, or working with mon...",
+    "zh": "该技能用于 git-workflows 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Advanced git operations beyond add/commit/push. Use when rebasing, bisecting bugs, using worktrees for parallel development, recovering with reflog, managing subtrees/submodules, resolving merge conflicts, cherry-picking across branches, or working with mon..."
+  },
+  "glm": {
+    "en": "Use this model doc whenever the user wants to run a classical General Linear Model (GLM) for task-evoked fMRI activation analysis. This is a non-deep-learning model route focused on design matrices, first-level/second-level statistics, and statistical maps.",
+    "zh": "该技能用于 glm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run a classical General Linear Model (GLM) for task-evoked fMRI activation analysis. This is a non-deep-learning model route focused on design matrices, first-level/second-level statistics, and statistical maps."
+  },
+  "harmonization-tool": {
+    "en": "Use this skill whenever the user wants to remove site/scanner/batch effects from neuroimaging features before running downstream models, run mega-analysis across multiple datasets, or evaluate models with leave-site-out / site-stratified protocols. Triggers...",
+    "zh": "该技能用于 harmonization-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to remove site/scanner/batch effects from neuroimaging features before running downstream models, run mega-analysis across multiple datasets, or evaluate models with leave-site-out / site-stratified protocols. Triggers..."
+  },
+  "harness-core": {
+    "en": "Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroClaw skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for...",
+    "zh": "该技能用于 harness-core 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroClaw skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for..."
+  },
+  "hbn-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Healthy Brain Network (HBN) dataset, including download, BIDS organization, and multimodal processing of sMRI, dMRI, rs-fMRI, task-fMRI, and EEG data. Triggers include: 'HBN', 'Healthy Br...",
+    "zh": "该技能用于 hbn-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Healthy Brain Network (HBN) dataset, including download, BIDS organization, and multimodal processing of sMRI, dMRI, rs-fMRI, task-fMRI, and EEG data. Triggers include: 'HBN', 'Healthy Br..."
+  },
+  "hcpa-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the HCP Aging (HCP-A) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Aging', 'HCP-A', 'process HCP Aging dat...",
+    "zh": "该技能用于 hcpa-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the HCP Aging (HCP-A) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Aging', 'HCP-A', 'process HCP Aging dat..."
+  },
+  "hcpd-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the HCP Development (HCP-D) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Development', 'HCP-D', 'process H...",
+    "zh": "该技能用于 hcpd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the HCP Development (HCP-D) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Development', 'HCP-D', 'process H..."
+  },
+  "hcpep-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the HCP Early Psychosis (HCP-EP) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Early Psychosis', 'HCP-EP',...",
+    "zh": "该技能用于 hcpep-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the HCP Early Psychosis (HCP-EP) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Early Psychosis', 'HCP-EP',..."
+  },
+  "hcppipeline-tool": {
+    "en": "Use this skill whenever the user wants to perform high-quality, HCP-style preprocessing of multimodal MRI data (structural, functional, diffusion) using the official HCP Pipelines. Triggers include: 'HCP pipeline', 'HCP preprocessing', 'hcp-fmri', 'hcp-dwi'...",
+    "zh": "该技能用于 hcppipeline-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to perform high-quality, HCP-style preprocessing of multimodal MRI data (structural, functional, diffusion) using the official HCP Pipelines. Triggers include: 'HCP pipeline', 'HCP preprocessing', 'hcp-fmri', 'hcp-dwi'..."
+  },
+  "hcpya-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the HCP Young Adult (HCP-YA / HCP1200) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Young Adult', 'HCP-YA'...",
+    "zh": "该技能用于 hcpya-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the HCP Young Adult (HCP-YA / HCP1200) dataset, including dataset download, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'HCP Young Adult', 'HCP-YA'..."
+  },
+  "hierarchical": {
+    "en": "Use this model doc whenever the user wants to perform brain parcellation using Hierarchical clustering. This is a non-deep-learning unsupervised route focused on multi-scale parcel discovery, voxel or vertex grouping, and atlas-like region generation from n...",
+    "zh": "该技能用于 hierarchical 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform brain parcellation using Hierarchical clustering. This is a non-deep-learning unsupervised route focused on multi-scale parcel discovery, voxel or vertex grouping, and atlas-like region generation from n..."
+  },
+  "ibgnn": {
+    "en": "Use this model doc whenever the user wants to run IBGNN (Interpretable Brain Graph Neural Network) for fMRI phenotype prediction. IBGNN is a PyG-based GNN with a learnable MLP message function over [x_i, x_j, edge_attr], designed for connectome-based brain...",
+    "zh": "该技能用于 ibgnn 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run IBGNN (Interpretable Brain Graph Neural Network) for fMRI phenotype prediction. IBGNN is a PyG-based GNN with a learnable MLP message function over [x_i, x_j, edge_attr], designed for connectome-based brain..."
+  },
+  "ica": {
+    "en": "Use this model doc whenever the user wants to perform resting-state network decomposition using ICA. This is a non-deep-learning unsupervised route focused on extracting intrinsic connectivity networks, component maps, and subject-level time series from res...",
+    "zh": "该技能用于 ica 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform resting-state network decomposition using ICA. This is a non-deep-learning unsupervised route focused on extracting intrinsic connectivity networks, component maps, and subject-level time series from res..."
+  },
+  "ixi-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the IXI (Information eXtraction from Images) dataset, including data download, BIDS organization, and multimodal processing of T1w, T2w, and MRA. Triggers include: 'IXI', 'IXI dataset', 'proc...",
+    "zh": "该技能用于 ixi-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the IXI (Information eXtraction from Images) dataset, including data download, BIDS organization, and multimodal processing of T1w, T2w, and MRA. Triggers include: 'IXI', 'IXI dataset', 'proc..."
+  },
+  "kmeans": {
+    "en": "Use this model doc whenever the user wants to perform brain parcellation using K-means. This is a non-deep-learning unsupervised route focused on parcel discovery, voxel or vertex grouping, and atlas-like region generation from neuroimaging features.",
+    "zh": "该技能用于 kmeans 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform brain parcellation using K-means. This is a non-deep-learning unsupervised route focused on parcel discovery, voxel or vertex grouping, and atlas-like region generation from neuroimaging features."
+  },
+  "knowledge-graph-builder": {
+    "en": "Use this skill when users need to build, populate, or extend a domain-specific knowledge graph from literature and structured databases. Triggers include: 'build knowledge graph', 'extract claims from papers', 'ingest data into graph', 'batch extract claims...",
+    "zh": "该技能用于 knowledge-graph-builder 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill when users need to build, populate, or extend a domain-specific knowledge graph from literature and structured databases. Triggers include: 'build knowledge graph', 'extract claims from papers', 'ingest data into graph', 'batch extract claims..."
+  },
+  "lggnn": {
+    "en": "Use this model doc whenever the user wants to run LG-GNN (Local-to-Global GNN) for fMRI phenotype prediction. LG-GNN is a PyG-based GNN with SABP (Self-Attention Brain Pooling) and mutual-information regularization. NeuroClaw adapts the original population-...",
+    "zh": "该技能用于 lggnn 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run LG-GNN (Local-to-Global GNN) for fMRI phenotype prediction. LG-GNN is a PyG-based GNN with SABP (Self-Attention Brain Pooling) and mutual-information regularization. NeuroClaw adapts the original population-..."
+  },
+  "meg-skill": {
+    "en": "Use this skill whenever the user wants to process MEG (magnetoencephalography) data including source localization, time-frequency analysis, connectivity analysis, sensor-level preprocessing, or MEG-specific feature extraction. Triggers include: 'MEG', 'MEG...",
+    "zh": "该技能用于 meg-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process MEG (magnetoencephalography) data including source localization, time-frequency analysis, connectivity analysis, sensor-level preprocessing, or MEG-specific feature extraction. Triggers include: 'MEG', 'MEG..."
+  },
+  "method-design": {
+    "en": "Use this skill whenever the user wants to formalize a network architecture and derive theoretical components from a research idea. Triggers include: 'method design', 'design method', 'network architecture', 'formula derivation', 'method-design', 'theoretica...",
+    "zh": "该技能用于 method-design 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to formalize a network architecture and derive theoretical components from a research idea. Triggers include: 'method design', 'design method', 'network architecture', 'formula derivation', 'method-design', 'theoretica..."
+  },
+  "mnd-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Motor Neuron Disease (MND) dataset from OpenNeuro ds005874, including BIDS validation, multimodal processing of rs-fMRI and task-fMRI, phenotype extraction, and QC integration. Triggers i...",
+    "zh": "该技能用于 mnd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Motor Neuron Disease (MND) dataset from OpenNeuro ds005874, including BIDS validation, multimodal processing of rs-fMRI and task-fMRI, phenotype extraction, and QC integration. Triggers i..."
+  },
+  "mne-eeg-tool": {
+    "en": "Use this skill whenever any NeuroClaw modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the de...",
+    "zh": "该技能用于 mne-eeg-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the de..."
+  },
+  "mschallenge-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Longitudinal MS Lesion Segmentation Challenge dataset, including data validation, multimodal processing of T1w, T2w, FLAIR, and PD, lesion segmentation, and QC integration. Triggers inclu...",
+    "zh": "该技能用于 mschallenge-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Longitudinal MS Lesion Segmentation Challenge dataset, including data validation, multimodal processing of T1w, T2w, FLAIR, and PD, lesion segmentation, and QC integration. Triggers inclu..."
+  },
+  "multi-search-engine": {
+    "en": "Multi search engine integration with 17 engines (8 CN + 9 Global). Supports advanced search operators, time filters, site search, privacy engines, and WolframAlpha knowledge queries. No API keys required.",
+    "zh": "该技能用于 multi-search-engine 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Multi search engine integration with 17 engines (8 CN + 9 Global). Supports advanced search operators, time filters, site search, privacy engines, and WolframAlpha knowledge queries. No API keys required."
+  },
+  "neurostorm": {
+    "en": "Use this skill whenever the user wants to run the NeuroSTORM multi-model fMRI platform: preprocessing, pretraining (MAE or contrastive), fine-tuning, inference, or benchmarking. It covers 8 built-in models — NeuroSTORM, SwiFT, BrainGNN, BrainNetworkTransfor...",
+    "zh": "该技能用于 neurostorm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to run the NeuroSTORM multi-model fMRI platform: preprocessing, pretraining (MAE or contrastive), fine-tuning, inference, or benchmarking. It covers 8 built-in models — NeuroSTORM, SwiFT, BrainGNN, BrainNetworkTransfor..."
+  },
+  "nibabel-skill": {
+    "en": "Use this skill whenever NeuroClaw needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading...",
+    "zh": "该技能用于 nibabel-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever NeuroClaw needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading..."
+  },
+  "nifd-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Neuroimaging in Frontotemporal Dementia (NIFD) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers inc...",
+    "zh": "该技能用于 nifd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Neuroimaging in Frontotemporal Dementia (NIFD) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers inc..."
+  },
+  "nii2dcm": {
+    "en": "Use this skill whenever the user wants to convert NIfTI files (.nii or .nii.gz) to DICOM format, create DICOM series from processed neuroimaging results, write segmentation/registration/analysis outputs back to DICOM for PACS compatibility or clinical viewe...",
+    "zh": "该技能用于 nii2dcm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to convert NIfTI files (.nii or .nii.gz) to DICOM format, create DICOM series from processed neuroimaging results, write segmentation/registration/analysis outputs back to DICOM for PACS compatibility or clinical viewe..."
+  },
+  "nilearn-tool": {
+    "en": "Use this skill whenever any NeuroClaw fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decodin...",
+    "zh": "该技能用于 nilearn-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decodin..."
+  },
+  "nsd-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Natural Scenes Dataset (NSD), including data access, BIDS validation, multimodal processing of task-fMRI and structural MRI, stimulus metadata extraction, and QC integration. Triggers inc...",
+    "zh": "该技能用于 nsd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Natural Scenes Dataset (NSD), including data access, BIDS validation, multimodal processing of task-fMRI and structural MRI, stimulus metadata extraction, and QC integration. Triggers inc..."
+  },
+  "oasis-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the OASIS (Open Access Series of Imaging Studies) dataset, including BIDS validation, multimodal processing of sMRI, and phenotype extraction for aging and Alzheimer's disease research. Trigg...",
+    "zh": "该技能用于 oasis-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the OASIS (Open Access Series of Imaging Studies) dataset, including BIDS validation, multimodal processing of sMRI, and phenotype extraction for aging and Alzheimer's disease research. Trigg..."
+  },
+  "overleaf-skill": {
+    "en": "Use this skill whenever the user wants to synchronize NeuroClaw-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'syn...",
+    "zh": "该技能用于 overleaf-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to synchronize NeuroClaw-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'syn..."
+  },
+  "paper-writing": {
+    "en": "Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create...",
+    "zh": "该技能用于 paper-writing 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create..."
+  },
+  "pet-skill": {
+    "en": "Use this skill whenever the user wants to process PET neuroimaging data including spatial normalization to T1w/MNI space, SUVR computation, reference region quantification, partial volume correction, or tracer-specific workflows (PiB amyloid, FDG metabolism...",
+    "zh": "该技能用于 pet-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process PET neuroimaging data including spatial normalization to T1w/MNI space, SUVR computation, reference region quantification, partial volume correction, or tracer-specific workflows (PiB amyloid, FDG metabolism..."
+  },
+  "pnc-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Philadelphia Neurodevelopmental Cohort (PNC) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, task-fMRI, and dMRI, phenotype extraction, and QC integration. Tri...",
+    "zh": "该技能用于 pnc-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Philadelphia Neurodevelopmental Cohort (PNC) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, task-fMRI, and dMRI, phenotype extraction, and QC integration. Tri..."
+  },
+  "ppmi-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Parkinson's Progression Markers Initiative (PPMI) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers...",
+    "zh": "该技能用于 ppmi-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Parkinson's Progression Markers Initiative (PPMI) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers..."
+  },
+  "qsiprep-tool": {
+    "en": "Use this skill whenever the user wants to run QSIPrep (BIDS App) for diffusion MRI (DWI) preprocessing with best-practice workflows (topup/eddy, denoising/unringing options, susceptibility/motion correction, coregistration/normalization, QC reports) on BIDS...",
+    "zh": "该技能用于 qsiprep-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to run QSIPrep (BIDS App) for diffusion MRI (DWI) preprocessing with best-practice workflows (topup/eddy, denoising/unringing options, susceptibility/motion correction, coregistration/normalization, QC reports) on BIDS..."
+  },
+  "research-idea": {
+    "en": "Use this skill whenever the user wants to generate or refine a research idea through literature search and discussion. Triggers include: 'research idea', 'brainstorm idea', 'generate idea', 'research-idea', 'idea generation', 'discuss new direction', or any...",
+    "zh": "该技能用于 research-idea 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to generate or refine a research idea through literature search and discussion. Triggers include: 'research idea', 'brainstorm idea', 'generate idea', 'research-idea', 'idea generation', 'discuss new direction', or any..."
+  },
+  "rest-mneta-mdd-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the REST-meta-MDD (Resting-State Meta-Major Depressive Disorder) dataset, including BIDS validation, processing of rs-fMRI, phenotype extraction, and QC integration. Triggers include: 'REST-m...",
+    "zh": "该技能用于 rest-mneta-mdd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the REST-meta-MDD (Resting-State Meta-Major Depressive Disorder) dataset, including BIDS validation, processing of rs-fMRI, phenotype extraction, and QC integration. Triggers include: 'REST-m..."
+  },
+  "run_models": {
+    "en": "Use this skill whenever the user wants to run phenotype-prediction models, browse model cards, map model inputs/outputs, or choose an execution route for fMRI/sMRI based models. This is a model-entry orchestration skill: it routes requests to model-specific...",
+    "zh": "该技能用于 run_models 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to run phenotype-prediction models, browse model cards, map model inputs/outputs, or choose an execution route for fMRI/sMRI based models. This is a model-entry orchestration skill: it routes requests to model-specific..."
+  },
+  "seed-iv-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the SEED-IV (SJTU Emotion EEG Dataset - 4 emotions) dataset, including EEG validation, preprocessing, feature extraction, and emotion classification. Triggers include: 'SEED-IV', 'SEED4', 'em...",
+    "zh": "该技能用于 seed-iv-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the SEED-IV (SJTU Emotion EEG Dataset - 4 emotions) dataset, including EEG validation, preprocessing, feature extraction, and emotion classification. Triggers include: 'SEED-IV', 'SEED4', 'em..."
+  },
+  "seed-vig-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the SEED-VIG (SJTU Emotion EEG Dataset - Vigilance) dataset, including EEG validation, preprocessing, feature extraction, and vigilance/fatigue detection. Triggers include: 'SEED-VIG', 'SEEDV...",
+    "zh": "该技能用于 seed-vig-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the SEED-VIG (SJTU Emotion EEG Dataset - Vigilance) dataset, including EEG validation, preprocessing, feature extraction, and vigilance/fatigue detection. Triggers include: 'SEED-VIG', 'SEEDV..."
+  },
+  "skill-updater": {
+    "en": "Use this skill after a task succeeds (user confirms 'success' or tools report success). It extracts new experience from the session log + daily memory, locates relevant skills, and proposes diff-formatted updates to SKILL.md files with a clear summary for t...",
+    "zh": "该技能用于 skill-updater 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill after a task succeeds (user confirms 'success' or tools report success). It extracts new experience from the session log + daily memory, locates relevant skills, and proposes diff-formatted updates to SKILL.md files with a clear summary for t..."
+  },
+  "smri-skill": {
+    "en": "Use this skill whenever the user wants to process structural MRI (sMRI) such as T1w/T2w/FLAIR for brain extraction, bias correction, tissue segmentation (GM/WM/CSF), registration to MNI, cortical/subcortical parcellation, cortical thickness/volumetry (FreeS...",
+    "zh": "该技能用于 smri-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process structural MRI (sMRI) such as T1w/T2w/FLAIR for brain extraction, bias correction, tissue segmentation (GM/WM/CSF), registration to MNI, cortical/subcortical parcellation, cortical thickness/volumetry (FreeS..."
+  },
+  "spacenet": {
+    "en": "Use this model doc whenever the user wants to perform disease classification with SpaceNet. This is a non-deep-learning supervised route focused on voxel-wise neuroimaging-based case-control prediction with sparse and interpretable weight maps.",
+    "zh": "该技能用于 spacenet 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform disease classification with SpaceNet. This is a non-deep-learning supervised route focused on voxel-wise neuroimaging-based case-control prediction with sparse and interpretable weight maps."
+  },
+  "svm": {
+    "en": "Use this model doc whenever the user wants to perform disease classification with SVM. This is a non-deep-learning supervised route focused on neuroimaging-based case-control prediction from ROI-wise or tabular features.",
+    "zh": "该技能用于 svm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform disease classification with SVM. This is a non-deep-learning supervised route focused on neuroimaging-based case-control prediction from ROI-wise or tabular features."
+  },
+  "tcp-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the Transdiagnostic Connectome Project (TCP) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers include:...",
+    "zh": "该技能用于 tcp-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Transdiagnostic Connectome Project (TCP) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers include:..."
+  },
+  "ucla-cnp-skill": {
+    "en": "Use this skill whenever the user wants an end-to-end workflow for the UCLA CNP (Consortium for Neuropsychiatric Phenomics) dataset, including BIDS validation, multimodal processing of sMRI, task-fMRI, and dMRI, phenotype extraction, and QC integration. Trig...",
+    "zh": "该技能用于 ucla-cnp-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the UCLA CNP (Consortium for Neuropsychiatric Phenomics) dataset, including BIDS validation, multimodal processing of sMRI, task-fMRI, and dMRI, phenotype extraction, and QC integration. Trig..."
+  },
+  "ukb-skill": {
+    "en": "Use this skill whenever the user wants to analyze already available UK Biobank data for brain-related research, including neurological outcomes, cognitive phenotypes, brain MRI derived phenotypes, survival analysis, subgroup analysis, propensity score analy...",
+    "zh": "该技能用于 ukb-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to analyze already available UK Biobank data for brain-related research, including neurological outcomes, cognitive phenotypes, brain MRI derived phenotypes, survival analysis, subgroup analysis, propensity score analy..."
+  },
+  "wmh-segmentation": {
+    "en": "Use this skill whenever the user wants to perform automated white matter hyperintensity (WMH) segmentation on structural MRI data using the MARS-WMH nnU-Net model. Requires one FLAIR and one T1w NIfTI image (no contrast). Triggers include: 'wmh', 'white mat...",
+    "zh": "该技能用于 wmh-segmentation 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to perform automated white matter hyperintensity (WMH) segmentation on structural MRI data using the MARS-WMH nnU-Net model. Requires one FLAIR and one T1w NIfTI image (no contrast). Triggers include: 'wmh', 'white mat..."
+  }
+}

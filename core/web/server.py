@@ -29,11 +29,14 @@ import re
 import queue as stdlib_queue
 import sys
 import threading
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
 STATIC_DIR = Path(__file__).parent / "static"
+SKILL_SUMMARIES_FILE = STATIC_DIR / "skill_summaries.json"
 SHELL_STATUS_FILE = Path("/tmp/neuroclaw_claw_shell_status.json")
 AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 
@@ -72,6 +75,56 @@ def _sanitize_title(raw: str, user_text: str) -> str:
     if not t:
         return _fallback_title_from_user_text(user_text)
     return t[:64]
+
+
+def _summarize_web_tool_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return compact tool events that are safe to show in the web timeline."""
+    compact: list[dict[str, Any]] = []
+    for idx, event in enumerate(events, start=1):
+        if not isinstance(event, dict):
+            continue
+        result = event.get("result") if isinstance(event.get("result"), dict) else {}
+        stdout = str(result.get("stdout", "") or result.get("output", "") or "")
+        stderr = str(result.get("stderr", "") or result.get("error", "") or "")
+        compact.append(
+            {
+                "id": idx,
+                "tool": str(event.get("tool", "tool")),
+                "command": str(event.get("command", "")),
+                "executed": bool(event.get("executed", False)),
+                "success": bool(event.get("success", False)),
+                "stdout_preview": stdout[:1200],
+                "stderr_preview": stderr[:1200],
+                "skills_used": event.get("skills_used", []) if isinstance(event.get("skills_used"), list) else [],
+            }
+        )
+    return compact
+
+
+def _workspace_change_summary() -> list[dict[str, str]]:
+    """Summarize current git working tree changes for the web timeline."""
+    try:
+        proc = subprocess.run(
+            ["git", "status", "--short"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5,
+        )
+    except Exception:
+        return []
+    if proc.returncode != 0:
+        return []
+    changes: list[dict[str, str]] = []
+    for line in proc.stdout.splitlines():
+        if not line.strip():
+            continue
+        status = line[:2].strip() or "modified"
+        path = line[3:].strip() if len(line) > 3 else line.strip()
+        changes.append({"status": status, "path": path})
+    return changes[:40]
 
 
 def _safe_skill_summary_fallback(skill_name: str, description: str) -> dict[str, str]:
@@ -574,6 +627,100 @@ def create_app() -> Any:
     )
     SkillLoader = _loader_mod.SkillLoader
 
+    def _load_offline_skill_summaries() -> dict[str, dict[str, str]]:
+        try:
+            raw = json.loads(SKILL_SUMMARIES_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+        if not isinstance(raw, dict):
+            return {}
+        out: dict[str, dict[str, str]] = {}
+        for name, summary in raw.items():
+            if not isinstance(name, str) or not isinstance(summary, dict):
+                continue
+            en = str(summary.get("en", "")).strip()
+            zh = str(summary.get("zh", "")).strip()
+            if en or zh:
+                out[name.lower()] = {"en": en, "zh": zh}
+        return out
+
+    def _summary_for_skill(skill: dict[str, Any], offline: dict[str, dict[str, str]]) -> dict[str, str]:
+        name = str(skill.get("name", "")).strip()
+        summary = offline.get(name.lower()) if name else None
+        if summary:
+            return {
+                "en": summary.get("en") or str(skill.get("summary_en") or skill.get("description") or ""),
+                "zh": summary.get("zh") or str(skill.get("summary_zh") or ""),
+            }
+        return _safe_skill_summary_fallback(name, str(skill.get("description", "")))
+
+    def _dedupe_model_catalog(models: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for item in models:
+            if not isinstance(item, dict):
+                continue
+            provider = str(item.get("provider") or "openai").strip() or "openai"
+            model = str(item.get("model") or item.get("id") or item.get("name") or "").strip()
+            if not model:
+                continue
+            key = (provider.lower(), model)
+            if key in seen:
+                continue
+            seen.add(key)
+            entry = dict(item)
+            entry["provider"] = provider
+            entry["model"] = model
+            entry.setdefault("label", model)
+            out.append(entry)
+        return out
+
+    def _fetch_openai_compatible_models(llm: dict[str, Any]) -> list[dict[str, Any]]:
+        base_url = str(llm.get("base_url") or llm.get("baseUrl") or "").strip()
+        if not base_url:
+            return []
+        api_key = ""
+        api_key_env = str(llm.get("api_key_env") or "").strip()
+        if api_key_env:
+            api_key = os.environ.get(api_key_env, "")
+        api_key = api_key or str(llm.get("api_key") or llm.get("apiKey") or "").strip()
+        url = base_url.rstrip("/") + "/models"
+        headers = {"Accept": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        try:
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+        except (OSError, urllib.error.URLError, json.JSONDecodeError):
+            return []
+        data = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(data, list):
+            return []
+        provider = str(llm.get("provider") or "openai").strip() or "openai"
+        models: list[dict[str, Any]] = []
+        inherited_keys = (
+            "base_url", "baseUrl", "api_key_env", "api_key", "apiKey",
+            "default_headers", "headers", "tool_calling",
+        )
+        for raw in data:
+            if not isinstance(raw, dict):
+                continue
+            model = str(raw.get("id") or raw.get("model") or raw.get("name") or "").strip()
+            if not model:
+                continue
+            entry: dict[str, Any] = {"provider": provider, "model": model, "label": model}
+            for key in inherited_keys:
+                if key in llm:
+                    entry[key] = llm[key]
+            models.append(entry)
+        return models
+
+    def _runtime_available_models(llm: dict[str, Any]) -> list[dict[str, Any]]:
+        configured = llm.get("available_models", [])
+        base = configured if isinstance(configured, list) else []
+        return _dedupe_model_catalog([*base, *_fetch_openai_compatible_models(llm)])
+
     app = FastAPI(title="NeuroClaw Web UI", docs_url=None, redoc_url=None)
 
     # ── Static files ────────────────────────────────────────────────────────────
@@ -611,13 +758,14 @@ def create_app() -> Any:
     async def list_skills() -> dict:
         loader = SkillLoader(REPO_ROOT / "skills")
         skills = loader.load_all()
+        offline_summaries = _load_offline_skill_summaries()
         return {
             "skills": [
                 {
                     "name": s["name"],
                     "description": s.get("description", ""),
-                    "summary_en": s.get("summary_en", ""),
-                    "summary_zh": s.get("summary_zh", ""),
+                    "summary_en": _summary_for_skill(s, offline_summaries)["en"],
+                    "summary_zh": _summary_for_skill(s, offline_summaries)["zh"],
                     "layer": s.get("layer", ""),
                     "skill_type": s.get("skill_type", ""),
                     "dependencies": s.get("dependencies", []),
@@ -679,10 +827,11 @@ def create_app() -> Any:
         provider = llm.get("provider", "unknown")
         api_key_env = llm.get("api_key_env", "")
         api_key_present = bool(api_key_env and __import__('os').environ.get(api_key_env))
+        available_models = _runtime_available_models(llm if isinstance(llm, dict) else {})
         return {
             "provider": provider,
             "model": llm.get("model", "unknown"),
-            "available_models": llm.get("available_models", []),
+            "available_models": available_models,
             "cuda_device": env.get("cuda", {}).get("device", "cpu"),
             "setup_type": env.get("setup_type", "unknown"),
             "conda_env": env.get("conda_env"),
@@ -702,7 +851,7 @@ def create_app() -> Any:
 
         env = load_environment()
         llm = env.setdefault("llm_backend", {})
-        available_models = llm.get("available_models", [])
+        available_models = _runtime_available_models(llm)
         selected_model = next(
             (
                 item
@@ -741,7 +890,7 @@ def create_app() -> Any:
             "type": "done",
             "provider": provider,
             "model": model,
-            "available_models": llm.get("available_models", []),
+            "available_models": _runtime_available_models(llm),
         }
 
     @app.post("/api/chat")
@@ -816,6 +965,8 @@ def create_app() -> Any:
             "content": reply,
             "provider_used": provider_used,
             "model_used": model_used,
+            "tool_events": _summarize_web_tool_events(getattr(session, "_tool_events", [])),
+            "workspace_changes": _workspace_change_summary(),
         }
 
     @app.post("/api/chat/title")
@@ -875,53 +1026,8 @@ def create_app() -> Any:
         if target is None:
             return JSONResponse({"type": "error", "message": f"Skill not found: {skill_name}"}, status_code=404)
 
-        skill_md = Path(target.get("skill_md"))
-        if not skill_md.exists():
-            fb = _safe_skill_summary_fallback(skill_name, str(target.get("description", "")))
-            return {"type": "done", "summary_en": fb["en"], "summary_zh": fb["zh"]}
-
-        md_text = skill_md.read_text(encoding="utf-8")
-        excerpt = md_text[:7000]
-
-        session = AgentSession()
-        try:
-            session.set_llm_client(build_llm_client(session.env))
-        except Exception:
-            fb = _safe_skill_summary_fallback(skill_name, str(target.get("description", "")))
-            return {"type": "done", "summary_en": fb["en"], "summary_zh": fb["zh"]}
-
-        prompt = (
-            "Summarize the following SKILL.md into concise bilingual summaries.\n"
-            "Requirements:\n"
-            "1) Return valid JSON only, no markdown, no extra text.\n"
-            "2) JSON keys: en, zh.\n"
-            "3) en: 1-5 complete English sentences.\n"
-            "4) zh: 1-5 complete Chinese sentences.\n"
-            "5) Focus on what this skill can do and when to use it.\n\n"
-            f"Skill Name: {skill_name}\n"
-            f"SKILL.md Content:\n{excerpt}"
-        )
-        session.history = [
-            {
-                "role": "system",
-                "content": "You are a precise technical summarizer. Output strict JSON only.",
-            },
-            {"role": "user", "content": prompt},
-        ]
-
-        try:
-            raw = await asyncio.to_thread(session._chat)
-            parsed = _parse_bilingual_summary_json(raw)
-            if not parsed:
-                raise ValueError("Invalid summary JSON")
-            return {
-                "type": "done",
-                "summary_en": parsed["en"],
-                "summary_zh": parsed["zh"],
-            }
-        except Exception:
-            fb = _safe_skill_summary_fallback(skill_name, str(target.get("description", "")))
-            return {"type": "done", "summary_en": fb["en"], "summary_zh": fb["zh"]}
+        summary = _summary_for_skill(target, _load_offline_skill_summaries())
+        return {"type": "done", "summary_en": summary["en"], "summary_zh": summary["zh"]}
 
     # ── Checkpoint API endpoints ─────────────────────────────────────────────
 
@@ -1083,12 +1189,27 @@ def create_app() -> Any:
     KG_DATA_DIR = REPO_ROOT / "neurooracle" / "data"
     KG_PATH = KG_DATA_DIR / "knowledge_graph.json"
     KG_QUICK_DIR = KG_DATA_DIR / "quick"
-    HYPOTHESIS_SOURCES = [
-        "hypotheses_critic.json",
-        "hypotheses_imaging_ukb.json",
-        "hypotheses_imaging_adni.json",
-        "hypotheses_imaging_hcp.json",
+    NEUROORACLE_HF_REPO = "zxcvb20001/NeuroOracle"
+    NEUROORACLE_HF_BASE = f"https://huggingface.co/spaces/{NEUROORACLE_HF_REPO}/resolve/main"
+    NEUROORACLE_MANIFEST_PATH = KG_DATA_DIR / ".download_manifest.json"
+    NEUROORACLE_DOWNLOAD_FILES = [
+        ("neurooracle/data/knowledge_graph.json.gz", KG_PATH.with_suffix(KG_PATH.suffix + ".gz")),
     ]
+    _neurooracle_download_state: dict[str, Any] = {
+        "running": False,
+        "error": None,
+        "completed": False,
+        "current": None,
+        "downloaded_bytes": 0,
+        "total_bytes": None,
+        "files_done": 0,
+        "files_total": len(NEUROORACLE_DOWNLOAD_FILES),
+    }
+    _neurooracle_download_lock = threading.Lock()
+    # Quick hypothesis snapshots were retired after case-study scoped runs moved
+    # to explicit run directories. The KG explorer still supports hypotheses if
+    # a future curated source is added here.
+    HYPOTHESIS_SOURCES: list[str] = []
     RECIPES_PATH = KG_QUICK_DIR / "recipes_top10.json"
 
     ATOM_COLORS = {
@@ -1287,6 +1408,234 @@ def create_app() -> Any:
             with gzip.open(path, "rt", encoding="utf-8") as f:
                 return f.read()
         return path.read_text(encoding="utf-8")
+
+    def _neurooracle_graph_path() -> Path:
+        return _resolve_optional_gz(KG_PATH)
+
+    def _neurooracle_proxy_url() -> str:
+        return (
+            os.environ.get("NEUROCLAW_PROXY_URL")
+            or os.environ.get("HTTPS_PROXY")
+            or os.environ.get("HTTP_PROXY")
+            or os.environ.get("ALL_PROXY")
+            or ""
+        ).strip()
+
+    def _neurooracle_proxy_info() -> dict[str, Any]:
+        proxy_url = _neurooracle_proxy_url()
+        return {
+            "enabled": bool(proxy_url),
+            "url": proxy_url,
+            "source": "NEUROCLAW_PROXY_URL/HTTPS_PROXY/HTTP_PROXY/ALL_PROXY" if proxy_url else "",
+        }
+
+    def _neurooracle_urlopen(req: urllib.request.Request, timeout: int = 60) -> Any:
+        proxy_url = _neurooracle_proxy_url()
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url})
+        ) if proxy_url else urllib.request.build_opener()
+        return opener.open(req, timeout=timeout)  # nosec: controlled NeuroOracle/HF URLs
+
+    def _load_neurooracle_manifest() -> dict[str, Any]:
+        try:
+            raw = json.loads(NEUROORACLE_MANIFEST_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {"files": {}}
+        return raw if isinstance(raw, dict) else {"files": {}}
+
+    def _save_neurooracle_manifest(manifest: dict[str, Any]) -> None:
+        NEUROORACLE_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        NEUROORACLE_MANIFEST_PATH.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    def _remote_file_metadata(remote_path: str) -> dict[str, Any]:
+        url = f"{NEUROORACLE_HF_BASE}/{remote_path}"
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "NeuroClaw Desktop"},
+            method="HEAD",
+        )
+        with _neurooracle_urlopen(req, timeout=20) as resp:
+            headers = resp.headers
+            length = headers.get("Content-Length")
+            return {
+                "remote_path": remote_path,
+                "url": url,
+                "etag": headers.get("ETag", "").strip(),
+                "last_modified": headers.get("Last-Modified", "").strip(),
+                "content_length": int(length) if length and length.isdigit() else None,
+            }
+
+    def _neurooracle_remote_update_status() -> dict[str, Any]:
+        manifest = _load_neurooracle_manifest()
+        manifest_files = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
+        files: list[dict[str, Any]] = []
+        update_available = False
+        errors: list[str] = []
+
+        for remote_path, dest in NEUROORACLE_DOWNLOAD_FILES:
+            local_exists = dest.exists()
+            local_size = dest.stat().st_size if local_exists else 0
+            local_meta = manifest_files.get(remote_path, {}) if isinstance(manifest_files, dict) else {}
+            item: dict[str, Any] = {
+                "remote_path": remote_path,
+                "local_path": str(dest),
+                "local_exists": local_exists,
+                "local_size": local_size,
+                "update_available": False,
+                "reason": "current",
+            }
+            try:
+                remote = _remote_file_metadata(remote_path)
+                item["remote"] = remote
+                remote_size = remote.get("content_length")
+                remote_etag = str(remote.get("etag") or "")
+                remote_modified = str(remote.get("last_modified") or "")
+                local_etag = str(local_meta.get("etag") or "")
+                local_modified = str(local_meta.get("last_modified") or "")
+
+                if not local_exists:
+                    item.update({"update_available": True, "reason": "missing"})
+                elif remote_etag and local_etag and remote_etag != local_etag:
+                    item.update({"update_available": True, "reason": "etag"})
+                elif remote_modified and local_modified and remote_modified != local_modified:
+                    item.update({"update_available": True, "reason": "last_modified"})
+                elif remote_size is not None and local_size and int(remote_size) != int(local_size):
+                    item.update({"update_available": True, "reason": "size"})
+                elif not local_meta:
+                    item.update({"update_available": False, "reason": "no_manifest_size_match" if remote_size == local_size else "no_manifest"})
+            except Exception as exc:
+                item.update({"error": str(exc), "reason": "check_failed"})
+                errors.append(f"{remote_path}: {exc}")
+
+            if item.get("update_available"):
+                update_available = True
+            files.append(item)
+
+        return {
+            "type": "done",
+            "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "update_available": update_available,
+            "files": files,
+            "errors": errors,
+            "proxy": _neurooracle_proxy_info(),
+            "manifest_path": str(NEUROORACLE_MANIFEST_PATH),
+        }
+
+    def _neurooracle_graph_status() -> dict[str, Any]:
+        graph_path = _neurooracle_graph_path()
+        exists = graph_path.exists()
+        stat = graph_path.stat() if exists else None
+        with _neurooracle_download_lock:
+            download = dict(_neurooracle_download_state)
+        return {
+            "available": exists,
+            "path": str(graph_path if exists else KG_PATH),
+            "size_bytes": stat.st_size if stat else 0,
+            "loaded": bool(_kg_state.get("loaded")),
+            "loading": bool(_kg_state.get("loading")),
+            "load_error": _kg_state.get("error"),
+            "hf_repo": NEUROORACLE_HF_REPO,
+            "proxy": _neurooracle_proxy_info(),
+            "download": download,
+        }
+
+    def _reset_kg_state_after_graph_update() -> None:
+        with _kg_lock:
+            _kg_state.clear()
+            _kg_state.update({"loaded": False, "loading": False, "error": None})
+
+    def _download_url_to_file(url: str, dest: Path, *, label: str) -> int:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_name(dest.name + ".download")
+        req = urllib.request.Request(url, headers={"User-Agent": "NeuroClaw Desktop"})
+        downloaded = 0
+        with _neurooracle_urlopen(req, timeout=60) as resp:
+            total = resp.headers.get("Content-Length")
+            metadata = {
+                "url": url,
+                "etag": resp.headers.get("ETag", "").strip(),
+                "last_modified": resp.headers.get("Last-Modified", "").strip(),
+                "content_length": int(total) if total and total.isdigit() else None,
+                "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            with _neurooracle_download_lock:
+                _neurooracle_download_state["current"] = label
+                _neurooracle_download_state["downloaded_bytes"] = 0
+                _neurooracle_download_state["total_bytes"] = metadata["content_length"]
+            with open(tmp, "wb") as f:
+                while True:
+                    chunk = resp.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    with _neurooracle_download_lock:
+                        _neurooracle_download_state["downloaded_bytes"] = downloaded
+        os.replace(tmp, dest)
+        metadata["downloaded_bytes"] = downloaded
+        return metadata
+
+    def _download_neurooracle_graph_blocking(force: bool = False) -> dict[str, Any]:
+        with _neurooracle_download_lock:
+            if _neurooracle_download_state.get("running"):
+                already_running = True
+            else:
+                already_running = False
+                _neurooracle_download_state.update({
+                    "running": True,
+                    "error": None,
+                    "completed": False,
+                    "current": None,
+                    "downloaded_bytes": 0,
+                    "total_bytes": None,
+                    "files_done": 0,
+                    "files_total": len(NEUROORACLE_DOWNLOAD_FILES),
+                })
+        if already_running:
+            return _neurooracle_graph_status()
+
+        try:
+            manifest = _load_neurooracle_manifest()
+            manifest_files = manifest.setdefault("files", {})
+            for remote_path, dest in NEUROORACLE_DOWNLOAD_FILES:
+                if dest.exists() and not force:
+                    with _neurooracle_download_lock:
+                        _neurooracle_download_state["files_done"] += 1
+                    continue
+                url = f"{NEUROORACLE_HF_BASE}/{remote_path}"
+                metadata = _download_url_to_file(url, dest, label=remote_path)
+                manifest_files[remote_path] = {
+                    **metadata,
+                    "remote_path": remote_path,
+                    "local_path": str(dest),
+                    "local_size": dest.stat().st_size if dest.exists() else 0,
+                }
+                with _neurooracle_download_lock:
+                    _neurooracle_download_state["files_done"] += 1
+            manifest["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            manifest["hf_repo"] = NEUROORACLE_HF_REPO
+            _save_neurooracle_manifest(manifest)
+            _reset_kg_state_after_graph_update()
+            with _neurooracle_download_lock:
+                _neurooracle_download_state.update({
+                    "running": False,
+                    "completed": True,
+                    "current": None,
+                    "downloaded_bytes": 0,
+                    "total_bytes": None,
+                })
+            return _neurooracle_graph_status()
+        except Exception as exc:
+            with _neurooracle_download_lock:
+                _neurooracle_download_state.update({
+                    "running": False,
+                    "completed": False,
+                    "error": str(exc),
+                })
+            return _neurooracle_graph_status()
 
     def _load_kg_blocking() -> dict:
         """Load KG + hypotheses + recipes; build reverse indexes. Called once."""
@@ -1660,15 +2009,53 @@ def create_app() -> Any:
     async def kg_explore_page() -> Any:
         page = STATIC_DIR / "explore.html"
         if page.exists():
-            return FileResponse(str(page))
+            return FileResponse(
+                str(page),
+                headers={
+                    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                    "Pragma": "no-cache",
+                },
+            )
         return HTMLResponse(
             "<h1>Knowledge Graph Explorer</h1>"
             f"<p>explore.html not found in <code>{STATIC_DIR}</code>.</p>",
             status_code=500,
         )
 
+    @app.get("/api/neurooracle/graph/status")
+    async def neurooracle_graph_status() -> Any:
+        return _neurooracle_graph_status()
+
+    @app.post("/api/neurooracle/graph/download")
+    async def neurooracle_graph_download(payload: dict = Body(default={})) -> Any:
+        force = bool((payload or {}).get("force"))
+        with _neurooracle_download_lock:
+            running = bool(_neurooracle_download_state.get("running"))
+        if not running:
+            thread = threading.Thread(
+                target=_download_neurooracle_graph_blocking,
+                kwargs={"force": force},
+                daemon=True,
+            )
+            thread.start()
+            # Give the worker a tiny moment to publish "running" before the UI polls.
+            await asyncio.sleep(0.05)
+        return _neurooracle_graph_status()
+
+    @app.get("/api/neurooracle/graph/update-status")
+    async def neurooracle_graph_update_status() -> Any:
+        try:
+            return await asyncio.to_thread(_neurooracle_remote_update_status)
+        except Exception as exc:
+            return JSONResponse(
+                {"type": "error", "message": str(exc), "proxy": _neurooracle_proxy_info()},
+                status_code=500,
+            )
+
     @app.get("/api/kg/stats")
     async def kg_stats() -> Any:
+        if not _neurooracle_graph_path().exists():
+            return {"loaded": False, "loading": False, "missing": True, "path": str(KG_PATH)}
         if not _kg_state.get("loaded"):
             if _kg_state.get("loading"):
                 return {"loaded": False, "loading": True}
@@ -1679,6 +2066,11 @@ def create_app() -> Any:
 
     @app.post("/api/kg/load")
     async def kg_load() -> Any:
+        if not _neurooracle_graph_path().exists():
+            return JSONResponse(
+                {"loaded": False, "missing": True, "error": f"NeuroOracle graph file is missing: {KG_PATH}"},
+                status_code=404,
+            )
         try:
             state = await _get_kg_state()
             return {"loaded": True, **state["stats"]}

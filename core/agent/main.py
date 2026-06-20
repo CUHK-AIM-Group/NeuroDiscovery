@@ -45,6 +45,8 @@ ENV_FILE = REPO_ROOT / "neuroclaw_environment.json"
 FEATURES_FILE = REPO_ROOT / "core" / "config" / "features.json"
 AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 BENCHMARK_ENV_FLAG = "NEUROCLAW_BENCHMARK"
+MAX_TOOL_ITERATIONS_ENV = "NEUROCLAW_MAX_TOOL_ITERATIONS"
+DEFAULT_MAX_TOOL_ITERATIONS = 8
 BENCHMARK_SCORER_MODEL = "gpt-5.4"
 BENCHMARK_SCORE_WEIGHTS = {
     "planning_completeness": 0.30,
@@ -864,6 +866,17 @@ def _read_workspace_file(path_text: str, workspace: Path, max_chars: int = 12000
 def _is_benchmark_enabled_from_env() -> bool:
     raw = str(os.environ.get(BENCHMARK_ENV_FLAG, "")).strip().lower()
     return raw in {"1", "true", "yes", "on"}
+
+
+def _max_tool_iterations_from_env() -> int:
+    raw = str(os.environ.get(MAX_TOOL_ITERATIONS_ENV, "")).strip()
+    if not raw:
+        return DEFAULT_MAX_TOOL_ITERATIONS
+    try:
+        value = int(raw)
+    except ValueError:
+        return DEFAULT_MAX_TOOL_ITERATIONS
+    return min(20, max(1, value))
 
 
 def _looks_file_io_shell_command(command: str) -> bool:
@@ -4014,7 +4027,9 @@ class AgentSession:
             "completion_tokens": 0,
             "total_tokens": 0,
         }
-        for _ in range(4):
+        max_tool_iterations = _max_tool_iterations_from_env()
+        tool_iteration_summaries: list[str] = []
+        for iteration_idx in range(max_tool_iterations):
             resp = _retry_api_call(
                 "OpenAI tool-call request",
                 lambda: self._llm.chat.completions.create(
@@ -4038,6 +4053,16 @@ class AgentSession:
 
             if not tool_calls:
                 return message.content or ""
+
+            tool_names = []
+            for tc in tool_calls:
+                try:
+                    tool_names.append(str(tc.function.name))
+                except Exception:
+                    tool_names.append("unknown")
+            tool_iteration_summaries.append(
+                f"{iteration_idx + 1}: " + ", ".join(tool_names)
+            )
 
             def _tool_call_to_message_dict(tc: Any) -> dict[str, Any]:
                 """Best-effort tool_call serialization.
@@ -4271,7 +4296,42 @@ class AgentSession:
             if content.strip():
                 return content
 
-        return "[Agent: tool-call loop reached max iterations]"
+        recent = "; ".join(tool_iteration_summaries[-5:])
+        final_messages = list(messages) + [{
+            "role": "user",
+            "content": (
+                "You have reached the tool-call iteration limit. Do not call any more tools. "
+                "Use the information already gathered to provide the best possible final answer. "
+                "If important information is still missing, say exactly what is missing and give a safe next step."
+            ),
+        }]
+        try:
+            resp = _retry_api_call(
+                "OpenAI tool-call finalization request",
+                lambda: self._llm.chat.completions.create(
+                    **_get_openai_chat_create_kwargs(
+                        self.env,
+                        model,
+                        final_messages,
+                    )
+                ),
+                retries=3,
+            )
+            usage = _extract_token_usage_from_response(resp)
+            token_usage_totals["prompt_tokens"] += usage["prompt_tokens"]
+            token_usage_totals["completion_tokens"] += usage["completion_tokens"]
+            token_usage_totals["total_tokens"] += usage["total_tokens"]
+            self._last_token_usage = dict(token_usage_totals)
+            content = resp.choices[0].message.content or ""
+            if content.strip():
+                return content
+        except Exception:
+            pass
+
+        return (
+            f"[Agent: tool-call loop reached max iterations "
+            f"({max_tool_iterations}). Recent tool calls: {recent or 'none'}]"
+        )
 
     def _latest_user_task(self) -> str:
         for msg in reversed(self.history):
