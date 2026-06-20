@@ -134,169 +134,65 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 <a id="quick-start"></a>
 ## 🚀 Quick Start
 
-### Prerequisites
-- Python >= 3.10
-- Git
-- *(Optional)* Conda/Mamba for environment isolation
-- *(Optional)* `nvidia-smi` / `nvcc` for GPU support
-- *(Recommended for Web UI attachments)* `pypdf`, `python-docx`, `openpyxl`, `python-pptx`
+### Option 1. Desktop Client (recommended)
 
-> **NeuroClaw runs as a standalone research assistant** with its own GUI and CLI.
-> The bundled installer configures everything, including your Python environment,
-> CUDA version, neuroimaging toolchain, and LLM backend.
+Download the latest Windows or macOS client from the [GitHub Releases page](https://github.com/CUHK-AIM-Group/NeuroClaw/releases).
 
-### Installation Options
+- **Windows:** use `NeuroClaw Setup 0.2.0.exe` for normal installation. The portable `.exe` is also available, but may take longer to start because it extracts the app first.
+- **macOS:** use the `.dmg` or `.zip` build from the release assets.
+- Open **Settings** to configure the model endpoint, runtime mode, Python path, FSL path, proxy, language, and text size.
+- Open **NeuroOracle** from the sidebar. If the graph file is missing, the client can download it from Hugging Face.
 
-<details>
-<summary><strong>Standalone NeuroClaw installation (GUI and CLI)</strong></summary>
+Linux remains supported through the source repository, command-line workflow, and web interface.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-   cd NeuroClaw
-   ```
+### Option 2. Run from Source
 
-2. **Run the setup wizard**
-   ```bash
-   python installer/setup.py
-   ```
+Requirements: Python >= 3.10 and Git. Conda/Mamba, CUDA/GPU tools, FSL, FreeSurfer, and dcm2niix are optional depending on the workflows you want to run.
 
-   This installs the standalone NeuroClaw environment for both GUI and CLI workflows. The wizard will walk you through:
-   - Python runtime (system / conda / Docker)
-   - CUDA / GPU configuration and optional PyTorch install
-   - Neuroscience toolchain paths (FSL, FreeSurfer, dcm2niix, etc.)
-   - LLM backend selection (OpenAI, DeepSeek, MiniMax, Kimi/Moonshot, Qwen/DashScope, Baichuan, Zhipu GLM, Doubao/Ark, OpenRouter, Together, Groq, Fireworks, Ollama, llama.cpp, Anthropic, or local model)
-   - Default BIDS and output directories
-   - Web UI dependencies and attachment parsers (PDF/DOCX/XLSX/PPTX)
+```bash
+git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
+cd NeuroClaw
+python installer/setup.py
+python core/agent/main.py --web
+```
 
-   Settings are saved to `neuroclaw_environment.json` and loaded automatically on every future session. Setup does not ask for an API key. Pass the key only at runtime with `--api-key`, or export the configured environment variable before startup.
+Then open **http://localhost:7080** in your browser.
 
-   For a quick non-interactive setup with auto-detected defaults:
-   ```bash
-   python installer/setup.py --non-interactive
-   ```
+Useful checks:
 
-   If you skipped optional Web UI dependencies, install them manually:
-   ```bash
-   pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx
-   ```
+```bash
+python installer/setup.py --check
+python core/agent/main.py --web --port 8080 --host 0.0.0.0
+```
 
-3. **Start NeuroClaw**
+Settings are saved to `neuroclaw_environment.json`. API keys can be passed at runtime with `--api-key` or provided through the configured provider environment variable.
 
-   Interactive REPL:
-   ```bash
-   python core/agent/main.py --api-key "$OPENAI_API_KEY"
-   ```
+### Option 3. Install as a Host-Agent Skill
 
-   Browser Web UI:
-   ```bash
-   python core/agent/main.py --web --api-key "$OPENAI_API_KEY"
-   ```
+Use this path if you want Codex, Claude Code, Cursor, or another coding agent to call NeuroClaw as a neuroimaging skill library.
 
-   Then open **http://localhost:7080** in your browser. The Web UI features a chat interface, skills sidebar, markdown rendering, and code syntax highlighting.
+```bash
+git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
+cd NeuroClaw
+python installer/install_agent_integration.py --target codex
+```
 
-   If you prefer environment variables, export the provider-specific key first and start NeuroClaw without `--api-key`.
+Common targets:
 
-   Built-in OpenAI-compatible provider profiles:
-   - `deepseek`: `DEEPSEEK_API_KEY`, default endpoint `https://api.deepseek.com`
-   - `minimax`: `MINIMAX_API_KEY`, default endpoint `https://api.minimaxi.com/v1`
-   - `kimi` / `moonshot`: `MOONSHOT_API_KEY`, default endpoint `https://api.moonshot.cn/v1`
-   - `qwen` / `dashscope`: `DASHSCOPE_API_KEY`, default endpoint `https://dashscope.aliyuncs.com/compatible-mode/v1`
-   - `baichuan`: `BAICHUAN_API_KEY`, default endpoint `https://api.baichuan-ai.com/v1`
-   - `zhipu` / `glm`: `ZHIPUAI_API_KEY`, default endpoint `https://open.bigmodel.cn/api/paas/v4`
-   - `doubao` / `ark`: `ARK_API_KEY`, default endpoint `https://ark.cn-beijing.volces.com/api/v3`
-   - `openrouter`: `OPENROUTER_API_KEY`, default endpoint `https://openrouter.ai/api/v1`
-   - `together`: `TOGETHER_API_KEY`, default endpoint `https://api.together.xyz/v1`
-   - `groq`: `GROQ_API_KEY`, default endpoint `https://api.groq.com/openai/v1`
-   - `fireworks`: `FIREWORKS_API_KEY`, default endpoint `https://api.fireworks.ai/inference/v1`
-   - `ollama`: no API key required, default endpoint `http://localhost:11434/v1`
-   - `llamacpp`: no API key required, default endpoint `http://localhost:8080/v1`
+| Host agent | Install command |
+|---|---|
+| Codex | `python installer/install_agent_integration.py --target codex` |
+| Claude Code | `python installer/install_agent_integration.py --target claude-code` |
+| Cursor | `python installer/install_agent_integration.py --target cursor --scope project` |
+| Multiple agents | `python installer/install_agent_integration.py --target all` |
 
-   Web UI attachment parsing currently supports these file types:
-   - Text/config/code: `.txt`, `.md`, `.markdown`, `.json`, `.yaml`, `.yml`, `.csv`, `.tsv`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sh`, `.bash`, `.zsh`, `.sql`, `.html`, `.css`, `.xml`, `.log`, `.rst`, `.ini`, `.toml`, `.cfg`
-   - Documents: `.pdf`, `.docx`, `.xlsx`, `.pptx`
-
-   The file picker in the Web UI only allows these supported formats.
-
-   To use a custom port or bind to all interfaces:
-   ```bash
-   python core/agent/main.py --web --port 8080 --host 0.0.0.0 --api-key "$OPENAI_API_KEY"
-   ```
-
-</details>
-
-<details>
-<summary><strong>Install NeuroClaw into Claude Code, Codex, Cursor, and other agents</strong></summary>
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-   cd NeuroClaw
-   ```
-
-2. **Install the host-agent integration**
-
-   | Host agent | Install command | Installed integration |
-   |---|---|---|
-   | Codex | `python installer/install_agent_integration.py --target codex` | `~/.codex/skills/neuroclaw/` |
-   | Claude Code | `python installer/install_agent_integration.py --target claude-code` | `~/.claude/skills/neuroclaw/` |
-   | Cursor | `python installer/install_agent_integration.py --target cursor --scope project` | `.cursor/rules/neuroclaw.mdc` plus generated references |
-   | OpenClaw | `python installer/install_agent_integration.py --target openclaw` | `~/.openclaw/skills/neuroclaw/` |
-   | Hermes | `python installer/install_agent_integration.py --target hermes` | `~/.hermes/skills/neuroclaw/` |
-   | WorkBuddy | `python installer/install_agent_integration.py --target workbuddy` | `~/.workbuddy/skills/neuroclaw/` |
-   | QClaw | `python installer/install_agent_integration.py --target qclaw` | `~/.qclaw/skills/neuroclaw/` |
-
-   Install Codex and Claude Code together:
-   ```bash
-   python installer/install_agent_integration.py --target both
-   ```
-
-   Generate all supported integrations:
-   ```bash
-   python installer/install_agent_integration.py --target all
-   ```
-
-   Export skill packs for manual import:
-   ```bash
-   python installer/install_agent_integration.py --target all --export ./dist/agent-integrations
-   ```
-
-3. **Use NeuroClaw from the host agent**
-
-   After installation, ask the host agent to "use NeuroClaw" or "enter NeuroClaw mode" for neuroimaging and autoresearch work.
-
-   To let Codex, Claude Code, Cursor, or another host agent use its own built-in model instead of a NeuroClaw LLM API key for autoresearch, start the file-based host-agent loop:
-   ```bash
-   python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5
-   ```
-
-   The host agent reads `tasks/round_XXX_task.json`, acts as NeuroClaw's hypothesis generator, critic, and experiment supervisor, writes `host_outputs/round_XXX_result.json`, and advances the loop with:
-   ```bash
-   python -m neurooracle.src.hypothesis_cli host-agent-next --run-dir neurooracle/data/host_agent_runs/case1
-   ```
-
-</details>
+After installation, ask the host agent to **use NeuroClaw** or **enter NeuroClaw mode** for neuroimaging, NeuroOracle, NeuroBench, and autoresearch tasks.
 
 <div align="center">
   <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
 </div>
 
 > Note: We provide benchmark run results and per-model outputs under `materials/benchmark_results/`. These artifacts can be used as practical references when running NeuroClaw benchmarks or reproducing model outputs.
-
-### Verify Installation
-```bash
-# Check that the environment file is valid
-python installer/setup.py --check
-
-# List registered neuroscience skills (Python)
-python -c "
-from core.skill_loader.loader import SkillLoader
-from pathlib import Path
-skills = SkillLoader(Path('skills')).load_all()
-for s in skills:
-    print(s['name'])
-"
-```
 
 ### Benchmark Evaluation
 
