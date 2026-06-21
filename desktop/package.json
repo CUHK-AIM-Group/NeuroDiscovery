@@ -10,9 +10,11 @@
     "dev": "electron .",
     "start": "electron .",
     "pack": "electron-builder --dir",
+    "patch:portable:win": "node scripts/patch-portable-progress.js",
     "prepare:runtime:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-bundled-runtime.ps1",
     "prepare:runtime:mac": "bash scripts/prepare-bundled-runtime-mac.sh",
-    "dist:win": "electron-builder --win nsis portable",
+    "dist:win": "npm run prepare:runtime:win && npm run patch:portable:win && electron-builder --win nsis portable zip",
+    "dist:win:skip-runtime": "npm run patch:portable:win && electron-builder --win nsis portable zip",
     "dist:mac": "npm run prepare:runtime:mac && electron-builder --mac dmg zip",
     "dist:mac:skip-runtime": "electron-builder --mac dmg zip",
     "dist:mac:arm64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --arm64",
@@ -49,7 +51,8 @@
     "win": {
       "target": [
         "nsis",
-        "portable"
+        "portable",
+        "zip"
       ]
     },
     "mac": {

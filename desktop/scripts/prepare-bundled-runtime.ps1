@@ -69,6 +69,21 @@ function Copy-RootFileIfExists {
   }
 }
 
+function Get-CondaEnvPrefix {
+  param([string]$CondaExe, [string]$CondaEnv)
+  $prefix = (& $CondaExe run -n $CondaEnv python -c "import sys; print(sys.prefix)") | Select-Object -Last 1
+  $prefix = "$prefix".Trim()
+  if ($prefix -and (Test-Path -LiteralPath (Join-Path $prefix "python.exe") -PathType Leaf)) {
+    return [System.IO.Path]::GetFullPath($prefix)
+  }
+  $condaRoot = Split-Path -Parent (Split-Path -Parent $CondaExe)
+  $fallback = Join-Path (Join-Path $condaRoot "envs") $CondaEnv
+  if (Test-Path -LiteralPath (Join-Path $fallback "python.exe") -PathType Leaf) {
+    return [System.IO.Path]::GetFullPath($fallback)
+  }
+  throw "Unable to locate conda env prefix for '$CondaEnv'"
+}
+
 function Write-Utf8NoBom {
   param(
     [string]$Path,
@@ -83,7 +98,7 @@ $RepoRoot = [System.IO.Path]::GetFullPath($RepoRoot)
 $Requirements = [System.IO.Path]::GetFullPath($Requirements)
 $PythonTarget = Join-Path $RuntimeRoot "python"
 $BackendTarget = Join-Path $RuntimeRoot "backend"
-$PythonExe = Join-Path $PythonTarget "Scripts\python.exe"
+$PythonExe = Join-Path $PythonTarget "python.exe"
 
 Assert-Directory $RepoRoot "Repo root not found: $RepoRoot"
 New-Item -ItemType Directory -Path $RuntimeRoot -Force | Out-Null
@@ -91,15 +106,43 @@ New-Item -ItemType Directory -Path $RuntimeRoot -Force | Out-Null
 if (-not $SkipPython) {
   Assert-File $CondaExe "Conda executable not found: $CondaExe"
   Assert-File $Requirements "Runtime requirements file not found: $Requirements"
+  $CondaEnvPrefix = Get-CondaEnvPrefix -CondaExe $CondaExe -CondaEnv $CondaEnv
 
-  Invoke-Step "Create minimal bundled Python venv from conda env '$CondaEnv'" {
+  Invoke-Step "Create standalone bundled Python from conda env '$CondaEnv'" {
     Remove-DirectoryFresh -Path $PythonTarget
-    & $CondaExe run -n $CondaEnv python -m venv --copies $PythonTarget
-    if ($LASTEXITCODE -ne 0) { throw "Failed to create Python venv" }
+    New-Item -ItemType Directory -Path $PythonTarget -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $PythonTarget "Lib") -Force | Out-Null
+
+    Get-ChildItem -LiteralPath $CondaEnvPrefix -File |
+      Where-Object {
+        $_.Name -match '^(pythonw?\.exe|python\d+\.dll|python\d*\.dll|vcruntime.*\.dll|msvcp.*\.dll|ucrtbase\.dll|api-ms-.*\.dll|concrt.*\.dll|zlib\.dll|LICENSE.*\.txt)$'
+      } |
+      Copy-Item -Destination $PythonTarget -Force
+
+    Invoke-Robocopy `
+      -Source (Join-Path $CondaEnvPrefix "DLLs") `
+      -Target (Join-Path $PythonTarget "DLLs") `
+      -ExcludeDirs @("__pycache__") `
+      -ExcludeFiles @("*.pyc", "*.pyo", "*.pdb")
+
+    Invoke-Robocopy `
+      -Source (Join-Path $CondaEnvPrefix "Lib") `
+      -Target (Join-Path $PythonTarget "Lib") `
+      -ExcludeDirs @("site-packages", "test", "tkinter", "idlelib", "turtledemo", "__pycache__") `
+      -ExcludeFiles @("*.pyc", "*.pyo", "*.pdb")
+
+    Invoke-Robocopy `
+      -Source (Join-Path $CondaEnvPrefix "Library\bin") `
+      -Target (Join-Path $PythonTarget "Library\bin") `
+      -ExcludeDirs @("__pycache__") `
+      -ExcludeFiles @("*.pyc", "*.pyo", "*.pdb")
+
     Assert-File $PythonExe "Bundled Python executable was not created: $PythonExe"
   }
 
   Invoke-Step "Install desktop runtime dependencies" {
+    & $PythonExe -m ensurepip --upgrade
+    if ($LASTEXITCODE -ne 0) { throw "Failed to bootstrap pip" }
     & $PythonExe -m pip install --upgrade pip setuptools wheel
     if ($LASTEXITCODE -ne 0) { throw "Failed to upgrade pip tooling" }
     & $PythonExe -m pip install -r $Requirements
@@ -186,7 +229,7 @@ $Manifest = [ordered]@{
   python_target = $PythonTarget
   backend_target = $BackendTarget
   requirements = $Requirements
-  strategy = "venv-minimal"
+  strategy = "standalone-python-prefix"
 }
 $Manifest |
   ConvertTo-Json -Depth 4 |

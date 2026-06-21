@@ -1509,6 +1509,28 @@
       border-color: color-mix(in oklab, var(--accent), var(--border) 45%);
       box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 88%);
     }
+    .settings-combo {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .settings-detect {
+      border: 1px solid color-mix(in oklab, var(--border), transparent 15%);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .settings-detect:hover { background: var(--surface-soft); }
+    .settings-detect:disabled {
+      cursor: default;
+      opacity: 0.65;
+    }
     .settings-path {
       font-family: var(--mono);
       font-size: 12px;
@@ -2430,6 +2452,10 @@
           <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 8.2 10 10"/><path d="m14 10 3-1.8"/><path d="m10.2 14-2.7 2.7"/><path d="m13.8 14 2.7 2.7"/></svg></span>
           <span>NeuroOracle</span>
         </button>
+        <button class="primary-nav-btn" id="nav-settings" data-view-button="settings" type="button">
+          <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.05a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 0 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.05A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 0 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.05a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 0 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.05A1.7 1.7 0 0 0 19.4 15z"/></svg></span>
+          <span>Settings</span>
+        </button>
       </nav>
 
       <div class="sidebar-scroll-zone" id="sidebar-scroll-zone">
@@ -2766,10 +2792,11 @@
   const DEFAULT_DESKTOP_CONFIG = {
     host: '127.0.0.1',
     port: 7080,
-    runtimeMode: 'conda',
-    pythonExe: 'C:\\Users\\45846\\anaconda3\\envs\\neuroclaw\\python.exe',
-    condaExe: 'C:\\Users\\45846\\anaconda3\\Scripts\\conda.exe',
+    runtimeMode: 'bundled',
+    pythonExe: '',
+    condaExe: '',
     condaEnv: 'neuroclaw',
+    localPythonExe: '',
     fslDir: '',
     language: 'English',
     proxyUrl: 'http://127.0.0.1:7897',
@@ -2778,7 +2805,7 @@
     llmBaseUrl: 'https://api.openai.com/v1',
     llmApiKey: '',
     llmApiKeyEnv: 'OPENAI_API_KEY',
-    repoRoot: 'C:\\Users\\45846\\Documents\\Code\\neuroclaw',
+    repoRoot: '',
   };
   const DEFAULT_LOCAL_SETTINGS = {
     defaultShell: 'PowerShell',
@@ -2808,7 +2835,6 @@
       rows: [
         { key: 'language', scope: 'desktop', label: 'Language', desc: 'Interface and backend language preference.', type: 'select', options: ['System default', 'English', 'Simplified Chinese'] },
         { key: 'textScale', scope: 'local', label: 'Text size', desc: 'Scale interface text without using browser zoom.', type: 'textScale' },
-        { key: 'runtimeMode', scope: 'desktop', label: 'Agent runtime', desc: 'Choose how the desktop app starts the local backend.', type: 'select', options: ['bundled', 'conda', 'python'] },
         { key: 'defaultShell', scope: 'local', label: 'Integrated terminal shell', desc: 'Preferred shell for commands and copied run snippets.', type: 'select', options: ['PowerShell', 'cmd', 'Git Bash', 'WSL bash'] },
         { key: 'fileOpenTarget', scope: 'local', label: 'Default file opener', desc: 'Where folders, logs, and generated files should open by default.', type: 'select', options: ['VS Code', 'Explorer', 'System default'] },
       ],
@@ -2819,10 +2845,11 @@
       title: 'Desktop Runtime',
       note: 'These values are used by the Electron desktop launcher when it starts the local backend.',
       rows: [
-        { key: 'repoRoot', scope: 'desktop', label: 'NeuroClaw repo root', desc: 'Local source checkout used by the desktop app.', type: 'text', path: true },
-        { key: 'pythonExe', scope: 'desktop', label: 'Python executable', desc: 'Absolute path to python.exe when runtime mode is python.', type: 'text', path: true },
-        { key: 'condaExe', scope: 'desktop', label: 'Conda executable', desc: 'Absolute path to conda.exe.', type: 'text', path: true },
-        { key: 'condaEnv', scope: 'desktop', label: 'Conda environment', desc: 'Environment name used to launch NeuroClaw.', type: 'text' },
+        { key: 'runtimeMode', scope: 'desktop', label: 'Python runtime', desc: 'Packaged Windows and macOS apps start with Built-in Python by default.', type: 'select', options: ['bundled', 'conda', 'python'] },
+        { key: 'repoRoot', scope: 'desktop', label: 'NeuroClaw repo root', desc: 'Local source checkout used by the desktop app.', type: 'text', path: true, hideWhenPackaged: true },
+        { key: 'localPythonExe', scope: 'desktop', label: 'Custom Python executable', desc: 'Used only when Python runtime is Custom Python.', type: 'pythonSelect', path: true, whenRuntime: 'python' },
+        { key: 'condaExe', scope: 'desktop', label: 'Conda executable', desc: 'Absolute path to conda.exe.', type: 'text', path: true, whenRuntime: 'conda' },
+        { key: 'condaEnv', scope: 'desktop', label: 'Conda environment', desc: 'Environment name used to launch NeuroClaw.', type: 'text', whenRuntime: 'conda' },
         { key: 'host', scope: 'desktop', label: 'Backend host', desc: 'Local host address used by the embedded client.', type: 'text' },
         { key: 'port', scope: 'desktop', label: 'Backend port', desc: 'Local backend port. Current ROG setup uses 7080.', type: 'number' },
         { key: 'proxyUrl', scope: 'desktop', label: 'Download proxy', desc: 'Proxy used by backend downloads, for example http://127.0.0.1:7897.', type: 'text' },
@@ -2920,12 +2947,17 @@
     desktopConfig: { ...DEFAULT_DESKTOP_CONFIG },
     desktopConfigPath: '',
     desktopLogsPath: '',
+    desktopIsPackaged: false,
+    desktopPlatform: window.neuroclawDesktop && window.neuroclawDesktop.platform ? window.neuroclawDesktop.platform : '',
+    localPythonCandidates: [],
+    detectingLocalPython: false,
     localSettings: { ...DEFAULT_LOCAL_SETTINGS },
     settingsLoaded: false,
     neurooracleStatus: null,
     neurooracleUpdateStatus: null,
     neurooraclePoller: null,
     neurooracleFrameLoaded: false,
+    lastDesktopMenuAction: { action: '', at: 0 },
   };
 
   const ASSISTANT_AVATAR_SRC = '/static/logo.png';
@@ -3095,10 +3127,23 @@
     'Choose where the local agent is expected to run.': '选择本地 agent 预期运行的位置。',
     'Agent runtime': 'Agent 运行方式',
     'Choose how the desktop app starts the local backend.': '选择桌面应用如何启动本地后端。',
+    'Python runtime': 'Python 运行环境',
+    'Packaged Windows and macOS apps start with Built-in Python by default.': 'Windows 和 macOS 发布版默认使用内置 Python 启动。',
     'Built-in Python': '内置 Python',
     'Conda environment': 'Conda 环境',
     'Custom Python': '指定 Python',
     'Custom python.exe': '指定 python.exe',
+    'Local Python executable': '本地 Python 可执行文件',
+    'Optional local Python for advanced custom runs; packaged apps start with built-in Python first.': '用于高级自定义运行的可选本地 Python；发布版会优先使用内置 Python 启动。',
+    'Custom Python executable': '自定义 Python 可执行文件',
+    'Used only when Python runtime is Custom Python.': '仅在 Python 运行环境选择“指定 Python”时使用。',
+    'No local Python selected': '未选择本地 Python',
+    'Detect local Python': '检测本地 Python',
+    'Checking...': '正在检查...',
+    'Local Python detection is available in the desktop app.': '本地 Python 检测仅在桌面应用中可用。',
+    'local Python candidates found.': '个本地 Python 候选项已找到。',
+    'No local Python candidates found.': '未找到本地 Python 候选项。',
+    'Local Python detection failed:': '本地 Python 检测失败：',
     'bundled': '内置 Python',
     'conda': 'Windows 原生 + conda',
     'python': '指定 python.exe',
@@ -3261,6 +3306,7 @@
       ['nav-search', 'Search'],
       ['nav-skills', 'Skills'],
       ['nav-neurooracle', 'NeuroOracle'],
+      ['nav-settings', 'Settings'],
     ].forEach(([id, label]) => {
       const labelEl = document.querySelector(`#${id} span:last-child`);
       if (labelEl) labelEl.textContent = tr(label);
@@ -3791,6 +3837,8 @@
       }
       state.desktopConfigPath = result && result.configPath ? String(result.configPath) : '';
       state.desktopLogsPath = result && result.logsPath ? String(result.logsPath) : '';
+      state.desktopIsPackaged = Boolean(result && result.isPackaged);
+      state.desktopPlatform = result && result.platform ? String(result.platform) : state.desktopPlatform;
     } catch (err) {
       setSettingsStatus(`Could not read desktop config: ${err && err.message ? err.message : err}`, true);
     } finally {
@@ -3810,6 +3858,34 @@
     const source = row.scope === 'desktop' ? state.desktopConfig : state.localSettings;
     const value = source && Object.prototype.hasOwnProperty.call(source, row.key) ? source[row.key] : '';
     return value == null ? '' : value;
+  }
+
+  function isDesktopPackaged() {
+    return Boolean(state.desktopIsPackaged);
+  }
+
+  function selectedRuntimeMode() {
+    return String(state.desktopConfig.runtimeMode || DEFAULT_DESKTOP_CONFIG.runtimeMode || 'bundled');
+  }
+
+  function normalizeDesktopRuntimeSelection() {
+    if (selectedRuntimeMode() === 'python' && state.desktopConfig.localPythonExe) {
+      state.desktopConfig.pythonExe = state.desktopConfig.localPythonExe;
+    }
+  }
+
+  function settingOptions(row) {
+    const options = Array.isArray(row.options) ? [...row.options] : [];
+    if (row.key === 'runtimeMode' && isDesktopPackaged()) {
+      return options.filter(option => option !== 'conda');
+    }
+    return options;
+  }
+
+  function shouldRenderSettingsRow(row) {
+    if (row.hideWhenPackaged && isDesktopPackaged()) return false;
+    if (row.whenRuntime && selectedRuntimeMode() !== row.whenRuntime) return false;
+    return true;
   }
 
   function settingOptionLabel(row, option) {
@@ -3850,11 +3926,39 @@
       `;
     }
     if (row.type === 'select') {
-      const options = (row.options || []).map(option => {
+      const options = settingOptions(row).map(option => {
         const selected = String(option) === String(value) ? ' selected' : '';
         return `<option value="${escapeAttr(option)}"${selected}>${escapeHtml(tr(settingOptionLabel(row, option)))}</option>`;
       }).join('');
       return `<select class="settings-control" ${common}>${options}</select>`;
+    }
+    if (row.type === 'pythonSelect') {
+      const currentValue = String(value || '').trim();
+      const candidates = Array.isArray(state.localPythonCandidates) ? state.localPythonCandidates : [];
+      const seen = new Set();
+      const options = [];
+      if (!currentValue) {
+        options.push(`<option value="">${escapeHtml(tr('No local Python selected'))}</option>`);
+      } else {
+        seen.add(currentValue);
+        options.push(`<option value="${escapeAttr(currentValue)}" selected>${escapeHtml(currentValue)}</option>`);
+      }
+      for (const candidate of candidates) {
+        const candidatePath = String(candidate.path || '').trim();
+        if (!candidatePath || seen.has(candidatePath)) continue;
+        seen.add(candidatePath);
+        const selected = candidatePath === currentValue ? ' selected' : '';
+        const label = candidate.label || `${candidate.version || 'Python'} - ${candidatePath}`;
+        options.push(`<option value="${escapeAttr(candidatePath)}"${selected}>${escapeHtml(label)}</option>`);
+      }
+      const disabled = state.detectingLocalPython ? ' disabled' : '';
+      const buttonText = state.detectingLocalPython ? tr('Checking...') : tr('Detect local Python');
+      return `
+        <div class="settings-combo">
+          <select class="settings-control settings-path" ${common}>${options.join('')}</select>
+          <button class="settings-detect" type="button" data-settings-detect-python${disabled}>${escapeHtml(buttonText)}</button>
+        </div>
+      `;
     }
     if (row.type === 'toggle') {
       const active = Boolean(value);
@@ -3899,7 +4003,7 @@
       ? SETTINGS_SECTIONS
       : [active];
     const html = sectionsToRender.map(section => {
-      const rows = section.rows.filter(row => rowMatchesSettingsSearch(row, section));
+      const rows = section.rows.filter(row => shouldRenderSettingsRow(row) && rowMatchesSettingsSearch(row, section));
       if (!rows.length) return '';
       const body = rows.map(row => `
         <div class="settings-row">
@@ -3965,6 +4069,7 @@
         state.localSettings[key] = value;
       }
     });
+    normalizeDesktopRuntimeSelection();
   }
 
   async function saveSettings() {
@@ -3992,6 +4097,34 @@
     }
     renderSettings();
     applyLanguage(false);
+  }
+
+  async function detectLocalPythonsForSettings() {
+    if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.detectLocalPythons !== 'function') {
+      setSettingsStatus(uiText('Local Python detection is available in the desktop app.', '本地 Python 检测仅在桌面应用中可用。'), true);
+      return;
+    }
+    state.detectingLocalPython = true;
+    renderSettings();
+    try {
+      const result = await window.neuroclawDesktop.detectLocalPythons();
+      state.localPythonCandidates = Array.isArray(result && result.candidates) ? result.candidates : [];
+      if (state.localPythonCandidates.length && !state.desktopConfig.localPythonExe) {
+        state.desktopConfig.localPythonExe = state.localPythonCandidates[0].path || '';
+      }
+      normalizeDesktopRuntimeSelection();
+      setSettingsStatus(
+        state.localPythonCandidates.length
+          ? `${state.localPythonCandidates.length} ${uiText('local Python candidates found.', '个本地 Python 候选项已找到。')}`
+          : uiText('No local Python candidates found.', '未找到本地 Python 候选项。'),
+        !state.localPythonCandidates.length,
+      );
+    } catch (err) {
+      setSettingsStatus(`${uiText('Local Python detection failed:', '本地 Python 检测失败：')} ${err && err.message ? err.message : err}`, true);
+    } finally {
+      state.detectingLocalPython = false;
+      renderSettings();
+    }
   }
 
   function clampTextScale(value) {
@@ -4277,6 +4410,26 @@
 
   function findReusableEmptyHomeSession() {
     return state.sessions.find(session => isCompletelyEmptyHomeSession(session)) || null;
+  }
+
+  function cleanupEmptyActiveHomeSession() {
+    saveActiveDraft();
+    const session = getActiveSession();
+    if (!session || !isCompletelyEmptyHomeSession(session)) return false;
+    if (state.waiting || state.pendingFiles.length) return false;
+
+    state.sessions = state.sessions.filter(s => s.id !== session.id);
+    const fallback = getUnassignedSessions()[0] || state.sessions[0] || null;
+    state.activeSessionId = fallback ? fallback.id : null;
+    state.activeProjectId = fallback && isKnownProjectId(fallback.projectId) ? fallback.projectId : null;
+    state.selectedSkills = [];
+    state.editingMessageId = null;
+    state.openSessionMenuId = null;
+    state.menuPosition = null;
+    saveProjects();
+    saveSessions();
+    renderSidebarLists();
+    return true;
   }
 
   function startFreshHomeSession(options = {}) {
@@ -5487,8 +5640,15 @@
   }
 
   function setActiveView(view, opts = {}) {
-    state.activeView = ['skills', 'search', 'settings', 'neurooracle'].includes(view) ? view : 'chat';
+    const nextView = ['skills', 'search', 'settings', 'neurooracle'].includes(view) ? view : 'chat';
+    if (state.activeView === 'chat' && nextView !== 'chat') {
+      cleanupEmptyActiveHomeSession();
+    }
+    state.activeView = nextView;
     const isChat = state.activeView === 'chat';
+    if (isChat && !getActiveSession()) {
+      startFreshHomeSession({ saveDraft: false });
+    }
     if (messagesEl) messagesEl.hidden = !isChat;
     if (inputAreaEl) inputAreaEl.hidden = !isChat;
     if (skillsPageEl) skillsPageEl.hidden = state.activeView !== 'skills';
@@ -5794,17 +5954,30 @@
       applySidebarCollapsed();
     });
 
-    if (window.neuroclawDesktop && typeof window.neuroclawDesktop.onMenuAction === 'function') {
-      window.neuroclawDesktop.onMenuAction((action) => {
-        if (action === 'open-settings') {
-          setActiveView('settings');
-          return;
-        }
-        if (action === 'new-chat') {
-          startNewChat();
-        }
-      });
+    function handleDesktopMenuAction(action) {
+      const normalized = String(action || '');
+      const now = Date.now();
+      if (
+        state.lastDesktopMenuAction.action === normalized &&
+        now - state.lastDesktopMenuAction.at < 250
+      ) {
+        return;
+      }
+      state.lastDesktopMenuAction = { action: normalized, at: now };
+
+      if (normalized === 'open-settings') {
+        setActiveView('settings');
+        return;
+      }
+      if (normalized === 'new-chat') {
+        startNewChat();
+      }
     }
+
+    if (window.neuroclawDesktop && typeof window.neuroclawDesktop.onMenuAction === 'function') {
+      window.neuroclawDesktop.onMenuAction(handleDesktopMenuAction);
+    }
+    window.addEventListener('neuroclaw:menu-action', (event) => handleDesktopMenuAction(event.detail));
 
     document.querySelectorAll('[data-view-button]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5863,11 +6036,25 @@
     if (settingsContentEl) {
       settingsContentEl.addEventListener('change', (e) => {
         const control = e.target.closest('[data-setting-key]');
-        if (!control || control.dataset.settingKey !== 'language') return;
-        state.desktopConfig.language = control.value;
-        applyLanguage(true);
-        renderSettings();
-        applyLanguage(false);
+        if (!control) return;
+        if (control.dataset.settingKey === 'language') {
+          state.desktopConfig.language = control.value;
+          applyLanguage(true);
+          renderSettings();
+          applyLanguage(false);
+          return;
+        }
+        if (control.dataset.settingKey === 'runtimeMode') {
+          collectSettingsFromForm();
+          state.desktopConfig.runtimeMode = control.value;
+          normalizeDesktopRuntimeSelection();
+          renderSettings();
+          return;
+        }
+        if (control.dataset.settingKey === 'localPythonExe') {
+          collectSettingsFromForm();
+          normalizeDesktopRuntimeSelection();
+        }
       });
 
       settingsContentEl.addEventListener('click', (e) => {
@@ -5878,6 +6065,13 @@
             ? state.textScale - TEXT_SCALE_STEP
             : state.textScale + TEXT_SCALE_STEP;
           applyTextScale(next, true);
+          return;
+        }
+
+        const detectPythonBtn = e.target.closest('[data-settings-detect-python]');
+        if (detectPythonBtn) {
+          e.preventDefault();
+          detectLocalPythonsForSettings();
           return;
         }
 

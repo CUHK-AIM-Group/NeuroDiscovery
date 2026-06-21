@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell, clipboard } = require('electron');
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
@@ -229,14 +230,38 @@ function userRuntimeRoot() {
   return path.join(app.getPath('userData'), 'bundled-runtime', BUNDLED_RUNTIME_VERSION);
 }
 
+function bundledPythonCandidates(runtimeRoot = userRuntimeRoot()) {
+  if (process.platform === 'win32') {
+    return [
+      path.join(runtimeRoot, 'python', 'python.exe'),
+      path.join(runtimeRoot, 'python', 'Scripts', 'python.exe'),
+    ];
+  }
+  return [
+    path.join(runtimeRoot, 'python', 'bin', 'python'),
+    path.join(runtimeRoot, 'python', 'python'),
+  ];
+}
+
 function bundledPythonExe(runtimeRoot = userRuntimeRoot()) {
-  if (process.platform === 'win32') return path.join(runtimeRoot, 'python', 'python.exe');
-  return path.join(runtimeRoot, 'python', 'bin', 'python');
+  return firstExistingPath(bundledPythonCandidates(runtimeRoot));
+}
+
+function bundledCondaUnpackCandidates(runtimeRoot = userRuntimeRoot()) {
+  if (process.platform === 'win32') {
+    return [
+      path.join(runtimeRoot, 'python', 'Scripts', 'conda-unpack.exe'),
+      path.join(runtimeRoot, 'python', 'conda-unpack.exe'),
+    ];
+  }
+  return [
+    path.join(runtimeRoot, 'python', 'bin', 'conda-unpack'),
+    path.join(runtimeRoot, 'python', 'conda-unpack'),
+  ];
 }
 
 function bundledCondaUnpackExe(runtimeRoot = userRuntimeRoot()) {
-  if (process.platform === 'win32') return path.join(runtimeRoot, 'python', 'Scripts', 'conda-unpack.exe');
-  return path.join(runtimeRoot, 'python', 'bin', 'conda-unpack');
+  return firstExistingPath(bundledCondaUnpackCandidates(runtimeRoot));
 }
 
 function ensureExecutableIfExists(filePath) {
@@ -266,7 +291,27 @@ function bundledRuntimeSourceExists() {
     && fs.existsSync(path.join(sourceRoot, 'backend', 'core', 'agent', 'main.py'));
 }
 
+function bundledRuntimeMarkerValue() {
+  const manifestPath = path.join(packagedRuntimeSourceRoot(), 'runtime-manifest.json');
+  try {
+    const digest = crypto
+      .createHash('sha256')
+      .update(fs.readFileSync(manifestPath))
+      .digest('hex')
+      .slice(0, 16);
+    return `${BUNDLED_RUNTIME_VERSION}:${digest}`;
+  } catch (_err) {
+    return BUNDLED_RUNTIME_VERSION;
+  }
+}
+
 function bundledRuntimeReady(runtimeRoot = userRuntimeRoot()) {
+  if (process.platform === 'win32' && fs.existsSync(path.join(runtimeRoot, 'python', 'pyvenv.cfg'))) {
+    return false;
+  }
+  if (process.platform === 'win32' && !fs.existsSync(path.join(runtimeRoot, 'python', 'python.exe'))) {
+    return false;
+  }
   return fs.existsSync(bundledPythonExe(runtimeRoot))
     && fs.existsSync(path.join(bundledBackendRoot(runtimeRoot), 'core', 'agent', 'main.py'));
 }
@@ -306,14 +351,15 @@ function ensureBundledRuntime() {
   const sourceRoot = packagedRuntimeSourceRoot();
   const runtimeRoot = userRuntimeRoot();
   const marker = path.join(runtimeRoot, '.runtime-version');
+  const expectedMarker = bundledRuntimeMarkerValue();
   const currentVersion = fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8').trim() : '';
-  if (!bundledRuntimeReady(runtimeRoot) || currentVersion !== BUNDLED_RUNTIME_VERSION) {
+  if (!bundledRuntimeReady(runtimeRoot) || currentVersion !== expectedMarker) {
     log(`Preparing bundled runtime ${BUNDLED_RUNTIME_VERSION} at ${runtimeRoot}`);
     fs.rmSync(runtimeRoot, { recursive: true, force: true });
     fs.mkdirSync(runtimeRoot, { recursive: true });
     copyDirectoryFresh(path.join(sourceRoot, 'python'), path.join(runtimeRoot, 'python'));
     copyDirectoryFresh(path.join(sourceRoot, 'backend'), path.join(runtimeRoot, 'backend'));
-    fs.writeFileSync(marker, BUNDLED_RUNTIME_VERSION, 'utf8');
+    fs.writeFileSync(marker, expectedMarker, 'utf8');
   }
   ensureBundledRuntimeExecutables(runtimeRoot);
   runBundledCondaUnpack(runtimeRoot);
@@ -353,16 +399,136 @@ function defaultLlmBaseUrl() {
   return process.env.NEUROCLAW_LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 }
 
+function pushUniquePath(out, seen, filePath) {
+  const value = String(filePath || '').trim().replace(/^"|"$/g, '');
+  if (!value || !fs.existsSync(value)) return;
+  const resolved = path.resolve(value);
+  const key = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  if (seen.has(key)) return;
+  seen.add(key);
+  out.push(resolved);
+}
+
+function commandOutputLines(command, args = []) {
+  const proc = spawnSync(command, args, {
+    windowsHide: true,
+    encoding: 'utf8',
+    timeout: 3000,
+  });
+  if (proc.error || proc.status !== 0) return [];
+  return `${proc.stdout || ''}\n${proc.stderr || ''}`
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
+function pythonVersion(pythonPath) {
+  const proc = spawnSync(pythonPath, ['--version'], {
+    windowsHide: true,
+    encoding: 'utf8',
+    timeout: 3000,
+  });
+  if (proc.error || proc.status !== 0) return '';
+  return `${proc.stdout || proc.stderr || ''}`.trim();
+}
+
+function detectLocalPythons() {
+  const candidates = [];
+  const seen = new Set();
+  const home = os.homedir();
+
+  const pathEntries = String(process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  for (const entry of pathEntries) {
+    if (process.platform === 'win32') {
+      pushUniquePath(candidates, seen, path.join(entry, 'python.exe'));
+      pushUniquePath(candidates, seen, path.join(entry, 'python3.exe'));
+    } else {
+      pushUniquePath(candidates, seen, path.join(entry, 'python3'));
+      pushUniquePath(candidates, seen, path.join(entry, 'python'));
+    }
+  }
+
+  if (process.platform === 'win32') {
+    for (const line of [...commandOutputLines('where', ['python']), ...commandOutputLines('where', ['python3'])]) {
+      pushUniquePath(candidates, seen, line);
+    }
+    for (const root of [
+      path.join(home, 'AppData', 'Local', 'Programs', 'Python'),
+      'C:\\Program Files',
+      'C:\\Program Files (x86)',
+      home,
+    ]) {
+      try {
+        if (!fs.existsSync(root)) continue;
+        for (const child of fs.readdirSync(root)) {
+          if (/^(Python|Miniconda|Miniforge|Anaconda|anaconda|miniconda|miniforge)/.test(child)) {
+            pushUniquePath(candidates, seen, path.join(root, child, 'python.exe'));
+            pushUniquePath(candidates, seen, path.join(root, child, 'Scripts', 'python.exe'));
+            pushUniquePath(candidates, seen, path.join(root, child, 'envs', 'neuroclaw', 'python.exe'));
+          }
+        }
+      } catch (_err) {}
+    }
+  } else {
+    for (const line of commandOutputLines('which', ['-a', 'python3', 'python'])) {
+      pushUniquePath(candidates, seen, line);
+    }
+    for (const candidate of [
+      '/usr/bin/python3',
+      '/opt/homebrew/bin/python3',
+      '/usr/local/bin/python3',
+      path.join(home, 'miniforge3', 'bin', 'python'),
+      path.join(home, 'miniconda3', 'bin', 'python'),
+      path.join(home, 'anaconda3', 'bin', 'python'),
+      path.join(home, 'miniforge3', 'envs', 'neuroclaw', 'bin', 'python'),
+      path.join(home, 'miniconda3', 'envs', 'neuroclaw', 'bin', 'python'),
+      path.join(home, 'anaconda3', 'envs', 'neuroclaw', 'bin', 'python'),
+    ]) {
+      pushUniquePath(candidates, seen, candidate);
+    }
+  }
+
+  return candidates.map(candidate => {
+    const version = pythonVersion(candidate);
+    return {
+      path: candidate,
+      version,
+      label: `${version || 'Python'} - ${candidate}`,
+    };
+  });
+}
+
+function normalizePackagedRuntimeConfig(config) {
+  if (!app.isPackaged) return config;
+  const localPythonExe = String(config.localPythonExe || '').trim().replace(/^"|"$/g, '');
+  if (config.runtimeMode === 'python' && localPythonExe && fs.existsSync(localPythonExe)) {
+    return {
+      ...config,
+      runtimeMode: 'python',
+      pythonExe: localPythonExe,
+      condaExe: '',
+      repoRoot: bundledBackendRoot(),
+    };
+  }
+  return {
+    ...config,
+    runtimeMode: 'bundled',
+    pythonExe: bundledPythonExe(),
+    condaExe: '',
+    repoRoot: bundledBackendRoot(),
+  };
+}
+
 function defaultConfig() {
   const home = os.homedir();
-  const hasBundledRuntime = app.isPackaged && bundledRuntimeSourceExists();
   return {
     host: '127.0.0.1',
     port: 7080,
-    runtimeMode: process.env.NEUROCLAW_RUNTIME_MODE || (hasBundledRuntime ? 'bundled' : 'conda'),
-    pythonExe: process.env.NEUROCLAW_PYTHON_EXE || defaultPythonExe(home),
-    condaExe: process.env.NEUROCLAW_CONDA_EXE || defaultCondaExe(home),
+    runtimeMode: app.isPackaged ? 'bundled' : (process.env.NEUROCLAW_RUNTIME_MODE || 'conda'),
+    pythonExe: app.isPackaged ? bundledPythonExe() : (process.env.NEUROCLAW_PYTHON_EXE || defaultPythonExe(home)),
+    condaExe: app.isPackaged ? '' : (process.env.NEUROCLAW_CONDA_EXE || defaultCondaExe(home)),
     condaEnv: process.env.NEUROCLAW_CONDA_ENV || 'neuroclaw',
+    localPythonExe: process.env.NEUROCLAW_LOCAL_PYTHON_EXE || '',
     fslDir: process.env.FSLDIR || '',
     language: process.env.NEUROCLAW_LANGUAGE || 'English',
     proxyUrl: process.env.NEUROCLAW_PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897',
@@ -371,7 +537,7 @@ function defaultConfig() {
     llmBaseUrl: defaultLlmBaseUrl(),
     llmApiKey: process.env.NEUROCLAW_LLM_API_KEY || '',
     llmApiKeyEnv: process.env.NEUROCLAW_LLM_API_KEY_ENV || 'OPENAI_API_KEY',
-    repoRoot: process.env.NEUROCLAW_REPO_ROOT || (hasBundledRuntime ? bundledBackendRoot() : (app.isPackaged ? path.join(home, 'Documents', 'Code', 'NeuroClaw') : repoRoot())),
+    repoRoot: app.isPackaged ? bundledBackendRoot() : (process.env.NEUROCLAW_REPO_ROOT || repoRoot()),
   };
 }
 
@@ -393,9 +559,9 @@ function loadConfig() {
   const defaults = defaultConfig();
   try {
     const raw = fs.readFileSync(userConfigPath(), 'utf8');
-    return normalizeConfig({ ...defaults, ...JSON.parse(raw) });
+    return normalizePackagedRuntimeConfig(normalizeConfig({ ...defaults, ...JSON.parse(raw) }));
   } catch (_err) {
-    return normalizeConfig(defaults);
+    return normalizePackagedRuntimeConfig(normalizeConfig(defaults));
   }
 }
 
@@ -409,6 +575,7 @@ function saveConfig(nextConfig) {
     'pythonExe',
     'condaExe',
     'condaEnv',
+    'localPythonExe',
     'repoRoot',
     'fslDir',
     'language',
@@ -426,7 +593,7 @@ function saveConfig(nextConfig) {
     }
   }
   fs.mkdirSync(path.dirname(userConfigPath()), { recursive: true });
-  fs.writeFileSync(userConfigPath(), JSON.stringify({ ...defaults, ...clean }, null, 2), 'utf8');
+  fs.writeFileSync(userConfigPath(), JSON.stringify(normalizePackagedRuntimeConfig({ ...defaults, ...clean }), null, 2), 'utf8');
   return loadConfig();
 }
 
@@ -488,9 +655,15 @@ function applyDesktopLlmConfig(config) {
   const envPath = path.join(config.repoRoot, 'neuroclaw_environment.json');
   const envConfig = readJsonObject(envPath);
 
-  envConfig.setup_type = envConfig.setup_type || (config.runtimeMode === 'bundled' ? 'bundled' : 'desktop');
-  envConfig.python_path = envConfig.python_path || (config.runtimeMode === 'bundled' ? 'bundled' : config.pythonExe || '');
-  envConfig.conda_env = envConfig.conda_env || (config.runtimeMode === 'conda' ? config.condaEnv || '' : '');
+  if (config.runtimeMode === 'bundled') {
+    envConfig.setup_type = 'bundled';
+    envConfig.python_path = 'bundled';
+    envConfig.conda_env = '';
+  } else {
+    envConfig.setup_type = envConfig.setup_type || 'desktop';
+    envConfig.python_path = envConfig.python_path || config.pythonExe || '';
+    envConfig.conda_env = envConfig.conda_env || (config.runtimeMode === 'conda' ? config.condaEnv || '' : '');
+  }
   envConfig.cuda = envConfig.cuda && typeof envConfig.cuda === 'object' ? envConfig.cuda : { device: 'cpu' };
   envConfig.toolchain = envConfig.toolchain && typeof envConfig.toolchain === 'object' ? envConfig.toolchain : {};
   envConfig.compression_mode = envConfig.compression_mode || 'stub';
@@ -657,6 +830,10 @@ function validateConfig(config) {
 }
 
 function resolveRuntimeConfig(config) {
+  config = normalizePackagedRuntimeConfig(config);
+  if (config.runtimeMode === 'python' && config.localPythonExe) {
+    config = { ...config, pythonExe: config.localPythonExe };
+  }
   if (config.runtimeMode !== 'bundled') return config;
   const runtime = ensureBundledRuntime();
   if (!runtime) {
@@ -894,6 +1071,12 @@ function sendMenuAction(action) {
   const target = BrowserWindow.getFocusedWindow() || mainWindow;
   if (target && !target.isDestroyed()) {
     target.webContents.send('neuroclaw:menu-action', action);
+    target.webContents.executeJavaScript(
+      `window.dispatchEvent(new CustomEvent('neuroclaw:menu-action', { detail: ${JSON.stringify(action)} }))`,
+      true,
+    ).catch((err) => {
+      log(`Menu action fallback failed for "${action}": ${err && err.message ? err.message : err}`);
+    });
   }
 }
 
@@ -1020,12 +1203,18 @@ ipcMain.handle('neuroclaw:get-config', () => ({
   config: loadConfig(),
   configPath: userConfigPath(),
   logsPath: path.join(app.getPath('userData'), 'logs'),
+  isPackaged: app.isPackaged,
+  platform: process.platform,
 }));
 
 ipcMain.handle('neuroclaw:save-config', (_event, config) => ({
   config: saveConfig(config),
   configPath: userConfigPath(),
   restartRequired: true,
+}));
+
+ipcMain.handle('neuroclaw:detect-local-pythons', () => ({
+  candidates: detectLocalPythons(),
 }));
 
 ipcMain.handle('neuroclaw:restart', () => {
