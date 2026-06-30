@@ -19,6 +19,7 @@ UKBAnalytica_v2-main
 
 # Experiment runs (harmonization pilots, model training outputs, etc.)
 runs/
+outputs/
 models/checkpoints/
 models/**/checkpoints/
 models/benchmark_results/
@@ -41,6 +42,7 @@ Thumbs.db
 .claude
 
 # Project-specific ignores
+.codegraph/
 .neuroclaw_checkpoints/
 neuroclaw_environment.json
 installer/install_log.txt
@@ -67,3 +69,27 @@ export_tables.py
 skills/brain_gnn/scripts/lifespan_age_FINAL_SUMMARY.md
 neurodiscovery.tex
 neuroclaw.tex
+
+# Local paper-reading and manuscript build artifacts
+papers/
+tex/_preview*/
+tex/**/*.aux
+tex/**/*.bbl
+tex/**/*.blg
+tex/**/*.fdb_latexmk
+tex/**/*.fls
+tex/**/*.out
+tex/fig/*.png
+tex/fig/*.svg
+
+# Local figure/rendering scripts
+core/scripts/plot_*.py
+core/scripts/draw_*.py
+core/scripts/render_*.py
+core/scripts/export_case1_*panel*.py
+core/scripts/export_case1_*workbench*.py
+neurooracle/scripts/plot_*.py
+neurooracle/scripts/draw_*.py
+neurooracle/scripts/render_*.py
+tex/plot_*.py
+tex/fig/draw_*.py
