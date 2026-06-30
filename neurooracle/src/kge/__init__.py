@@ -12,7 +12,6 @@ chain has not been written down yet.
 
 from .triple_loader import Triple, load_triples_from_kg, split_triples
 from .base import Scorer
-from .complex_scorer import ComplExScorer
 from .plausibility import (
     local_plausibility,
     global_attestation,
@@ -20,6 +19,11 @@ from .plausibility import (
     score_hypothesis,
 )
 from .specificity import path_specificity, build_degree_map
+
+try:
+    from .complex_scorer import ComplExScorer
+except ImportError:  # pragma: no cover
+    ComplExScorer = None  # type: ignore[assignment]
 
 __all__ = [
     "Triple",

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import importlib.util
 import io
 import json
@@ -1442,6 +1443,18 @@ def create_app() -> Any:
         ) if proxy_url else urllib.request.build_opener()
         return opener.open(req, timeout=timeout)  # nosec: controlled NeuroOracle/HF URLs
 
+    class _NeuroOracleNoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> None:
+            return None
+
+    def _neurooracle_urlopen_no_redirect(req: urllib.request.Request, timeout: int = 60) -> Any:
+        proxy_url = _neurooracle_proxy_url()
+        handlers: list[Any] = [_NeuroOracleNoRedirect]
+        if proxy_url:
+            handlers.insert(0, urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url}))
+        opener = urllib.request.build_opener(*handlers)
+        return opener.open(req, timeout=timeout)  # nosec: controlled NeuroOracle/HF URLs
+
     def _load_neurooracle_manifest() -> dict[str, Any]:
         try:
             raw = json.loads(NEUROORACLE_MANIFEST_PATH.read_text(encoding="utf-8"))
@@ -1456,6 +1469,20 @@ def create_app() -> Any:
             encoding="utf-8",
         )
 
+    def _header_token(value: Any) -> str:
+        return str(value or "").strip().strip('"')
+
+    def _header_int(value: Any) -> int | None:
+        text = str(value or "").strip()
+        return int(text) if text.isdigit() else None
+
+    def _file_sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
     def _remote_file_metadata(remote_path: str) -> dict[str, Any]:
         url = f"{NEUROORACLE_HF_BASE}/{remote_path}"
         req = urllib.request.Request(
@@ -1463,16 +1490,44 @@ def create_app() -> Any:
             headers={"User-Agent": "NeuroClaw Desktop"},
             method="HEAD",
         )
-        with _neurooracle_urlopen(req, timeout=20) as resp:
-            headers = resp.headers
-            length = headers.get("Content-Length")
-            return {
-                "remote_path": remote_path,
-                "url": url,
-                "etag": headers.get("ETag", "").strip(),
-                "last_modified": headers.get("Last-Modified", "").strip(),
-                "content_length": int(length) if length and length.isdigit() else None,
-            }
+        last_error: Exception | None = None
+        for attempt in range(3):
+            resp: Any | None = None
+            status_code: int | None = None
+            try:
+                try:
+                    resp = _neurooracle_urlopen_no_redirect(req, timeout=20)
+                    headers = resp.headers
+                    status_code = getattr(resp, "status", None)
+                except urllib.error.HTTPError as exc:
+                    if not (300 <= exc.code < 400):
+                        raise
+                    headers = exc.headers
+                    status_code = exc.code
+                linked_size = _header_int(headers.get("X-Linked-Size"))
+                content_length = linked_size or _header_int(headers.get("Content-Length"))
+                return {
+                    "remote_path": remote_path,
+                    "url": url,
+                    "status_code": status_code,
+                    "repo_commit": _header_token(headers.get("X-Repo-Commit")),
+                    "etag": _header_token(headers.get("ETag")),
+                    "linked_etag": _header_token(headers.get("X-Linked-ETag")),
+                    "xet_hash": _header_token(headers.get("X-Xet-Hash")),
+                    "last_modified": headers.get("Last-Modified", "").strip(),
+                    "content_length": content_length,
+                }
+            except Exception as exc:
+                last_error = exc
+                if attempt >= 2:
+                    raise
+                time.sleep(0.4 * (attempt + 1))
+            finally:
+                if resp is not None:
+                    resp.close()
+        if last_error:
+            raise last_error
+        raise RuntimeError(f"Unable to read remote metadata for {remote_path}")
 
     def _neurooracle_remote_update_status() -> dict[str, Any]:
         manifest = _load_neurooracle_manifest()
@@ -1497,13 +1552,29 @@ def create_app() -> Any:
                 remote = _remote_file_metadata(remote_path)
                 item["remote"] = remote
                 remote_size = remote.get("content_length")
-                remote_etag = str(remote.get("etag") or "")
+                remote_etag = _header_token(remote.get("etag"))
+                remote_linked_etag = _header_token(remote.get("linked_etag"))
+                remote_xet_hash = _header_token(remote.get("xet_hash"))
                 remote_modified = str(remote.get("last_modified") or "")
-                local_etag = str(local_meta.get("etag") or "")
+                local_etag = _header_token(local_meta.get("etag"))
+                local_linked_etag = _header_token(local_meta.get("linked_etag") or local_meta.get("sha256"))
+                local_xet_hash = _header_token(local_meta.get("xet_hash"))
                 local_modified = str(local_meta.get("last_modified") or "")
+                local_sha256 = ""
+                if local_exists and remote_linked_etag:
+                    local_sha256 = _file_sha256(dest)
+                    item["local_sha256"] = local_sha256
 
                 if not local_exists:
                     item.update({"update_available": True, "reason": "missing"})
+                elif remote_linked_etag and local_sha256 and remote_linked_etag.lower() != local_sha256.lower():
+                    item.update({"update_available": True, "reason": "content_hash"})
+                elif remote_linked_etag and local_sha256:
+                    item.update({"update_available": False, "reason": "content_hash_match"})
+                elif remote_linked_etag and local_linked_etag and remote_linked_etag.lower() != local_linked_etag.lower():
+                    item.update({"update_available": True, "reason": "linked_etag"})
+                elif remote_xet_hash and local_xet_hash and remote_xet_hash != local_xet_hash:
+                    item.update({"update_available": True, "reason": "xet_hash"})
                 elif remote_etag and local_etag and remote_etag != local_etag:
                     item.update({"update_available": True, "reason": "etag"})
                 elif remote_modified and local_modified and remote_modified != local_modified:
@@ -1511,7 +1582,9 @@ def create_app() -> Any:
                 elif remote_size is not None and local_size and int(remote_size) != int(local_size):
                     item.update({"update_available": True, "reason": "size"})
                 elif not local_meta:
-                    item.update({"update_available": False, "reason": "no_manifest_size_match" if remote_size == local_size else "no_manifest"})
+                    message = "Remote content hash is unavailable and no local download manifest exists"
+                    item.update({"error": message, "reason": "insufficient_metadata"})
+                    errors.append(f"{remote_path}: {message}")
             except Exception as exc:
                 item.update({"error": str(exc), "reason": "check_failed"})
                 errors.append(f"{remote_path}: {exc}")
@@ -1520,11 +1593,16 @@ def create_app() -> Any:
                 update_available = True
             files.append(item)
 
+        remote_checked = sum(1 for item in files if item.get("remote") and not item.get("error"))
+        check_failed = bool(errors) and remote_checked == 0
         return {
-            "type": "done",
+            "type": "error" if check_failed else "done",
+            "message": "Unable to check HuggingFace graph updates" if check_failed else "",
             "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "update_available": update_available,
             "files": files,
+            "remote_checked": remote_checked,
+            "check_failed": check_failed,
             "errors": errors,
             "proxy": _neurooracle_proxy_info(),
             "manifest_path": str(NEUROORACLE_MANIFEST_PATH),
@@ -1582,6 +1660,7 @@ def create_app() -> Any:
                         _neurooracle_download_state["downloaded_bytes"] = downloaded
         os.replace(tmp, dest)
         metadata["downloaded_bytes"] = downloaded
+        metadata["sha256"] = _file_sha256(dest)
         return metadata
 
     def _download_neurooracle_graph_blocking(force: bool = False) -> dict[str, Any]:

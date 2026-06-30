@@ -28,6 +28,7 @@ from .hypothesis_engine import (
 )
 from .critic_agent import CriticAgent
 from .evolution_engine import EvolutionEngine
+from .feedback_state import FeedbackState
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
@@ -266,6 +267,79 @@ def cmd_rank(engine, input_path, top_n=20, as_json=False):
         for i, h in enumerate(ranked, 1):
             print(format_hypothesis(h, i))
             print()
+
+
+def _base_score_for_feedback_audit(h: Hypothesis) -> float:
+    return (
+        (max(h.confidence_score, 0.01) ** 0.20)
+        * (max(h.evidence_score, 0.01) ** 0.20)
+        * (max(h.novelty_score, 0.01) ** 0.25)
+        * (max(h.testability_score, 0.01) ** 0.35)
+    )
+
+
+def cmd_feedback_audit(input_path, feedback_state_path, output_path, top_n=0, as_json=False):
+    """Quantify how closed-loop feedback changes saved hypothesis ranking."""
+    input_path = Path(input_path)
+    output_path = Path(output_path)
+    raw = json.loads(input_path.read_text(encoding="utf-8"))
+    raw_hypotheses = raw.get("hypotheses", raw if isinstance(raw, list) else [])
+    hypotheses = [Hypothesis.from_dict(h) for h in raw_hypotheses]
+    if top_n and top_n > 0:
+        hypotheses = sorted(hypotheses, key=lambda h: h.composite_score, reverse=True)[:top_n]
+
+    feedback = FeedbackState.load(feedback_state_path)
+    before = sorted(hypotheses, key=lambda h: h.composite_score, reverse=True)
+    before_rank = {id(h): i + 1 for i, h in enumerate(before)}
+
+    rows = []
+    for h in hypotheses:
+        base_score = _base_score_for_feedback_audit(h)
+        adjustment = feedback.score(h)
+        adjusted_score = feedback.apply(base_score, adjustment)
+        rows.append(
+            {
+                "hypothesis_id": h.id,
+                "source_id": h.source_id,
+                "source_name": h.source_name,
+                "target_id": h.target_id,
+                "target_name": h.target_name,
+                "base_composite_score": float(base_score),
+                "previous_composite_score": float(h.composite_score),
+                "adjusted_composite_score": float(adjusted_score),
+                "previous_rank": before_rank[id(h)],
+                **adjustment.as_dict(),
+            }
+        )
+
+    rows.sort(key=lambda r: r["adjusted_composite_score"], reverse=True)
+    for i, row in enumerate(rows, 1):
+        row["adjusted_rank"] = i
+        row["rank_shift"] = int(row["previous_rank"] - i)
+
+    summary = {
+        "input": str(input_path),
+        "feedback_state": str(feedback_state_path),
+        "n_feedback_records": len(feedback.records),
+        "n_hypotheses_audited": len(rows),
+        "n_matched": sum(1 for r in rows if r["matched_records"] > 0),
+        "n_exact_supported": sum(1 for r in rows if r["exact_supported"]),
+        "n_exact_contradicted": sum(1 for r in rows if r["exact_contradicted"]),
+        "n_exact_execution_failed": sum(1 for r in rows if r["exact_execution_failed"]),
+        "n_downweighted": sum(1 for r in rows if r["adjusted_composite_score"] < r["base_composite_score"]),
+        "n_upweighted": sum(1 for r in rows if r["adjusted_composite_score"] > r["base_composite_score"]),
+    }
+    payload = {"summary": summary, "hypotheses": rows}
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    if as_json:
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+    else:
+        print(f"Feedback records: {summary['n_feedback_records']}")
+        print(f"Hypotheses audited: {summary['n_hypotheses_audited']}")
+        print(f"Matched by feedback: {summary['n_matched']}")
+        print(f"Downweighted / upweighted: {summary['n_downweighted']} / {summary['n_upweighted']}")
+        print(f"Saved audit: {output_path}")
 
 
 def cmd_paths(engine, source_query, target_query, max_hops=3, max_paths=20, as_json=False):
@@ -958,7 +1032,7 @@ def cmd_gm_brainstorm(graph_path: str, output: str, n: int = 50,
 
 def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
                    graph_path, snapshot_2022_kg=None, snapshot_2022_kge=None,
-                   as_json=False):
+                   feedback_state=None, as_json=False):
     """Run the four-stage autoresearch cycle for a registered case study.
 
     Reads a :class:`CaseStudy` from :mod:`case_studies`, dispatches stage
@@ -1008,6 +1082,8 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
         if case.generator == GENERATOR_TASK:
             kg = load_graph(Path(graph_path))
             engine = HypothesisEngine(kg)
+            if feedback_state:
+                engine.load_feedback_state(feedback_state)
             for hook in case.pre_hooks:
                 hook(engine, case)
             cmd_batch(
@@ -1027,6 +1103,8 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
         elif case.generator == GENERATOR_CHAIN:
             kg = load_graph(Path(graph_path))
             engine = HypothesisEngine(kg)
+            if feedback_state:
+                engine.load_feedback_state(feedback_state)
             for hook in case.pre_hooks:
                 hook(engine, case)
             cmd_batch(
@@ -1046,6 +1124,8 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
         elif case.generator == GENERATOR_CASE1_CANDIDATE:
             kg = load_graph(Path(graph_path))
             engine = HypothesisEngine(kg)
+            if feedback_state:
+                engine.load_feedback_state(feedback_state)
             for hook in case.pre_hooks:
                 hook(engine, case)
             extras = case.extras or {}
@@ -1141,6 +1221,14 @@ def main():
     parser = argparse.ArgumentParser(description="Hypothesis engine for NeuroClaw knowledge graph")
     parser.add_argument("--graph", default=None, help="Path to graph JSON")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument(
+        "--feedback-state",
+        default=None,
+        help=(
+            "Optional JSON/JSONL closed-loop feedback records. Supported statuses: "
+            "supported, contradicted, execution_failed."
+        ),
+    )
     sub = parser.add_subparsers(dest="command")
 
     # batch
@@ -1186,6 +1274,16 @@ def main():
     p_rank = sub.add_parser("rank", help="Load and re-rank saved hypotheses")
     p_rank.add_argument("--input", default="neurooracle/data/hypotheses_baseline.json", help="Input JSON path")
     p_rank.add_argument("--top", type=int, default=20)
+
+    # feedback-audit
+    p_feedback = sub.add_parser(
+        "feedback-audit",
+        help="Audit how supported/contradicted/execution_failed feedback changes ranking",
+    )
+    p_feedback.add_argument("--input", required=True, help="Input hypotheses JSON path")
+    p_feedback.add_argument("--feedback-state", required=True, help="Feedback JSON/JSONL path")
+    p_feedback.add_argument("--output", required=True, help="Output audit JSON path")
+    p_feedback.add_argument("--top", type=int, default=0, help="Audit only top K by previous composite score (0=all)")
 
     # paths
     p_paths = sub.add_parser("paths", help="Find hypothesis paths between two concepts")
@@ -1433,6 +1531,16 @@ def main():
         print(json.dumps(load_status(args.run_dir), indent=2, ensure_ascii=False))
         return
 
+    if args.command == "feedback-audit":
+        cmd_feedback_audit(
+            input_path=args.input,
+            feedback_state_path=args.feedback_state,
+            output_path=args.output,
+            top_n=args.top,
+            as_json=args.json,
+        )
+        return
+
     # Commands that don't need the full HypothesisEngine — short-circuit so we
     # don't spend ~1 min loading the KG into a NetworkX graph for nothing.
     if args.command in ("kge-train", "plausibility"):
@@ -1483,6 +1591,7 @@ def main():
             graph_path=graph_p,
             snapshot_2022_kg=args.snapshot_2022_kg,
             snapshot_2022_kge=args.snapshot_2022_kge,
+            feedback_state=args.feedback_state,
             as_json=args.json,
         )
         return
@@ -1490,6 +1599,8 @@ def main():
     graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json")
     kg = load_graph(graph_path)
     engine = HypothesisEngine(kg)
+    if args.feedback_state:
+        engine.load_feedback_state(args.feedback_state)
 
     as_json = args.json
 

@@ -39,6 +39,7 @@ import networkx as nx
 
 from .graph_manager import KnowledgeGraph
 from .schema import ConceptNode
+from .feedback_state import FeedbackState
 
 logger = logging.getLogger(__name__)
 
@@ -1116,6 +1117,12 @@ class HypothesisEngine:
                 self._claims_by_triple.setdefault(key, []).append(meta)
         # Lazy evidence-degree cache for the min_evidence_per_node walk filter.
         self._non_tree_degree: Optional[dict[str, int]] = None
+        self.feedback_state: FeedbackState | None = None
+
+    def load_feedback_state(self, path: str | Path) -> None:
+        """Load supported/contradicted/execution-failed feedback for ranking."""
+        self.feedback_state = FeedbackState.load(path)
+        logger.info("loaded %d feedback record(s) from %s", len(self.feedback_state.records), path)
 
     def _build_non_tree_degree(self) -> dict[str, int]:
         """Count incident non-tree edges per node.
@@ -3532,12 +3539,13 @@ class HypothesisEngine:
             }
 
         for h in hypotheses:
-            h.composite_score = (
+            base_score = (
                 (h.confidence_score ** weights["confidence"])
                 * (h.evidence_score ** weights["evidence"])
                 * (h.novelty_score ** weights["novelty"])
                 * (max(h.testability_score, 0.01) ** weights["testability"])
             )
+            h.composite_score = self._apply_feedback_adjustment(h, base_score)
 
         hypotheses.sort(key=lambda h: h.composite_score, reverse=True)
         return hypotheses[:top_n]
@@ -4339,7 +4347,24 @@ class HypothesisEngine:
         if self._has_only_review_evidence(h):
             score *= 0.7
 
-        return score
+        return self._apply_feedback_adjustment(h, score)
+
+    def _apply_feedback_adjustment(self, h: Hypothesis, base_score: float) -> float:
+        """Apply loaded closed-loop feedback and store an auditable adjustment."""
+        metadata = h.metadata or {}
+        if self.feedback_state is None:
+            metadata.pop("feedback_adjustment", None)
+            h.metadata = metadata
+            return float(min(1.0, max(0.0, base_score)))
+        adjustment = self.feedback_state.score(h)
+        adjusted = self.feedback_state.apply(base_score, adjustment)
+        metadata["feedback_adjustment"] = {
+            **adjustment.as_dict(),
+            "base_score": float(base_score),
+            "adjusted_score": float(adjusted),
+        }
+        h.metadata = metadata
+        return adjusted
 
     @staticmethod
     def _has_only_review_evidence(h: Hypothesis) -> bool:

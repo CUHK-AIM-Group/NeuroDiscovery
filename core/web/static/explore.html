@@ -1152,6 +1152,7 @@ const I18N = {
     update_available: "New graph available",
     up_to_date: "Graph is up to date",
     update_failed: "Update check failed",
+    checked_files: "checked files",
     downloading_graph: "Downloading graph…",
     download_complete: "Graph updated",
     download_confirm: "Download the latest NeuroOracle graph from HuggingFace now?",
@@ -1250,6 +1251,7 @@ const I18N = {
     update_available: "发现新版图谱",
     up_to_date: "图谱已是最新",
     update_failed: "更新检查失败",
+    checked_files: "已检查文件",
     downloading_graph: "正在下载图谱…",
     download_complete: "图谱已更新",
     download_confirm: "现在从 HuggingFace 下载最新版 NeuroOracle 图谱吗？",
@@ -1481,12 +1483,21 @@ function renderGraphUpdateStatus(status = null) {
     statusEl.textContent = status.message ? `${t("update_failed")}: ${status.message}` : t("update_failed");
     return;
   }
+  const files = Array.isArray(status.files) ? status.files : [];
+  const checkedCount = Number(status.remote_checked || files.filter((file) => file && file.remote && !file.error).length || 0);
+  const errors = Array.isArray(status.errors) ? status.errors : [];
+  if (status.check_failed || (errors.length && !checkedCount)) {
+    const detail = status.message || errors[0] || "";
+    statusEl.textContent = detail ? `${t("update_failed")}: ${detail}` : t("update_failed");
+    return;
+  }
+  const suffix = checkedCount ? ` · ${t("checked_files")}: ${checkedCount}` : "";
   if (status.update_available) {
-    statusEl.textContent = t("update_available");
+    statusEl.textContent = `${t("update_available")}${suffix}`;
     updateBtn.style.display = "inline-flex";
     return;
   }
-  statusEl.textContent = t("up_to_date");
+  statusEl.textContent = `${t("up_to_date")}${suffix}`;
 }
 
 async function checkGraphUpdate() {

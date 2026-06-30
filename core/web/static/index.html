@@ -1316,39 +1316,6 @@
     }
     .neurooracle-page.ready .neurooracle-setup { display: none; }
     .neurooracle-page.ready .neurooracle-viewer { display: flex; }
-    .neurooracle-viewer-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 12px;
-      border: 1px solid color-mix(in oklab, var(--border), transparent 12%);
-      border-radius: 12px;
-      background: color-mix(in oklab, var(--surface-elev), transparent 8%);
-      box-shadow: var(--shadow-card);
-    }
-    .neurooracle-update-status {
-      min-width: 0;
-      color: var(--text-muted);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-    .neurooracle-update-status strong {
-      color: var(--text);
-      font-weight: 720;
-    }
-    .neurooracle-update-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-    }
-    .neurooracle-viewer-toolbar .neurooracle-primary,
-    .neurooracle-viewer-toolbar .neurooracle-secondary {
-      min-height: 34px;
-      padding: 7px 12px;
-      font-size: 13px;
-    }
     .neurooracle-frame {
       flex: 1 1 auto;
       min-height: 0;
@@ -2546,13 +2513,6 @@
             <div class="neurooracle-status" id="neurooracle-status">Checking local graph...</div>
           </div>
           <div class="neurooracle-viewer" id="neurooracle-viewer">
-            <div class="neurooracle-viewer-toolbar">
-              <div class="neurooracle-update-status" id="neurooracle-update-status">Graph loaded.</div>
-              <div class="neurooracle-update-actions">
-                <button class="neurooracle-secondary" id="neurooracle-check-update-btn" type="button">Check for updates</button>
-                <button class="neurooracle-primary" id="neurooracle-update-btn" type="button" hidden>Update graph</button>
-              </div>
-            </div>
             <iframe class="neurooracle-frame" id="neurooracle-frame" title="NeuroOracle graph viewer"></iframe>
           </div>
         </div>
@@ -2721,9 +2681,6 @@
   const neurooracleOpenBtn = document.getElementById('neurooracle-open-btn');
   const neurooracleDownloadBtn = document.getElementById('neurooracle-download-btn');
   const neurooracleRefreshBtn = document.getElementById('neurooracle-refresh-btn');
-  const neurooracleCheckUpdateBtn = document.getElementById('neurooracle-check-update-btn');
-  const neurooracleUpdateBtn = document.getElementById('neurooracle-update-btn');
-  const neurooracleUpdateStatusEl = document.getElementById('neurooracle-update-status');
   const neurooracleFrameEl = document.getElementById('neurooracle-frame');
   const avatarPickerOverlayEl = document.getElementById('avatar-picker-overlay');
   const avatarPickerCloseEl = document.getElementById('avatar-picker-close');
@@ -3034,16 +2991,6 @@
     'Browse concepts, claims, hypotheses, and graph paths from the local NeuroOracle knowledge graph.': '浏览本地 NeuroOracle 知识图谱中的概念、文献声明、假设和图谱路径。',
     'Open graph viewer': '打开图谱查看器',
     'Download graph': '下载图谱',
-    'Graph loaded.': '图谱已加载。',
-    'Check for updates': '检查更新',
-    'Update graph': '更新图谱',
-    'Checking HuggingFace for graph updates...': '正在检查 HuggingFace 图谱更新...',
-    'A newer NeuroOracle graph is available.': '发现新版 NeuroOracle 图谱。',
-    'NeuroOracle graph is up to date.': 'NeuroOracle 图谱已是最新。',
-    'Unable to check graph updates:': '无法检查图谱更新：',
-    'Update check failed': '更新检查失败',
-    'Update reason': '更新原因',
-    'Remote files checked': '已检查远端文件',
     'Download the latest NeuroOracle graph from HuggingFace now?': '现在从 HuggingFace 下载最新版 NeuroOracle 图谱吗？',
     'Check local graph': '检查本地图谱',
     'Checking local graph...': '正在检查本地图谱...',
@@ -3348,8 +3295,6 @@
     setText('#neurooracle-open-btn', 'Open graph viewer');
     setText('#neurooracle-download-btn', 'Download graph');
     setText('#neurooracle-refresh-btn', 'Check local graph');
-    setText('#neurooracle-check-update-btn', 'Check for updates');
-    setText('#neurooracle-update-btn', 'Update graph');
     setText('#search-page .page-eyebrow', 'Workspace Search');
     setText('#search-page .page-title', 'Search');
     setText('#search-page .page-subtitle', 'Search chats in the active project. Skill search lives in the Skills page.');
@@ -5734,8 +5679,6 @@
     if (neurooracleOpenBtn) neurooracleOpenBtn.disabled = !available || running;
     if (neurooracleDownloadBtn) neurooracleDownloadBtn.disabled = running;
     if (neurooracleRefreshBtn) neurooracleRefreshBtn.disabled = running;
-    if (neurooracleCheckUpdateBtn) neurooracleCheckUpdateBtn.disabled = running;
-    if (neurooracleUpdateBtn) neurooracleUpdateBtn.disabled = running;
 
     if (available) {
       const proxy = status && status.proxy ? status.proxy : {};
@@ -5778,46 +5721,6 @@
 
   function renderNeuroOracleUpdateStatus(status = null) {
     state.neurooracleUpdateStatus = status || null;
-    if (!neurooracleUpdateStatusEl || !neurooracleUpdateBtn || !neurooracleCheckUpdateBtn) return;
-
-    const download = state.neurooracleStatus && state.neurooracleStatus.download ? state.neurooracleStatus.download : {};
-    const downloadRunning = Boolean(download.running);
-    neurooracleCheckUpdateBtn.disabled = downloadRunning || Boolean(status && status.type === 'checking');
-    neurooracleUpdateBtn.disabled = downloadRunning;
-    neurooracleUpdateBtn.hidden = true;
-
-    if (!status) {
-      neurooracleUpdateStatusEl.innerHTML = escapeHtml(tr('Graph loaded.'));
-      return;
-    }
-
-    if (status.type === 'checking') {
-      neurooracleUpdateStatusEl.innerHTML = `<strong>${escapeHtml(tr('Checking HuggingFace for graph updates...'))}</strong>`;
-      return;
-    }
-
-    if (status.type === 'error') {
-      const message = status.message || tr('Update check failed');
-      neurooracleUpdateStatusEl.innerHTML = `<strong>${escapeHtml(tr('Unable to check graph updates:'))}</strong> ${escapeHtml(message)}`;
-      return;
-    }
-
-    const files = Array.isArray(status.files) ? status.files : [];
-    const changed = files.filter(file => file && file.update_available);
-    if (status.update_available) {
-      const reason = changed[0] && changed[0].reason ? changed[0].reason : 'remote';
-      neurooracleUpdateBtn.hidden = false;
-      neurooracleUpdateStatusEl.innerHTML = `
-        <strong>${escapeHtml(tr('A newer NeuroOracle graph is available.'))}</strong>
-        ${escapeHtml(tr('Update reason'))}: ${escapeHtml(reason)}
-      `;
-      return;
-    }
-
-    neurooracleUpdateStatusEl.innerHTML = `
-      <strong>${escapeHtml(tr('NeuroOracle graph is up to date.'))}</strong>
-      ${escapeHtml(tr('Remote files checked'))}: ${escapeHtml(String(files.length || 0))}
-    `;
   }
 
   async function refreshNeuroOracleStatus() {
@@ -5898,31 +5801,6 @@
       renderNeuroOracleStatus({ available: false, download: { error: err && err.message ? err.message : 'download failed' } });
       renderNeuroOracleUpdateStatus({ type: 'error', message: err && err.message ? err.message : 'download failed' });
     }
-  }
-
-  async function checkNeuroOracleGraphUpdate() {
-    renderNeuroOracleUpdateStatus({ type: 'checking' });
-    try {
-      const resp = await fetch('/api/neurooracle/graph/update-status');
-      if (!resp.ok) {
-        const message = resp.status === 404
-          ? tr('Current backend does not support NeuroOracle graph download. Restart the desktop app to launch the bundled backend.')
-          : `update check failed (${resp.status})`;
-        throw new Error(message);
-      }
-      const status = await resp.json();
-      renderNeuroOracleUpdateStatus(status);
-      return status;
-    } catch (err) {
-      const status = { type: 'error', message: err && err.message ? err.message : tr('Update check failed') };
-      renderNeuroOracleUpdateStatus(status);
-      return status;
-    }
-  }
-
-  function updateNeuroOracleGraph() {
-    const ok = confirm(tr('Download the latest NeuroOracle graph from HuggingFace now?'));
-    if (ok) startNeuroOracleDownload({ force: true });
   }
 
   async function ensureNeuroOracleReady(opts = {}) {
@@ -6009,12 +5887,6 @@
     }
     if (neurooracleRefreshBtn) {
       neurooracleRefreshBtn.addEventListener('click', () => refreshNeuroOracleStatus());
-    }
-    if (neurooracleCheckUpdateBtn) {
-      neurooracleCheckUpdateBtn.addEventListener('click', () => checkNeuroOracleGraphUpdate());
-    }
-    if (neurooracleUpdateBtn) {
-      neurooracleUpdateBtn.addEventListener('click', () => updateNeuroOracleGraph());
     }
     if (settingsSearchEl) {
       settingsSearchEl.addEventListener('input', () => {
