@@ -10,7 +10,7 @@ Features:
   - Configurable diseases, year range, papers per year
 
 Usage:
-    /c/Users/45846/anaconda3/envs/neuroclaw/python.exe -m neurooracle.batch_extract
+    python -m neurooracle.batch_extract
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
@@ -53,7 +54,7 @@ DISEASES = [
 YEAR_START = 2000
 YEAR_END = 2026
 PAPERS_PER_YEAR = 20
-NCBI_API_KEY = "1e72705978ad50249ffc129798ba3958f308"
+NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "").strip()
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "full_snapshot_v2"
 CHECKPOINT_FILE = DATA_DIR / "batch_checkpoint.json"
