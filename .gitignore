@@ -33,6 +33,7 @@ models/**/*results*.csv
 .env.keys
 *.secret
 api_keys.txt
+keys.txt
 
 # OS & IDE
 .DS_Store
@@ -73,6 +74,8 @@ neuroclaw.tex
 # Local paper-reading and manuscript build artifacts
 papers/
 tex/_preview*/
+tex/.render_check/
+tex/_layout_check*/
 tex/**/*.aux
 tex/**/*.bbl
 tex/**/*.blg
@@ -81,6 +84,11 @@ tex/**/*.fls
 tex/**/*.out
 tex/fig/*.png
 tex/fig/*.svg
+
+# Local UI previews and screenshots
+core/web/static/skill-logo-preview.html
+core/web/static/skill-logo-preview.png
+neuroclaw-project-checkpoint.png
 
 # Local figure/rendering scripts
 core/scripts/plot_*.py

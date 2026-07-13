@@ -33,6 +33,7 @@ import concurrent.futures
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -752,21 +753,51 @@ def _run_shell_command(
     """
     cmd = str(command or "").strip()
     if not cmd:
-        return {"success": False, "error": "empty command"}
+        return {
+            "success": False,
+            "error": "empty command",
+            "error_type": "invalid_tool_input",
+            "failure_stage": "validation",
+            "retryable": True,
+            "recovery_hint": "Submit a non-empty command using the platform shell syntax.",
+        }
 
     if _looks_dangerous_shell_command(cmd):
         return {
             "success": False,
             "error": "blocked_dangerous_command",
+            "error_type": "safety_policy_block",
+            "failure_stage": "validation",
+            "retryable": False,
             "message": "Command blocked by safety policy. Ask user for explicit confirmation.",
         }
 
-    shell_path = os.environ.get("SHELL") or "/bin/bash"
-    shell_name = Path(shell_path).name.lower()
-    if shell_name in {"bash", "zsh", "sh", "dash", "ksh", "fish"}:
-        argv = [shell_path, "-lc", cmd]
+    if os.name == "nt":
+        # Windows desktop sessions normally do not define SHELL. Falling back
+        # to /bin/bash here makes every command fail before it starts with
+        # [WinError 2]. COMSPEC is the authoritative system command shell.
+        shell_path = (
+            str(os.environ.get("COMSPEC", "")).strip().strip('"')
+            or shutil.which("cmd.exe")
+            or shutil.which("cmd")
+            or "cmd.exe"
+        )
+        # Passing a quoted command as a list makes subprocess.list2cmdline()
+        # escape its quotes with backslashes, which cmd.exe treats literally.
+        # Build the Windows command line explicitly so quoted file paths keep
+        # their normal cmd.exe meaning.
+        argv: str | list[str] = f'"{shell_path}" /d /s /c "{cmd}"'
     else:
-        argv = [shell_path, "-c", cmd]
+        shell_path = (
+            str(os.environ.get("SHELL", "")).strip().strip('"')
+            or shutil.which("bash")
+            or "/bin/sh"
+        )
+        shell_name = Path(shell_path).name.lower()
+        if shell_name in {"bash", "zsh", "sh", "dash", "ksh", "fish"}:
+            argv = [shell_path, "-lc", cmd]
+        else:
+            argv = [shell_path, "-c", cmd]
 
     env = os.environ.copy()
     proc: subprocess.Popen[str] | None = None
@@ -781,14 +812,29 @@ def _run_shell_command(
         )
         _write_agent_shell_status(cmd, cwd, proc.pid)
         stdout, stderr = proc.communicate(timeout=max(1, int(timeout_sec)))
-        return {
+        result = {
             "success": proc.returncode == 0,
             "returncode": proc.returncode,
             "stdout": stdout,
             "stderr": stderr,
             "shell": shell_path,
             "cwd": str(cwd),
+            "platform": sys.platform,
         }
+        if proc.returncode != 0:
+            result.update(
+                {
+                    "error_type": "command_failed",
+                    "failure_stage": "command_execution",
+                    "retryable": True,
+                    "recovery_hint": (
+                        "Diagnose stderr and the return code, then make a materially different retry. "
+                        "Check platform syntax, quoting, paths, and available executables. Do not repeat "
+                        "the same command unchanged; prefer a dedicated read-only tool when one can answer the request."
+                    ),
+                }
+            )
+        return result
     except subprocess.TimeoutExpired as exc:
         if proc is not None:
             try:
@@ -804,20 +850,129 @@ def _run_shell_command(
         return {
             "success": False,
             "error": f"timeout_after_{int(timeout_sec)}s",
+            "error_type": "command_timeout",
+            "failure_stage": "command_execution",
+            "retryable": True,
+            "recovery_hint": (
+                "Determine whether the command is still useful, then retry with a narrower command or a justified "
+                "longer timeout. Do not blindly repeat an expensive command."
+            ),
             "stdout": _stdout or exc.stdout or "",
             "stderr": _stderr or exc.stderr or "",
             "shell": shell_path,
             "cwd": str(cwd),
+            "platform": sys.platform,
+        }
+    except FileNotFoundError as exc:
+        missing = str(getattr(exc, "filename", "") or shell_path)
+        return {
+            "success": False,
+            "error": str(exc),
+            "error_type": "shell_launch_failed",
+            "failure_stage": "process_start",
+            "missing_executable": missing,
+            "retryable": True,
+            "recovery_hint": (
+                "The shell process did not start; this does not mean the user's target file is missing. "
+                "Select an executable available on the current platform or use a dedicated non-shell tool."
+            ),
+            "shell": shell_path,
+            "cwd": str(cwd),
+            "platform": sys.platform,
         }
     except Exception as exc:  # pragma: no cover
         return {
             "success": False,
             "error": str(exc),
+            "error_type": "shell_runtime_error",
+            "failure_stage": "process_start" if proc is None else "command_execution",
+            "retryable": True,
+            "recovery_hint": (
+                "Classify the failure before retrying. Try a materially different safe approach or a dedicated tool; "
+                "do not infer that the user's target path is missing from a process-start error."
+            ),
             "shell": shell_path,
             "cwd": str(cwd),
+            "platform": sys.platform,
         }
     finally:
         _clear_agent_shell_status()
+
+
+def _format_file_size(size_bytes: int) -> str:
+    value = float(max(0, int(size_bytes)))
+    units = ("B", "KiB", "MiB", "GiB", "TiB")
+    for unit in units:
+        if value < 1024.0 or unit == units[-1]:
+            return f"{int(value)} B" if unit == "B" else f"{value:.2f} {unit}"
+        value /= 1024.0
+    return f"{int(size_bytes)} B"
+
+
+def _inspect_local_path(path_text: str, workspace: Path) -> dict[str, Any]:
+    """Return read-only metadata for a local path without invoking a shell."""
+    raw_path = str(path_text or "").strip()
+    if len(raw_path) >= 2 and raw_path[0] == raw_path[-1] and raw_path[0] in {'"', "'"}:
+        raw_path = raw_path[1:-1].strip()
+    if not raw_path:
+        return {
+            "success": False,
+            "error": "empty_path",
+            "error_type": "invalid_tool_input",
+            "retryable": True,
+            "recovery_hint": "Provide the exact local path supplied by the user or attachment metadata.",
+        }
+
+    expanded = os.path.expandvars(os.path.expanduser(raw_path))
+    candidate = Path(expanded)
+    if not candidate.is_absolute():
+        candidate = workspace / candidate
+    try:
+        candidate = candidate.resolve(strict=False)
+    except Exception:
+        candidate = candidate.absolute()
+
+    try:
+        stat = candidate.stat()
+    except FileNotFoundError:
+        return {
+            "success": False,
+            "exists": False,
+            "path": str(candidate),
+            "error": "path_not_found",
+            "error_type": "path_not_found",
+            "failure_stage": "path_inspection",
+            "retryable": True,
+            "recovery_hint": "Re-check the exact attachment path and quoting; do not change shells to solve a missing path.",
+        }
+    except Exception as exc:
+        return {
+            "success": False,
+            "exists": None,
+            "path": str(candidate),
+            "error": str(exc),
+            "error_type": "path_inspection_failed",
+            "failure_stage": "path_inspection",
+            "retryable": False,
+            "recovery_hint": "Report the access problem; request user input only if permissions or authority are required.",
+        }
+
+    kind = "file" if candidate.is_file() else "directory" if candidate.is_dir() else "other"
+    result: dict[str, Any] = {
+        "success": True,
+        "exists": True,
+        "path": str(candidate),
+        "name": candidate.name,
+        "kind": kind,
+        "modified_time_unix": stat.st_mtime,
+    }
+    if kind == "file":
+        result["size_bytes"] = stat.st_size
+        result["size_human"] = _format_file_size(stat.st_size)
+        result["output"] = f"{candidate.name}: {stat.st_size} bytes ({result['size_human']})"
+    else:
+        result["output"] = f"{candidate.name or candidate}: {kind}"
+    return result
 
 
 def _read_workspace_file(path_text: str, workspace: Path, max_chars: int = 12000) -> dict[str, Any]:
@@ -3936,8 +4091,9 @@ class AgentSession:
                 "function": {
                     "name": "run_shell_command",
                     "description": (
-                        "Run a shell command in the local workspace using default shell "
-                        "and inherited environment variables."
+                        "Run a shell command in the local workspace using the platform shell "
+                        "and inherited environment variables. On Windows, use cmd.exe syntax "
+                        "(for example: dir, type, and if exist), not bash syntax."
                     ),
                     "parameters": {
                         "type": "object",
@@ -3952,6 +4108,27 @@ class AgentSession:
                             },
                         },
                         "required": ["command"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "inspect_local_path",
+                    "description": (
+                        "Inspect a local file or directory without using a shell. Returns existence, resolved path, "
+                        "kind, and exact file size. Prefer this for attachment existence/size questions and as a "
+                        "read-only fallback when shell execution fails."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "Exact local path supplied by the user or recorded for an attachment.",
+                            },
+                        },
+                        "required": ["path"],
                     },
                 },
             },
@@ -4172,6 +4349,28 @@ class AgentSession:
                             "executed": bool(result.get("executed", result.get("success", False))),
                             "success": bool(result.get("success", False)),
                             "skills_used": _extract_skills_from_result_payload(result),
+                            "result": result,
+                        }
+                    )
+                elif name == "inspect_local_path":
+                    inspect_path = str(args.get("path", ""))
+                    if self.benchmark_mode:
+                        result = {
+                            "success": True,
+                            "benchmark_mode": True,
+                            "executed": False,
+                            "message": "Benchmark mode skipped real local path inspection.",
+                            "suggested_path": inspect_path,
+                        }
+                    else:
+                        result = _inspect_local_path(inspect_path, self.workspace)
+                    self._tool_events.append(
+                        {
+                            "tool": "inspect_local_path",
+                            "command": inspect_path,
+                            "executed": bool(result.get("executed", True)),
+                            "success": bool(result.get("success", False)),
+                            "skills_used": [],
                             "result": result,
                         }
                     )
@@ -4510,7 +4709,20 @@ class AgentSession:
                 memory_section = self._memory_store.render_index()
             except Exception:
                 memory_section = ""
-        return f"{soul}{loaded_skills_line}{extra}{memory_section}{benchmark_policy}"
+        recovery_policy = (
+            "\n\n[Autonomous Error Recovery]\n"
+            "- Treat tool errors as diagnostic evidence. Distinguish validation failures, process-start failures, "
+            "command execution failures, missing paths, permissions, and timeouts before deciding what failed.\n"
+            "- Resolve small, safe, reversible problems autonomously. Make up to two materially different recovery "
+            "attempts when the result says retryable; do not repeat the same command or unavailable runtime unchanged.\n"
+            "- Prefer dedicated tools over shell workarounds. For local attachment existence or size, use "
+            "inspect_local_path instead of asking the user to run a command.\n"
+            "- Use the platform and recovery_hint fields returned by tools. A shell process-start failure does not "
+            "prove that the user's target file is missing.\n"
+            "- Stop and ask the user only when recovery needs new permission, destructive action, missing required "
+            "input, or a material change of scope. If still blocked, report the diagnosed root cause precisely."
+        )
+        return f"{soul}{loaded_skills_line}{extra}{memory_section}{recovery_policy}{benchmark_policy}"
 
     # ── Subagent management ────────────────────────────────────────────────────
 

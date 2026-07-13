@@ -318,6 +318,29 @@
       color: #6f7b88;
       flex-shrink: 0;
     }
+    .model-probe-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0 6px 6px;
+      padding: 7px 8px;
+      border-radius: 9px;
+      color: var(--text-muted);
+      background: color-mix(in oklab, var(--surface-soft), transparent 24%);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .model-probe-status.error { color: var(--danger); }
+    .model-probe-spinner {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+      border: 2px solid color-mix(in oklab, var(--text-muted), transparent 65%);
+      border-top-color: currentColor;
+      border-radius: 999px;
+      animation: model-probe-spin .8s linear infinite;
+    }
+    @keyframes model-probe-spin { to { transform: rotate(360deg); } }
 
     .spacer { flex: 1; }
 
@@ -620,6 +643,118 @@
     }
     .section-action-btn.danger:hover { color: var(--danger); }
 
+    .project-create-menu {
+      position: fixed;
+      z-index: 5000;
+      width: min(306px, calc(100vw - 24px));
+      display: none;
+      gap: 3px;
+      padding: 7px;
+      border: 1px solid color-mix(in oklab, var(--border), transparent 6%);
+      border-radius: 14px;
+      background: color-mix(in oklab, var(--surface-elev), transparent 1%);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, .18);
+    }
+    .project-create-menu.open { display: grid; }
+    .project-create-option {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 11px;
+      text-align: left;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .project-create-option:hover,
+    .project-create-option:focus-visible {
+      background: color-mix(in oklab, var(--surface-soft), transparent 10%);
+      outline: none;
+    }
+    .project-create-option svg {
+      width: 19px;
+      height: 19px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      color: var(--text-muted);
+    }
+
+    .project-hover-card {
+      position: fixed;
+      z-index: 5200;
+      width: min(390px, calc(100vw - 24px));
+      padding: 13px 14px;
+      border: 1px solid color-mix(in oklab, var(--border), transparent 4%);
+      border-radius: 15px;
+      background: color-mix(in oklab, var(--surface-elev), transparent 1%);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, .16);
+      color: var(--text);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateX(-4px);
+      transition: transform 120ms ease;
+    }
+    .project-hover-card.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+    .project-hover-head,
+    .project-hover-detail {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr);
+      align-items: start;
+      gap: 9px;
+    }
+    .project-hover-head { align-items: center; }
+    .project-hover-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+      font-weight: 720;
+      letter-spacing: -.01em;
+    }
+    .project-hover-detail {
+      margin-top: 10px;
+      color: color-mix(in oklab, var(--text), var(--text-muted) 22%);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .project-hover-detail.path {
+      margin-top: 11px;
+      padding-top: 11px;
+      border-top: 1px solid color-mix(in oklab, var(--border), transparent 22%);
+    }
+    .project-hover-path {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .project-hover-card svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: var(--text-muted);
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .project-hover-card { transition: none; transform: none; }
+    }
+
     .section-body { max-height: none; overflow: visible; transition: max-height var(--ease); }
     .nav-section.collapsed .section-body { max-height: 0; overflow: hidden; }
 
@@ -769,7 +904,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .project-meta { margin-top: 4px; padding-left: 16px; font-size: 11px; color: var(--text-muted); }
     .project-chat-list {
       display: grid;
       gap: 2px;
@@ -856,6 +990,19 @@
     .chat-row { display: flex; align-items: center; gap: 8px; }
     .chat-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-meta { margin-top: 4px; font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-running-indicator {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border: 2px solid color-mix(in oklab, var(--accent), transparent 64%);
+      border-top-color: var(--accent-strong);
+      border-radius: 50%;
+      animation: chat-running-spin 800ms linear infinite;
+    }
+    @keyframes chat-running-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .chat-running-indicator { animation: none; border-color: var(--accent); }
+    }
 
     .rename-btn {
       border: none;
@@ -2005,13 +2152,30 @@
       list-style: none;
       cursor: pointer;
       display: grid;
-      grid-template-columns: 24px minmax(0, 1fr) auto;
+      grid-template-columns: 24px minmax(0, 1fr) auto 14px;
       gap: 9px;
       align-items: center;
       padding: 10px 12px;
       font-size: 13px;
     }
     .tool-event-summary::-webkit-details-marker { display: none; }
+    .tool-event-summary:focus-visible {
+      outline: 2px solid color-mix(in oklab, var(--accent), transparent 28%);
+      outline-offset: -2px;
+    }
+    .tool-event-chevron {
+      color: var(--text-muted);
+      font-size: 18px;
+      line-height: 1;
+      transform: rotate(0deg);
+      transition: transform 140ms ease;
+    }
+    .tool-timeline details[open] > .tool-event-summary .tool-event-chevron {
+      transform: rotate(90deg);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tool-event-chevron { transition: none; }
+    }
     .tool-event-dot {
       width: 20px;
       height: 20px;
@@ -2132,7 +2296,14 @@
       min-width: 112px;
     }
 
-    .attach-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; }
+    .attach-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      min-height: 0;
+      padding: 0 2px 1px;
+    }
     .attach-list:empty { display: none; }
 
     .attach-chip {
@@ -2149,6 +2320,46 @@
     }
     .skill-chip { background: color-mix(in oklab, var(--accent), transparent 90%); border-color: color-mix(in oklab, var(--accent), var(--border) 56%); }
     .attach-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .file-attach-chip {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) 22px;
+      align-items: center;
+      gap: 9px;
+      min-width: 210px;
+      max-width: min(330px, 100%);
+      padding: 7px 7px 7px 8px;
+      border-radius: 12px;
+      background: color-mix(in oklab, var(--surface-elev), var(--surface-soft) 28%);
+      box-shadow: 0 3px 12px rgba(23, 64, 78, 0.05);
+    }
+    .file-attach-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: color-mix(in oklab, var(--text-muted), var(--text) 18%);
+      background: var(--surface-soft);
+    }
+    .file-attach-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .file-attach-copy { min-width: 0; display: grid; gap: 2px; }
+    .file-attach-chip .attach-name { font-size: 13px; font-weight: 650; line-height: 1.25; }
+    .file-attach-type {
+      color: var(--text-muted);
+      font-size: 11px;
+      line-height: 1.2;
+      letter-spacing: .02em;
+    }
+    .file-attach-chip .attach-remove { align-self: start; }
 
     .attach-remove {
       border: none;
@@ -2167,11 +2378,160 @@
       display: flex;
       align-items: flex-end;
       gap: 8px;
+      position: relative;
       border: 1px solid color-mix(in oklab, var(--accent), var(--border) 72%);
       border-radius: 14px;
       background: var(--surface-elev);
       box-shadow: 0 8px 24px rgba(23, 64, 78, 0.08);
       padding: 6px;
+      transition: border-color var(--ease), box-shadow var(--ease), background var(--ease);
+    }
+
+    .file-drop-hint {
+      position: absolute;
+      inset: 4px;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px dashed color-mix(in oklab, var(--accent), white 12%);
+      border-radius: 11px;
+      background: color-mix(in oklab, var(--surface-elev), var(--accent) 8%);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity var(--ease), visibility var(--ease);
+    }
+    .file-drop-hint svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+    .input-area.is-file-dragover .input-row {
+      border-color: var(--accent);
+      background: color-mix(in oklab, var(--surface-elev), var(--accent) 5%);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 82%), 0 12px 30px rgba(23, 64, 78, 0.11);
+    }
+    .input-area.is-file-dragover .file-drop-hint { opacity: 1; visibility: visible; }
+
+    .slash-menu {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      z-index: 3200;
+      padding: 7px;
+      border: 1px solid color-mix(in oklab, var(--border), transparent 8%);
+      border-radius: 15px;
+      background: color-mix(in oklab, var(--surface-elev), transparent 2%);
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+      backdrop-filter: blur(18px);
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+    }
+    .slash-menu[hidden] { display: none; }
+    .slash-menu-header {
+      padding: 7px 9px 9px;
+      border-bottom: 1px solid color-mix(in oklab, var(--border), transparent 48%);
+      margin-bottom: 4px;
+    }
+    .slash-menu-title {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 680;
+    }
+    .slash-menu-title code {
+      color: var(--accent-strong);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 11.5px;
+    }
+    .slash-menu-help {
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+    .slash-menu-list { display: grid; gap: 2px; }
+    .slash-command {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 8px 10px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .slash-command:hover {
+      background: color-mix(in oklab, var(--accent), var(--surface-soft) 94%);
+    }
+    .slash-command.active {
+      background: color-mix(in oklab, var(--accent), var(--surface-soft) 88%);
+    }
+    .slash-command:focus-visible {
+      outline: 2px solid color-mix(in oklab, var(--accent), transparent 25%);
+      outline-offset: -2px;
+    }
+    .slash-command-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      color: var(--accent-strong);
+      background: color-mix(in oklab, var(--accent), transparent 88%);
+      font-size: 12px;
+      font-weight: 760;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .slash-command-copy { min-width: 0; }
+    .slash-command-name {
+      font-size: 13px;
+      font-weight: 680;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .slash-command-desc {
+      margin-top: 2px;
+      color: var(--text-muted);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .slash-menu-footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 8px 9px 3px;
+      border-top: 1px solid color-mix(in oklab, var(--border), transparent 48%);
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 10.5px;
+    }
+    .slash-menu-footer span { display: inline-flex; align-items: center; gap: 4px; }
+    .slash-menu-footer kbd {
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border: 1px solid color-mix(in oklab, var(--border), transparent 20%);
+      border-radius: 5px;
+      background: var(--surface-soft);
+      color: var(--text);
+      display: inline-grid;
+      place-items: center;
+      font: 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      box-shadow: 0 1px 0 color-mix(in oklab, var(--border), transparent 35%);
     }
     .input-row .model-badge {
       margin-bottom: 1px;
@@ -2192,9 +2552,18 @@
       background: transparent;
       color: var(--text-muted);
       cursor: pointer;
-      font-size: 17px;
+      display: grid;
+      place-items: center;
       flex-shrink: 0;
       transition: all var(--ease);
+    }
+    .upload-btn svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
     }
     .upload-btn:hover { color: var(--text); background: var(--surface-soft); transform: translateY(-1px); }
 
@@ -2246,7 +2615,6 @@
     .new-chat-btn,
     .clear-chat-btn,
     .project-name,
-    .project-meta,
     .chat-title,
     .primary-nav-btn,
     .skill-card-title,
@@ -2288,7 +2656,6 @@
     .msg-time,
     .msg-action-btn,
     .empty-hint,
-    .project-meta,
     .cp-date,
     .skill-card-desc,
     .skill-category-count,
@@ -2400,6 +2767,19 @@
 
   <div id="error-banner"></div>
 
+  <div class="project-create-menu" id="project-create-menu" role="menu" aria-hidden="true">
+    <button class="project-create-option" type="button" role="menuitem" data-project-create="blank">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+      <span data-project-create-label="blank">New blank project</span>
+    </button>
+    <button class="project-create-option" type="button" role="menuitem" data-project-create="existing">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2-2h9v13h-17z"/></svg>
+      <span data-project-create-label="existing">Use existing folder</span>
+    </button>
+  </div>
+
+  <div class="project-hover-card" id="project-hover-card" role="tooltip" aria-hidden="true"></div>
+
   <div class="main">
     <aside class="sidebar">
       <nav class="primary-nav" aria-label="Primary navigation">
@@ -2432,7 +2812,7 @@
             <span>Projects</span><span class="caret">▾</span>
           </button>
           <div class="section-floating-actions" aria-label="Project actions">
-            <button class="section-action-btn" id="new-project-btn" type="button" title="New project" aria-label="New project">
+            <button class="section-action-btn" id="new-project-btn" type="button" title="New project" aria-label="New project" aria-haspopup="menu" aria-expanded="false">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
             </button>
           </div>
@@ -2551,9 +2931,15 @@
       <div class="input-area">
         <div class="attach-list" id="attach-list"></div>
         <div class="input-row">
-          <input id="file-input" type="file" accept=".txt,.md,.markdown,.json,.yaml,.yml,.csv,.tsv,.py,.js,.ts,.tsx,.jsx,.sh,.bash,.zsh,.sql,.html,.css,.xml,.log,.rst,.ini,.toml,.cfg,.pdf,.docx,.xlsx,.pptx" multiple hidden>
-          <button id="upload-btn" class="upload-btn" title="Upload supported files" type="button">📎</button>
-          <textarea id="msg-input" rows="1" placeholder="Ask NeuroClaw... (Enter to send, Shift+Enter for newline)"></textarea>
+          <div class="slash-menu" id="slash-menu" role="listbox" aria-label="AutoResearch help commands" hidden></div>
+          <div class="file-drop-hint" id="file-drop-hint" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span id="file-drop-hint-text">Drop files to attach</span>
+          </div>
+          <button id="upload-btn" class="upload-btn" title="Attach local files" aria-label="Attach local files" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <textarea id="msg-input" rows="1" placeholder="Ask NeuroClaw... (Enter to send, Shift+Enter for newline)" aria-controls="slash-menu" aria-expanded="false"></textarea>
           <div class="model-badge">
             <span id="model-label">Model</span>
             <button id="model-menu-btn" class="model-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" title="Select model">
@@ -2661,6 +3047,7 @@
   const welcomeEl = document.getElementById('welcome');
   const inputAreaEl = document.querySelector('.input-area');
   const inputEl = document.getElementById('msg-input');
+  const slashMenuEl = document.getElementById('slash-menu');
   const sendBtn = document.getElementById('send-btn');
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
@@ -2698,11 +3085,13 @@
   const settingsStatusEl = document.getElementById('settings-status');
   const chatEmptyHintEl = document.getElementById('chat-empty-hint');
   const newProjectBtn = document.getElementById('new-project-btn');
+  const projectCreateMenuEl = document.getElementById('project-create-menu');
+  const projectHoverCardEl = document.getElementById('project-hover-card');
   const newChatBtn = document.getElementById('new-chat-btn');
   const clearChatBtn = document.getElementById('clear-chat-btn');
-  const fileInputEl = document.getElementById('file-input');
   const uploadBtnEl = document.getElementById('upload-btn');
   const attachListEl = document.getElementById('attach-list');
+  const fileDropHintTextEl = document.getElementById('file-drop-hint-text');
   const skillInfoOverlayEl = document.getElementById('skill-info-overlay');
   const skillInfoTitleEl = document.getElementById('skill-info-title');
   const skillInfoBodyEl = document.getElementById('skill-info-body');
@@ -2723,27 +3112,40 @@
   const TEXT_SCALE_STEP = 0.1;
   const TEXT_SCALE_DEFAULT = 1.1;
   const AUTO_RESEARCH_MODE_OFF = 'off';
-  const AUTO_RESEARCH_MODE_ON = 'on';
-  const AUTO_RESEARCH_PROMPT = [
-    '[AutoResearch mode: ON]',
-    'Before doing substantive work, first confirm the research setup with the user.',
-    'Ask the user to confirm, modify, or provide these items:',
-    '1. Task definition: the objective, exact inputs, expected outputs, and success criteria.',
-    '2. Dataset location: where the data lives, where labels/metadata live, relevant file formats, and train/validation/test splits if applicable.',
-    '3. Preprocessing: whether preprocessing is needed, what has already been preprocessed, and which pipeline or checks should be used.',
-    '4. AutoResearch effort: light = 10 research loops, standard = 30 loops, deep = 50 loops, or a user-specified loop count.',
-    'Do not start the AutoResearch loop until the user confirms these items.',
-    'After confirmation, run the agreed loop count and report each loop with findings, decisions, and next actions.'
-  ].join('\n');
-  const PROJECT_CHAT_PREVIEW_LIMIT = 5;
-  const MAX_ATTACHMENT_FILE_BYTES = 15 * 1024 * 1024;
-  const MAX_EMBED_CHARS = 12000;
-  const SUPPORTED_ATTACHMENT_EXTENSIONS = [
-    '.txt', '.md', '.markdown', '.json', '.yaml', '.yml', '.csv', '.tsv',
-    '.py', '.js', '.ts', '.tsx', '.jsx', '.sh', '.bash', '.zsh', '.sql',
-    '.html', '.css', '.xml', '.log', '.rst', '.ini', '.toml', '.cfg',
-    '.pdf', '.docx', '.xlsx', '.pptx',
+  const AUTO_RESEARCH_MODE_DATA = 'data';
+  const AUTO_RESEARCH_MODE_MODEL = 'model';
+  const AUTO_RESEARCH_MODE_IDEA = 'idea';
+  const AUTO_RESEARCH_MODE_END_TO_END = 'end-to-end';
+  const AUTO_RESEARCH_MODES = [
+    AUTO_RESEARCH_MODE_OFF,
+    AUTO_RESEARCH_MODE_DATA,
+    AUTO_RESEARCH_MODE_MODEL,
+    AUTO_RESEARCH_MODE_IDEA,
+    AUTO_RESEARCH_MODE_END_TO_END,
   ];
+  const SLASH_HELP_COMMANDS = [
+    {
+      command: '/help data', icon: 'D', en: 'Process data only', zh: '只处理数据',
+      templateEn: '/help data I only want to process data. What information should I provide?',
+      templateZh: '/help data 我只想处理数据。请问需要提供哪些信息。',
+    },
+    {
+      command: '/help model', icon: 'M', en: 'Write and run models only', zh: '只编写并运行模型',
+      templateEn: '/help model I only want to write and run models. What information should I provide?',
+      templateZh: '/help model 我只想编写并运行模型。请问需要提供哪些信息。',
+    },
+    {
+      command: '/help idea', icon: 'I', en: 'Generate a research idea only', zh: '只生成研究 idea',
+      templateEn: '/help idea I only want to generate a research idea. What information should I provide?',
+      templateZh: '/help idea 我只想生成研究 idea。请问需要提供哪些信息。',
+    },
+    {
+      command: '/help autoresearch', icon: '∞', en: 'Run the complete workflow', zh: '端到端 autoresearch',
+      templateEn: '/help autoresearch I want to run end-to-end autoresearch. What information should I provide?',
+      templateZh: '/help autoresearch 我想做端到端 autoresearch。请问需要提供哪些信息。',
+    },
+  ];
+  const PROJECT_CHAT_PREVIEW_LIMIT = 5;
   const SHELL_STATUS_POLL_MS = 1000;
 
   const DEFAULT_DESKTOP_CONFIG = {
@@ -2756,7 +3158,7 @@
     localPythonExe: '',
     fslDir: '',
     language: 'English',
-    proxyUrl: 'http://127.0.0.1:7897',
+    proxyUrl: '',
     llmProvider: 'openai',
     llmModel: 'gpt-5.5',
     llmBaseUrl: 'https://api.openai.com/v1',
@@ -2775,8 +3177,8 @@
     matlabPath: '',
     spmPath: '',
     bidsRoot: '',
-    outputRoot: 'C:\\Users\\45846\\Documents\\Code\\neuroclaw\\output',
-    memoryRoot: 'C:\\Users\\45846\\Documents\\Code\\cc_memory\\ROG',
+    outputRoot: '',
+    memoryRoot: '',
     autoStartBackend: true,
     reuseExistingBackend: true,
     showAdvancedLogs: false,
@@ -2847,7 +3249,7 @@
       rows: [
         { key: 'bidsRoot', scope: 'local', label: 'Default BIDS root', desc: 'Primary dataset root for new analysis sessions.', type: 'text', path: true },
         { key: 'outputRoot', scope: 'local', label: 'Output root', desc: 'Default folder for reports, benchmark outputs, and generated artifacts.', type: 'text', path: true },
-        { key: 'memoryRoot', scope: 'local', label: 'Memory root', desc: 'Shared ROG memory directory for Codex and NeuroClaw notes.', type: 'text', path: true },
+        { key: 'memoryRoot', scope: 'local', label: 'Memory root', desc: 'Shared local memory directory for NeuroClaw notes.', type: 'text', path: true },
       ],
     },
     {
@@ -2869,8 +3271,7 @@
     activeProjectId: null,
     skills: [],
     activeSessionId: null,
-    waiting: false,
-    waitingSessionId: null,
+    sessionRequests: {},
     pendingFiles: [],
     selectedSkills: [],
     skillSummaryCache: {},
@@ -2892,13 +3293,17 @@
       sessionId: null,
       poller: null,
     },
-    requestController: null,
     availableModels: [],
     activeModelProvider: '',
     activeModel: '',
     modelMenuOpen: false,
     modelMenuPanel: 'root',
+    modelProbe: { status: 'idle', count: 0, endpoint: '', error: '' },
+    modelProbeRequestId: 0,
+    projectCreateMenuOpen: false,
     autoResearchMode: AUTO_RESEARCH_MODE_OFF,
+    slashMenuOpen: false,
+    slashMenuIndex: 0,
     settingsSection: 'general',
     settingsSearch: '',
     desktopConfig: { ...DEFAULT_DESKTOP_CONFIG },
@@ -2916,6 +3321,11 @@
     neurooracleFrameLoaded: false,
     lastDesktopMenuAction: { action: '', at: 0 },
   };
+
+  let projectHoverShowTimer = null;
+  let projectHoverHideTimer = null;
+  let projectHoverAnchorEl = null;
+  let projectHoverProjectId = null;
 
   const ASSISTANT_AVATAR_SRC = '/static/logo.png';
   const USER_AVATAR_OPTIONS = [
@@ -2984,6 +3394,18 @@
     'Collapse sidebar': '折叠侧栏',
     'Expand sidebar': '展开侧栏',
     'Theme switcher': '主题切换',
+    'Primary navigation': '主导航',
+    'Project actions': '项目操作',
+    'Chat actions': '对话操作',
+    'New project': '新建项目',
+    'Settings navigation': '设置导航',
+    'NeuroOracle graph viewer': 'NeuroOracle 图谱查看器',
+    'AutoResearch help commands': 'AutoResearch 帮助命令',
+    'Attach local files': '添加本地文件',
+    'Drop files to attach': '拖放文件以添加',
+    'Ask NeuroClaw... (Enter to send, Shift+Enter for newline)': '向 NeuroClaw 提问…（Enter 发送，Shift+Enter 换行）',
+    'Select model': '选择模型',
+    'Starter prompts': '快捷提示',
     'Search': '搜索',
     'Skills': '技能',
     'NeuroOracle': 'NeuroOracle',
@@ -3063,10 +3485,15 @@
     'Choose User Avatar': '选择用户头像',
     'Change avatar': '更换头像',
     'General': '通用',
+    'Runtime': '运行环境',
+    'Personal': '个人',
+    'Integrations': '集成',
+    'Data': '数据',
     'Default desktop behavior for daily NeuroClaw work.': 'NeuroClaw 日常使用的默认桌面行为。',
     'Language': '语言',
     'Interface and backend language preference.': '界面和后端语言偏好。',
     'System default': '跟随系统',
+    'English': '英语',
     'Simplified Chinese': '简体中文',
     'Text size': '字号',
     'Scale interface text without using browser zoom.': '不依赖浏览器缩放来调整界面文字。',
@@ -3098,6 +3525,7 @@
     'Preferred shell for commands and copied run snippets.': '命令和复制运行片段使用的首选 shell。',
     'Default file opener': '默认文件打开方式',
     'Where folders, logs, and generated files should open by default.': '文件夹、日志和生成文件默认打开的位置。',
+    'Explorer': '文件资源管理器',
     'Desktop Runtime': '桌面运行时',
     'These values are used by the Electron desktop launcher when it starts the local backend.': '这些值用于 Electron 桌面端启动本地后端。',
     'NeuroClaw repo root': 'NeuroClaw 仓库根目录',
@@ -3153,6 +3581,7 @@
     'Default folder for reports, benchmark outputs, and generated artifacts.': '报告、基准输出和生成文件的默认目录。',
     'Memory root': '记忆根目录',
     'Shared ROG memory directory for Codex and NeuroClaw notes.': 'Codex 和 NeuroClaw 共享的 ROG 记忆目录。',
+    'Shared local memory directory for NeuroClaw notes.': 'NeuroClaw 笔记使用的共享本地记忆目录。',
     'Advanced': '高级',
     'Startup and diagnostics preferences for the desktop client.': '桌面客户端的启动和诊断偏好。',
     'Auto-start backend': '自动启动后端',
@@ -3194,12 +3623,21 @@
     'Cancel': '取消',
     'Save': '保存',
     'Send': '发送',
+    'Stop': '停止',
+    'Send message': '发送消息',
+    'Stop request': '停止请求',
+    'Close': '关闭',
+    'Selected skill:': '已选技能：',
+    'Remove skill': '移除技能',
+    'Remove file': '移除文件',
+    'Loading model...': '正在加载模型...',
     'Regen': '重新生成',
     'Edit': '编辑',
     'Copy': '复制',
     'Copied': '已复制',
     'Failed': '失败',
     'Ran shell command': '已执行 Shell 命令',
+    'Inspected local path': '已检查本地路径',
     'Read workspace file': '已读取工作区文件',
     'Spawned subagent': '已启动子 Agent',
     'Completed': '已完成',
@@ -3224,6 +3662,16 @@
     'Attachment parser failed.': '附件解析失败。',
     'Attachment parser is unavailable.': '附件解析器不可用。',
     'No readable attachment content.': '没有可读取的附件内容。',
+    'Unable to select files.': '无法选择文件。',
+    'fMRI workflow': 'fMRI 工作流',
+    'Dataset': '数据集',
+    'Modality': '影像模态',
+    'Academic Writing': '学术写作',
+    'Documents & Data': '文档与数据',
+    'Developer Tools': '开发工具',
+    'Search & Web': '搜索与网络',
+    'Agents & Runtime': 'Agent 与运行环境',
+    'Export format: json or md': '导出格式：json 或 md',
   };
 
   function tr(text) {
@@ -3263,6 +3711,20 @@
     setText('.theme-btn[data-theme="dark"]', 'Night');
     const themeSwitch = document.querySelector('.theme-switch');
     if (themeSwitch) themeSwitch.setAttribute('aria-label', tr('Theme switcher'));
+    const primaryNav = document.querySelector('.primary-nav');
+    if (primaryNav) primaryNav.setAttribute('aria-label', tr('Primary navigation'));
+    const projectActions = document.querySelector('#projects-section .section-floating-actions');
+    if (projectActions) projectActions.setAttribute('aria-label', tr('Project actions'));
+    const chatActions = document.querySelector('#chat-section .section-floating-actions');
+    if (chatActions) chatActions.setAttribute('aria-label', tr('Chat actions'));
+    if (newProjectBtn) {
+      newProjectBtn.title = tr('New project');
+      newProjectBtn.setAttribute('aria-label', tr('New project'));
+    }
+    if (newChatBtn) {
+      newChatBtn.title = tr('New chat');
+      newChatBtn.setAttribute('aria-label', tr('New chat'));
+    }
     if (sidebarToggleBtn) {
       const collapsed = document.body && document.body.classList.contains('sidebar-collapsed');
       sidebarToggleBtn.setAttribute('aria-label', collapsed ? tr('Expand sidebar') : tr('Collapse sidebar'));
@@ -3295,6 +3757,8 @@
     setText('#neurooracle-open-btn', 'Open graph viewer');
     setText('#neurooracle-download-btn', 'Download graph');
     setText('#neurooracle-refresh-btn', 'Check local graph');
+    const graphFrame = document.getElementById('neurooracle-frame');
+    if (graphFrame) graphFrame.title = tr('NeuroOracle graph viewer');
     setText('#search-page .page-eyebrow', 'Workspace Search');
     setText('#search-page .page-title', 'Search');
     setText('#search-page .page-subtitle', 'Search chats in the active project. Skill search lives in the Skills page.');
@@ -3307,10 +3771,37 @@
     setText('#settings-page .page-subtitle', 'Configure the desktop runtime, local dependency paths, LLM backend, and common software preferences.');
     setText('#settings-save-btn', 'Save settings');
     setText('#settings-restart-btn', 'Restart now');
+    const settingsSidebar = document.querySelector('.settings-sidebar');
+    if (settingsSidebar) settingsSidebar.setAttribute('aria-label', tr('Settings navigation'));
 
     setText('#welcome .start-kicker', 'Research desk ready');
     setText('#welcome h2', 'What should NeuroClaw inspect?');
     setText('#welcome p', 'Start with a dataset, a pipeline question, or a research idea.');
+    const starterTitles = ['BIDS QC', 'fMRI workflow', 'FreeSurfer QC', 'NeuroOracle'];
+    const starterPrompts = [
+      uiText(
+        'Plan a BIDS validation and quality-control pass for my neuroimaging dataset.',
+        '请为我的神经影像数据集规划一次 BIDS 验证和质量控制。',
+      ),
+      uiText(
+        'Help me design an fMRI preprocessing and first-level analysis workflow.',
+        '请帮我设计 fMRI 预处理和一级分析工作流。',
+      ),
+      uiText(
+        'Draft a FreeSurfer cortical reconstruction QC checklist with commands.',
+        '请起草一份包含命令的 FreeSurfer 皮层重建质量控制清单。',
+      ),
+      uiText(
+        'Turn a neuroscience hypothesis into runnable NeuroOracle research rounds.',
+        '请把一个神经科学假设转化为可运行的 NeuroOracle 研究轮次。',
+      ),
+    ];
+    document.querySelectorAll('.starter-title').forEach((el, idx) => {
+      if (starterTitles[idx]) el.textContent = tr(starterTitles[idx]);
+    });
+    document.querySelectorAll('.starter-btn').forEach((el, idx) => {
+      if (starterPrompts[idx]) el.dataset.starterPrompt = starterPrompts[idx];
+    });
     const starterDescs = [
       'Validate layout, metadata, and next checks.',
       'Preprocess, model, and inspect results.',
@@ -3328,6 +3819,39 @@
     document.querySelectorAll('[data-user-avatar-trigger]').forEach(btn => {
       btn.setAttribute('title', tr('Change avatar'));
     });
+    renderCheckpoints(_checkpointsCache);
+    syncModelTrigger();
+    if (state.modelMenuOpen) renderModelMenu();
+    if (slashMenuEl) slashMenuEl.setAttribute('aria-label', tr('AutoResearch help commands'));
+    if (uploadBtnEl) {
+      uploadBtnEl.title = tr('Attach local files');
+      uploadBtnEl.setAttribute('aria-label', tr('Attach local files'));
+    }
+    if (fileDropHintTextEl) fileDropHintTextEl.textContent = tr('Drop files to attach');
+    setPlaceholder('#msg-input', 'Ask NeuroClaw... (Enter to send, Shift+Enter for newline)');
+    if (modelMenuEl) modelMenuEl.setAttribute('aria-label', tr('Select model'));
+    if (modelSelect) modelSelect.setAttribute('aria-label', tr('Select model'));
+    if (modelSelect && modelSelect.options.length === 1) {
+      const loadingModelRaw = modelSelect.options[0].textContent.trim();
+      if (loadingModelRaw === 'Loading model...' || loadingModelRaw === '正在加载模型...') {
+        modelSelect.options[0].textContent = tr('Loading model...');
+      }
+    }
+    const starterGrid = document.querySelector('.starter-grid');
+    if (starterGrid) starterGrid.setAttribute('aria-label', tr('Starter prompts'));
+    if (skillInfoCloseEl) skillInfoCloseEl.setAttribute('aria-label', tr('Close'));
+    setSendButtonMode(isSessionWaiting() ? 'stop' : 'send');
+    const graphStatusRaw = neurooracleStatusEl ? neurooracleStatusEl.textContent.trim() : '';
+    if (graphStatusRaw === 'Checking local graph...' || graphStatusRaw === '正在检查本地图谱...') {
+      neurooracleStatusEl.textContent = tr('Checking local graph...');
+    }
+    renderSidebarLists();
+    renderActiveSession();
+    renderSkills(state.skills);
+    renderPendingFiles();
+    if (state.activeView === 'search') renderWorkspaceSearch();
+    if (state.projectCreateMenuOpen) setProjectCreateMenuOpen(true);
+    if (state.slashMenuOpen) renderSlashMenu();
   }
 
   function compactModelName(model) {
@@ -3363,11 +3887,29 @@
   }
 
   function isAutoResearchActive() {
-    return state.autoResearchMode === AUTO_RESEARCH_MODE_ON;
+    return state.autoResearchMode !== AUTO_RESEARCH_MODE_OFF;
   }
 
   function autoResearchLabel(mode = state.autoResearchMode) {
-    return mode === AUTO_RESEARCH_MODE_ON ? 'On' : 'Off';
+    const labels = {
+      [AUTO_RESEARCH_MODE_OFF]: uiText('Off', '关闭'),
+      [AUTO_RESEARCH_MODE_DATA]: uiText('Data', '数据'),
+      [AUTO_RESEARCH_MODE_MODEL]: uiText('Model', '模型'),
+      [AUTO_RESEARCH_MODE_IDEA]: uiText('Idea', 'Idea'),
+      [AUTO_RESEARCH_MODE_END_TO_END]: uiText('Full', '全流程'),
+    };
+    return labels[mode] || labels[AUTO_RESEARCH_MODE_OFF];
+  }
+
+  function autoResearchDescription(mode = state.autoResearchMode) {
+    const descriptions = {
+      [AUTO_RESEARCH_MODE_OFF]: uiText('Standard chat without component constraints', '普通对话，不限制组件'),
+      [AUTO_RESEARCH_MODE_DATA]: uiText('Stop at model-ready data and QC', '只处理数据，止于建模就绪产物和质控'),
+      [AUTO_RESEARCH_MODE_MODEL]: uiText('Use prepared data to write and run models', '使用已准备数据编写并运行模型'),
+      [AUTO_RESEARCH_MODE_IDEA]: uiText('Search and refine an idea into IDEA.md', '检索并完善 idea，输出 IDEA.md'),
+      [AUTO_RESEARCH_MODE_END_TO_END]: uiText('Idea, data, model, experiment, and validation', '覆盖 idea、数据、模型、实验和验证'),
+    };
+    return descriptions[mode] || descriptions[AUTO_RESEARCH_MODE_OFF];
   }
 
   function syncModelTrigger() {
@@ -3375,12 +3917,12 @@
     const model = String(choice.model || '').trim();
     const provider = String(choice.provider || '').trim();
     if (modelTriggerMainEl) modelTriggerMainEl.textContent = compactModelName(model);
-    if (modelTriggerMetaEl) modelTriggerMetaEl.textContent = isAutoResearchActive() ? tr('On') : tr('Off');
+    if (modelTriggerMetaEl) modelTriggerMetaEl.textContent = autoResearchLabel();
     if (modelMenuBtn) {
       modelMenuBtn.disabled = !model || modelSelect.disabled;
       modelMenuBtn.classList.toggle('autoresearch-active', isAutoResearchActive());
       modelMenuBtn.title = model
-        ? `${provider ? provider + ' / ' : ''}${model} · ${tr('AutoResearch')}: ${tr(autoResearchLabel())}`
+        ? `${provider ? provider + ' / ' : ''}${model} · ${tr('AutoResearch')}: ${autoResearchLabel()}`
         : tr('Model unavailable');
     }
   }
@@ -3397,9 +3939,64 @@
     }
   }
 
+  function sortedAvailableModels() {
+    const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+    return (Array.isArray(state.availableModels) ? state.availableModels : [])
+      .slice()
+      .sort((a, b) => {
+        const byModel = collator.compare(String(a.model || a.label || ''), String(b.model || b.label || ''));
+        return byModel || collator.compare(String(a.provider || ''), String(b.provider || ''));
+      });
+  }
+
+  function modelProbeStatusHtml() {
+    const probe = state.modelProbe || {};
+    if (probe.status === 'loading') {
+      return `<div class="model-probe-status"><span class="model-probe-spinner" aria-hidden="true"></span>${escapeHtml(uiText('Checking the model endpoint…', '正在检测模型接入点…'))}</div>`;
+    }
+    if (probe.status === 'error') {
+      const reason = String(probe.error || uiText('Unknown error', '未知错误'));
+      return `<div class="model-probe-status error">${escapeHtml(uiText('Endpoint check failed', '接入点检测失败'))} · ${escapeHtml(reason)}</div>`;
+    }
+    if (probe.status === 'success') {
+      let host = '';
+      try { host = new URL(probe.endpoint).host; } catch (_e) {}
+      const countText = isChineseUi() ? `${Number(probe.count || 0)} 个可用模型` : `${Number(probe.count || 0)} models available`;
+      return `<div class="model-probe-status">${escapeHtml(host ? `${countText} · ${host}` : countText)}</div>`;
+    }
+    return '';
+  }
+
+  async function refreshAvailableModels() {
+    const requestId = ++state.modelProbeRequestId;
+    state.modelProbe = { status: 'loading', count: 0, endpoint: '', error: '' };
+    renderModelMenu();
+    try {
+      const resp = await fetch('/api/env/models', { cache: 'no-store' });
+      const data = await resp.json();
+      if (requestId !== state.modelProbeRequestId) return;
+      if (!resp.ok) throw new Error(data.message || uiText('Unable to check models', '无法检测模型'));
+      state.availableModels = Array.isArray(data.available_models) ? data.available_models : state.availableModels;
+      const probe = data.model_probe || {};
+      state.modelProbe = probe.ok
+        ? { status: 'success', count: state.availableModels.length, endpoint: probe.endpoint || '', error: '' }
+        : { status: 'error', count: state.availableModels.length, endpoint: probe.endpoint || '', error: probe.error || uiText('Unable to reach endpoint', '无法连接接入点') };
+      renderModelOptions(data.provider || state.activeModelProvider, data.model || state.activeModel);
+    } catch (err) {
+      if (requestId !== state.modelProbeRequestId) return;
+      state.modelProbe = {
+        status: 'error',
+        count: state.availableModels.length,
+        endpoint: '',
+        error: err && err.message ? err.message : uiText('Unable to reach endpoint', '无法连接接入点'),
+      };
+      renderModelMenu();
+    }
+  }
+
   function renderModelMenu() {
     if (!modelMenuEl) return;
-    const items = Array.isArray(state.availableModels) ? state.availableModels : [];
+    const items = sortedAvailableModels();
     const current = currentModelChoice();
     const currentModel = String(current.model || '').trim();
     const currentProvider = String(current.provider || '').trim();
@@ -3417,7 +4014,7 @@
           <button class="model-menu-route" type="button" data-model-panel="autoresearch">
             <span>
               <span class="model-menu-name">${isAutoResearchActive() ? autoResearchIcon() : ''}${escapeHtml(tr('AutoResearch'))}</span>
-              <span class="model-menu-sub">${escapeHtml(tr(isAutoResearchActive() ? 'Confirm setup, then run research loops' : 'Standard chat without research loops'))}</span>
+              <span class="model-menu-sub">${escapeHtml(autoResearchDescription())}</span>
             </span>
             <span class="model-menu-chevron">›</span>
           </button>
@@ -3428,20 +4025,23 @@
 
     if (state.modelMenuPanel === 'autoresearch') {
       const options = [
-        { mode: AUTO_RESEARCH_MODE_OFF, label: 'Off', sub: 'Standard chat without research loops' },
-        { mode: AUTO_RESEARCH_MODE_ON, label: 'On', sub: 'Confirm setup, then run research loops' },
+        AUTO_RESEARCH_MODE_OFF,
+        AUTO_RESEARCH_MODE_DATA,
+        AUTO_RESEARCH_MODE_MODEL,
+        AUTO_RESEARCH_MODE_IDEA,
+        AUTO_RESEARCH_MODE_END_TO_END,
       ];
       modelMenuEl.innerHTML = `
         <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
         <div class="model-menu-title">${escapeHtml(tr('AutoResearch'))}</div>
         <div class="model-menu-list">
-          ${options.map(option => {
-            const active = state.autoResearchMode === option.mode;
+          ${options.map(mode => {
+            const active = state.autoResearchMode === mode;
             return `
-              <button class="model-menu-item ${active ? 'active' : ''}" type="button" role="option" aria-selected="${active ? 'true' : 'false'}" data-autoresearch-mode="${escapeAttr(option.mode)}">
+              <button class="model-menu-item ${active ? 'active' : ''}" type="button" role="option" aria-selected="${active ? 'true' : 'false'}" data-autoresearch-mode="${escapeAttr(mode)}">
                 <span>
-                  <span class="model-menu-name">${option.mode === AUTO_RESEARCH_MODE_ON ? autoResearchIcon() : ''}${escapeHtml(tr(option.label))}</span>
-                  <span class="model-menu-sub">${escapeHtml(tr(option.sub))}</span>
+                  <span class="model-menu-name">${mode !== AUTO_RESEARCH_MODE_OFF ? autoResearchIcon() : ''}${escapeHtml(autoResearchLabel(mode))}</span>
+                  <span class="model-menu-sub">${escapeHtml(autoResearchDescription(mode))}</span>
                 </span>
                 <span class="model-menu-check">${active ? '✓' : ''}</span>
               </button>
@@ -3456,6 +4056,7 @@
       modelMenuEl.innerHTML = `
         <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
         <div class="model-menu-title">${escapeHtml(tr('Models'))}</div>
+        ${modelProbeStatusHtml()}
         <div class="skill-empty-state">${escapeHtml(tr('No models available.'))}</div>
       `;
       return;
@@ -3463,6 +4064,7 @@
     modelMenuEl.innerHTML = `
       <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
       <div class="model-menu-title">${escapeHtml(tr('Models'))}</div>
+      ${modelProbeStatusHtml()}
       <div class="model-menu-list">
         ${items.map(item => {
           const provider = String(item.provider || '').trim();
@@ -3483,7 +4085,8 @@
   }
 
   function renderModelOptions(selectedProvider, selectedModel) {
-    const items = Array.isArray(state.availableModels) ? state.availableModels : [];
+    const items = sortedAvailableModels();
+    state.availableModels = items;
     modelSelect.innerHTML = '';
     if (!items.length) {
       const option = document.createElement('option');
@@ -3534,14 +4137,14 @@
     }
     state.availableModels = Array.isArray(data.available_models) ? data.available_models : state.availableModels;
     renderModelOptions(data.provider, data.model);
-    setStatus('connected', `Ready · ${data.provider} / ${data.model}`);
+    setStatus('connected', `${tr('Ready')} · ${data.provider} / ${data.model}`);
   }
 
   function setSendButtonMode(mode) {
     const busy = mode === 'stop';
     sendBtn.textContent = busy ? '⏹' : '➤';
-    sendBtn.title = busy ? 'Stop' : 'Send';
-    sendBtn.setAttribute('aria-label', busy ? 'Stop request' : 'Send message');
+    sendBtn.title = tr(busy ? 'Stop' : 'Send');
+    sendBtn.setAttribute('aria-label', tr(busy ? 'Stop request' : 'Send message'));
     sendBtn.classList.toggle('stop-mode', busy);
   }
 
@@ -3688,7 +4291,11 @@
         if (Array.isArray(parsed.projects) && parsed.projects.length) {
           state.projects = parsed.projects
             .filter(p => p && typeof p.id === 'string' && typeof p.name === 'string')
-            .map(p => ({ id: p.id, name: p.name.slice(0, 64) }));
+            .map(p => ({
+              id: p.id,
+              name: p.name.slice(0, 64),
+              workspacePath: typeof p.workspacePath === 'string' ? p.workspacePath : '',
+            }));
         }
         if (parsed && typeof parsed.activeProjectId === 'string') {
           state.activeProjectId = parsed.activeProjectId;
@@ -3715,10 +4322,10 @@
         if (parsed && typeof parsed.sidebarCollapsed === 'boolean') {
           state.sidebarCollapsed = parsed.sidebarCollapsed;
         }
-        if (parsed && (parsed.autoResearchMode === AUTO_RESEARCH_MODE_ON || parsed.autoResearchMode === AUTO_RESEARCH_MODE_OFF)) {
+        if (parsed && AUTO_RESEARCH_MODES.includes(parsed.autoResearchMode)) {
           state.autoResearchMode = parsed.autoResearchMode;
-        } else if (parsed && parsed.autoResearchMode === 'high') {
-          state.autoResearchMode = AUTO_RESEARCH_MODE_ON;
+        } else if (parsed && ['on', 'high'].includes(parsed.autoResearchMode)) {
+          state.autoResearchMode = AUTO_RESEARCH_MODE_END_TO_END;
         }
       }
     } catch (_e) {}
@@ -3863,7 +4470,7 @@
     if (row.type === 'textScale') {
       const scale = clampTextScale(value || state.textScale);
       return `
-        <div class="text-scale-control settings-text-scale" role="group" aria-label="Text size" ${common} data-setting-value="${escapeAttr(scale)}">
+        <div class="text-scale-control settings-text-scale" role="group" aria-label="${escapeAttr(tr('Text size'))}" ${common} data-setting-value="${escapeAttr(scale)}">
           <button class="text-scale-btn" data-text-scale-action="down" type="button" title="${escapeAttr(tr('Smaller text'))}" ${scale <= TEXT_SCALE_MIN ? 'disabled' : ''}>A-</button>
           <span class="text-scale-value">${Math.round(scale * 100)}%</span>
           <button class="text-scale-btn" data-text-scale-action="up" type="button" title="${escapeAttr(tr('Larger text'))}" ${scale >= TEXT_SCALE_MAX ? 'disabled' : ''}>A+</button>
@@ -4116,7 +4723,11 @@
     if (!Array.isArray(state.projects)) state.projects = [];
     state.projects = state.projects
       .filter(p => p && typeof p.id === 'string' && typeof p.name === 'string')
-      .map(p => ({ id: p.id, name: p.name.slice(0, 64) }));
+      .map(p => ({
+        id: p.id,
+        name: p.name.slice(0, 64),
+        workspacePath: typeof p.workspacePath === 'string' ? p.workspacePath : '',
+      }));
     if (state.activeProjectId && !state.projects.some(p => p.id === state.activeProjectId)) {
       state.activeProjectId = null;
     }
@@ -4126,6 +4737,12 @@
 
   function getActiveProject() {
     return state.projects.find(p => p.id === state.activeProjectId) || null;
+  }
+
+  function workspacePathForSession(session = getActiveSession()) {
+    if (!session || !session.projectId) return '';
+    const project = state.projects.find(item => item.id === session.projectId);
+    return project ? String(project.workspacePath || '').trim() : '';
   }
 
   function isKnownProjectId(projectId) {
@@ -4141,21 +4758,77 @@
     return state.sessions.filter(s => !isKnownProjectId(s.projectId));
   }
 
-  function createProject() {
+  function normalizeProjectPathForCompare(value) {
+    let normalized = String(value || '').trim().replace(/[\\/]+$/, '');
+    if (state.desktopPlatform === 'win32') normalized = normalized.toLowerCase();
+    return normalized;
+  }
+
+  function addProjectWorkspace(folder) {
+    const workspacePath = String(folder && folder.path || '').trim();
+    if (!workspacePath) throw new Error(uiText('No project folder was selected.', '未选择项目文件夹。'));
+    const existing = state.projects.find(project => (
+      normalizeProjectPathForCompare(project.workspacePath) === normalizeProjectPathForCompare(workspacePath)
+    ));
+    if (existing) {
+      setActiveProject(existing.id);
+      return existing;
+    }
     saveActiveDraft();
-    const raw = prompt('Project name', 'New Project');
-    if (raw === null) return;
-    const name = raw.trim().slice(0, 64);
-    if (!name) return;
-    const project = { id: 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), name };
+    const fallbackName = workspacePath.split(/[\\/]/).filter(Boolean).pop() || uiText('New Project', '新项目');
+    const name = String(folder.name || fallbackName).trim().slice(0, 64) || fallbackName;
+    const project = {
+      id: 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      name,
+      workspacePath,
+    };
     state.projects.unshift(project);
     state.activeProjectId = project.id;
-    state.activeSessionId = null;
     saveProjects();
-    saveSessions();
-    renderSidebarLists();
-    renderActiveSession();
+    createSession('New Chat', project.id, { saveDraft: false });
     return project;
+  }
+
+  function setProjectCreateMenuOpen(open) {
+    state.projectCreateMenuOpen = Boolean(open);
+    if (!projectCreateMenuEl) return;
+    projectCreateMenuEl.classList.toggle('open', state.projectCreateMenuOpen);
+    projectCreateMenuEl.setAttribute('aria-hidden', state.projectCreateMenuOpen ? 'false' : 'true');
+    newProjectBtn.setAttribute('aria-expanded', state.projectCreateMenuOpen ? 'true' : 'false');
+    if (!state.projectCreateMenuOpen) return;
+    const blankLabel = projectCreateMenuEl.querySelector('[data-project-create-label="blank"]');
+    const existingLabel = projectCreateMenuEl.querySelector('[data-project-create-label="existing"]');
+    if (blankLabel) blankLabel.textContent = uiText('New blank project', '新建空白项目');
+    if (existingLabel) existingLabel.textContent = uiText('Use existing folder', '使用现有文件夹');
+    const rect = newProjectBtn.getBoundingClientRect();
+    const width = Math.min(306, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
+    projectCreateMenuEl.style.left = `${left}px`;
+    projectCreateMenuEl.style.top = `${Math.min(rect.bottom + 7, window.innerHeight - 122)}px`;
+  }
+
+  async function createBlankProject() {
+    if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.createProjectFolder !== 'function') {
+      throw new Error(uiText('Project folders are available in the desktop app.', '项目文件夹功能仅在桌面客户端中可用。'));
+    }
+    const raw = prompt(uiText('Project name', '项目名称'), uiText('New Project', '新项目'));
+    if (raw === null) return;
+    const name = raw.trim();
+    if (!name) return;
+    const result = await window.neuroclawDesktop.createProjectFolder(name);
+    if (!result || result.canceled) return;
+    if (result.error) throw new Error(result.error);
+    addProjectWorkspace(result);
+  }
+
+  async function useExistingProjectFolder() {
+    if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.selectProjectFolder !== 'function') {
+      throw new Error(uiText('Project folders are available in the desktop app.', '项目文件夹功能仅在桌面客户端中可用。'));
+    }
+    const result = await window.neuroclawDesktop.selectProjectFolder();
+    if (!result || result.canceled) return;
+    if (result.error) throw new Error(result.error);
+    addProjectWorkspace(result);
   }
 
   function deleteProject(projectId) {
@@ -4164,12 +4837,22 @@
     const project = state.projects[idx];
     const projectSessions = getProjectSessions(projectId);
     const chatNote = projectSessions.length
-      ? `${projectSessions.length} chat${projectSessions.length === 1 ? '' : 's'} will be deleted too.`
-      : 'No chats are inside this project.';
-    const ok = confirm(`Delete project "${project.name}"? ${chatNote} This cannot be undone.`);
+      ? uiText(
+          `${projectSessions.length} chat${projectSessions.length === 1 ? '' : 's'} will be deleted too.`,
+          `${projectSessions.length} 个对话也将被删除。`,
+        )
+      : uiText('No chats are inside this project.', '此项目中没有对话。');
+    const folderNote = project.workspacePath
+      ? uiText('The folder and its files will stay on disk.', '磁盘上的文件夹和文件会保留。')
+      : '';
+    const ok = confirm(uiText(
+      `Delete project "${project.name}"? ${chatNote} ${folderNote} This cannot be undone.`,
+      `删除项目“${project.name}”？${chatNote}${folderNote} 此操作无法撤销。`,
+    ));
     if (!ok) return;
 
     const deletedSessionIds = new Set(projectSessions.map(s => s.id));
+    projectSessions.forEach(session => cancelSessionRequest(session.id, { render: false }));
     state.projects.splice(idx, 1);
     state.sessions = state.sessions.filter(session => !deletedSessionIds.has(session.id));
     delete state.expandedProjectChats[projectId];
@@ -4194,7 +4877,12 @@
     saveActiveDraft();
     state.activeProjectId = projectId;
     const projectSessions = getProjectSessions(projectId);
-    state.activeSessionId = projectSessions[0] ? projectSessions[0].id : null;
+    if (projectSessions[0]) {
+      state.activeSessionId = projectSessions[0].id;
+    } else {
+      createSession('New Chat', projectId, { saveDraft: false });
+      return;
+    }
     saveProjects();
     saveSessions();
     renderSidebarLists();
@@ -4213,12 +4901,14 @@
   function renderSessionListItem(s, extraClass = '') {
     const createdLabel = `${tr('Created:')} ${formatCreatedAt(s.createdAt)}`;
     const menuOpen = state.openSessionMenuId === s.id;
+    const running = isSessionWaiting(s.id);
     const displayTitle = (s.title === 'New Chat' || s.title === '新对话') ? tr('New Chat') : s.title;
     return `
       <li>
-        <div class="chat-item ${extraClass} ${s.id === state.activeSessionId ? 'active' : ''} ${menuOpen ? 'menu-open' : ''}" data-session-id="${escapeHtml(s.id)}" role="button" tabindex="0">
+        <div class="chat-item ${extraClass} ${s.id === state.activeSessionId ? 'active' : ''} ${menuOpen ? 'menu-open' : ''} ${running ? 'running' : ''}" data-session-id="${escapeHtml(s.id)}" role="button" tabindex="0">
           <div class="chat-row">
             <div class="chat-title" title="${escapeHtml(displayTitle)}">${escapeHtml(displayTitle)}</div>
+            ${running ? `<span class="chat-running-indicator" title="${escapeAttr(uiText('Running', '运行中'))}" aria-label="${escapeAttr(uiText('Running', '运行中'))}"></span>` : ''}
             <span class="chat-menu-wrap">
               <button class="chat-menu-btn" data-menu-toggle-id="${escapeHtml(s.id)}" type="button" title="${escapeAttr(tr('Session menu'))}" aria-label="${escapeAttr(tr('Session menu'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
               <span class="chat-menu ${menuOpen ? 'open' : ''}" ${menuOpen && state.menuPosition ? `style="top:${state.menuPosition.top}px;left:${state.menuPosition.left}px;"` : ''}>
@@ -4239,7 +4929,87 @@
     renderChatList();
   }
 
+  function projectSessionCountLabel(count) {
+    return isChineseUi()
+      ? `${count} 个对话`
+      : `${count} chat${count === 1 ? '' : 's'}`;
+  }
+
+  function projectFolderIcon() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2-2h9v13h-17z"/></svg>';
+  }
+
+  function projectChatIcon() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 9.7 9.7 0 0 1-3.2-.6L4 20l1.5-4.2A7.2 7.2 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5z"/></svg>';
+  }
+
+  function positionProjectHoverCard(anchorEl) {
+    if (!projectHoverCardEl || !anchorEl || !anchorEl.isConnected) return;
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const cardRect = projectHoverCardEl.getBoundingClientRect();
+    const viewportMargin = 12;
+    const gap = 10;
+    let left = anchorRect.right + gap;
+    if (left + cardRect.width > window.innerWidth - viewportMargin) {
+      left = anchorRect.left - cardRect.width - gap;
+    }
+    left = Math.max(viewportMargin, Math.min(left, window.innerWidth - cardRect.width - viewportMargin));
+    const top = Math.max(
+      viewportMargin,
+      Math.min(anchorRect.top - 4, window.innerHeight - cardRect.height - viewportMargin),
+    );
+    projectHoverCardEl.style.left = `${Math.round(left)}px`;
+    projectHoverCardEl.style.top = `${Math.round(top)}px`;
+  }
+
+  function showProjectHoverCard(projectId, anchorEl, immediate = false) {
+    clearTimeout(projectHoverShowTimer);
+    clearTimeout(projectHoverHideTimer);
+    const open = () => {
+      const project = state.projects.find(item => item.id === projectId);
+      if (!project || !anchorEl || !anchorEl.isConnected) return;
+      const count = getProjectSessions(project.id).length;
+      const workspacePath = String(project.workspacePath || '').trim()
+        || uiText('No workspace folder', '未设置工作目录');
+      projectHoverProjectId = project.id;
+      projectHoverAnchorEl = anchorEl;
+      projectHoverCardEl.innerHTML = `
+        <div class="project-hover-head">
+          ${projectFolderIcon()}
+          <div class="project-hover-title">${escapeHtml(project.name)}</div>
+        </div>
+        <div class="project-hover-detail">
+          ${projectChatIcon()}
+          <div>${escapeHtml(projectSessionCountLabel(count))}</div>
+        </div>
+        <div class="project-hover-detail path">
+          ${projectFolderIcon()}
+          <div class="project-hover-path">${escapeHtml(workspacePath)}</div>
+        </div>
+      `;
+      projectHoverCardEl.classList.add('open');
+      projectHoverCardEl.setAttribute('aria-hidden', 'false');
+      positionProjectHoverCard(anchorEl);
+    };
+    if (immediate) open();
+    else projectHoverShowTimer = setTimeout(open, 180);
+  }
+
+  function hideProjectHoverCard(immediate = false) {
+    clearTimeout(projectHoverShowTimer);
+    clearTimeout(projectHoverHideTimer);
+    const close = () => {
+      projectHoverCardEl.classList.remove('open');
+      projectHoverCardEl.setAttribute('aria-hidden', 'true');
+      projectHoverAnchorEl = null;
+      projectHoverProjectId = null;
+    };
+    if (immediate) close();
+    else projectHoverHideTimer = setTimeout(close, 80);
+  }
+
   function renderProjectList() {
+    hideProjectHoverCard(true);
     if (!state.projects.length) {
       projectListEl.innerHTML = `<li class="empty-hint">${escapeHtml(tr('No projects'))}</li>`;
       return;
@@ -4258,10 +5028,9 @@
         : (expanded && count > PROJECT_CHAT_PREVIEW_LIMIT
           ? `<button class="project-show-more" data-project-show-less-id="${escapeHtml(p.id)}" type="button">${escapeHtml(tr('Show less'))}</button>`
           : '');
-      const countLabel = isChineseUi() ? `${count} 个对话` : `${count} chat${count === 1 ? '' : 's'}`;
       return `
         <li>
-          <div class="project-item ${p.id === state.activeProjectId ? 'active' : ''}" data-project-id="${escapeHtml(p.id)}" role="button" tabindex="0">
+          <div class="project-item ${p.id === state.activeProjectId ? 'active' : ''}" data-project-id="${escapeHtml(p.id)}" role="button" tabindex="0" aria-describedby="project-hover-card">
             <div class="project-row">
               <span class="project-dot"></span>
               <div class="project-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
@@ -4270,7 +5039,6 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>
               </button>
             </div>
-            <div class="project-meta">${escapeHtml(countLabel)}</div>
           </div>
           ${children ? `<ul class="project-chat-list">${children}</ul>` : `<div class="project-empty-chats">${escapeHtml(tr('No chats in this project'))}</div>`}
           ${showMore}
@@ -4361,7 +5129,7 @@
     saveActiveDraft();
     const session = getActiveSession();
     if (!session || !isCompletelyEmptyHomeSession(session)) return false;
-    if (state.waiting || state.pendingFiles.length) return false;
+    if (isSessionWaiting(session.id) || state.pendingFiles.length) return false;
 
     state.sessions = state.sessions.filter(s => s.id !== session.id);
     const fallback = getUnassignedSessions()[0] || state.sessions[0] || null;
@@ -4438,6 +5206,7 @@
     const ok = confirm(`${tr('Delete chat')} "${session.title}"? ${tr('This cannot be undone.')}`);
     if (!ok) return;
 
+    cancelSessionRequest(sessionId, { render: false });
     state.sessions.splice(idx, 1);
     if (state.activeSessionId === sessionId) {
       const fallback = state.sessions.find(s => s.projectId === session.projectId) || getUnassignedSessions()[0] || state.sessions[0] || null;
@@ -4460,6 +5229,7 @@
     if (!ok) return;
 
     const unassignedIds = new Set(unassignedSessions.map(s => s.id));
+    unassignedSessions.forEach(session => cancelSessionRequest(session.id, { render: false }));
     state.sessions = state.sessions.filter(s => !unassignedIds.has(s.id));
     state.activeSessionId = null;
     state.activeProjectId = null;
@@ -4519,7 +5289,7 @@
     const session = state.sessions.find(s => s.id === sessionId);
     if (!session) return;
 
-    const fmt = prompt('Export format: json or md', 'json');
+    const fmt = prompt(tr('Export format: json or md'), 'json');
     if (fmt === null) return;
     const format = fmt.trim().toLowerCase();
     const base = `${safeFilename(session.title)}_${session.id}`;
@@ -4557,7 +5327,10 @@
   }
 
   function skillSummaryText(skill) {
-    return String(skill.summary_en || skill.description || skill.summary_zh || 'Task-specific workflow support.').trim();
+    if (isChineseUi()) {
+      return String(skill.summary_zh || '面向当前任务的专业工作流支持。').trim();
+    }
+    return String(skill.summary_en || skill.description || 'Task-specific workflow support.').trim();
   }
 
   function skillCategoryFor(skill) {
@@ -4672,7 +5445,7 @@
     const id = `skill-logo-${name.replace(/[^a-z0-9]/gi, '') || 'skill'}-${kind}`;
     const initials = skillLogoInitials(name);
     return `
-      <svg class="skill-logo" viewBox="0 0 64 64" role="img" aria-label="${escapeAttr(formatSkillName(name))} logo">
+      <svg class="skill-logo" viewBox="0 0 64 64" role="img" aria-label="${escapeAttr(formatSkillName(name))} ${escapeAttr(uiText('logo', '标志'))}">
         <defs>
           <linearGradient id="${escapeAttr(id)}" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
             <stop stop-color="${soft}"></stop>
@@ -4723,7 +5496,7 @@
     skillPageContentEl.innerHTML = groups.map(group => `
       <section class="skill-category">
         <div class="skill-category-head">
-          <h2 class="skill-category-title">${escapeHtml(group.name)}</h2>
+          <h2 class="skill-category-title">${escapeHtml(tr(group.name))}</h2>
           <div class="skill-category-count">${escapeHtml(isChineseUi() ? `${group.items.length} 个技能` : `${group.items.length} skill${group.items.length === 1 ? '' : 's'}`)}</div>
         </div>
         <div class="skill-page-list">
@@ -4756,10 +5529,7 @@
     requestSkillSummary(skillName).then((summary) => {
       const summaryEn = String(summary.en || '').trim();
       const summaryZh = String(summary.zh || '').trim();
-      skillInfoBodyEl.innerHTML = isChineseUi()
-        ? '<div><strong>English</strong>: ' + escapeHtml(summaryEn) + '</div>' +
-          '<div style="margin-top:8px;"><strong>中文</strong>: ' + escapeHtml(summaryZh) + '</div>'
-        : '<div>' + escapeHtml(summaryEn) + '</div>';
+      skillInfoBodyEl.innerHTML = `<div>${escapeHtml(isChineseUi() ? summaryZh : summaryEn)}</div>`;
     });
   }
 
@@ -4797,18 +5567,6 @@
     skillInfoOverlayEl.setAttribute('aria-hidden', 'true');
   }
 
-  function formatBytes(bytes) {
-    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let val = bytes;
-    let idx = 0;
-    while (val >= 1024 && idx < units.length - 1) {
-      val /= 1024;
-      idx += 1;
-    }
-    return `${val.toFixed(val >= 10 || idx === 0 ? 0 : 1)} ${units[idx]}`;
-  }
-
   function renderPendingFiles() {
     const selectedSkills = getSessionSelectedSkills();
     if (!state.pendingFiles.length && !selectedSkills.length) {
@@ -4817,51 +5575,78 @@
     }
 
     const skillChips = selectedSkills.map((name, idx) => `
-      <span class="attach-chip skill-chip" title="Selected skill: ${escapeHtml(name)}">
+      <span class="attach-chip skill-chip" title="${escapeAttr(tr('Selected skill:'))} ${escapeAttr(name)}">
         <span class="attach-name">${escapeHtml(name)}</span>
-        <button class="attach-remove" data-skill-index="${idx}" type="button" aria-label="Remove skill">×</button>
+        <button class="attach-remove" data-skill-index="${idx}" type="button" aria-label="${escapeAttr(tr('Remove skill'))}">×</button>
       </span>
     `).join('');
 
     const fileChips = state.pendingFiles.map((f, idx) => `
-      <span class="attach-chip" title="${escapeHtml(f.name)} (${formatBytes(f.size)})">
-        <span class="attach-name">${escapeHtml(f.name)}</span>
-        <span style="color:var(--text-muted)">${formatBytes(f.size)}</span>
-        <button class="attach-remove" data-file-index="${idx}" type="button" aria-label="Remove file">×</button>
+      <span class="attach-chip file-attach-chip" title="${escapeHtml(f.path)}">
+        <span class="file-attach-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6.5 4.5h7l4 4v11h-11z"/><path d="M13.5 4.5v4h4"/></svg>
+        </span>
+        <span class="file-attach-copy">
+          <span class="attach-name">${escapeHtml(f.name)}</span>
+          <span class="file-attach-type">${escapeHtml(attachmentTypeLabel(f.name))}</span>
+        </span>
+        <button class="attach-remove" data-file-index="${idx}" type="button" aria-label="${escapeAttr(tr('Remove file'))}">×</button>
       </span>
     `).join('');
 
     attachListEl.innerHTML = skillChips + fileChips;
   }
 
-  function addPendingFiles(fileList) {
-    const incoming = Array.from(fileList || []);
-    const rejected = [];
+  function attachmentTypeLabel(name) {
+    const value = String(name || '').trim();
+    const lower = value.toLowerCase();
+    if (lower.endsWith('.nii.gz')) return 'NII.GZ';
+    const dot = value.lastIndexOf('.');
+    if (dot <= 0 || dot === value.length - 1) return uiText('FILE', '文件');
+    return value.slice(dot + 1).toUpperCase().slice(0, 12);
+  }
 
-    for (const file of incoming) {
-      const ext = '.' + String(file.name || '').split('.').pop().toLowerCase();
-      if (!SUPPORTED_ATTACHMENT_EXTENSIONS.includes(ext)) {
-        rejected.push(`${file.name} (unsupported type)`);
-        continue;
-      }
-      if (file.size > MAX_ATTACHMENT_FILE_BYTES) {
-        rejected.push(`${file.name} (too large, max ${formatBytes(MAX_ATTACHMENT_FILE_BYTES)})`);
-        continue;
-      }
-      const duplicate = state.pendingFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified);
-      if (!duplicate) state.pendingFiles.push(file);
+  function addPendingFilePaths(paths) {
+    const incoming = Array.from(paths || []);
+    for (const rawPath of incoming) {
+      const filePath = String(rawPath || '').trim();
+      if (!filePath) continue;
+      const normalized = filePath.replace(/\\/g, '/').toLowerCase();
+      const duplicate = state.pendingFiles.some(file => (
+        String(file.path || '').replace(/\\/g, '/').toLowerCase() === normalized
+      ));
+      if (duplicate) continue;
+      const parts = filePath.split(/[\\/]/);
+      state.pendingFiles.push({
+        name: parts[parts.length - 1] || filePath,
+        path: filePath,
+      });
     }
-
-    if (rejected.length) {
-      showError(`Some files were skipped:\n${rejected.slice(0, 3).join('\n')}`);
-    }
-
     renderPendingFiles();
+  }
+
+  function hasDraggedFiles(event) {
+    return Array.from((event.dataTransfer && event.dataTransfer.types) || []).includes('Files');
+  }
+
+  function droppedFilePaths(fileList) {
+    const bridge = window.neuroclawDesktop;
+    const resolver = bridge && bridge.getPathForFile;
+    if (typeof resolver !== 'function') return [];
+    const paths = [];
+    for (const file of Array.from(fileList || [])) {
+      try {
+        const filePath = String(resolver(file) || '').trim();
+        if (filePath) paths.push(filePath);
+      } catch (_error) {
+        // Skip entries Electron cannot resolve to a local filesystem path.
+      }
+    }
+    return paths;
   }
 
   function clearPendingFiles() {
     state.pendingFiles = [];
-    fileInputEl.value = '';
     renderPendingFiles();
   }
 
@@ -4881,65 +5666,15 @@
     return ['Selected skills:', ...skills.map(n => `- ${n}`), 'Use these skills when generating the response.'].join('\n');
   }
 
-  async function buildAttachmentText(files) {
+  function buildAttachmentText(files) {
     if (!files.length) return '';
-
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file, file.name));
-
-    let payload = null;
-    try {
-      const resp = await fetch('/api/attachments/parse', {
-        method: 'POST',
-        body: formData,
-      });
-      payload = await resp.json();
-      if (!resp.ok || payload.type === 'error') {
-        showError(payload.message || tr('Attachment parser failed.'));
-        return '';
-      }
-    } catch (_e) {
-      showError(tr('Attachment parser is unavailable.'));
-      return '';
-    }
-
-    const blocks = [];
-    const notes = [];
-    const parsedFiles = Array.isArray(payload.files) ? payload.files : [];
-    for (const item of parsedFiles) {
-      const name = String(item.name || 'untitled');
-      const size = Number(item.size || 0);
-      const typeLabel = String(item.content_type || item.type || 'unknown');
-
-      if (!item.ok) {
-        notes.push(`- ${name} (${formatBytes(size)}, ${typeLabel}): ${String(item.error || 'unable to parse')}`);
-        continue;
-      }
-
-      let textContent = String(item.text || '');
-      if (textContent.length > MAX_EMBED_CHARS) {
-        textContent = textContent.slice(0, MAX_EMBED_CHARS) + '\n[Content truncated]';
-      }
-
-      blocks.push([
-        `### File: ${name}`,
-        `Type: ${typeLabel}`,
-        `Size: ${formatBytes(size)}`,
-        '```text',
-        textContent,
-        '```',
-      ].join('\n'));
-    }
-
-    if (!blocks.length && notes.length) {
-      showError(tr('No readable attachment content.'));
-      return '';
-    }
-    if (!blocks.length) return '';
-
-    const chunks = ['Attached files:', ...blocks];
-    if (notes.length) chunks.push('Attachment parser notes:\n' + notes.join('\n'));
-    return chunks.join('\n\n');
+    const paths = files.map(file => String(file.path || '').trim()).filter(Boolean);
+    if (!paths.length) return '';
+    return [
+      'Local file attachments (path references only; file contents were not uploaded or embedded):',
+      JSON.stringify(paths, null, 2),
+      'Inspect these user-selected paths directly. Choose the appropriate available tool or skill for each actual file format.',
+    ].join('\n');
   }
 
   function shouldAutoGenerateTitle(session) {
@@ -5013,7 +5748,8 @@
 
   function actionButton(action, msgId, tip, iconName) {
     const label = tr(tip);
-    return `<button class="msg-action-btn" data-msg-action="${escapeHtml(action)}" data-msg-id="${escapeHtml(msgId)}" data-tip="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" type="button">${actionIcon(iconName)}</button>`;
+    const disabled = isSessionWaiting() ? ' disabled aria-disabled="true"' : '';
+    return `<button class="msg-action-btn" data-msg-action="${escapeHtml(action)}" data-msg-id="${escapeHtml(msgId)}" data-tip="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" type="button"${disabled}>${actionIcon(iconName)}</button>`;
   }
 
   function addUserBubble(message, index) {
@@ -5049,6 +5785,7 @@
   function toolEventTitle(event) {
     const tool = String(event.tool || 'tool').replace(/_/g, ' ');
     if (event.tool === 'run_shell_command') return tr('Ran shell command');
+    if (event.tool === 'inspect_local_path') return tr('Inspected local path');
     if (event.tool === 'read_workspace_file') return tr('Read workspace file');
     if (event.tool === 'spawn_subagent') return tr('Spawned subagent');
     return tool.replace(/\b\w/g, ch => ch.toUpperCase());
@@ -5065,7 +5802,7 @@
     const changes = Array.isArray(workspaceChanges) ? workspaceChanges : [];
     if (!events.length && !changes.length) return '';
 
-    const eventHtml = events.map((event, index) => {
+    const eventHtml = events.map((event) => {
       const ok = event.success !== false;
       const title = toolEventTitle(event);
       const subtitle = toolEventSubtitle(event);
@@ -5076,7 +5813,7 @@
         ? `<div class="tool-event-code">${escapeHtml(tr('Skills:'))} ${escapeHtml(event.skills_used.join(', '))}</div>`
         : '';
       return `
-        <details ${index === 0 ? 'open' : ''}>
+        <details>
           <summary class="tool-event-summary">
             <span class="tool-event-dot${ok ? '' : ' failed'}">${ok ? '✓' : '!'}</span>
             <span class="tool-event-main">
@@ -5084,6 +5821,7 @@
               <span class="tool-event-sub">${escapeHtml(subtitle)}</span>
             </span>
             <span class="tool-event-status">${escapeHtml(ok ? tr('done') : tr('failed'))}</span>
+            <span class="tool-event-chevron" aria-hidden="true">›</span>
           </summary>
           <div class="tool-event-body">
             ${command ? `<div class="tool-event-code">${escapeHtml(formatExecutionCommandForDisplay(command))}</div>` : ''}
@@ -5097,7 +5835,7 @@
 
     const changeHtml = changes.length
       ? `
-        <details ${events.length ? '' : 'open'}>
+        <details>
           <summary class="tool-event-summary">
             <span class="tool-event-dot">Δ</span>
             <span class="tool-event-main">
@@ -5105,6 +5843,7 @@
               <span class="tool-event-sub">${escapeHtml(String(changes.length))} ${escapeHtml(tr(changes.length === 1 ? 'changed file' : 'changed files'))}</span>
             </span>
             <span class="tool-event-status">diff</span>
+            <span class="tool-event-chevron" aria-hidden="true">›</span>
           </summary>
           <div class="workspace-change-list">
             ${changes.map(change => `
@@ -5162,6 +5901,7 @@
       welcomeEl.style.display = 'block';
       syncExecutionIndicatorVisibility();
       syncTypingIndicatorVisibility();
+      syncActiveRequestUi();
       return;
     }
     ensureMessageIds(session);
@@ -5174,6 +5914,7 @@
     }
     syncExecutionIndicatorVisibility();
     syncTypingIndicatorVisibility();
+    syncActiveRequestUi();
     scrollToBottom();
   }
 
@@ -5202,11 +5943,7 @@
   }
 
   function syncTypingIndicatorVisibility() {
-    const shouldShow = Boolean(
-      state.waiting &&
-      state.waitingSessionId &&
-      state.waitingSessionId === state.activeSessionId
-    );
+    const shouldShow = isSessionWaiting(state.activeSessionId);
     if (shouldShow) {
       addTypingIndicator();
     } else {
@@ -5214,14 +5951,66 @@
     }
   }
 
-  function finishRequestUi() {
-    state.waiting = false;
-    state.waitingSessionId = null;
-    removeTypingIndicator();
-    inputEl.disabled = false;
-    setSendButtonMode('send');
-    state.requestController = null;
-    setStatus('connected', tr('Ready'));
+  function sessionRequestFor(sessionId = state.activeSessionId) {
+    return sessionId ? (state.sessionRequests[sessionId] || null) : null;
+  }
+
+  function isSessionWaiting(sessionId = state.activeSessionId) {
+    return Boolean(sessionRequestFor(sessionId));
+  }
+
+  function beginSessionRequest(sessionId, controller) {
+    if (!sessionId || !controller || isSessionWaiting(sessionId)) return false;
+    state.sessionRequests[sessionId] = { controller };
+    return true;
+  }
+
+  function finishSessionRequest(sessionId, controller) {
+    const request = sessionRequestFor(sessionId);
+    if (!request || (controller && request.controller !== controller)) return;
+    delete state.sessionRequests[sessionId];
+    renderSidebarLists();
+    if (sessionId === state.activeSessionId) renderActiveSession();
+    else syncActiveRequestUi();
+  }
+
+  function cancelSessionRequest(sessionId, options = {}) {
+    const request = sessionRequestFor(sessionId);
+    if (!request) return false;
+    delete state.sessionRequests[sessionId];
+    try { request.controller.abort(); } catch (_error) {}
+    if (options.render !== false) {
+      renderSidebarLists();
+      if (sessionId === state.activeSessionId) renderActiveSession();
+      else syncActiveRequestUi();
+    }
+    return true;
+  }
+
+  function syncActiveRequestUi() {
+    const busy = isSessionWaiting();
+    const runningCount = Object.keys(state.sessionRequests).length;
+    inputEl.disabled = busy;
+    setMessageActionsDisabled(busy);
+    setSendButtonMode(busy ? 'stop' : 'send');
+    if (busy) {
+      closeSlashMenu();
+      setStatus('connected', tr('Thinking'));
+    } else if (runningCount > 0) {
+      setStatus('connected', uiText(
+        `Ready · ${runningCount} running`,
+        `就绪 · ${runningCount} 个任务运行中`,
+      ));
+    } else {
+      setStatus('connected', tr('Ready'));
+    }
+  }
+
+  function setMessageActionsDisabled(disabled) {
+    document.querySelectorAll('.msg-action-btn').forEach((button) => {
+      button.disabled = Boolean(disabled);
+      button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    });
   }
 
   function upsertExecutionIndicator(commandText, startedAt) {
@@ -5332,19 +6121,104 @@
     });
   }
 
+  function matchingSlashCommands(value = inputEl.value) {
+    const query = String(value || '').trimStart().toLowerCase();
+    if (!query.startsWith('/') || query.includes('\n')) return [];
+    return SLASH_HELP_COMMANDS.filter(item => item.command.startsWith(query));
+  }
+
+  function closeSlashMenu() {
+    state.slashMenuOpen = false;
+    state.slashMenuIndex = 0;
+    if (slashMenuEl) {
+      slashMenuEl.hidden = true;
+      slashMenuEl.innerHTML = '';
+    }
+    if (inputEl) {
+      inputEl.setAttribute('aria-expanded', 'false');
+      inputEl.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  function renderSlashMenu() {
+    if (!slashMenuEl || isSessionWaiting() || inputEl.disabled) {
+      closeSlashMenu();
+      return;
+    }
+    const items = matchingSlashCommands();
+    if (!items.length) {
+      closeSlashMenu();
+      return;
+    }
+    state.slashMenuOpen = true;
+    state.slashMenuIndex = Math.min(state.slashMenuIndex, items.length - 1);
+    slashMenuEl.hidden = false;
+    slashMenuEl.innerHTML = `
+      <div class="slash-menu-header">
+        <div class="slash-menu-title">${uiText(
+          'Usage: <code>/help &lt;scope&gt; + task description</code>',
+          '用法：<code>/help &lt;范围&gt; + 任务描述</code>',
+        )}</div>
+        <div class="slash-menu-help">${escapeHtml(uiText(
+          'Choose a scope, then describe your goal. NeuroClaw will list the materials you need to provide.',
+          '选择范围后继续描述目标，NeuroClaw 会列出你需要提供的资料。',
+        ))}</div>
+      </div>
+      <div class="slash-menu-list">
+        ${items.map((item, index) => `
+          <button id="slash-command-${index}" class="slash-command ${index === state.slashMenuIndex ? 'active' : ''}" type="button" role="option" aria-selected="${index === state.slashMenuIndex ? 'true' : 'false'}" data-slash-index="${index}">
+            <span class="slash-command-icon">${escapeHtml(item.icon)}</span>
+            <span class="slash-command-copy">
+              <span class="slash-command-name">${escapeHtml(item.command)}</span>
+              <span class="slash-command-desc">${escapeHtml(uiText(item.en, item.zh))}</span>
+            </span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="slash-menu-footer" aria-hidden="true">
+        <span><kbd>↑↓</kbd>${escapeHtml(uiText('Select', '选择'))}</span>
+        <span><kbd>Enter</kbd>${escapeHtml(uiText('Insert', '插入'))}</span>
+        <span><kbd>Esc</kbd>${escapeHtml(uiText('Close', '关闭'))}</span>
+      </div>
+    `;
+    const inputRow = inputEl.closest('.input-row');
+    if (inputRow) {
+      const rowRect = inputRow.getBoundingClientRect();
+      const viewportGap = 12;
+      const menuWidth = Math.min(rowRect.width, window.innerWidth - (viewportGap * 2));
+      slashMenuEl.style.width = `${menuWidth}px`;
+      slashMenuEl.style.left = `${Math.max(viewportGap, Math.min(rowRect.left, window.innerWidth - menuWidth - viewportGap))}px`;
+      slashMenuEl.style.top = `${Math.max(viewportGap, rowRect.top - slashMenuEl.offsetHeight - 8)}px`;
+    }
+    inputEl.setAttribute('aria-expanded', 'true');
+    inputEl.setAttribute('aria-activedescendant', `slash-command-${state.slashMenuIndex}`);
+  }
+
+  function chooseSlashCommand(index = state.slashMenuIndex) {
+    const items = matchingSlashCommands();
+    const item = items[index];
+    if (!item) return;
+    inputEl.value = isChineseUi() ? item.templateZh : item.templateEn;
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + 'px';
+    saveActiveDraft();
+    closeSlashMenu();
+    inputEl.focus();
+    inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+  }
+
   async function sendMessage() {
     const text = inputEl.value.trim();
     const session = getActiveSession();
     const hasFiles = state.pendingFiles.length > 0;
     const selectedSkills = [...getSessionSelectedSkills(session)];
     const hasSkills = selectedSkills.length > 0;
-    if ((!text && !hasFiles && !hasSkills) || state.waiting || !session) return;
+    if ((!text && !hasFiles && !hasSkills) || !session || isSessionWaiting(session.id)) return;
 
     const skillText = buildSkillInstruction(selectedSkills);
-    const attachmentText = await buildAttachmentText(state.pendingFiles);
-    const modeText = isAutoResearchActive() ? AUTO_RESEARCH_PROMPT : '';
-    const finalText = [text, modeText, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
-    const displayText = text || (hasFiles ? tr('Uploaded files') : tr('Use selected skills'));
+    const attachmentText = buildAttachmentText(state.pendingFiles);
+    const finalText = [text, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
+    const displayText = text || (hasFiles ? uiText('Attached local files', '已附加本地文件') : tr('Use selected skills'));
     const userMsgTime = nowISO();
 
     chatPanelEl.classList.remove('is-empty');
@@ -5353,24 +6227,20 @@
     session.draft = '';
     session.selectedSkills = [];
     state.selectedSkills = [];
+    clearPendingFiles();
     session.updatedAt = nowISO();
     state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     saveSessions();
 
+    const controller = new AbortController();
+    if (!beginSessionRequest(session.id, controller)) return;
     renderSidebarLists();
     renderActiveSession();
-    state.waiting = true;
-    state.waitingSessionId = session.id;
-    addTypingIndicator();
     scrollToBottom();
 
     inputEl.value = '';
     inputEl.style.height = 'auto';
-    inputEl.disabled = true;
-    setSendButtonMode('stop');
-    setStatus('connected', tr('Thinking'));
-
-    state.requestController = new AbortController();
+    closeSlashMenu();
 
     const priorHistory = session.messages.slice(0, -1)
       .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -5380,21 +6250,30 @@
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: state.requestController.signal,
+        signal: controller.signal,
         body: JSON.stringify({
           message: finalText,
           history: priorHistory,
           selected_skills: selectedSkills,
+          autoresearch_mode: state.autoResearchMode,
+          language: currentUiLanguage(),
+          client_surface: state.desktopPlatform ? 'desktop' : 'web',
+          workspace_path: workspacePathForSession(session),
         }),
       });
       const data = await resp.json();
-      finishRequestUi();
 
       if (!resp.ok || data.type === 'error') {
         showError(data.message || tr('Chat request failed'));
       } else {
         const reply = String(data.content || '');
         const modelUsed = String(data.model_used || '').trim();
+        if (data.autoresearch_mode && AUTO_RESEARCH_MODES.includes(data.autoresearch_mode)) {
+          state.autoResearchMode = data.autoresearch_mode;
+          savePrefs();
+          syncModelTrigger();
+          renderModelMenu();
+        }
         session.messages.push({
           id: newMessageId(),
           role: 'assistant',
@@ -5417,20 +6296,20 @@
         saveSessions();
         renderSidebarLists();
         renderActiveSession();
-        clearPendingFiles();
         renderSkills(state.skills);
         renderPendingFiles();
         loadCheckpoints();
       }
     } catch (err) {
-      finishRequestUi();
       if (!(err && err.name === 'AbortError')) {
         showError((err && err.message) ? err.message : tr('Network error'));
       }
     } finally {
-      finishRequestUi();
-      inputEl.focus();
-      scrollToBottom();
+      finishSessionRequest(session.id, controller);
+      if (state.activeSessionId === session.id) {
+        inputEl.focus();
+        scrollToBottom();
+      }
     }
   }
 
@@ -5441,9 +6320,22 @@
     savePrefs();
   }
 
-  async function resendAsNewTurn(displayText, promptText) {
-    const session = getActiveSession();
-    if (!session || state.waiting) return;
+  function restoreResendSnapshot(session, snapshot) {
+    if (!session || !snapshot || !Array.isArray(snapshot.messages)) return;
+    session.messages = snapshot.messages.slice();
+    session.updatedAt = snapshot.updatedAt;
+    state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+    saveSessions();
+    renderSidebarLists();
+    renderActiveSession();
+  }
+
+  async function resendAsNewTurn(displayText, promptText, options = {}) {
+    const session = options.session || getActiveSession();
+    if (!session || isSessionWaiting(session.id)) return false;
+    const rollbackSnapshot = options.rollbackSnapshot || null;
+    const controller = new AbortController();
+    if (!beginSessionRequest(session.id, controller)) return false;
 
     const userMsgTime = nowISO();
     welcomeEl.style.display = 'none';
@@ -5453,15 +6345,6 @@
     saveSessions();
     renderSidebarLists();
     renderActiveSession();
-    state.waiting = true;
-    state.waitingSessionId = session.id;
-    addTypingIndicator();
-
-    inputEl.disabled = true;
-    setSendButtonMode('stop');
-    setStatus('connected', tr('Thinking'));
-
-    state.requestController = new AbortController();
 
     const priorHistory = session.messages.slice(0, -1)
       .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -5471,13 +6354,22 @@
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: state.requestController.signal,
-        body: JSON.stringify({ message: promptText, history: priorHistory, selected_skills: [] }),
+        signal: controller.signal,
+        body: JSON.stringify({
+          message: promptText,
+          history: priorHistory,
+          selected_skills: [],
+          autoresearch_mode: state.autoResearchMode,
+          language: currentUiLanguage(),
+          client_surface: state.desktopPlatform ? 'desktop' : 'web',
+          workspace_path: workspacePathForSession(session),
+        }),
       });
       const data = await resp.json();
-      finishRequestUi();
       if (!resp.ok || data.type === 'error') {
+        restoreResendSnapshot(session, rollbackSnapshot);
         showError(data.message || tr('Chat request failed'));
+        return false;
       } else {
         const reply = String(data.content || '');
         const modelUsed = String(data.model_used || '').trim();
@@ -5495,38 +6387,36 @@
         saveSessions();
         renderSidebarLists();
         renderActiveSession();
+        return true;
       }
     } catch (err) {
-      finishRequestUi();
+      restoreResendSnapshot(session, rollbackSnapshot);
       if (!(err && err.name === 'AbortError')) {
         showError((err && err.message) ? err.message : tr('Network error'));
       }
+      return false;
     } finally {
-      finishRequestUi();
-      inputEl.focus();
-      scrollToBottom();
+      finishSessionRequest(session.id, controller);
+      if (state.activeSessionId === session.id) {
+        inputEl.focus();
+        scrollToBottom();
+      }
     }
   }
 
   function stopCurrentRequest() {
-    if (state.requestController) {
-      try {
-        state.requestController.abort();
-      } catch (_e) {}
-    }
-    finishRequestUi();
+    const request = sessionRequestFor(state.activeSessionId);
+    if (!request) return;
+    try { request.controller.abort(); } catch (_error) {}
     inputEl.focus();
   }
 
-  function resendPreviousUserMessage(session, userMsg) {
-    if (!session || !userMsg || userMsg.role !== 'user') return;
+  function resendPreviousUserMessage(session, userMsg, rollbackSnapshot = null) {
+    if (!session || !userMsg || userMsg.role !== 'user') return false;
     const displayText = String(userMsg.content || '').trim() || 'Previous user message';
     const promptText = String(userMsg.promptContent || userMsg.content || '').trim() || displayText;
     state.editingMessageId = null;
-    saveSessions();
-    renderSidebarLists();
-    renderActiveSession();
-    resendAsNewTurn(displayText, promptText);
+    return resendAsNewTurn(displayText, promptText, { session, rollbackSnapshot });
   }
 
   function normalizeEditText(text) {
@@ -5545,16 +6435,13 @@
 
   function removeAssistantAndPrevUser(session, assistantIdx) {
     if (assistantIdx < 0 || assistantIdx >= session.messages.length) return null;
-    const assistantMsg = session.messages[assistantIdx];
-    let userMsg = null;
     if (assistantIdx > 0 && session.messages[assistantIdx - 1].role === 'user') {
-      userMsg = session.messages[assistantIdx - 1];
+      const userMsg = session.messages[assistantIdx - 1];
       session.messages.splice(assistantIdx, 1);
       session.messages.splice(assistantIdx - 1, 1);
       return userMsg;
     }
-    session.messages.splice(assistantIdx, 1);
-    return userMsg || assistantMsg;
+    return null;
   }
 
   function applySectionState() {
@@ -5974,9 +6861,48 @@
     }
 
     newProjectBtn.addEventListener('click', () => {
-      createProject();
-      setActiveView('chat');
-      inputEl.focus();
+      setProjectCreateMenuOpen(!state.projectCreateMenuOpen);
+    });
+
+    projectCreateMenuEl.addEventListener('click', async (e) => {
+      const option = e.target.closest('[data-project-create]');
+      if (!option) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const action = option.dataset.projectCreate;
+      setProjectCreateMenuOpen(false);
+      try {
+        if (action === 'blank') await createBlankProject();
+        if (action === 'existing') await useExistingProjectFolder();
+        setActiveView('chat');
+        inputEl.focus();
+      } catch (err) {
+        showError(err && err.message ? err.message : uiText('Unable to create project.', '无法创建项目。'));
+      }
+    });
+
+    projectListEl.addEventListener('pointerover', (e) => {
+      const item = e.target.closest('[data-project-id]');
+      if (!item || item.contains(e.relatedTarget)) return;
+      showProjectHoverCard(item.dataset.projectId, item);
+    });
+
+    projectListEl.addEventListener('pointerout', (e) => {
+      const item = e.target.closest('[data-project-id]');
+      if (!item || item.contains(e.relatedTarget)) return;
+      hideProjectHoverCard();
+    });
+
+    projectListEl.addEventListener('focusin', (e) => {
+      const item = e.target.closest('[data-project-id]');
+      if (!item) return;
+      showProjectHoverCard(item.dataset.projectId, item, true);
+    });
+
+    projectListEl.addEventListener('focusout', (e) => {
+      const item = e.target.closest('[data-project-id]');
+      if (!item || item.contains(e.relatedTarget)) return;
+      hideProjectHoverCard();
     });
 
     projectListEl.addEventListener('click', (e) => {
@@ -6094,7 +7020,7 @@
     });
 
     sendBtn.addEventListener('click', () => {
-      if (state.waiting) {
+      if (isSessionWaiting()) {
         stopCurrentRequest();
         return;
       }
@@ -6102,6 +7028,25 @@
     });
 
     inputEl.addEventListener('keydown', (e) => {
+      if (state.slashMenuOpen && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
+        e.preventDefault();
+        const items = matchingSlashCommands();
+        if (!items.length) return;
+        const direction = e.key === 'ArrowDown' ? 1 : -1;
+        state.slashMenuIndex = (state.slashMenuIndex + direction + items.length) % items.length;
+        renderSlashMenu();
+        return;
+      }
+      if (state.slashMenuOpen && (e.key === 'Enter' || e.key === 'Tab')) {
+        e.preventDefault();
+        chooseSlashCommand();
+        return;
+      }
+      if (state.slashMenuOpen && e.key === 'Escape') {
+        e.preventDefault();
+        closeSlashMenu();
+        return;
+      }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
@@ -6112,6 +7057,18 @@
       inputEl.style.height = 'auto';
       inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + 'px';
       saveActiveDraft();
+      state.slashMenuIndex = 0;
+      renderSlashMenu();
+    });
+
+    slashMenuEl.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+    });
+
+    slashMenuEl.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-slash-index]');
+      if (!item) return;
+      chooseSlashCommand(Number(item.dataset.slashIndex));
     });
 
     newChatBtn.addEventListener('click', () => {
@@ -6135,14 +7092,79 @@
       });
     }
 
-    uploadBtnEl.addEventListener('click', () => {
-      if (!state.waiting) fileInputEl.click();
+    uploadBtnEl.addEventListener('click', async () => {
+      if (isSessionWaiting()) return;
+      const picker = window.neuroclawDesktop && window.neuroclawDesktop.selectAttachmentFiles;
+      if (typeof picker !== 'function') {
+        showError(uiText(
+          'Local path attachments are available in the NeuroClaw desktop client.',
+          '本地路径附件仅在 NeuroClaw 桌面客户端中可用。',
+        ));
+        return;
+      }
+      try {
+        addPendingFilePaths(await picker());
+      } catch (err) {
+        showError((err && err.message) ? err.message : tr('Unable to select files.'));
+      }
+      inputEl.focus();
     });
 
-    fileInputEl.addEventListener('change', () => {
-      addPendingFiles(fileInputEl.files);
-      fileInputEl.value = '';
+    let fileDragDepth = 0;
+    const setFileDragActive = (active) => {
+      inputAreaEl.classList.toggle('is-file-dragover', Boolean(active));
+      if (fileDropHintTextEl) {
+        fileDropHintTextEl.textContent = uiText('Drop files to attach', '松开即可添加文件');
+      }
+    };
+
+    inputAreaEl.addEventListener('dragenter', (event) => {
+      if (!hasDraggedFiles(event)) return;
+      event.preventDefault();
+      fileDragDepth += 1;
+      setFileDragActive(true);
+    });
+
+    inputAreaEl.addEventListener('dragover', (event) => {
+      if (!hasDraggedFiles(event)) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+      setFileDragActive(true);
+    });
+
+    inputAreaEl.addEventListener('dragleave', (event) => {
+      if (!hasDraggedFiles(event)) return;
+      fileDragDepth = Math.max(0, fileDragDepth - 1);
+      if (fileDragDepth === 0) setFileDragActive(false);
+    });
+
+    inputAreaEl.addEventListener('drop', (event) => {
+      if (!hasDraggedFiles(event)) return;
+      event.preventDefault();
+      fileDragDepth = 0;
+      setFileDragActive(false);
+      if (isSessionWaiting()) return;
+      const paths = droppedFilePaths(event.dataTransfer && event.dataTransfer.files);
+      if (!paths.length) {
+        showError(uiText(
+          'The dropped files do not expose local paths. Use the desktop client file picker instead.',
+          '无法读取拖入文件的本地路径，请改用桌面客户端的文件选择器。',
+        ));
+        return;
+      }
+      addPendingFilePaths(paths);
       inputEl.focus();
+    });
+
+    document.addEventListener('dragover', (event) => {
+      if (hasDraggedFiles(event)) event.preventDefault();
+    });
+
+    document.addEventListener('drop', (event) => {
+      if (!hasDraggedFiles(event)) return;
+      event.preventDefault();
+      if (!inputAreaEl.contains(event.target)) setFileDragActive(false);
+      fileDragDepth = 0;
     });
 
     attachListEl.addEventListener('click', (e) => {
@@ -6373,22 +7395,45 @@
 
       if (action === 'regenerate-user') {
         if (msg.role !== 'user') return;
+        if (isSessionWaiting(session.id)) {
+          showError(uiText(
+            'Wait for the current response to finish before regenerating.',
+            '请等待当前回复完成后再重新生成。',
+          ));
+          return;
+        }
+        const rollbackSnapshot = {
+          messages: session.messages.slice(),
+          updatedAt: session.updatedAt,
+        };
         const removed = removeUserAndNextAssistant(session, idx);
         if (!removed) return;
-        resendPreviousUserMessage(session, removed);
+        resendPreviousUserMessage(session, removed, rollbackSnapshot);
         return;
       }
 
       if (action === 'regenerate-assistant') {
         if (msg.role !== 'assistant') return;
-        const pairedUser = removeAssistantAndPrevUser(session, idx);
-        if (!pairedUser || pairedUser.role !== 'user') {
-          saveSessions();
-          renderSidebarLists();
-          renderActiveSession();
+        if (isSessionWaiting(session.id)) {
+          showError(uiText(
+            'Wait for the current response to finish before regenerating.',
+            '请等待当前回复完成后再重新生成。',
+          ));
           return;
         }
-        resendPreviousUserMessage(session, pairedUser);
+        const rollbackSnapshot = {
+          messages: session.messages.slice(),
+          updatedAt: session.updatedAt,
+        };
+        const pairedUser = removeAssistantAndPrevUser(session, idx);
+        if (!pairedUser || pairedUser.role !== 'user') {
+          showError(uiText(
+            'This response has no preceding user message to regenerate.',
+            '这条回复缺少对应的用户消息，无法重新生成。',
+          ));
+          return;
+        }
+        resendPreviousUserMessage(session, pairedUser, rollbackSnapshot);
       }
     });
 
@@ -6448,6 +7493,7 @@
         if (['root', 'models', 'autoresearch'].includes(panel)) {
           state.modelMenuPanel = panel;
           renderModelMenu();
+          if (panel === 'models') await refreshAvailableModels();
         }
         return;
       }
@@ -6456,8 +7502,9 @@
       if (modeBtn) {
         e.preventDefault();
         e.stopPropagation();
-        const mode = modeBtn.dataset.autoresearchMode === AUTO_RESEARCH_MODE_ON
-          ? AUTO_RESEARCH_MODE_ON
+        const requestedMode = modeBtn.dataset.autoresearchMode;
+        const mode = AUTO_RESEARCH_MODES.includes(requestedMode)
+          ? requestedMode
           : AUTO_RESEARCH_MODE_OFF;
         state.autoResearchMode = mode;
         savePrefs();
@@ -6491,8 +7538,14 @@
     });
 
     document.addEventListener('click', (e) => {
+      if (state.projectCreateMenuOpen && !e.target.closest('#project-create-menu') && !e.target.closest('#new-project-btn')) {
+        setProjectCreateMenuOpen(false);
+      }
       if (state.modelMenuOpen && !e.target.closest('.model-badge')) {
         setModelMenuOpen(false);
+      }
+      if (state.slashMenuOpen && !e.target.closest('.input-row')) {
+        closeSlashMenu();
       }
     });
 
@@ -6505,7 +7558,23 @@
       if (e.key === 'Escape' && state.modelMenuOpen) {
         setModelMenuOpen(false);
       }
+      if (e.key === 'Escape' && state.projectCreateMenuOpen) {
+        setProjectCreateMenuOpen(false);
+      }
+      if (e.key === 'Escape' && projectHoverProjectId) {
+        hideProjectHoverCard(true);
+      }
     });
+
+    window.addEventListener('resize', () => {
+      if (projectHoverProjectId && projectHoverAnchorEl) {
+        positionProjectHoverCard(projectHoverAnchorEl);
+      }
+    });
+
+    document.addEventListener('scroll', () => {
+      if (projectHoverProjectId) hideProjectHoverCard(true);
+    }, true);
 
     modelSelect.addEventListener('change', async () => {
       if (!modelSelect.value) return;
@@ -6537,6 +7606,10 @@
       const data = await resp.json();
       modelLabel.textContent = tr('Model');
       state.availableModels = Array.isArray(data.available_models) ? data.available_models : [];
+      const probe = data.model_probe || {};
+      state.modelProbe = probe.ok
+        ? { status: 'success', count: state.availableModels.length, endpoint: probe.endpoint || '', error: '' }
+        : { status: probe.attempted ? 'error' : 'idle', count: state.availableModels.length, endpoint: probe.endpoint || '', error: probe.error || '' };
       renderModelOptions(data.provider, data.model);
       if (data.api_key_present === false) {
         setStatus('error', tr('Setup required'));
@@ -6547,6 +7620,7 @@
     } catch (_e) {
       modelLabel.textContent = tr('Model');
       state.availableModels = [];
+      state.modelProbe = { status: 'error', count: 0, endpoint: '', error: tr('Unable to fetch runtime environment.') };
       renderModelOptions('', '');
       setStatus('error', tr('Offline'));
       showError(tr('Unable to fetch runtime environment.'));
@@ -6691,7 +7765,6 @@
 
   function boot() {
     loadState();
-    fileInputEl.setAttribute('accept', SUPPORTED_ATTACHMENT_EXTENSIONS.join(','));
     bindEvents();
     applyTheme(state.theme);
     applyTextScale(state.textScale, false);
@@ -6700,7 +7773,7 @@
     applySectionState();
     setSendButtonMode('send');
     startShellStatusPolling();
-    startFreshHomeSession({ saveDraft: false });
+    ensureSession();
     renderProjectList();
     renderChatList();
     renderActiveSession();

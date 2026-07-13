@@ -138,7 +138,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 Download the latest Windows or macOS client from the [GitHub Releases page](https://github.com/CUHK-AIM-Group/NeuroClaw/releases).
 
-- **Windows:** use `NeuroClaw Setup 0.2.0.exe` for normal installation. The portable `.exe` is also available, but may take longer to start because it extracts the app first.
+- **Windows:** use `NeuroClaw Setup 0.2.1.exe` for normal installation. The portable `.exe` is also available, but may take longer to start because it extracts the app first.
 - **macOS:** use the `.dmg` or `.zip` build from the release assets.
 - Open **Settings** to configure the model endpoint, runtime mode, Python path, FSL path, proxy, language, and text size.
 - Open **NeuroOracle** from the sidebar. If the graph file is missing, the client can download it from Hugging Face.

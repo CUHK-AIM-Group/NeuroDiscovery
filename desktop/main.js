@@ -8,9 +8,22 @@ const path = require('node:path');
 
 const APP_NAME = 'NeuroClaw';
 const STARTUP_TIMEOUT_MS = 90_000;
-const BUNDLED_RUNTIME_VERSION = '0.2.0';
+const BUNDLED_RUNTIME_VERSION = '0.2.1';
+const WINDOWS_RESERVED_FOLDER_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
 
 app.setName(APP_NAME);
+
+function validateProjectFolderName(value) {
+  const name = String(value || '').trim();
+  if (!name) throw new Error(desktopText('Project name is required.', '请输入项目名称。'));
+  if (name === '.' || name === '..' || name !== path.basename(name)) {
+    throw new Error(desktopText('Use a folder name, not a path.', '请输入文件夹名称，而不是路径。'));
+  }
+  if (/[<>:"/\\|?*\u0000-\u001f]/.test(name) || /[. ]$/.test(name) || WINDOWS_RESERVED_FOLDER_NAMES.test(name)) {
+    throw new Error(desktopText('This folder name is not valid on Windows.', '该文件夹名称在 Windows 上无效。'));
+  }
+  return name.slice(0, 120);
+}
 
 let mainWindow = null;
 let backendProcess = null;
@@ -531,7 +544,7 @@ function defaultConfig() {
     localPythonExe: process.env.NEUROCLAW_LOCAL_PYTHON_EXE || '',
     fslDir: process.env.FSLDIR || '',
     language: process.env.NEUROCLAW_LANGUAGE || 'English',
-    proxyUrl: process.env.NEUROCLAW_PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897',
+    proxyUrl: process.env.NEUROCLAW_PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '',
     llmProvider: process.env.NEUROCLAW_LLM_PROVIDER || 'openai',
     llmModel: process.env.NEUROCLAW_LLM_MODEL || 'gpt-5.5',
     llmBaseUrl: defaultLlmBaseUrl(),
@@ -1216,6 +1229,63 @@ ipcMain.handle('neuroclaw:save-config', (_event, config) => ({
 ipcMain.handle('neuroclaw:detect-local-pythons', () => ({
   candidates: detectLocalPythons(),
 }));
+
+ipcMain.handle('neuroclaw:select-attachment-files', async () => {
+  const owner = BrowserWindow.getFocusedWindow() || mainWindow;
+  const options = {
+    properties: ['openFile', 'multiSelections'],
+    title: desktopText('Attach local files', '选择本地附件'),
+    buttonLabel: desktopText('Attach', '添加'),
+  };
+  const result = owner && !owner.isDestroyed()
+    ? await dialog.showOpenDialog(owner, options)
+    : await dialog.showOpenDialog(options);
+  return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle('neuroclaw:select-project-folder', async () => {
+  const owner = BrowserWindow.getFocusedWindow() || mainWindow;
+  const options = {
+    properties: ['openDirectory'],
+    title: desktopText('Use an existing project folder', '使用现有项目文件夹'),
+    buttonLabel: desktopText('Use folder', '使用文件夹'),
+  };
+  const result = owner && !owner.isDestroyed()
+    ? await dialog.showOpenDialog(owner, options)
+    : await dialog.showOpenDialog(options);
+  if (result.canceled || !result.filePaths[0]) return { canceled: true };
+  const workspacePath = path.resolve(result.filePaths[0]);
+  return { canceled: false, path: workspacePath, name: path.basename(workspacePath) };
+});
+
+ipcMain.handle('neuroclaw:create-project-folder', async (_event, requestedName) => {
+  try {
+    const name = validateProjectFolderName(requestedName);
+    const owner = BrowserWindow.getFocusedWindow() || mainWindow;
+    const options = {
+      properties: ['openDirectory', 'createDirectory'],
+      title: desktopText('Choose where to create the project', '选择新项目的保存位置'),
+      buttonLabel: desktopText('Create here', '在此创建'),
+    };
+    const result = owner && !owner.isDestroyed()
+      ? await dialog.showOpenDialog(owner, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || !result.filePaths[0]) return { canceled: true };
+
+    const parentPath = path.resolve(result.filePaths[0]);
+    const workspacePath = path.resolve(parentPath, name);
+    if (path.dirname(workspacePath) !== parentPath) {
+      throw new Error(desktopText('Invalid project location.', '项目位置无效。'));
+    }
+    if (fs.existsSync(workspacePath)) {
+      throw new Error(desktopText('A folder with this name already exists.', '该位置已存在同名文件夹。'));
+    }
+    fs.mkdirSync(workspacePath, { recursive: false });
+    return { canceled: false, path: workspacePath, name };
+  } catch (error) {
+    return { canceled: false, error: String(error && error.message ? error.message : error) };
+  }
+});
 
 ipcMain.handle('neuroclaw:restart', () => {
   log('Restart requested from settings');

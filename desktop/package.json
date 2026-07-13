@@ -1,6 +1,6 @@
 {
   "name": "neuroclaw-desktop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "NeuroClaw cross-platform desktop shell",
   "main": "main.js",
   "author": "NeuroClaw",

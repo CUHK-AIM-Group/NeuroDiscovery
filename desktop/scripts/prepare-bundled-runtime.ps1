@@ -135,7 +135,7 @@ if (-not $SkipPython) {
       -Source (Join-Path $CondaEnvPrefix "Library\bin") `
       -Target (Join-Path $PythonTarget "Library\bin") `
       -ExcludeDirs @("__pycache__") `
-      -ExcludeFiles @("*.pyc", "*.pyo", "*.pdb")
+      -ExcludeFiles @("*.pyc", "*.pyo", "*.pdb", "*.pl")
 
     Assert-File $PythonExe "Bundled Python executable was not created: $PythonExe"
   }
@@ -148,6 +148,21 @@ if (-not $SkipPython) {
     & $PythonExe -m pip install -r $Requirements
     if ($LASTEXITCODE -ne 0) { throw "Failed to install runtime requirements" }
   }
+
+  Invoke-Step "Remove build-machine Python metadata" {
+    Get-ChildItem -LiteralPath $PythonTarget -Recurse -Force -File |
+      Where-Object { $_.Extension -in @(".pyc", ".pyo") } |
+      Remove-Item -Force
+
+    Get-ChildItem -LiteralPath $PythonTarget -Recurse -Force -Directory |
+      Where-Object { $_.Name -eq "__pycache__" } |
+      Sort-Object { $_.FullName.Length } -Descending |
+      Remove-Item -Recurse -Force
+
+    # Console launchers embed the temporary build prefix. The desktop starts
+    # modules through python.exe directly, so these wrappers are not required.
+    Remove-DirectoryFresh -Path (Join-Path $PythonTarget "Scripts")
+  }
 }
 
 if (-not $SkipBackend) {
@@ -158,6 +173,7 @@ if (-not $SkipBackend) {
     $ExcludeDirs = @(
       ".pytest_cache",
       ".mypy_cache",
+      "tests",
       "__pycache__",
       "dist",
       "build",
@@ -175,6 +191,8 @@ if (-not $SkipBackend) {
     $ExcludeFiles = @(
       "*.pyc",
       "*.pyo",
+      "test_*.py",
+      "*_test.py",
       "*.log",
       ".env"
     )
@@ -182,7 +200,11 @@ if (-not $SkipBackend) {
     foreach ($dirName in @("core", "skills", "neurooracle")) {
       $source = Join-Path $RepoRoot $dirName
       if (Test-Path -LiteralPath $source -PathType Container) {
-        Invoke-Robocopy -Source $source -Target (Join-Path $BackendTarget $dirName) -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
+        $dirExcludes = @($ExcludeDirs)
+        if ($dirName -eq "core") {
+          $dirExcludes += "scripts"
+        }
+        Invoke-Robocopy -Source $source -Target (Join-Path $BackendTarget $dirName) -ExcludeDirs $dirExcludes -ExcludeFiles $ExcludeFiles
       }
     }
 
@@ -222,13 +244,12 @@ if (-not $SkipBackend) {
 }
 
 $Manifest = [ordered]@{
+  format_version = 1
   created_at = (Get-Date).ToUniversalTime().ToString("o")
-  conda_env = $CondaEnv
-  repo_root = $RepoRoot
-  runtime_root = $RuntimeRoot
-  python_target = $PythonTarget
-  backend_target = $BackendTarget
-  requirements = $Requirements
+  platform = "win32-x64"
+  python = "python"
+  backend = "backend"
+  requirements = (Split-Path -Leaf $Requirements)
   strategy = "standalone-python-prefix"
 }
 $Manifest |

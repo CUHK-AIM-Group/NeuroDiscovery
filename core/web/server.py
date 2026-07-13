@@ -21,7 +21,6 @@ import argparse
 import asyncio
 import hashlib
 import importlib.util
-import io
 import json
 import os
 import subprocess
@@ -43,14 +42,22 @@ AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 7080
-ATTACHMENT_MAX_FILE_BYTES = 15 * 1024 * 1024
-ATTACHMENT_MAX_EMBED_CHARS = 12000
-SUPPORTED_ATTACHMENT_EXTENSIONS = {
-    ".txt", ".md", ".markdown", ".json", ".yaml", ".yml", ".csv", ".tsv",
-    ".py", ".js", ".ts", ".tsx", ".jsx", ".sh", ".bash", ".zsh", ".sql",
-    ".html", ".css", ".xml", ".log", ".rst", ".ini", ".toml", ".cfg",
-    ".pdf", ".docx", ".xlsx", ".pptx",
-}
+
+
+def _client_surface_prompt(raw_surface: Any) -> str:
+    """Return runtime policy that distinguishes Desktop from CLI/web sessions."""
+    surface = str(raw_surface or "").strip().lower()
+    if surface != "desktop":
+        return ""
+    return (
+        "[NeuroClaw Desktop runtime policy — this overrides conflicting environment "
+        "setup instructions in SOUL.md]\n"
+        "The desktop launcher has already configured and started the active runtime. "
+        "Never inspect, create, or require neuroclaw_environment.json in the user's "
+        "project workspace. Never run or recommend installer/setup.py as a prerequisite. "
+        "Proceed with the user's task using the inherited desktop runtime. If a specific "
+        "external command is unavailable, diagnose that command directly."
+    )
 
 
 def _fallback_title_from_user_text(text: str) -> str:
@@ -102,12 +109,13 @@ def _summarize_web_tool_events(events: list[dict[str, Any]]) -> list[dict[str, A
     return compact
 
 
-def _workspace_change_summary() -> list[dict[str, str]]:
+def _workspace_change_summary(workspace: Path | None = None) -> list[dict[str, str]]:
     """Summarize current git working tree changes for the web timeline."""
+    workspace_root = (workspace or REPO_ROOT).resolve()
     try:
         proc = subprocess.run(
             ["git", "status", "--short"],
-            cwd=REPO_ROOT,
+            cwd=workspace_root,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -126,6 +134,23 @@ def _workspace_change_summary() -> list[dict[str, str]]:
         path = line[3:].strip() if len(line) > 3 else line.strip()
         changes.append({"status": status, "path": path})
     return changes[:40]
+
+
+def _resolve_workspace_path(raw: Any) -> Path:
+    """Validate a renderer-selected project workspace without creating it."""
+    value = str(raw or "").strip()
+    if not value:
+        return REPO_ROOT
+    workspace = Path(value).expanduser()
+    if not workspace.is_absolute():
+        raise ValueError("Project workspace must be an absolute path")
+    try:
+        workspace = workspace.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError(f"Project workspace is unavailable: {exc}") from exc
+    if not workspace.is_dir():
+        raise ValueError("Project workspace is not a directory")
+    return workspace
 
 
 def _safe_skill_summary_fallback(skill_name: str, description: str) -> dict[str, str]:
@@ -303,153 +328,6 @@ def _selected_skills_context(selected_names: list[str], skills: list[dict[str, A
     return "\n\n".join(chunks)
 
 
-def _attachment_extension(filename: str) -> str:
-    return Path(str(filename or "")).suffix.lower().strip()
-
-
-def _truncate_text(text: str, max_chars: int = ATTACHMENT_MAX_EMBED_CHARS) -> tuple[str, bool]:
-    raw = str(text or "")
-    if len(raw) <= max_chars:
-        return raw, False
-    return raw[:max_chars].rstrip() + "\n[Content truncated]", True
-
-
-def _decode_text_attachment(raw: bytes) -> str:
-    for encoding in ("utf-8", "utf-8-sig", "gb18030", "latin-1"):
-        try:
-            return raw.decode(encoding)
-        except Exception:
-            continue
-    return raw.decode("utf-8", errors="replace")
-
-
-def _extract_pdf_text(raw: bytes) -> str:
-    from pypdf import PdfReader  # type: ignore
-
-    reader = PdfReader(io.BytesIO(raw))
-    chunks: list[str] = []
-    for page in reader.pages[:120]:
-        txt = (page.extract_text() or "").strip()
-        if txt:
-            chunks.append(txt)
-    return "\n\n".join(chunks)
-
-
-def _extract_docx_text(raw: bytes) -> str:
-    from docx import Document  # type: ignore
-
-    doc = Document(io.BytesIO(raw))
-    chunks: list[str] = []
-
-    for para in doc.paragraphs:
-        txt = (para.text or "").strip()
-        if txt:
-            chunks.append(txt)
-
-    for table in doc.tables:
-        for row in table.rows:
-            vals = [str(cell.text or "").strip() for cell in row.cells]
-            vals = [v for v in vals if v]
-            if vals:
-                chunks.append(" | ".join(vals))
-
-    return "\n".join(chunks)
-
-
-def _extract_xlsx_text(raw: bytes) -> str:
-    from openpyxl import load_workbook  # type: ignore
-
-    wb = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
-    lines: list[str] = []
-    for ws in wb.worksheets[:12]:
-        lines.append(f"[Sheet] {ws.title}")
-        row_count = 0
-        for row in ws.iter_rows(max_row=200, max_col=30, values_only=True):
-            cells = ["" if v is None else str(v).strip() for v in row]
-            if not any(cells):
-                continue
-            lines.append("\t".join(cells))
-            row_count += 1
-            if row_count >= 200:
-                lines.append("[Rows truncated]")
-                break
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _extract_pptx_text(raw: bytes) -> str:
-    from pptx import Presentation  # type: ignore
-
-    prs = Presentation(io.BytesIO(raw))
-    lines: list[str] = []
-    for idx, slide in enumerate(prs.slides[:80], start=1):
-        lines.append(f"[Slide {idx}]")
-        for shape in slide.shapes:
-            txt = ""
-            try:
-                txt = (shape.text or "").strip()  # type: ignore[attr-defined]
-            except Exception:
-                txt = ""
-            if txt:
-                lines.append(txt)
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _parse_attachment_content(filename: str, content_type: str, raw: bytes) -> dict[str, Any]:
-    ext = _attachment_extension(filename)
-    if ext not in SUPPORTED_ATTACHMENT_EXTENSIONS:
-        return {
-            "ok": False,
-            "error": (
-                f"Unsupported extension '{ext or 'unknown'}'. "
-                "Supported: " + ", ".join(sorted(SUPPORTED_ATTACHMENT_EXTENSIONS))
-            ),
-        }
-
-    if ext in {
-        ".txt", ".md", ".markdown", ".json", ".yaml", ".yml", ".csv", ".tsv",
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".sh", ".bash", ".zsh", ".sql",
-        ".html", ".css", ".xml", ".log", ".rst", ".ini", ".toml", ".cfg",
-    }:
-        text = _decode_text_attachment(raw)
-    elif ext == ".pdf":
-        try:
-            text = _extract_pdf_text(raw)
-        except ImportError:
-            return {"ok": False, "error": "PDF parser missing. Install: pypdf"}
-    elif ext == ".docx":
-        try:
-            text = _extract_docx_text(raw)
-        except ImportError:
-            return {"ok": False, "error": "DOCX parser missing. Install: python-docx"}
-    elif ext == ".xlsx":
-        try:
-            text = _extract_xlsx_text(raw)
-        except ImportError:
-            return {"ok": False, "error": "XLSX parser missing. Install: openpyxl"}
-    elif ext == ".pptx":
-        try:
-            text = _extract_pptx_text(raw)
-        except ImportError:
-            return {"ok": False, "error": "PPTX parser missing. Install: python-pptx"}
-    else:
-        return {"ok": False, "error": "Unsupported file type"}
-
-    cleaned = str(text or "").strip()
-    if not cleaned:
-        return {"ok": False, "error": "No readable text found in file"}
-
-    truncated_text, truncated = _truncate_text(cleaned)
-    return {
-        "ok": True,
-        "text": truncated_text,
-        "truncated": truncated,
-        "ext": ext,
-        "content_type": content_type,
-    }
-
-
 def _normalize_skill_token(text: str) -> str:
     """Normalize a skill token for robust mention matching."""
     t = str(text or "").lower()
@@ -606,7 +484,7 @@ def create_app() -> Any:
     """Build and return the FastAPI application object."""
     _require_webdeps()
 
-    from fastapi import Body, FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect  # type: ignore
+    from fastapi import Body, FastAPI, WebSocket, WebSocketDisconnect  # type: ignore
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse  # type: ignore
     from fastapi.staticfiles import StaticFiles  # type: ignore
 
@@ -619,6 +497,11 @@ def create_app() -> Any:
         build_llm_client,
         load_environment,
         save_environment,
+    )
+    from core.autoresearch import (  # type: ignore[import]
+        build_autoresearch_scope_prompt,
+        parse_help_command,
+        render_help_response,
     )
 
     # SkillLoader lives in core/skill_loader/, so we use importlib for dynamic loading.
@@ -674,30 +557,75 @@ def create_app() -> Any:
             entry["model"] = model
             entry.setdefault("label", model)
             out.append(entry)
-        return out
+        return sorted(
+            out,
+            key=lambda item: (
+                str(item.get("model", "")).casefold(),
+                str(item.get("model", "")),
+                str(item.get("provider", "")).casefold(),
+            ),
+        )
 
-    def _fetch_openai_compatible_models(llm: dict[str, Any]) -> list[dict[str, Any]]:
-        base_url = str(llm.get("base_url") or llm.get("baseUrl") or "").strip()
+    def _probe_openai_compatible_models(llm: dict[str, Any]) -> dict[str, Any]:
+        base_url = str(
+            llm.get("base_url") or llm.get("baseUrl") or llm.get("local_endpoint") or ""
+        ).strip()
         if not base_url:
-            return []
+            return {
+                "ok": False,
+                "attempted": False,
+                "endpoint": "",
+                "status_code": None,
+                "error": "No model endpoint configured",
+                "models": [],
+            }
         api_key = ""
         api_key_env = str(llm.get("api_key_env") or "").strip()
         if api_key_env:
             api_key = os.environ.get(api_key_env, "")
         api_key = api_key or str(llm.get("api_key") or llm.get("apiKey") or "").strip()
         url = base_url.rstrip("/") + "/models"
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "User-Agent": "NeuroClaw/0.2.1"}
+        configured_headers = llm.get("default_headers") or llm.get("headers")
+        if isinstance(configured_headers, dict):
+            for key, value in configured_headers.items():
+                if str(key).strip() and value is not None:
+                    headers[str(key)] = str(value)
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
         req = urllib.request.Request(url, headers=headers, method="GET")
         try:
             with urllib.request.urlopen(req, timeout=3) as resp:
+                status_code = int(getattr(resp, "status", 200) or 200)
                 payload = json.loads(resp.read().decode("utf-8"))
-        except (OSError, urllib.error.URLError, json.JSONDecodeError):
-            return []
+        except urllib.error.HTTPError as exc:
+            return {
+                "ok": False,
+                "attempted": True,
+                "endpoint": url,
+                "status_code": int(exc.code),
+                "error": f"HTTP {exc.code}",
+                "models": [],
+            }
+        except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+            return {
+                "ok": False,
+                "attempted": True,
+                "endpoint": url,
+                "status_code": None,
+                "error": str(exc)[:240] or type(exc).__name__,
+                "models": [],
+            }
         data = payload.get("data") if isinstance(payload, dict) else None
         if not isinstance(data, list):
-            return []
+            return {
+                "ok": False,
+                "attempted": True,
+                "endpoint": url,
+                "status_code": status_code,
+                "error": "The endpoint returned no model list",
+                "models": [],
+            }
         provider = str(llm.get("provider") or "openai").strip() or "openai"
         models: list[dict[str, Any]] = []
         inherited_keys = (
@@ -715,12 +643,50 @@ def create_app() -> Any:
                 if key in llm:
                     entry[key] = llm[key]
             models.append(entry)
-        return models
+        return {
+            "ok": True,
+            "attempted": True,
+            "endpoint": url,
+            "status_code": status_code,
+            "error": "",
+            "models": models,
+        }
 
-    def _runtime_available_models(llm: dict[str, Any]) -> list[dict[str, Any]]:
+    def _public_model_probe(probe: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "ok": bool(probe.get("ok")),
+            "attempted": bool(probe.get("attempted")),
+            "endpoint": str(probe.get("endpoint") or ""),
+            "status_code": probe.get("status_code"),
+            "error": str(probe.get("error") or ""),
+            "count": len(probe.get("models", [])) if isinstance(probe.get("models"), list) else 0,
+        }
+
+    def _public_model_catalog(models: list[dict[str, Any]]) -> list[dict[str, str]]:
+        """Return only renderer-facing model metadata; never expose connection secrets."""
+        return [
+            {
+                "provider": str(item.get("provider") or "openai"),
+                "model": str(item.get("model") or ""),
+                "label": str(item.get("label") or item.get("model") or ""),
+            }
+            for item in models
+            if isinstance(item, dict) and str(item.get("model") or "").strip()
+        ]
+
+    def _runtime_model_catalog(llm: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         configured = llm.get("available_models", [])
         base = configured if isinstance(configured, list) else []
-        return _dedupe_model_catalog([*base, *_fetch_openai_compatible_models(llm)])
+        probe = _probe_openai_compatible_models(llm)
+        remote = probe.get("models", []) if isinstance(probe.get("models"), list) else []
+        # A successful live probe is authoritative. Configured entries are only
+        # a fallback for offline or non-discoverable providers.
+        catalog_source = remote if probe.get("ok") else base
+        return _dedupe_model_catalog(catalog_source), _public_model_probe(probe)
+
+    def _runtime_available_models(llm: dict[str, Any]) -> list[dict[str, Any]]:
+        catalog, _probe = _runtime_model_catalog(llm)
+        return catalog
 
     app = FastAPI(title="NeuroClaw Web UI", docs_url=None, redoc_url=None)
 
@@ -776,50 +742,6 @@ def create_app() -> Any:
             ]
         }
 
-    @app.post("/api/attachments/parse")
-    async def parse_attachments(files: list[UploadFile] = File(...)) -> Any:
-        if not files:
-            return JSONResponse({"type": "error", "message": "No files uploaded"}, status_code=400)
-
-        parsed_files: list[dict[str, Any]] = []
-        for upload in files[:24]:
-            name = str(upload.filename or "untitled")
-            content_type = str(upload.content_type or "unknown")
-            raw = await upload.read()
-            size = len(raw)
-
-            item: dict[str, Any] = {
-                "name": name,
-                "size": size,
-                "content_type": content_type,
-            }
-
-            if size > ATTACHMENT_MAX_FILE_BYTES:
-                item.update(
-                    {
-                        "ok": False,
-                        "error": (
-                            f"File too large ({size} bytes). "
-                            f"Limit is {ATTACHMENT_MAX_FILE_BYTES} bytes."
-                        ),
-                    }
-                )
-                parsed_files.append(item)
-                continue
-
-            try:
-                item.update(_parse_attachment_content(name, content_type, raw))
-            except Exception as exc:
-                item.update({"ok": False, "error": f"Parse failed: {exc}"})
-            parsed_files.append(item)
-
-        return {
-            "type": "done",
-            "files": parsed_files,
-            "max_file_bytes": ATTACHMENT_MAX_FILE_BYTES,
-            "supported_extensions": sorted(SUPPORTED_ATTACHMENT_EXTENSIONS),
-        }
-
     @app.get("/api/env")
     async def get_env() -> dict:
         """Return non-sensitive parts of the runtime environment config."""
@@ -833,16 +755,34 @@ def create_app() -> Any:
             or (isinstance(direct_api_key, str) and direct_api_key.strip())
             or (api_key_env and __import__('os').environ.get(api_key_env))
         )
-        available_models = _runtime_available_models(llm if isinstance(llm, dict) else {})
+        available_models, model_probe = _runtime_model_catalog(
+            llm if isinstance(llm, dict) else {}
+        )
         return {
             "provider": provider,
             "model": llm.get("model", "unknown"),
             "base_url": llm.get("base_url") or llm.get("baseUrl") or llm.get("local_endpoint") or "",
-            "available_models": available_models,
+            "available_models": _public_model_catalog(available_models),
+            "model_probe": model_probe,
             "cuda_device": env.get("cuda", {}).get("device", "cpu"),
             "setup_type": env.get("setup_type", "unknown"),
             "conda_env": env.get("conda_env"),
             "api_key_present": api_key_present,
+        }
+
+    @app.get("/api/env/models")
+    async def get_available_models() -> dict:
+        """Probe the configured model endpoint and return a safe, sorted catalog."""
+        env = load_environment()
+        llm = env.get("llm_backend", {})
+        if not isinstance(llm, dict):
+            llm = {}
+        available_models, model_probe = await asyncio.to_thread(_runtime_model_catalog, llm)
+        return {
+            "provider": str(llm.get("provider") or "unknown"),
+            "model": str(llm.get("model") or "unknown"),
+            "available_models": _public_model_catalog(available_models),
+            "model_probe": model_probe,
         }
 
     @app.post("/api/env/model")
@@ -897,7 +837,7 @@ def create_app() -> Any:
             "type": "done",
             "provider": provider,
             "model": model,
-            "available_models": _runtime_available_models(llm),
+            "available_models": _public_model_catalog(_runtime_available_models(llm)),
         }
 
     @app.post("/api/chat")
@@ -906,10 +846,29 @@ def create_app() -> Any:
         user_text = str(payload.get("message", "")).strip()
         raw_history = payload.get("history", [])
         raw_selected_skills = payload.get("selected_skills", [])
+        autoresearch_mode = payload.get("autoresearch_mode", "off")
+        client_surface = payload.get("client_surface", "web")
         if not user_text:
             return JSONResponse({"type": "error", "message": "Empty message"}, status_code=400)
 
-        session = AgentSession()
+        help_request = parse_help_command(user_text, payload.get("language"))
+        if help_request is not None:
+            return {
+                "type": "done",
+                "content": render_help_response(help_request),
+                "provider_used": "NeuroClaw",
+                "model_used": "local help",
+                "autoresearch_mode": help_request.mode,
+                "tool_events": [],
+                "workspace_changes": [],
+            }
+
+        try:
+            workspace = _resolve_workspace_path(payload.get("workspace_path"))
+        except ValueError as exc:
+            return JSONResponse({"type": "error", "message": str(exc)}, status_code=400)
+
+        session = AgentSession(workspace=workspace)
 
         try:
             loader = SkillLoader(REPO_ROOT / "skills")
@@ -925,13 +884,6 @@ def create_app() -> Any:
         if not selected_skills:
             selected_skills = _infer_skills_from_user_text(user_text, skills)
 
-        env_file = REPO_ROOT / "neuroclaw_environment.json"
-        if not env_file.exists():
-            return JSONResponse({
-                "type": "error",
-                "message": "neuroclaw_environment.json not found. Run python installer/setup.py to configure NeuroClaw.",
-            }, status_code=400)
-
         try:
             session.set_llm_client(build_llm_client(session.env))
         except Exception as exc:
@@ -940,7 +892,12 @@ def create_app() -> Any:
         soul_path = REPO_ROOT / "SOUL.md"
         soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
         skill_names = ", ".join(s["name"] for s in skills)
-        session.history = [{"role": "system", "content": f"{soul}\n\nLoaded skills: {skill_names}"}]
+        surface_prompt = _client_surface_prompt(client_surface)
+        system_parts = [soul, surface_prompt, f"Loaded skills: {skill_names}"]
+        session.history = [{
+            "role": "system",
+            "content": "\n\n".join(part for part in system_parts if part),
+        }]
 
         if isinstance(raw_history, list):
             for msg in raw_history:
@@ -953,13 +910,16 @@ def create_app() -> Any:
                 session.history.append({"role": role, "content": content})
 
         selected_ctx = _selected_skills_context(selected_skills, skills)
-        user_payload = user_text
+        scope_context = build_autoresearch_scope_prompt(autoresearch_mode)
+        payload_parts = [user_text]
         if selected_ctx:
-            user_payload = (
-                f"{user_text}\n\n"
+            payload_parts.append(
                 "[Selected skill references from local SKILL.md files]\n"
                 f"{selected_ctx}"
             )
+        if scope_context:
+            payload_parts.append(scope_context)
+        user_payload = "\n\n".join(payload_parts)
 
         session.history.append({"role": "user", "content": user_payload})
 
@@ -973,7 +933,7 @@ def create_app() -> Any:
             "provider_used": provider_used,
             "model_used": model_used,
             "tool_events": _summarize_web_tool_events(getattr(session, "_tool_events", [])),
-            "workspace_changes": _workspace_change_summary(),
+            "workspace_changes": _workspace_change_summary(workspace),
         }
 
     @app.post("/api/chat/title")
@@ -983,10 +943,6 @@ def create_app() -> Any:
         assistant_text = str(payload.get("assistant", "")).strip()
         if not user_text and not assistant_text:
             return JSONResponse({"type": "error", "message": "Missing conversation content"}, status_code=400)
-
-        env_file = REPO_ROOT / "neuroclaw_environment.json"
-        if not env_file.exists():
-            return JSONResponse({"type": "error", "message": "Environment not configured"}, status_code=400)
 
         session = AgentSession()
         try:
@@ -1115,18 +1071,6 @@ def create_app() -> Any:
                 "model": llm_cfg.get("model", "unconfigured"),
             }))
 
-            env_file = REPO_ROOT / "neuroclaw_environment.json"
-            if not env_file.exists():
-                await websocket.send_text(json.dumps({
-                    "type": "error",
-                    "message": (
-                        "neuroclaw_environment.json not found. "
-                        "Run python installer/setup.py to configure NeuroClaw."
-                    ),
-                }))
-                await websocket.close()
-                return
-
             # Initialise LLM client
             try:
                 session.set_llm_client(build_llm_client(session.env))
@@ -1151,7 +1095,22 @@ def create_app() -> Any:
                     msg = json.loads(raw)
                     user_text = msg.get("message", "").strip()
                     raw_selected = msg.get("selected_skills", [])
+                    autoresearch_mode = msg.get("autoresearch_mode", "off")
                     if not user_text:
+                        continue
+
+                    help_request = parse_help_command(user_text, msg.get("language"))
+                    if help_request is not None:
+                        reply = render_help_response(help_request)
+                        await websocket.send_text(json.dumps({
+                            "type": "done",
+                            "content": reply,
+                            "provider_used": "NeuroClaw",
+                            "model_used": "local help",
+                            "autoresearch_mode": help_request.mode,
+                        }))
+                        session.history.append({"role": "user", "content": user_text})
+                        session.history.append({"role": "assistant", "content": reply})
                         continue
 
                     selected = []
@@ -1161,13 +1120,16 @@ def create_app() -> Any:
                         selected = _infer_skills_from_user_text(user_text, skills)
 
                     selected_ctx = _selected_skills_context(selected, skills)
-                    user_payload = user_text
+                    scope_context = build_autoresearch_scope_prompt(autoresearch_mode)
+                    payload_parts = [user_text]
                     if selected_ctx:
-                        user_payload = (
-                            f"{user_text}\n\n"
+                        payload_parts.append(
                             "[Selected skill references from local SKILL.md files]\n"
                             f"{selected_ctx}"
                         )
+                    if scope_context:
+                        payload_parts.append(scope_context)
+                    user_payload = "\n\n".join(payload_parts)
 
                     session.history.append({"role": "user", "content": user_payload})
                     try:

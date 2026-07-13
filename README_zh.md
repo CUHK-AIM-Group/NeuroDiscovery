@@ -136,7 +136,7 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 
 从 [GitHub Releases](https://github.com/CUHK-AIM-Group/NeuroClaw/releases) 下载最新的 Windows 或 macOS 客户端。
 
-- **Windows：** 推荐使用 `NeuroClaw Setup 0.2.0.exe` 正常安装。Portable `.exe` 也可使用，但由于需要先解压应用，启动可能更慢。
+- **Windows：** 推荐使用 `NeuroClaw Setup 0.2.1.exe` 正常安装。Portable `.exe` 也可使用，但由于需要先解压应用，启动可能更慢。
 - **macOS：** 使用 release assets 中的 `.dmg` 或 `.zip` 构建。
 - 打开 **Settings** 配置模型端点、运行模式、Python 路径、FSL 路径、代理、语言和字号。
 - 从侧边栏打开 **NeuroOracle**。如果本地图谱文件缺失，客户端会提示从 Hugging Face 下载。
