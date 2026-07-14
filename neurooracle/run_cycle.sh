@@ -13,7 +13,7 @@ fi
 
 CYCLE_ID="${1:-001}"
 SEED_FROM="${2:-}"
-PY=/c/Users/45846/anaconda3/envs/neuroclaw/python.exe
+PY="${PYTHON:-python}"
 KG=neurooracle/data/full_snapshot_v2/knowledge_graph.json
 KGE=neurooracle/data/full_snapshot_v2/kge_complex.pt
 NOV_CACHE=neurooracle/data/full_snapshot_v2/novelty_cache.json

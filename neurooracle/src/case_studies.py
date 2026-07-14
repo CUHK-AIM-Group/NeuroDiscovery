@@ -25,6 +25,7 @@ historical claim / snapshot pipeline is finalized.
 
 from __future__ import annotations
 
+import os
 import re
 import csv
 from collections import Counter
@@ -56,7 +57,12 @@ _KNOWN_GENERATORS = frozenset({
     GENERATOR_ATOM_SUBSTITUTION,
 })
 
-NEUROSTORM_ATLAS_ROOT = Path(r"C:\Users\45846\Documents\Code\NeuroSTORM\datasets\atlas")
+NEUROSTORM_ATLAS_ROOT = Path(
+    os.environ.get(
+        "NEUROSTORM_ATLAS_ROOT",
+        Path(__file__).resolve().parents[2] / "data" / "atlas",
+    )
+)
 
 
 def _clean_atlas_label_cell(cell: str) -> str:
