@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Expert Study</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6f8;
+      --paper: #fff;
+      --ink: #17233a;
+      --muted: #69768a;
+      --line: #dce3e8;
+      --line-strong: #c7d1da;
+      --indigo: #5866d8;
+      --cyan: #2d879c;
+      --high: #16856a;
+      --medium: #ad741b;
+      --low: #68758a;
+      --exclude: #b24d57;
+      --shadow: 0 12px 34px rgba(23,35,58,.09);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    .app { height: 100%; display: flex; flex-direction: column; min-width: 960px; }
+    .topbar {
+      height: 58px; flex: 0 0 58px; display: flex; align-items: center; gap: 18px;
+      padding: 0 18px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.94);
+    }
+    .brand { display: flex; align-items: center; min-width: 270px; }
+    .brand strong { font-size: 17px; letter-spacing: -.02em; }
+    .tabs { display: flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: #f6f8fa; }
+    body.embedded-route .tabs { display: none; }
+    .tab { border: 0; background: transparent; border-radius: 6px; padding: 7px 12px; cursor: pointer; color: var(--muted); }
+    .tab.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(23,35,58,.1); }
+    .top-meta { margin-left: auto; display: flex; gap: 14px; align-items: center; color: var(--muted); font-size: 12px; }
+    .recording { display: inline-flex; align-items: center; gap: 6px; }
+    .recording::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #b9c0c9; }
+    .recording.live::before { background: #d24f5b; box-shadow: 0 0 0 4px rgba(210,79,91,.12); }
+    .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
+    .view { flex: 1; min-height: 0; display: none; }
+    .view.active { display: flex; }
+    [hidden] { display: none !important; }
+
+    .auth { align-items: center; justify-content: center; padding: 36px; background: #eef3f6; }
+    .auth-card { width: min(430px, 100%); border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: var(--shadow); padding: 34px; }
+    .auth-symbol { width: 48px; height: 48px; margin-bottom: 22px; display: grid; place-items: center; border-radius: 14px; background: var(--ink); color: white; }
+    .auth-symbol svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .auth-card h1 { margin: 10px 0 9px; font-size: 26px; letter-spacing: -.03em; }
+    .auth-card > p { margin-bottom: 23px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .auth-form { display: grid; gap: 12px; }
+
+    .setup { align-items: stretch; justify-content: center; overflow: auto; padding: 44px; }
+    .setup-card { width: min(840px, 100%); margin: auto; display: grid; grid-template-columns: 1.05fr .95fr; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+    .setup-intro { padding: 38px; border-right: 1px solid var(--line); background: #f9fbfc; }
+    .eyebrow { color: var(--cyan); font-size: 11px; letter-spacing: .13em; font-weight: 750; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    .setup-intro h1 { font-size: 31px; line-height: 1.1; letter-spacing: -.035em; margin: 15px 0 13px; }
+    .setup-intro p { color: var(--muted); line-height: 1.6; font-size: 14px; }
+    .protocol { margin-top: 28px; display: grid; gap: 14px; }
+    .protocol-row { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+    .protocol-num { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #edf1ff; color: var(--indigo); font-weight: 700; font-size: 11px; }
+    .protocol-row strong { display: block; font-size: 13px; margin-bottom: 3px; }
+    .protocol-row span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .setup-form { padding: 34px; display: grid; align-content: center; gap: 15px; }
+    label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+    input, select { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; color: var(--ink); padding: 10px 11px; outline: none; }
+    input:focus, select:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(88,102,216,.12); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .primary, .secondary, .ghost { border-radius: 8px; padding: 9px 13px; cursor: pointer; }
+    .primary { border: 1px solid var(--ink); background: var(--ink); color: #fff; font-weight: 650; }
+    .secondary { border: 1px solid var(--line-strong); background: var(--paper); }
+    .ghost { border: 0; background: transparent; color: var(--muted); }
+    .primary:hover { background: #24334f; }
+    .form-note, .error { font-size: 11px; line-height: 1.45; color: var(--muted); }
+    .error { color: var(--exclude); min-height: 16px; }
+
+    .workbench { flex-direction: column; }
+    .study-strip { height: 42px; flex: 0 0 42px; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid var(--line); background: #fafcfd; font-size: 12px; }
+    .study-strip strong { font-size: 12px; }
+    .study-strip .progress-track { width: 160px; height: 5px; background: #e2e7eb; border-radius: 5px; overflow: hidden; }
+    .study-strip .progress-track span { display: block; height: 100%; background: var(--cyan); width: 0; transition: width .2s ease; }
+    .strip-actions { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+    .workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 310px minmax(380px,1fr) 390px; }
+    .panel { min-height: 0; background: var(--paper); }
+    .candidate-panel { border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+    .panel-head { flex: 0 0 auto; padding: 15px 15px 11px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { font-size: 14px; margin: 0 0 4px; }
+    .panel-head p { color: var(--muted); font-size: 11px; margin: 0; }
+    .filter-row { display: flex; gap: 6px; margin-top: 11px; }
+    .filter-row input { padding: 7px 9px; font-size: 12px; }
+    .mini-select { width: 92px; padding: 7px; font-size: 11px; }
+    .candidate-list { overflow: auto; flex: 1; padding: 7px; }
+    .candidate { width: 100%; border: 1px solid transparent; border-radius: 8px; background: transparent; padding: 10px; text-align: left; cursor: pointer; display: grid; grid-template-columns: 28px 1fr; gap: 8px; margin-bottom: 2px; }
+    .candidate:hover { background: #f6f8fa; }
+    .candidate.selected { border-color: #aeb8e9; background: #f4f5ff; }
+    .candidate-index { color: var(--muted); font-size: 10px; padding-top: 2px; }
+    .candidate-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 1.4; font-weight: 620; }
+    .candidate-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .bucket-dot { width: 7px; height: 7px; border-radius: 50%; background: #c7ced5; }
+    .bucket-dot.high { background: var(--high); } .bucket-dot.medium { background: var(--medium); }
+    .bucket-dot.low { background: var(--low); } .bucket-dot.exclude { background: var(--exclude); }
+
+    .graph-panel { min-width: 0; position: relative; display: flex; flex-direction: column; background: #f7f9fb; }
+    .graph-head { height: 48px; display: flex; align-items: center; padding: 0 14px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.85); }
+    .graph-head strong { font-size: 12px; }
+    .graph-legend { margin-left: auto; display: flex; gap: 12px; font-size: 10px; color: var(--muted); }
+    .legend-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+    .graph-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+    #evidence-graph { width: 100%; height: 100%; display: block; }
+    .graph-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 12px; pointer-events: none; }
+    .graph-caption { position: absolute; left: 14px; bottom: 13px; max-width: 62%; padding: 8px 10px; background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .edge-line { stroke: #84a5ad; stroke-width: 2; opacity: .88; }
+    .edge-line.active { stroke: var(--cyan); filter: drop-shadow(0 1px 2px rgba(45,135,156,.18)); }
+    .edge-badge { fill: #f7fbfc; stroke: #bdd4da; stroke-width: 1; }
+    .edge-label { fill: #456b74; font-size: 10px; font-weight: 700; text-anchor: middle; }
+    .node-card { fill: #fff; stroke: #aeb7ea; stroke-width: 1.7; filter: drop-shadow(0 4px 8px rgba(23,35,58,.06)); }
+    .node-card.target { fill: #f1fafb; stroke: #75aebc; }
+    .node-accent { fill: var(--indigo); }
+    .node-accent.target { fill: var(--cyan); }
+    .node-kicker { fill: #7a8798; font-size: 8px; font-weight: 800; letter-spacing: 1.15px; }
+    .node-label { fill: var(--ink); font-size: 11px; font-weight: 680; }
+
+    .detail-panel { border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: auto; }
+    .detail { padding: 17px; }
+    .detail-id { color: var(--muted); font-size: 10px; margin-bottom: 8px; overflow-wrap: anywhere; }
+    .detail h2 { font-size: 18px; line-height: 1.3; letter-spacing: -.015em; margin-bottom: 10px; }
+    .detail-summary { color: #4e5d72; line-height: 1.55; font-size: 12px; }
+    .assisted-score { display: none; border-left: 3px solid var(--indigo); background: #f1f2ff; padding: 9px 11px; margin: 11px 0; color: #4552b8; font-size: 11px; }
+    .assisted .assisted-score { display: block; }
+    .section-label { margin: 18px 0 8px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .evidence-list { display: grid; gap: 7px; }
+    .evidence-item { border: 1px solid var(--line); border-radius: 7px; padding: 9px; font-size: 11px; line-height: 1.45; }
+    .evidence-item strong { display: block; margin-bottom: 3px; }
+    .evidence-item span { color: var(--muted); }
+    .rank-dock { position: sticky; bottom: 0; margin-top: auto; border-top: 1px solid var(--line); background: rgba(255,255,255,.97); padding: 13px 15px 15px; }
+    .rank-title { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .bucket-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .bucket-btn { position: relative; border: 1px solid var(--line-strong); background: #fff; border-radius: 7px; padding: 9px; cursor: pointer; text-align: left; font-size: 11px; transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease; }
+    .bucket-btn:hover { transform: translateY(-1px); border-color: #8f9aa7; }
+    .bucket-btn span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+    .bucket-btn[data-bucket=high] span { background: var(--high); } .bucket-btn[data-bucket=medium] span { background: var(--medium); }
+    .bucket-btn[data-bucket=low] span { background: var(--low); } .bucket-btn[data-bucket=exclude] span { background: var(--exclude); }
+    .bucket-btn.active { border-color: currentColor; background: #f8fafb; box-shadow: inset 0 0 0 1px currentColor; }
+    .bucket-btn.just-rated { animation: rating-confirm .42s ease; }
+    .bucket-btn.just-rated::after { content: '✓'; position: absolute; right: 8px; top: 7px; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--ink); font-size: 11px; font-weight: 800; }
+    .bucket-btn.just-rated .key { opacity: 0; }
+    @keyframes rating-confirm { 0% { transform: scale(.97); } 48% { transform: scale(1.025); } 100% { transform: scale(1); } }
+    .rating-feedback { min-height: 30px; margin-top: 8px; border-radius: 7px; padding: 7px 9px; color: var(--muted); background: #f5f7f8; font-size: 10px; line-height: 1.45; }
+    .rating-feedback.confirmed { color: #176b59; background: #edf8f4; }
+    .rating-feedback.refine-needed { color: #6d5618; background: #fff8e7; }
+    .key { float: right; color: #98a2ae; font-family: Consolas, monospace; }
+    .refine-row { margin-top: 8px; display: flex; gap: 6px; }
+    .refine-row button { flex: 1; }
+
+    .pair-overlay { position: absolute; inset: 48px 0 0; z-index: 4; display: none; background: rgba(243,246,248,.97); padding: 24px; overflow: auto; }
+    .pair-overlay.active { display: grid; place-items: center; }
+    .pair-card { width: min(780px, 100%); background: white; border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 12px; padding: 22px; }
+    .pair-progress { color: var(--muted); font-size: 11px; }
+    .pair-card h2 { margin: 8px 0 18px; font-size: 19px; }
+    .pair-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .pair-choice { min-height: 170px; border: 1px solid var(--line-strong); border-radius: 9px; background: white; padding: 15px; text-align: left; cursor: pointer; }
+    .pair-choice:hover { border-color: var(--indigo); background: #f7f7ff; }
+    .pair-choice.chosen { border-color: var(--indigo); background: #eef0ff; box-shadow: inset 0 0 0 1px var(--indigo); transform: translateY(-2px); }
+    .pair-choice.not-chosen { opacity: .48; }
+    .pair-choice b { display: block; color: var(--indigo); margin-bottom: 10px; }
+    .pair-choice strong { display: block; font-size: 14px; line-height: 1.4; }
+    .pair-choice p { color: var(--muted); font-size: 11px; line-height: 1.45; margin: 9px 0 0; }
+
+    .legacy-workspace { display: none; }
+    .duel-workspace { flex: 1; min-height: 0; overflow: auto; padding: 18px 22px 24px; background: #f3f6f8; }
+    .duel-shell { width: min(1320px, 100%); min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+    .duel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+    .duel-stage { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; background: #fff; padding: 6px 10px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+    .duel-stage::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); }
+    .duel-stage.medium::before { background: var(--medium); }
+    .duel-stage.hard::before { background: var(--exclude); }
+    .duel-head p { margin: 0; color: var(--muted); font-size: 11px; }
+    .duel-distance { margin-left: auto; color: var(--muted); font-size: 10px; }
+    .directory-trigger { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; color: var(--ink); padding: 6px 9px; cursor: pointer; font-size: 10.5px; font-weight: 720; }
+    .directory-trigger:hover, .directory-trigger[aria-expanded=true] { border-color: #8f9ae0; background: #f7f7ff; color: #4352c3; }
+    .directory-trigger b { min-width: 46px; border-left: 1px solid var(--line); padding-left: 8px; color: var(--muted); font: 700 9.5px/1.2 Consolas, monospace; }
+    .question-directory-scrim { position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(23,35,58,.18); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+    .question-directory-scrim.open { opacity: 1; pointer-events: auto; }
+    .question-directory { position: fixed; z-index: 41; top: 0; right: 0; bottom: 0; width: min(430px, calc(100vw - 24px)); display: flex; flex-direction: column; background: #fbfcfd; border-left: 1px solid var(--line); box-shadow: -18px 0 50px rgba(23,35,58,.14); transform: translateX(104%); transition: transform .2s ease; }
+    .question-directory.open { transform: translateX(0); }
+    .directory-head { display: flex; align-items: flex-start; gap: 12px; padding: 19px 20px 15px; border-bottom: 1px solid var(--line); background: #fff; }
+    .directory-head h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .directory-head p { margin: 5px 0 0; color: var(--muted); font-size: 10.5px; line-height: 1.45; }
+    .directory-close { margin-left: auto; width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
+    .directory-close:hover { border-color: var(--line-strong); color: var(--ink); }
+    .directory-summary { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: #f7f9fa; }
+    .directory-summary strong { font-size: 21px; letter-spacing: -.025em; }
+    .directory-summary span { color: var(--muted); font-size: 10.5px; }
+    .directory-legend { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .directory-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 10.5px; }
+    .legend-box { width: 16px; height: 16px; border: 2px solid #8793a2; border-radius: 5px; background: #fff; }
+    .legend-box.answered { border-color: #526172; background: #526172; }
+    .legend-box.undecided { border-color: #8793a2; background: repeating-linear-gradient(135deg,#fff 0 3px,#dfe4e9 3px 6px); }
+    .directory-groups { flex: 1; overflow: auto; padding: 15px 20px 24px; }
+    .directory-group + .directory-group { margin-top: 19px; padding-top: 17px; border-top: 1px solid var(--line); }
+    .directory-group-head { display: flex; align-items: center; margin-bottom: 9px; }
+    .directory-group-head h3 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 12px; }
+    .directory-group-head h3::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tier); }
+    .directory-group-head span { margin-left: auto; color: var(--muted); font: 700 9.5px/1.2 Consolas, monospace; }
+    .directory-group.easy, .question-index.easy { --tier: #2d879c; }
+    .directory-group.medium, .question-index.medium { --tier: #a87519; }
+    .directory-group.hard, .question-index.hard { --tier: #a94f60; }
+    .question-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 7px; }
+    .question-index { position: relative; min-width: 0; min-height: 48px; border: 1px solid #d8dfe5; border-radius: 8px; background: #fff; box-shadow: inset 0 4px 0 var(--tier); color: #536172; cursor: pointer; padding: 5px; text-align: center; font: 750 13px/1 Consolas, monospace; }
+    .question-index:hover { z-index: 1; border-color: var(--tier); transform: translateY(-1px); }
+    .question-index.answered { border-color: var(--tier); background: var(--tier); box-shadow: none; color: #fff; }
+    .question-index.answered::after { content: '✓'; position: absolute; top: 5px; right: 6px; color: #fff; font: 900 15px/1 Arial, sans-serif; text-shadow: 0 1px 2px rgba(23,35,58,.25); }
+    .question-index.undecided { border-color: var(--tier); background: repeating-linear-gradient(135deg,#fff 0 4px,#edf0f2 4px 8px); box-shadow: inset 0 3px 0 var(--tier); color: #4f5d6c; }
+    .question-index.undecided::after { content: '?'; position: absolute; top: 5px; right: 6px; color: var(--tier); font: 900 15px/1 Arial, sans-serif; }
+    .question-index.current { outline: 3px solid #1d293b; outline-offset: 2px; }
+    .directory-foot { padding: 12px 20px 16px; border-top: 1px solid var(--line); background: #fff; }
+    .directory-foot button { width: 100%; }
+    .duel-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 54px minmax(0,1fr); align-items: stretch; }
+    .duel-vs { display: grid; place-items: center; color: #8b96a5; font: 700 11px/1 Consolas, monospace; }
+    .hypothesis-card { min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: #fff; box-shadow: 0 8px 24px rgba(23,35,58,.055); overflow: hidden; transition: transform .18s ease, border-color .18s ease, opacity .18s ease; }
+    .hypothesis-card.chosen { transform: translateY(-3px); border-color: var(--indigo); box-shadow: 0 10px 26px rgba(88,102,216,.14); }
+    .hypothesis-card.not-chosen { opacity: .48; }
+    .hypothesis-card-head { padding: 17px 18px 14px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg,#fff,#fbfcfd); }
+    .hypothesis-label { color: var(--indigo); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+    .hypothesis-card h2 { margin: 9px 0 8px; font-size: 20px; line-height: 1.38; letter-spacing: -.015em; }
+    .hypothesis-summary { margin: 0; color: #596878; font-size: 13px; line-height: 1.58; }
+    .chain-strip { display: flex; align-items: center; gap: 7px; padding: 13px 18px; border-bottom: 1px solid var(--line); overflow: hidden; }
+    .chain-node { min-width: 0; max-width: 42%; border: 1px solid #dce2e8; border-radius: 7px; background: #f8fafb; padding: 7px 9px; font-size: 12px; font-weight: 680; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chain-arrow { color: #7f8c9b; font-size: 13px; }
+    .literature { padding: 16px 18px 19px; }
+    .literature-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: #667587; font-size: 11px; font-weight: 780; letter-spacing: .075em; text-transform: uppercase; }
+    .paper-list { display: grid; gap: 9px; }
+    .paper-item { border: 1px solid #dfe4f1; border-left: 4px solid #aeb7ea; border-radius: 9px; background: #f7f8fd; padding: 11px 12px; color: var(--ink); transition: border-color .16s ease, background .16s ease, box-shadow .16s ease; }
+    .paper-item:hover { border-color: #aab4e9; border-left-color: var(--indigo); background: #fbfbff; box-shadow: 0 6px 16px rgba(45,59,123,.08); }
+    .paper-title { display: block; color: var(--ink); font-size: 13px; font-weight: 760; line-height: 1.48; }
+    .paper-control:focus-visible { outline: 3px solid rgba(88,102,216,.24); outline-offset: 2px; border-radius: 5px; }
+    .paper-meta { margin-top: 5px; color: #687789; font-size: 11px; line-height: 1.45; }
+    .paper-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 9px; }
+    .paper-control { display: inline-flex; align-items: center; gap: 5px; min-height: 29px; border: 1px solid #d5dcec; border-radius: 7px; background: #fff; color: #536172; padding: 5px 8px; font: inherit; font-size: 10.5px; font-weight: 700; line-height: 1.2; text-decoration: none; cursor: pointer; }
+    .paper-control:hover { border-color: #9ba7e6; color: #4352c3; background: #f8f8ff; }
+    .paper-control.primary { border-color: #c8cff3; color: #4352c3; }
+    .paper-control .arrow { font-size: 13px; line-height: 1; }
+    .paper-excerpt { margin-top: 10px; border-top: 1px solid #e2e6f1; padding: 10px 3px 1px 12px; color: #445366; }
+    .paper-excerpt::before { content: '“'; float: left; margin: -4px 0 0 -12px; color: #8f9ae0; font: 700 21px/1 Georgia, serif; }
+    .paper-excerpt-label { margin-bottom: 5px; color: #697789; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .paper-excerpt p { margin: 0 0 6px; font-size: 11.5px; line-height: 1.58; }
+    .paper-abstract { margin-top: 9px; border-top: 1px solid #e2e6f1; padding-top: 8px; }
+    .paper-abstract summary { width: fit-content; color: #4b59c7; font-size: 10.5px; font-weight: 750; cursor: pointer; }
+    .paper-abstract p { max-height: 180px; margin-top: 8px; overflow: auto; color: #526174; }
+    .paper-empty { border: 1px dashed var(--line-strong); border-radius: 7px; padding: 10px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .duel-actions { display: grid; grid-template-columns: 1fr minmax(150px,.55fr) 1fr; gap: 10px; margin-top: 14px; }
+    .duel-action { min-height: 44px; border: 1px solid var(--line-strong); border-radius: 9px; background: #fff; color: var(--ink); cursor: pointer; font-weight: 700; }
+    .duel-action:hover { border-color: var(--indigo); background: #f7f7ff; }
+    .duel-action.unsure { color: var(--muted); background: #f8fafb; }
+    .duel-action.chosen { border-color: var(--cyan); background: #eaf6f5; color: #176b59; }
+    .duel-action .key { float: none; margin-left: 8px; }
+    .duel-complete { display: none; flex: 1; place-items: center; }
+    .duel-complete.active { display: grid; }
+    .duel-complete-card { width: min(520px,100%); border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: var(--shadow); padding: 28px; text-align: center; }
+    .duel-complete-card h2 { margin: 10px 0 8px; font-size: 23px; }
+    .duel-complete-card p { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .duel-complete-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .duel-complete-actions button { min-height: 42px; }
+    .export-status { min-height: 18px; margin-top: 10px; color: var(--muted); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+    .export-status.error { color: #a8444f; }
+    @media (max-width: 980px) { .duel-grid { grid-template-columns: 1fr; gap: 10px; } .duel-vs { min-height: 24px; } .duel-actions { grid-template-columns: 1fr; } .directory-trigger span { display: none; } }
+    @media (prefers-reduced-motion: reduce) { .question-directory, .question-directory-scrim, .question-index { transition: none; } }
+
+    .results { overflow: auto; padding: 24px; display: none; }
+    .results.active { display: block; }
+    .results-shell { width: min(1180px, 100%); margin: 0 auto; }
+    .results-head { display: flex; align-items: end; gap: 20px; margin-bottom: 18px; }
+    .results-head h1 { font-size: 25px; letter-spacing: -.025em; margin: 6px 0 0; }
+    .results-tools { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: end; gap: 8px; }
+    .results-tools label { width: 210px; }
+    .results-tools .export-status { flex-basis: 100%; margin-top: 0; text-align: right; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .metric { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    .metric small { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+    .metric strong { display: block; margin-top: 8px; font-size: 24px; letter-spacing: -.03em; }
+    .analysis { margin-top: 12px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; }
+    .analysis-card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+    .analysis-card h2 { font-size: 14px; margin-bottom: 3px; }
+    .analysis-card > p { color: var(--muted); font-size: 11px; }
+    #curve-chart { width: 100%; height: 280px; display: block; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-weight: 650; }
+    .import-row { display: flex; gap: 7px; margin-top: 14px; }
+    .import-row input { font-size: 11px; padding: 8px; }
+    .empty-results { color: var(--muted); text-align: center; padding: 70px 20px; }
+    @media (max-width: 1120px) { .workspace { grid-template-columns: 270px minmax(330px,1fr) 340px; } }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="topbar">
+      <div class="brand"><strong data-i18n="expertStudy">Expert Study</strong></div>
+      <nav class="tabs">
+        <button class="tab active" data-view="setup" data-i18n="workbench">Ranking workbench</button>
+        <button class="tab" data-view="results" data-i18n="studyResults">Study results</button>
+      </nav>
+      <div class="top-meta"><span id="session-label" class="mono"></span><span id="recording" class="recording" data-i18n="notRecording">Not recording</span><span id="timer" class="mono">00:00:00</span></div>
+    </header>
+
+    <section class="view auth active" id="auth-view">
+      <div class="auth-card">
+        <div class="auth-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2.5"/></svg></div>
+        <div class="eyebrow" data-i18n="restrictedStudy">Restricted study workspace</div>
+        <h1 data-i18n="unlockStudy">Unlock User Study</h1>
+        <p data-i18n="unlockDesc">Enter the study password to access expert ranking sessions and study results.</p>
+        <form class="auth-form" id="auth-form">
+          <label><span data-i18n="studyPassword">Study password</span><input id="study-password" type="password" autocomplete="current-password" required autofocus></label>
+          <button class="primary" id="unlock-btn" type="submit" data-i18n="unlock">Unlock study</button>
+          <div class="error" id="auth-error"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="view setup" id="setup-view">
+      <div class="setup-card">
+        <div class="setup-intro">
+          <div class="eyebrow" data-i18n="caseStudyOne">Case Study 1 · Expert protocol</div>
+          <h1 data-i18n="caseTitle">Rank transdiagnostic brain hypotheses</h1>
+          <p data-i18n="caseIntro">Review every candidate with its graph-grounded evidence. Your active decision time and final ordering are recorded for the study.</p>
+          <div class="protocol">
+            <div class="protocol-row"><span class="protocol-num">1</span><div><strong data-i18n="triageTitle">Three-tier question bank</strong><span data-i18n="triageDesc">300 questions: 100 easy, 100 medium, and 100 hard.</span></div></div>
+            <div class="protocol-row"><span class="protocol-num">2</span><div><strong data-i18n="refineTitle">Progressive difficulty</strong><span data-i18n="refineDesc">Questions progress from one differing hypothesis position to three.</span></div></div>
+            <div class="protocol-row"><span class="protocol-num">3</span><div><strong data-i18n="submitTitle">Auditable ranking</strong><span data-i18n="submitDesc">Submit a complete order with timing, provenance hashes, and interaction history.</span></div></div>
+          </div>
+        </div>
+        <form class="setup-form" id="setup-form">
+          <label><span data-i18n="studyId">Study ID</span><input id="study-id" value="case1-user-study" required></label>
+          <div class="form-row">
+            <label><span data-i18n="participantId">Name / ID</span><input id="participant-id" data-i18n-placeholder="participantPlaceholder" placeholder="Name or expert-001" autocomplete="off" required></label>
+            <label><span data-i18n="condition">Condition</span><select id="condition"><option value="manual" data-i18n="manual">Human only (blinded)</option><option value="assisted" data-i18n="assisted">Generator assisted</option><option value="generator" data-i18n="generator">Generator baseline</option></select></label>
+          </div>
+          <label><span data-i18n="candidateFile">Candidate hypothesis JSON</span><input id="candidate-path" list="candidate-sources" required><datalist id="candidate-sources"></datalist></label>
+          <div class="form-row">
+            <label><span data-i18n="seed">Random seed</span><input id="seed" type="number" value="0"></label>
+            <label><span data-i18n="graphSnapshot">Graph snapshot (optional)</span><input id="graph-path"></label>
+          </div>
+          <button class="primary" id="start-btn" type="submit" data-i18n="startStudy">Start ranking session</button>
+          <div class="form-note" id="storage-note"></div><div class="error" id="setup-error"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="view workbench" id="workbench-view">
+      <div class="study-strip"><strong id="participant-label"></strong><span id="condition-label"></span><div class="progress-track"><span id="progress-fill"></span></div><span id="progress-text"></span><div class="strip-actions"><button class="directory-trigger" id="question-directory-btn" type="button" aria-expanded="false" aria-controls="question-directory"><span data-i18n="questionDirectory">Question directory</span><b id="directory-trigger-count">0 / 300</b></button><button class="ghost" id="pause-btn" data-i18n="pause">Pause</button><button class="ghost" id="end-btn" data-i18n="endSession">End session</button></div></div>
+      <div class="duel-workspace">
+        <div class="duel-shell" id="duel-active">
+          <div class="duel-head"><span class="duel-stage" id="duel-stage"></span><p data-i18n="comparePrompt">Review the hypotheses and their strongest supporting literature.</p><span class="duel-distance mono" id="duel-distance"></span></div>
+          <div class="duel-grid"><article class="hypothesis-card" id="duel-left"></article><div class="duel-vs">VS</div><article class="hypothesis-card" id="duel-right"></article></div>
+          <div class="duel-actions"><button class="duel-action" id="choose-left"><span data-i18n="leftBetter">Left hypothesis is better</span><i class="key">1</i></button><button class="duel-action unsure" id="choose-unsure"><span data-i18n="cannotJudge">Cannot judge</span><i class="key">2</i></button><button class="duel-action" id="choose-right"><span data-i18n="rightBetter">Right hypothesis is better</span><i class="key">3</i></button></div>
+        </div>
+        <div class="duel-complete" id="duel-complete"><div class="duel-complete-card"><div class="eyebrow" data-i18n="comparisonComplete">Comparison complete</div><h2 data-i18n="rankingReady">Your comparison set is complete</h2><p id="duel-summary"></p><div class="duel-complete-actions"><button class="secondary" id="export-results" type="button" data-i18n="exportResults">Export result file</button><button class="primary" id="duel-submit" data-i18n="submitComparisons">Submit comparisons</button></div><div class="export-status" id="export-status" role="status" aria-live="polite"></div></div></div>
+      </div>
+      <div class="workspace legacy-workspace" aria-hidden="true">
+        <aside class="panel candidate-panel">
+          <div class="panel-head"><h2 data-i18n="candidatePool">Candidate pool</h2><p data-i18n="candidateHint">Select a hypothesis to inspect its evidence path.</p><div class="filter-row"><input id="candidate-search" type="search" data-i18n-placeholder="searchCandidates" placeholder="Search candidates"><select class="mini-select" id="bucket-filter"><option value="all" data-i18n="all">All</option><option value="unranked" data-i18n="unranked">Unranked</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="exclude">Exclude</option></select></div></div>
+          <div class="candidate-list" id="candidate-list"></div>
+        </aside>
+        <section class="panel graph-panel">
+          <div class="graph-head"><strong data-i18n="evidenceGraph">Evidence graph</strong><div class="graph-legend"><span><i class="legend-dot" style="background:#5866d8"></i><span data-i18n="sourceConcept">Source concept</span></span><span><i class="legend-dot" style="background:#2d879c"></i><span data-i18n="targetFeature">Target feature</span></span></div></div>
+          <div class="graph-wrap"><svg id="evidence-graph" viewBox="0 0 920 560" preserveAspectRatio="xMidYMid meet"></svg><div class="graph-empty" id="graph-empty" data-i18n="selectCandidate">Select a candidate to inspect its evidence path.</div><div class="graph-caption" id="graph-caption" hidden></div></div>
+          <div class="pair-overlay" id="pair-overlay"><div class="pair-card"><div class="pair-progress" id="pair-progress"></div><h2 data-i18n="whichPriority">Which hypothesis should be tested first?</h2><div class="pair-options"><button class="pair-choice" id="pair-a"></button><button class="pair-choice" id="pair-b"></button></div><div class="refine-row"><button class="ghost" id="skip-pair" data-i18n="skipComparison">Skip comparison</button><button class="secondary" id="finish-refine" data-i18n="finishRefinement">Finish refinement</button></div></div></div>
+        </section>
+        <aside class="panel detail-panel" id="detail-panel"><div class="detail" id="detail"><div class="empty-results" data-i18n="noCandidate">No candidate selected</div></div><div class="rank-dock" id="rank-dock" hidden><div class="rank-title"><span data-i18n="priorityTier">Priority tier</span><span data-i18n="shortcuts">Shortcuts 1–4</span></div><div class="bucket-grid"><button class="bucket-btn" data-bucket="high" aria-pressed="false"><span></span><b data-i18n="high">High</b><i class="key">1</i></button><button class="bucket-btn" data-bucket="medium" aria-pressed="false"><span></span><b data-i18n="medium">Medium</b><i class="key">2</i></button><button class="bucket-btn" data-bucket="low" aria-pressed="false"><span></span><b data-i18n="low">Low</b><i class="key">3</i></button><button class="bucket-btn" data-bucket="exclude" aria-pressed="false"><span></span><b data-i18n="exclude">Exclude</b><i class="key">4</i></button></div><div class="rating-feedback" id="rating-feedback" role="status" aria-live="polite" data-i18n="tierGuidance">Choose a tier. A short same-tier refinement will create the final order.</div><div class="refine-row"><button class="secondary" id="refine-btn" disabled data-i18n="refineRanking">Refine ranking</button><button class="primary" id="submit-btn" disabled data-i18n="submitRanking">Submit ranking</button></div></div></aside>
+      </div>
+      <button class="question-directory-scrim" id="question-directory-scrim" type="button" tabindex="-1" data-i18n-aria-label="closeDirectory" aria-label="Close question directory"></button>
+      <aside class="question-directory" id="question-directory" aria-hidden="true" aria-labelledby="question-directory-title">
+        <div class="directory-head"><div><h2 id="question-directory-title" data-i18n="questionDirectory">Question directory</h2><p data-i18n="directoryHint">Jump to any question. Previous answers remain editable.</p></div><button class="directory-close" id="question-directory-close" type="button" data-i18n-aria-label="closeDirectory" aria-label="Close question directory">×</button></div>
+        <div class="directory-summary"><strong id="directory-answer-count">0 / 300</strong><span data-i18n="answered">answered</span><div class="directory-legend"><span><i class="legend-box"></i><span data-i18n="unanswered">Unanswered</span></span><span><i class="legend-box answered"></i><span data-i18n="answered">Answered</span></span><span><i class="legend-box undecided"></i><span data-i18n="cannotJudge">Cannot judge</span></span></div></div>
+        <div class="directory-groups" id="question-directory-groups"></div>
+        <div class="directory-foot"><button class="secondary" id="next-unanswered" type="button" data-i18n="nextUnanswered">Go to next unanswered</button></div>
+      </aside>
+    </section>
+
+    <section class="view results" id="results-view">
+      <div class="results-shell">
+        <div class="results-head"><div><div class="eyebrow" data-i18n="caseAnalysis">Case Study 1 · Analysis</div><h1 data-i18n="studyResults">Study results</h1></div><div class="results-tools"><label><span data-i18n="studyId">Study ID</span><input id="results-study-id" value="case1-user-study"></label><button class="secondary" id="export-results-after-submit" type="button" data-i18n="exportResults" hidden>Export result file</button><button class="primary" id="load-results" data-i18n="loadResults">Load results</button><div class="export-status" id="results-export-status" role="status" aria-live="polite"></div></div></div>
+        <div id="results-content"><div class="empty-results" data-i18n="loadPrompt">Load a study to compare ranking time and discovery efficiency.</div></div>
+      </div>
+    </section>
+  </main>
+  <script>
+  (() => {
+    const params = new URLSearchParams(location.search);
+    const lang = params.get('lang') === 'zh' || (!params.get('lang') && navigator.language.toLowerCase().startsWith('zh')) ? 'zh' : 'en';
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    const strings = {
+      expertStudy:['Expert Study','专家研究'], workbench:['Ranking workbench','排序工作台'], studyResults:['Study results','研究结果'],
+      restrictedStudy:['Restricted study workspace','受限研究工作区'], unlockStudy:['Unlock User Study','解锁 User Study'], unlockDesc:['Enter the study password to access expert ranking sessions and study results.','请输入研究密码，以访问专家排序会话和研究结果。'], studyPassword:['Study password','研究密码'], unlock:['Unlock study','解锁研究'], incorrectPassword:['Incorrect study password.','研究密码错误。'],
+      notRecording:['Not recording','未记录'], caseStudyOne:['Case Study 1 · Expert protocol','案例研究 1 · 专家实验协议'],
+      caseTitle:['Compare transdiagnostic brain hypotheses','比较跨诊断脑影像假设'], caseIntro:['Each screen shows two blinded hypotheses with their strongest supporting literature. Choose the one that should be tested first, or mark the pair as undecidable.','每次展示两个盲法假设及其最相关的文献证据。请选择更应该优先检验的一个，或标记为无法判断。'],
+      triageTitle:['Three-tier question bank','三档题库'], triageDesc:['300 questions: 100 easy, 100 medium, and 100 hard.','共 300 道题：容易、中等、困难各 100 道。'],
+      refineTitle:['Progressive difficulty','逐步增加难度'], refineDesc:['Questions progress from one differing hypothesis position to three.','题目从假设中一个位置不同，逐步增加到三个位置不同。'],
+      submitTitle:['Auditable preferences','可审计的偏好记录'], submitDesc:['Every choice, undecidable response, decision time, and structural distance is recorded.','记录每次选择、无法判断、决策时间和结构距离。'],
+      studyId:['Study ID','研究 ID'], participantId:['Name / ID','姓名 / ID'], participantPlaceholder:['Name or an ID you choose','填写姓名或自定义 ID'], condition:['Condition','实验条件'], manual:['Human only (blinded)','仅人工（盲排）'], assisted:['Generator assisted','生成器辅助'], generator:['Generator baseline','生成器基线'],
+      candidateFile:['Candidate hypothesis JSON','候选假设 JSON'], seed:['Random seed','随机种子'], graphSnapshot:['Graph snapshot (optional)','图谱快照（可选）'], startStudy:['Start ranking session','开始排序会话'],
+      pause:['Pause','暂停'], resume:['Resume','继续'], endSession:['End session','结束会话'], candidatePool:['Candidate pool','候选假设池'], candidateHint:['Select a hypothesis to inspect its evidence path.','选择假设以检查其证据路径。'], searchCandidates:['Search candidates','搜索候选假设'], all:['All','全部'], unranked:['Unranked','未判断'],
+      evidenceGraph:['Evidence graph','证据图谱'], sourceConcept:['Source concept','来源概念'], targetFeature:['Target feature','目标特征'], selectCandidate:['Select a candidate to inspect its evidence path.','选择候选假设以检查证据路径。'],
+      whichPriority:['Which hypothesis should be tested first?','哪个假设应该优先检验？'], skipComparison:['Skip comparison','跳过本次比较'], finishRefinement:['Finish refinement','完成精排'], noCandidate:['No candidate selected','尚未选择候选假设'], priorityTier:['Priority tier','优先级'], shortcuts:['Shortcuts 1–4','快捷键 1–4'], high:['High','高'], medium:['Medium','中'], low:['Low','低'], exclude:['Exclude','排除'], refineRanking:['Refine within tiers','同档精排'], submitRanking:['Submit ranking','提交排序'],
+      tierGuidance:['Choose a tier. A short same-tier refinement will create the final order.','先选择优先级；随后通过少量同档比较生成最终顺序。'], tierRecorded:['Recorded as {tier}. Opening the next unranked hypothesis…','已记录为“{tier}”，正在打开下一个未判断假设…'], triageComplete:['Initial triage complete. Refine same-tier ties before submitting.','初筛已完成。请先完成同档精排，再提交最终顺序。'], refinementComplete:['Refinement complete. The final order is ready to submit.','精排已完成，可以提交最终顺序。'],
+      comparePrompt:['Review the hypotheses and their strongest supporting literature.','请审阅两个假设及其最相关的文献证据。'], leftBetter:['Left hypothesis is better','左侧假设更好'], rightBetter:['Right hypothesis is better','右侧假设更好'], cannotJudge:['Cannot judge','无法判断'],
+      easyPair:['Easy · one hypothesis position differs','容易 · 假设中一个位置不同'], mediumPair:['Medium · two hypothesis positions differ','中等 · 假设中两个位置不同'], hardPair:['Hard · three or more positions differ','困难 · 假设中三个或更多位置不同'], structuralDistance:['Structural distance','结构距离'],
+      questionDirectory:['Question directory','题目目录'], directoryHint:['Jump to any question. Previous answers remain editable.','快速跳转到任意题目，已回答的题目仍可修改。'], closeDirectory:['Close question directory','关闭题目目录'], answered:['Answered','已回答'], unanswered:['Unanswered','未回答'], nextUnanswered:['Go to next unanswered','跳转到下一道未回答题目'], easyDifficulty:['Easy','容易'], mediumDifficulty:['Medium','中等'], hardDifficulty:['Hard','困难'], leftSelected:['Left selected','已选择左侧'], rightSelected:['Right selected','已选择右侧'], currentQuestion:['Current question','当前题目'],
+      hypothesisA:['Hypothesis A','假设 A'], hypothesisB:['Hypothesis B','假设 B'], relevantLiterature:['Relevant literature','相关参考文献'], reportedEvidence:['Reported evidence','已报告证据'], openPaper:['Open paper','打开论文'], findPapers:['Search title on Google Scholar','在 Google Scholar 检索标题'], showRelevantText:['Show relevant text','展开相关原文'], hideRelevantText:['Hide relevant text','收起相关原文'], sourceExcerpt:['Most relevant source text','与假设最相关的原文'], paperAbstract:['Abstract','摘要'], noPaperDetails:['No titled bibliographic record is available for this hypothesis.','此假设暂无带标题的参考文献记录。'],
+      comparisonComplete:['Comparison complete','比较完成'], rankingReady:['Your comparison set is complete','本轮假设比较已完成'], exportResults:['Export result file','导出结果文件'], exportSaved:['Saved to {path}','已保存到 {path}'], exportCanceled:['Export canceled.','已取消导出。'], exportFailed:['Could not export results: {error}','无法导出结果：{error}'], submitComparisons:['Submit comparisons','提交比较结果'], comparisonSummary:['{decided} decided · {unsure} cannot judge · {total} total','已选择 {decided} 组 · 无法判断 {unsure} 组 · 共 {total} 组'], comparisonSaved:['Pairwise preferences and decision times were saved.','成对偏好和决策时间已保存。'],
+      caseAnalysis:['Case Study 1 · Analysis','案例研究 1 · 分析'], loadResults:['Load results','加载结果'], loadPrompt:['Load a study to compare ranking time and discovery efficiency.','加载研究以比较排序时间与发现效率。'],
+      activeTime:['Active time','有效时间'], ranked:['ranked','已判断'], graphEvidence:['Graph evidence','图谱证据'], noEvidence:['No structured path evidence is available for this candidate.','此候选假设没有可用的结构化路径证据。'],
+      generatorSignal:['Generator signal','生成器信号'], compositeScore:['Composite score','综合分数'], evidenceItems:['Evidence items','证据条目'], hypothesisType:['Hypothesis type','假设类型'],
+      sessionComplete:['Ranking submitted. The immutable candidate snapshot and event history were saved.','排序已提交。不可变候选快照及交互历史已经保存。'], confirmEnd:['End this session without submitting a ranking?','不提交排序并结束当前会话吗？'], mustRank:['Classify every candidate before submitting.','提交前需要判断所有候选假设。'],
+      rankingSaving:['Ranking time saved','排序节省时间'], completedSessions:['Completed sessions','已完成会话'], runtimeResults:['Runtime results','运行结果'], manualMean:['Manual mean','人工平均'], assistedMean:['Assisted mean','辅助平均'], discoveryCurve:['Confirmed-hypothesis discovery time','证实假设发现时间'], discoveryDesc:['Cumulative NeuroRuntime time required to reach each share of all confirmed hypotheses.','发现全部证实假设中各比例所需的 NeuroRuntime 累计时间。'],
+      fraction:['Confirmed share','证实比例'], manualTime:['Manual','人工'], assistedTime:['Assisted','辅助'], generatorTime:['Generator','生成器'], importRuntime:['Import NeuroRuntime JSON','导入 NeuroRuntime JSON'], import:['Import','导入'], seconds:['s','秒'], noData:['No completed sessions yet.','暂无已完成的会话。']
+    };
+    const t = key => (strings[key] || [key,key])[lang === 'zh' ? 1 : 0];
+    document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t(el.dataset.i18nPlaceholder));
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(el => el.setAttribute('aria-label',t(el.dataset.i18nAriaLabel)));
+
+    const $ = id => document.getElementById(id);
+    if (params.get('embedded') === '1') document.body.classList.add('embedded-route');
+    const requestedView = params.get('view') === 'results' ? 'results' : 'setup';
+    const state = { authToken:sessionStorage.getItem('neurodiscoveryStudyToken')||'', authenticated:false, pendingView:requestedView, session:null, candidates:[], selectedId:null, selectedAt:0, buckets:{}, wins:{}, pairs:[], pairIndex:0, pairBusy:false, pairwiseActive:false, comparisonPairs:[], comparisonIndex:0, ratings:{}, pairResults:[], questionStats:{}, pairStartedAt:0, pairOpenedAt:0, duelBusy:false, directoryOpen:false, directoryReturnFocus:null, eventQueue:[], startedAt:0, completedAt:0, activeMs:0, activeSince:0, paused:false, refined:false, flushTimer:null, advanceTimer:null, exportBusy:false };
+    const views = { auth:$('auth-view'), setup:$('setup-view'), workbench:$('workbench-view'), results:$('results-view') };
+
+    function showView(name) {
+      if (name !== 'auth' && !state.authenticated) { state.pendingView=name; name='auth'; }
+      Object.entries(views).forEach(([key,el]) => el.classList.toggle('active', key === name));
+      document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.view === (name === 'workbench' ? 'setup' : name)));
+      if (name === 'results') $('results-study-id').value = $('study-id').value || 'case1-user-study';
+    }
+    document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view === 'setup' && state.session ? 'workbench' : btn.dataset.view)));
+
+    async function api(url, options={}) {
+      const headers = {'Content-Type':'application/json', ...(options.headers||{})};
+      if (state.authToken) headers['X-NeuroDiscovery-Study-Token']=state.authToken;
+      const response = await fetch(url, { ...options, headers });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error=new Error(payload.error || `HTTP ${response.status}`);error.status=response.status;
+        if(response.status===401){state.authenticated=false;state.authToken='';sessionStorage.removeItem('neurodiscoveryStudyToken');showView('auth');}
+        throw error;
+      }
+      return payload;
+    }
+    function fmtTime(seconds) {
+      if (seconds == null || Number.isNaN(Number(seconds))) return '—';
+      const total = Math.max(0, Math.round(Number(seconds))); const h=Math.floor(total/3600), m=Math.floor(total%3600/60), s=total%60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+    function formatDurationMs(milliseconds) { return fmtTime(Math.max(0,Number(milliseconds)||0)/1000); }
+    function toIsoDateTime(value) {
+      if(value==null||value==='')return null;
+      const numeric=typeof value==='number'||/^\d+(?:\.\d+)?$/.test(String(value).trim())?Number(value):NaN;
+      const date=Number.isFinite(numeric)?new Date(numeric<1e12?numeric*1000:numeric):new Date(value);
+      return Number.isNaN(date.getTime())?null:date.toISOString();
+    }
+    function isActive() { return state.session && state.pairwiseActive && !state.paused && !document.hidden && document.hasFocus(); }
+    function syncActive() {
+      const now=performance.now();
+      if (state.activeSince) { state.activeMs += now-state.activeSince; state.activeSince=0; }
+      if (isActive()) state.activeSince=now;
+    }
+    setInterval(() => { syncActive(); $('timer').textContent=fmtTime(state.activeMs/1000); }, 500);
+    ['visibilitychange','focus','blur'].forEach(name => window.addEventListener(name, syncActive));
+    function logEvent(type, hypothesisId=null, payload={}) {
+      state.eventQueue.push({type,hypothesis_id:hypothesisId,elapsed_ms:state.activeMs+(state.activeSince ? performance.now()-state.activeSince : 0),payload});
+      if (state.eventQueue.length >= 10) flushEvents();
+    }
+    async function flushEvents() {
+      if (!state.session || !state.eventQueue.length) return;
+      const events=state.eventQueue.splice(0);
+      try { await api(`/api/studies/sessions/${state.session.session_id}/events`, {method:'POST',body:JSON.stringify({events})}); }
+      catch (_) { state.eventQueue.unshift(...events); }
+    }
+    window.addEventListener('beforeunload', () => {
+      syncActive(); if (!state.session || !state.eventQueue.length) return;
+      fetch(`/api/studies/sessions/${state.session.session_id}/events`,{method:'POST',headers:{'Content-Type':'application/json','X-NeuroDiscovery-Study-Token':state.authToken},body:JSON.stringify({events:state.eventQueue}),keepalive:true});
+    });
+
+    $('auth-form').addEventListener('submit', async event => {
+      event.preventDefault();$('auth-error').textContent='';$('unlock-btn').disabled=true;
+      try{
+        const response=await fetch('/api/studies/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('study-password').value})});
+        const payload=await response.json().catch(()=>({}));
+        if(!response.ok)throw new Error(response.status===401?t('incorrectPassword'):(payload.error||`HTTP ${response.status}`));
+        state.authToken=payload.token;state.authenticated=true;sessionStorage.setItem('neurodiscoveryStudyToken',payload.token);$('study-password').value='';
+        const loaded=await loadConfig();if(loaded)showView(state.pendingView||requestedView);
+      }catch(err){$('auth-error').textContent=err.message;}finally{$('unlock-btn').disabled=false;}
+    });
+
+    async function loadConfig() {
+      try {
+        const config=await api('/api/studies/config');
+        $('candidate-sources').innerHTML=(config.suggested_candidate_sources||[]).map(path=>`<option value="${escapeHtml(path)}"></option>`).join('');
+        if (config.suggested_candidate_sources?.length) $('candidate-path').value=config.suggested_candidate_sources[0];
+        if (config.graph_path) $('graph-path').value=config.graph_path;
+        $('storage-note').textContent=(lang==='zh'?'研究数据目录：':'Study data root: ')+config.study_root;
+        return true;
+      } catch (err) { if(err.status!==401)$('setup-error').textContent=err.message;return false; }
+    }
+    $('setup-form').addEventListener('submit', async event => {
+      event.preventDefault(); $('setup-error').textContent=''; $('start-btn').disabled=true;
+      try {
+        const session=await api('/api/studies/sessions',{method:'POST',body:JSON.stringify({study_id:$('study-id').value.trim(),participant_id:$('participant-id').value.trim(),condition:$('condition').value,candidate_path:$('candidate-path').value.trim(),random_seed:Number($('seed').value),graph_path:$('graph-path').value.trim(),case_study:'case1_transdiagnostic'})});
+        if (session.condition === 'generator') { $('results-study-id').value=session.study_id; showView('results'); await loadResults(); return; }
+        beginSession(session);
+      } catch(err) { $('setup-error').textContent=err.message; } finally { $('start-btn').disabled=false; }
+    });
+    function beginSession(session) {
+      if(state.advanceTimer)clearTimeout(state.advanceTimer);
+      state.session=session; state.candidates=session.candidates||[]; state.startedAt=Date.now(); state.completedAt=0;state.activeMs=0; state.activeSince=performance.now(); state.paused=false;state.buckets={};state.wins={};state.pairs=[];state.pairIndex=0;state.pairBusy=false;state.refined=false;state.advanceTimer=null;state.pairwiseActive=true;state.comparisonPairs=session.pairs||[];state.comparisonIndex=0;state.ratings={};state.pairResults=[];state.questionStats={};state.pairStartedAt=0;state.pairOpenedAt=0;state.duelBusy=false;state.directoryOpen=false;state.exportBusy=false;state.candidates.forEach(item=>{state.ratings[item.id]=1000;state.wins[item.id]=0;});
+      $('app').classList.toggle('assisted',session.condition==='assisted'); $('recording').classList.add('live'); $('recording').textContent=lang==='zh'?'正在记录':'Recording';
+      $('session-label').textContent=session.session_id.slice(0,8); $('participant-label').textContent=session.participant_id; $('condition-label').textContent=t(session.condition);
+      $('export-status').textContent='';$('export-status').className='export-status';$('results-export-status').textContent='';$('results-export-status').className='export-status';$('export-results').disabled=false;$('export-results-after-submit').hidden=true;$('duel-submit').disabled=false;
+      $('duel-active').style.display='flex';$('duel-complete').classList.remove('active');setDirectoryOpen(false,false);renderDuel();showView('workbench');
+      state.flushTimer=setInterval(flushEvents,3000); logEvent('workbench_opened',null,{protocol:'pairwise_elo_v1',comparisons:state.comparisonPairs.length});
+    }
+
+    function escapeHtml(value) { return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+    function candidateById(id) { return state.candidates.find(item=>item.id===id); }
+
+    function candidateChain(item) {
+      const metadata=item.metadata&&typeof item.metadata==='object'?item.metadata:{},tuple=metadata.candidate_tuple&&typeof metadata.candidate_tuple==='object'?metadata.candidate_tuple:{};
+      const diseases=tuple.diseases||metadata.diseases||[];
+      const diseaseText=diseases.length?diseases.join(' + '):(item.source_name||item.source_id||'—');
+      const region=tuple.region_name||metadata.cluster_region_name||item.target_name||item.target_id||'—';
+      const feature=tuple.feature_name||metadata.cluster_modality||item.hypothesis_type||'—';
+      return {diseaseText,region,feature};
+    }
+    function directPaperUrl(paper) {
+      const direct=String(paper.direct_url||paper.pmc_url||paper.doi_url||paper.url||paper.link||'').trim(),doi=String(paper.doi||'').trim().replace(/^https?:\/\/(?:dx\.)?doi\.org\//i,''),pmid=String(paper.pmid||'').trim();
+      try { const parsed=new URL(direct); if(['http:','https:'].includes(parsed.protocol))return parsed.href; } catch(_err) {}
+      if(doi)return `https://doi.org/${encodeURI(doi)}`;
+      if(pmid)return `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(pmid)}/`;
+      return '';
+    }
+    function literatureItems(item) {
+      const rows=[],seen=new Set();
+      const add=(paper,excerpt='',fallbackMeta=[])=>{
+        if(!paper||typeof paper!=='object')return;
+        const title=String(paper.title||'').trim();
+        if(!title)return;
+        const key=String(paper.pmid||paper.doi||title).trim().toLowerCase();
+        if(seen.has(key))return;seen.add(key);
+        const authors=Array.isArray(paper.authors)?paper.authors.join(', '):String(paper.authors||'').trim();
+        const meta=[paper.year,paper.journal,authors?short(authors,90):'',...fallbackMeta].filter(Boolean);
+        const rawExcerpts=Array.isArray(paper.excerpts)?paper.excerpts:[paper.relevant_text||paper.excerpt||excerpt||paper.abstract||''];
+        const excerpts=rawExcerpts.map(value=>String(value||'').replace(/\s+/g,' ').trim()).filter(Boolean).slice(0,2);
+        rows.push({title,meta:meta.join(' · '),scholarUrl:`https://scholar.google.com/scholar?q=${encodeURIComponent(`"${title}"`)}`,directUrl:directPaperUrl(paper),excerpts,abstract:String(paper.abstract||'').replace(/\s+/g,' ').trim()});
+      };
+      (Array.isArray(item.literature)?item.literature:[]).forEach(paper=>add(paper));
+      (Array.isArray(item.path)?item.path:[]).forEach(edge=>{
+        const paper=edge.source_paper||edge.paper||{},ev=edge.evidence||{},stats=[];
+        if(ev.cohens_d!=null)stats.push(`d=${Number(ev.cohens_d).toFixed(2)}`);
+        if(ev.fdr_p!=null)stats.push(`FDR p=${ev.fdr_p}`);
+        if(ev.n_controls||ev.n_patients)stats.push(`n=${Number(ev.n_controls||0)+Number(ev.n_patients||0)}`);
+        add(paper,edge.raw_text||'',stats);
+      });
+      return rows.slice(0,5);
+    }
+    function hypothesisCard(item,label) {
+      const chain=candidateChain(item),papers=literatureItems(item),safeId=String(item.id||'hypothesis').replace(/[^a-z0-9_-]+/gi,'-');
+      const chainTitle=`${chain.diseaseText} → ${chain.region} → ${chain.feature}`;
+      const paperHtml=papers.length?papers.map((paper,index)=>{
+        const excerptId=`paper-excerpt-${safeId}-${index}`;
+        const excerptButton=paper.excerpts.length?`<button class="paper-control" type="button" data-paper-excerpt-toggle data-hypothesis-id="${escapeHtml(item.id)}" data-paper-title="${escapeHtml(paper.title)}" aria-expanded="false" aria-controls="${escapeHtml(excerptId)}">${t('showRelevantText')}</button>`:'';
+        const primaryLink=paper.directUrl?`<a class="paper-control primary" href="${escapeHtml(paper.directUrl)}" target="_blank" rel="noopener noreferrer" data-paper-link-kind="record" data-hypothesis-id="${escapeHtml(item.id)}" data-paper-title="${escapeHtml(paper.title)}">${t('openPaper')} <span class="arrow" aria-hidden="true">↗</span></a>`:`<a class="paper-control primary" href="${escapeHtml(paper.scholarUrl)}" target="_blank" rel="noopener noreferrer" data-paper-link-kind="scholar" data-hypothesis-id="${escapeHtml(item.id)}" data-paper-title="${escapeHtml(paper.title)}">${t('findPapers')} <span class="arrow" aria-hidden="true">↗</span></a>`;
+        const abstractPanel=paper.abstract?`<details class="paper-abstract"><summary>${t('paperAbstract')}</summary><p>${escapeHtml(paper.abstract)}</p></details>`:'';
+        const excerptPanel=paper.excerpts.length?`<div class="paper-excerpt" id="${escapeHtml(excerptId)}" hidden><div class="paper-excerpt-label">${t('sourceExcerpt')}</div>${paper.excerpts.map(text=>`<p>${escapeHtml(text)}</p>`).join('')}${abstractPanel}</div>`:'';
+        return `<article class="paper-item"><div class="paper-title">${escapeHtml(paper.title)}</div>${paper.meta?`<div class="paper-meta">${escapeHtml(paper.meta)}</div>`:''}<div class="paper-actions">${primaryLink}${excerptButton}</div>${excerptPanel}</article>`;
+      }).join(''):`<div class="paper-empty">${t('noPaperDetails')}</div>`;
+      return `<div class="hypothesis-card-head"><span class="hypothesis-label">${label}</span><h2>${escapeHtml(chainTitle)}</h2><p class="hypothesis-summary">${escapeHtml(short(item.summary,260))}</p><div class="assisted-score"><strong>${t('generatorSignal')}</strong><br>${escapeHtml(scoreText(item))}</div></div><div class="chain-strip" title="${escapeHtml(chainTitle)}"><span class="chain-node">${escapeHtml(chain.diseaseText)}</span><i class="chain-arrow">→</i><span class="chain-node">${escapeHtml(chain.region)}</span><i class="chain-arrow">→</i><span class="chain-node">${escapeHtml(chain.feature)}</span></div><div class="literature"><div class="literature-title"><span>${t('relevantLiterature')}</span><span>${papers.length}/5</span></div><div class="paper-list">${paperHtml}</div></div>`;
+    }
+    function resultForPair(pairId) { return state.pairResults.find(item=>item.pair_id===pairId)||null; }
+    function answeredPairCount() { return state.pairResults.length; }
+    function nextUnansweredIndex(start=0) {
+      const total=state.comparisonPairs.length;if(!total)return -1;
+      for(let offset=0;offset<total;offset++){const index=(Math.max(0,start)+offset)%total;if(!resultForPair(state.comparisonPairs[index].pair_id))return index;}
+      return -1;
+    }
+    function difficultyLabel(difficulty) { return t(difficulty==='easy'?'easyDifficulty':difficulty==='medium'?'mediumDifficulty':'hardDifficulty'); }
+    function answerStatusLabel(result) { if(!result)return t('unanswered');if(result.choice==='left')return t('leftSelected');if(result.choice==='right')return t('rightSelected');return t('cannotJudge'); }
+    function renderQuestionDirectory() {
+      const total=state.comparisonPairs.length,answered=answeredPairCount(),resultMap=new Map(state.pairResults.map(item=>[item.pair_id,item]));
+      $('directory-answer-count').textContent=`${answered} / ${total}`;$('directory-trigger-count').textContent=`${answered} / ${total}`;
+      const groups=['easy','medium','hard'].map(difficulty=>{
+        const rows=state.comparisonPairs.map((pair,index)=>({pair,index})).filter(item=>item.pair.difficulty===difficulty),groupAnswered=rows.filter(item=>resultMap.has(item.pair.pair_id)).length;
+        const buttons=rows.map(({pair,index})=>{const result=resultMap.get(pair.pair_id),status=result?(result.choice==='undecided'?'undecided':'answered'):'unanswered',current=index===state.comparisonIndex&&state.comparisonIndex<total,title=`${difficultyLabel(difficulty)} · ${lang==='zh'?'第':'Question '}${index+1}${lang==='zh'?'题':''} · ${answerStatusLabel(result)}${current?` · ${t('currentQuestion')}`:''}`;return `<button class="question-index ${difficulty} ${status}${current?' current':''}" type="button" data-question-index="${index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"${current?' aria-current="step"':''}>${index+1}</button>`;}).join('');
+        return `<section class="directory-group ${difficulty}"><div class="directory-group-head"><h3>${escapeHtml(difficultyLabel(difficulty))}</h3><span>${groupAnswered} / ${rows.length}</span></div><div class="question-grid">${buttons}</div></section>`;
+      }).join('');
+      $('question-directory-groups').innerHTML=groups;
+      $('question-directory-groups').querySelectorAll('[data-question-index]').forEach(button=>button.addEventListener('click',()=>goToQuestion(Number(button.dataset.questionIndex),'directory')));
+      $('next-unanswered').disabled=answered>=total;
+    }
+    function setDirectoryOpen(open,restoreFocus=true) {
+      state.directoryOpen=Boolean(open);$('question-directory').classList.toggle('open',state.directoryOpen);$('question-directory-scrim').classList.toggle('open',state.directoryOpen);$('question-directory').setAttribute('aria-hidden',String(!state.directoryOpen));$('question-directory-btn').setAttribute('aria-expanded',String(state.directoryOpen));
+      if(state.directoryOpen){state.directoryReturnFocus=document.activeElement;renderQuestionDirectory();requestAnimationFrame(()=>$('question-directory-close').focus());logEvent('question_directory_opened',null,{question_index:state.comparisonIndex});}
+      else if(restoreFocus&&state.directoryReturnFocus&&typeof state.directoryReturnFocus.focus==='function'){state.directoryReturnFocus.focus();state.directoryReturnFocus=null;}
+    }
+    function goToQuestion(index,source='direct') {
+      if(!Number.isInteger(index)||index<0||index>=state.comparisonPairs.length)return;
+      if(state.advanceTimer){clearTimeout(state.advanceTimer);state.advanceTimer=null;}state.duelBusy=false;state.completedAt=0;state.comparisonIndex=index;$('duel-active').style.display='flex';$('duel-complete').classList.remove('active');setDirectoryOpen(false,false);renderDuel();logEvent('question_navigated',null,{question_index:index,pair_id:state.comparisonPairs[index].pair_id,source,answered:Boolean(resultForPair(state.comparisonPairs[index].pair_id))});
+    }
+    function updatePairProgress() {const done=answeredPairCount(),total=state.comparisonPairs.length,pct=total?done/total*100:0;$('progress-fill').style.width=`${pct}%`;$('progress-text').textContent=`${done}/${total}`;$('directory-trigger-count').textContent=`${done} / ${total}`;if(state.directoryOpen)renderQuestionDirectory();}
+    function activeElapsedMs() { return state.activeMs+(state.activeSince?performance.now()-state.activeSince:0); }
+    function questionStatsFor(pair) {
+      if(!state.questionStats[pair.pair_id])state.questionStats[pair.pair_id]={first_presented_at:null,last_presented_at:null,view_count:0,total_decision_time_ms:0,answer_submission_count:0,modification_count:0,first_answered_at:null,last_answered_at:null,attempts:[]};
+      return state.questionStats[pair.pair_id];
+    }
+    function markQuestionPresented(pair) {
+      const now=Date.now(),stats=questionStatsFor(pair),iso=new Date(now).toISOString();
+      if(!stats.first_presented_at)stats.first_presented_at=iso;
+      stats.last_presented_at=iso;stats.view_count+=1;state.pairStartedAt=activeElapsedMs();state.pairOpenedAt=now;
+    }
+    function renderDuel() {
+      updatePairProgress();
+      if(state.comparisonIndex>=state.comparisonPairs.length){if(!state.completedAt)state.completedAt=Date.now();$('duel-active').style.display='none';$('duel-complete').classList.add('active');const unsure=state.pairResults.filter(item=>item.choice==='undecided').length;$('duel-summary').textContent=t('comparisonSummary').replace('{decided}',state.pairResults.length-unsure).replace('{unsure}',unsure).replace('{total}',state.pairResults.length);return;}
+      const pair=state.comparisonPairs[state.comparisonIndex],left=candidateById(pair.left_id),right=candidateById(pair.right_id);if(!left||!right){state.comparisonIndex++;renderDuel();return;}
+      $('duel-left').style.transition='none';$('duel-right').style.transition='none';$('duel-left').className='hypothesis-card';$('duel-right').className='hypothesis-card';$('choose-left').className='duel-action';$('choose-right').className='duel-action';$('choose-unsure').className='duel-action unsure';$('duel-left').innerHTML=hypothesisCard(left,t('hypothesisA'));$('duel-right').innerHTML=hypothesisCard(right,t('hypothesisB'));requestAnimationFrame(()=>{$('duel-left').style.transition='';$('duel-right').style.transition='';});
+      const existing=resultForPair(pair.pair_id);if(existing?.choice==='left'){$('duel-left').classList.add('chosen');$('duel-right').classList.add('not-chosen');$('choose-left').classList.add('chosen');}else if(existing?.choice==='right'){$('duel-right').classList.add('chosen');$('duel-left').classList.add('not-chosen');$('choose-right').classList.add('chosen');}else if(existing?.choice==='undecided'){$('choose-unsure').classList.add('chosen');}
+      const stageKey=pair.difficulty==='easy'?'easyPair':pair.difficulty==='medium'?'mediumPair':'hardPair';$('duel-stage').className=`duel-stage ${pair.difficulty}`;$('duel-stage').textContent=t(stageKey);$('duel-distance').textContent=`${state.comparisonIndex+1} / ${state.comparisonPairs.length}`;markQuestionPresented(pair);
+    }
+    function applyElo(winnerId,loserId){const winner=state.ratings[winnerId]||1000,loser=state.ratings[loserId]||1000,expected=1/(1+10**((loser-winner)/400)),change=32*(1-expected);state.ratings[winnerId]=winner+change;state.ratings[loserId]=loser-change;state.wins[winnerId]=(state.wins[winnerId]||0)+1;}
+    function recomputePairwiseRatings(){state.candidates.forEach(item=>{state.ratings[item.id]=1000;state.wins[item.id]=0;});state.pairResults.forEach(result=>{if(result.winner_id){const pair=state.comparisonPairs.find(item=>item.pair_id===result.pair_id);if(pair)applyElo(result.winner_id,result.winner_id===pair.left_id?pair.right_id:pair.left_id);}});}
+    function answerDuel(choice) {
+      if(!state.pairwiseActive||state.paused||state.duelBusy||state.directoryOpen||state.comparisonIndex>=state.comparisonPairs.length)return;
+      state.duelBusy=true;state.completedAt=0;
+      const answeredIndex=state.comparisonIndex,pair=state.comparisonPairs[answeredIndex],decisionMs=Math.round(Math.max(0,activeElapsedMs()-state.pairStartedAt)),answeredAt=Date.now(),previousIndex=state.pairResults.findIndex(item=>item.pair_id===pair.pair_id),previous=previousIndex>=0?state.pairResults[previousIndex]:null,stats=questionStatsFor(pair);
+      let winner=null,loser=null;
+      if(choice==='left'){winner=pair.left_id;loser=pair.right_id;$('duel-left').classList.add('chosen');$('duel-right').classList.add('not-chosen');$('choose-left').classList.add('chosen');}
+      else if(choice==='right'){winner=pair.right_id;loser=pair.left_id;$('duel-right').classList.add('chosen');$('duel-left').classList.add('not-chosen');$('choose-right').classList.add('chosen');}
+      else{$('choose-unsure').classList.add('chosen');}
+      const changedAnswer=Boolean(previous&&previous.choice!==choice),answeredIso=new Date(answeredAt).toISOString();
+      stats.total_decision_time_ms+=decisionMs;stats.answer_submission_count+=1;if(changedAnswer)stats.modification_count+=1;if(!stats.first_answered_at)stats.first_answered_at=answeredIso;stats.last_answered_at=answeredIso;
+      stats.attempts.push({attempt_number:stats.answer_submission_count,choice,winner_id:winner,previous_choice:previous?.choice||null,changed_answer:changedAnswer,presented_at:new Date(state.pairOpenedAt).toISOString(),answered_at:answeredIso,decision_time_ms:decisionMs});
+      const result={pair_id:pair.pair_id,left_id:pair.left_id,right_id:pair.right_id,choice,winner_id:winner,distance:pair.distance,difficulty:pair.difficulty,decision_ms:decisionMs,total_decision_time_ms:stats.total_decision_time_ms,answer_submission_count:stats.answer_submission_count,modification_count:stats.modification_count,first_answered_at:stats.first_answered_at,last_answered_at:stats.last_answered_at};
+      if(previousIndex>=0)state.pairResults[previousIndex]=result;else state.pairResults.push(result);
+      recomputePairwiseRatings();logEvent('pairwise_choice',winner,{...result,revised:Boolean(previous),previous_choice:previous?.choice||null,changed_answer:changedAnswer,question_index:answeredIndex});
+      state.advanceTimer=setTimeout(()=>{state.advanceTimer=null;$('choose-unsure').classList.remove('chosen');const next=nextUnansweredIndex(answeredIndex+1);state.comparisonIndex=next<0?state.comparisonPairs.length:next;state.duelBusy=false;renderDuel();},420);
+    }
+    function pairwiseFinalRanking(){return [...state.candidates].sort((a,b)=>(state.ratings[b.id]||1000)-(state.ratings[a.id]||1000)||(state.wins[b.id]||0)-(state.wins[a.id]||0)||state.candidates.indexOf(a)-state.candidates.indexOf(b)).map(item=>item.id);}
+    $('choose-left').addEventListener('click',()=>answerDuel('left'));$('choose-unsure').addEventListener('click',()=>answerDuel('undecided'));$('choose-right').addEventListener('click',()=>answerDuel('right'));
+    $('question-directory-btn').addEventListener('click',()=>setDirectoryOpen(!state.directoryOpen));$('question-directory-close').addEventListener('click',()=>setDirectoryOpen(false));$('question-directory-scrim').addEventListener('click',()=>setDirectoryOpen(false));$('next-unanswered').addEventListener('click',()=>{const next=nextUnansweredIndex(state.comparisonIndex+1);if(next>=0)goToQuestion(next,'next-unanswered');});
+    $('duel-active').addEventListener('click',event=>{
+      const toggle=event.target.closest('[data-paper-excerpt-toggle]');
+      if(toggle){
+        event.preventDefault();
+        const panel=$(toggle.getAttribute('aria-controls'));
+        if(!panel)return;
+        const expanded=toggle.getAttribute('aria-expanded')!=='true';
+        toggle.setAttribute('aria-expanded',String(expanded));panel.hidden=!expanded;toggle.textContent=t(expanded?'hideRelevantText':'showRelevantText');
+        logEvent('literature_excerpt_toggled',toggle.dataset.hypothesisId||null,{paper_title:toggle.dataset.paperTitle||'',expanded});
+        return;
+      }
+      const link=event.target.closest('[data-paper-link-kind]');
+      if(link)logEvent('literature_link_opened',link.dataset.hypothesisId||null,{paper_title:link.dataset.paperTitle||'',kind:link.dataset.paperLinkKind||''});
+    });
+    function compactHypothesis(item) {
+      const chain=candidateChain(item||{});
+      return {id:item?.id||'',title:item?.title||'',summary:item?.summary||'',disease:chain.diseaseText,region:chain.region,feature:chain.feature};
+    }
+    function buildStudyExportPayload() {
+      syncActive();
+      const exportedAt=Date.now(),completedAt=state.completedAt||exportedAt,totalStudyOpenMs=Math.max(0,completedAt-state.startedAt),activeAnsweringMs=Math.round(state.activeMs),resultMap=new Map(state.pairResults.map(item=>[item.pair_id,item])),difficultyCounts=state.comparisonPairs.reduce((out,pair)=>{out[pair.difficulty]=(out[pair.difficulty]||0)+1;return out;},{}),answerCounts=state.pairResults.reduce((out,result)=>{out[result.choice]=(out[result.choice]||0)+1;return out;},{left:0,right:0,undecided:0});
+      return {
+        schema_version:'neurodiscovery-expert-study-results-v1',
+        study_metadata:{study_id:state.session.study_id,case_study:state.session.case_study,session_id:state.session.session_id,protocol_version:state.session.protocol_version,participant_name_or_id:state.session.participant_id,condition:state.session.condition,random_seed:Number(state.session.random_seed),candidate_source:state.session.candidate_source,candidate_manifest_hash:state.session.candidate_manifest_hash,graph_source:state.session.graph_source||'',graph_snapshot_hash:state.session.graph_snapshot_hash||'',question_count:state.comparisonPairs.length,difficulty_counts:difficultyCounts,language:lang,client_version:window.neuroclawDesktop?.version||window.parent?.neuroclawDesktop?.version||null},
+        timing:{session_created_at:toIsoDateTime(state.session.started_at),client_started_at:new Date(state.startedAt).toISOString(),completed_at:new Date(completedAt).toISOString(),exported_at:new Date(exportedAt).toISOString(),total_study_open_time:formatDurationMs(totalStudyOpenMs),total_study_open_time_ms:totalStudyOpenMs,active_answering_time:formatDurationMs(activeAnsweringMs),active_answering_time_ms:activeAnsweringMs},
+        summary:{answered:state.pairResults.length,left_selected:answerCounts.left,right_selected:answerCounts.right,cannot_judge:answerCounts.undecided,total_modifications:Object.values(state.questionStats).reduce((sum,item)=>sum+Number(item.modification_count||0),0)},
+        final_ranking:pairwiseFinalRanking(),
+        questions:state.comparisonPairs.map((pair,index)=>{
+          const result=resultMap.get(pair.pair_id)||null,stats=state.questionStats[pair.pair_id]||{};
+          const totalDecisionTimeMs=Number(stats.total_decision_time_ms||0),attempts=Array.isArray(stats.attempts)?stats.attempts.map(attempt=>({...attempt,decision_time:formatDurationMs(attempt.decision_time_ms)})):[];
+          return {question_number:index+1,pair_id:pair.pair_id,difficulty:pair.difficulty,structural_distance:pair.distance,left_hypothesis:compactHypothesis(candidateById(pair.left_id)),right_hypothesis:compactHypothesis(candidateById(pair.right_id)),answer:result?.choice||null,winner_id:result?.winner_id||null,first_presented_at:stats.first_presented_at||null,last_presented_at:stats.last_presented_at||null,view_count:Number(stats.view_count||0),first_answered_at:stats.first_answered_at||null,last_answered_at:stats.last_answered_at||null,total_decision_time:formatDurationMs(totalDecisionTimeMs),total_decision_time_ms:totalDecisionTimeMs,answer_submission_count:Number(stats.answer_submission_count||0),modification_count:Number(stats.modification_count||0),attempts};
+        }),
+      };
+    }
+    function desktopBridge() {
+      try{return window.neuroclawDesktop||window.parent?.neuroclawDesktop||null;}catch(_error){return window.neuroclawDesktop||null;}
+    }
+    function exportFileName() {
+      const participant=String(state.session?.participant_id||'participant').replace(/[^\p{L}\p{N}._-]+/gu,'-').replace(/^-+|-+$/g,'').slice(0,60)||'participant',stamp=new Date().toISOString().replace(/[:.]/g,'-');
+      return `NeuroDiscovery-user-study-${participant}-${stamp}.json`;
+    }
+    function setExportStatus(message,error=false) {
+      ['export-status','results-export-status'].forEach(id=>{const el=$(id);if(!el)return;el.textContent=message;el.className=`export-status${error?' error':''}`;});
+    }
+    async function exportStudyResults() {
+      if(state.exportBusy||!state.session)return;
+      state.exportBusy=true;$('export-results').disabled=true;$('export-results-after-submit').disabled=true;setExportStatus('');
+      const defaultFileName=exportFileName(),payload=buildStudyExportPayload();
+      try{
+        const bridge=desktopBridge();
+        if(bridge?.exportUserStudyResults){
+          const result=await bridge.exportUserStudyResults({defaultFileName,payload});
+          if(result?.error)throw new Error(result.error);
+          if(result?.canceled){setExportStatus(t('exportCanceled'));}
+          else{setExportStatus(t('exportSaved').replace('{path}',result.path||defaultFileName));logEvent('results_exported',null,{format:'json',native:true});}
+        }else{
+          const blob=new Blob([`${JSON.stringify(payload,null,2)}\n`],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=defaultFileName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);setExportStatus(t('exportSaved').replace('{path}',defaultFileName));logEvent('results_exported',null,{format:'json',native:false});
+        }
+      }catch(err){setExportStatus(t('exportFailed').replace('{error}',err.message||String(err)),true);}
+      finally{state.exportBusy=false;$('export-results').disabled=false;$('export-results-after-submit').disabled=false;}
+    }
+    $('export-results').addEventListener('click',exportStudyResults);$('export-results-after-submit').addEventListener('click',exportStudyResults);
+    $('duel-submit').addEventListener('click',async()=>{syncActive();const ranking=pairwiseFinalRanking();logEvent('ranking_derived',null,{method:'pairwise_elo_v1',comparisons:state.pairResults.length,undecided:state.pairResults.filter(item=>item.choice==='undecided').length,ratings:state.ratings,ranking});await flushEvents();$('duel-submit').disabled=true;try{await api(`/api/studies/sessions/${state.session.session_id}/submit`,{method:'POST',body:JSON.stringify({ranking,buckets:{},active_seconds:state.activeMs/1000,wall_seconds:(Date.now()-state.startedAt)/1000})});clearInterval(state.flushTimer);state.activeSince=0;state.pairwiseActive=false;setDirectoryOpen(false,false);$('recording').classList.remove('live');$('recording').textContent=t('notRecording');$('results-study-id').value=state.session.study_id;$('export-results-after-submit').hidden=false;alert(t('comparisonSaved'));showView('results');await loadResults();}catch(err){alert(err.message);$('duel-submit').disabled=false;}});
+    window.addEventListener('keydown',event=>{if(!state.pairwiseActive||['INPUT','SELECT'].includes(document.activeElement.tagName))return;if(event.key==='Escape'&&state.directoryOpen){setDirectoryOpen(false);return;}if(event.key.toLowerCase()==='d'){setDirectoryOpen(!state.directoryOpen);return;}if(state.paused||state.directoryOpen)return;const map={'1':'left','2':'undecided','3':'right'};if(map[event.key])answerDuel(map[event.key]);});
+    function renderCandidates() {
+      const query=$('candidate-search').value.trim().toLowerCase(), filter=$('bucket-filter').value;
+      const rows=state.candidates.filter(item=>{
+        const bucket=state.buckets[item.id]; if(filter==='unranked'&&bucket)return false; if(!['all','unranked'].includes(filter)&&bucket!==filter)return false;
+        return !query || `${item.title} ${item.summary} ${item.source_name||''} ${item.target_name||''}`.toLowerCase().includes(query);
+      });
+      $('candidate-list').innerHTML=rows.map(item=>{const idx=state.candidates.indexOf(item)+1,bucket=state.buckets[item.id]||'';return `<button class="candidate ${item.id===state.selectedId?'selected':''}" data-id="${escapeHtml(item.id)}"><span class="candidate-index mono">${String(idx).padStart(2,'0')}</span><span><span class="candidate-title">${escapeHtml(item.title)}</span><span class="candidate-meta"><i class="bucket-dot ${bucket}"></i>${bucket?t(bucket):t('unranked')}</span></span></button>`}).join('');
+      $('candidate-list').querySelectorAll('.candidate').forEach(btn=>btn.addEventListener('click',()=>selectCandidate(btn.dataset.id)));
+    }
+    $('candidate-search').addEventListener('input',renderCandidates); $('bucket-filter').addEventListener('change',renderCandidates);
+    function selectCandidate(id) {
+      if(!id)return; state.selectedId=id; state.selectedAt=performance.now(); const item=candidateById(id); if(!item)return; renderCandidates(); renderDetail(item); renderGraph(item); logEvent('candidate_viewed',id);
+    }
+    function scoreText(item) {
+      const values=[['composite_score',t('compositeScore')],['evidence_score',lang==='zh'?'证据分数':'Evidence score'],['novelty_score',lang==='zh'?'新颖性':'Novelty']].filter(([key])=>item[key]!=null);
+      return values.map(([key,label])=>`${label}: ${Number(item[key]).toFixed(3)}`).join(' · ') || (lang==='zh'?'生成器排序可见':'Generator ordering visible');
+    }
+    function evidenceRows(item) {
+      const path=Array.isArray(item.path)?item.path:[];
+      if(!path.length)return `<div class="evidence-item"><span>${t('noEvidence')}</span></div>`;
+      return path.slice(0,10).map(edge=>{const ev=edge.evidence||{},paper=edge.source_paper||edge.paper||{};const stats=[];if(ev.cohens_d!=null)stats.push(`d=${Number(ev.cohens_d).toFixed(3)}`);if(ev.fdr_p!=null)stats.push(`FDR p=${ev.fdr_p}`);if(ev.sample_size!=null)stats.push(`n=${ev.sample_size}`);if(ev.n_controls||ev.n_patients)stats.push(`n=${Number(ev.n_controls||0)+Number(ev.n_patients||0)}`);if(paper.title)stats.push(paper.title);return `<div class="evidence-item"><strong>${escapeHtml(edge.from_name||edge.from_id||'?')} <span>—${escapeHtml(edge.relation_type||'related to')}→</span> ${escapeHtml(edge.to_name||edge.to_id||'?')}</strong><span>${escapeHtml(stats.join(' · ')||edge.raw_text||'Graph relation')}</span></div>`}).join('');
+    }
+    function renderDetail(item) {
+      $('rank-dock').hidden=false; $('detail').innerHTML=`<div class="detail-id mono">${escapeHtml(item.id)}</div><h2>${escapeHtml(item.title)}</h2><p class="detail-summary">${escapeHtml(item.summary||'')}</p><div class="assisted-score"><strong>${t('generatorSignal')}</strong><br>${escapeHtml(scoreText(item))}</div><div class="section-label">${t('hypothesisType')}</div><div class="evidence-item"><span>${escapeHtml(item.hypothesis_type||'—')}</span></div><div class="section-label">${t('evidenceItems')}</div><div class="evidence-list">${evidenceRows(item)}</div>`;
+      document.querySelectorAll('.bucket-btn').forEach(btn=>{const active=state.buckets[item.id]===btn.dataset.bucket;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));});
+    }
+    document.querySelectorAll('.bucket-btn').forEach(btn=>btn.addEventListener('click',()=>assignBucket(btn.dataset.bucket,'pointer')));
+    function setRatingFeedback(message,kind='') { const el=$('rating-feedback');el.textContent=message;el.className=`rating-feedback ${kind}`.trim(); }
+    function assignBucket(bucket,input='keyboard') {
+      const id=state.selectedId;if(!id||state.paused)return;
+      if(state.advanceTimer){clearTimeout(state.advanceTimer);state.advanceTimer=null;}
+      const previousTier=state.buckets[id]||null,decisionMs=Math.max(0,performance.now()-(state.selectedAt||performance.now()));
+      state.buckets[id]=bucket;
+      if(previousTier!==bucket){state.refined=false;state.wins={};state.pairs=[];state.pairIndex=0;}
+      logEvent('tier_assigned',id,{tier:bucket,previous_tier:previousTier,input,decision_ms:Math.round(decisionMs)});
+      renderCandidates();renderDetail(candidateById(id));updateProgress();
+      const ratedButton=document.querySelector(`.bucket-btn[data-bucket="${bucket}"]`);ratedButton?.classList.add('just-rated');setTimeout(()=>ratedButton?.classList.remove('just-rated'),430);
+      const allRanked=Object.keys(state.buckets).length===state.candidates.length;
+      if(allRanked){setRatingFeedback(t('triageComplete'),'refine-needed');return;}
+      setRatingFeedback(t('tierRecorded').replace('{tier}',t(bucket)),'confirmed');
+      const current=state.candidates.findIndex(item=>item.id===id),next=state.candidates.slice(current+1).find(item=>!state.buckets[item.id])||state.candidates.find(item=>!state.buckets[item.id]);
+      if(next)state.advanceTimer=setTimeout(()=>{state.advanceTimer=null;selectCandidate(next.id);setRatingFeedback(t('tierGuidance'));},430);
+    }
+    window.addEventListener('keydown',event=>{if(state.pairwiseActive||!state.session||state.paused||$('pair-overlay').classList.contains('active')||['INPUT','SELECT'].includes(document.activeElement.tagName))return;const map={'1':'high','2':'medium','3':'low','4':'exclude'};if(map[event.key])assignBucket(map[event.key],'keyboard');});
+    function updateProgress() { const done=Object.keys(state.buckets).length,total=state.candidates.length,pct=total?done/total*100:0,complete=done===total;$('progress-fill').style.width=`${pct}%`;$('progress-text').textContent=`${done}/${total} ${t('ranked')}`;$('refine-btn').disabled=!complete;$('submit-btn').disabled=!complete||!state.refined; }
+
+    function short(value,max=92){value=String(value||'');return value.length>max?value.slice(0,max-1)+'…':value;}
+    function wrapGraphLabel(value,max=29){
+      const text=String(value||'').trim();if(!text)return ['—'];
+      const words=text.includes(' ')?text.split(/\s+/):Array.from(text);const lines=[''];
+      for(const word of words){const joiner=text.includes(' ')?' ':'';const next=lines[lines.length-1]?lines[lines.length-1]+joiner+word:word;if(next.length<=max){lines[lines.length-1]=next;}else if(lines.length<2){lines.push(word);}else{lines[1]=short(lines[1]+joiner+word,max);break;}}
+      return lines.slice(0,2);
+    }
+    function renderGraph(item) {
+      const svg=$('evidence-graph'),path=Array.isArray(item.path)?item.path:[];$('graph-empty').hidden=path.length>0;$('graph-caption').hidden=!path.length;
+      if(!path.length){svg.innerHTML='';return;}
+      const nodes=new Map();path.forEach(edge=>{const fromId=edge.from_id||edge.from_name,toId=edge.to_id||edge.to_name;if(!nodes.has(fromId))nodes.set(fromId,{id:fromId,name:edge.from_name||edge.from_id,target:false});nodes.set(toId,{id:toId,name:edge.to_name||edge.to_id,target:true});});
+      const targets=[...nodes.values()].filter(n=>n.target),sources=[...nodes.values()].filter(n=>!n.target),pos=new Map(),cardW=232,cardH=70;
+      sources.forEach((n,i)=>pos.set(n.id,{x:200,y:72+(i+1)*416/(sources.length+1)}));targets.forEach((n,i)=>pos.set(n.id,{x:720,y:72+(i+1)*416/(targets.length+1)}));
+      const defs='<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2d879c"/></marker></defs>';
+      const edges=path.map(edge=>{const a=pos.get(edge.from_id||edge.from_name),b=pos.get(edge.to_id||edge.to_name);if(!a||!b)return'';const x1=a.x+cardW/2,x2=b.x-cardW/2-8,midX=(x1+x2)/2,midY=(a.y+b.y)/2,relation=short(edge.relation_type||'related to',22),badgeW=Math.max(58,Math.min(118,relation.length*7+22));return `<g><line class="edge-line active" x1="${x1}" y1="${a.y}" x2="${x2}" y2="${b.y}" marker-end="url(#arrow)"/><rect class="edge-badge" x="${midX-badgeW/2}" y="${midY-14}" width="${badgeW}" height="24" rx="12"/><text class="edge-label" x="${midX}" y="${midY+2}">${escapeHtml(relation)}</text></g>`}).join('');
+      const nodeEls=[...nodes.values()].map(n=>{const p=pos.get(n.id),lines=wrapGraphLabel(n.name),left=p.x-cardW/2,top=p.y-cardH/2,kicker=n.target?t('targetFeature'):t('sourceConcept');return `<g><rect class="node-card ${n.target?'target':''}" x="${left}" y="${top}" width="${cardW}" height="${cardH}" rx="12"/><rect class="node-accent ${n.target?'target':''}" x="${left}" y="${top}" width="5" height="${cardH}" rx="2.5"/><text class="node-kicker" x="${left+18}" y="${top+20}">${escapeHtml(kicker.toUpperCase())}</text><text class="node-label" x="${left+18}" y="${top+40}">${lines.map((line,index)=>`<tspan x="${left+18}" dy="${index?15:0}">${escapeHtml(line)}</tspan>`).join('')}</text></g>`}).join('');
+      svg.innerHTML=defs+edges+nodeEls;$('graph-caption').textContent=`${path.length} ${t('graphEvidence').toLowerCase()} · ${item.hypothesis_type||''}`;
+    }
+
+    function buildPairs() {
+      const queues=['high','medium','low'].map(bucket=>{const ids=state.candidates.filter(item=>state.buckets[item.id]===bucket).map(item=>item.id),pairs=[];for(let offset=0;offset<2;offset++){for(let i=offset;i+1<ids.length;i+=2)pairs.push([ids[i],ids[i+1],bucket]);}return pairs;});
+      const balanced=[];while(balanced.length<48&&queues.some(queue=>queue.length)){queues.forEach(queue=>{if(queue.length&&balanced.length<48)balanced.push(queue.shift());});}return balanced;
+    }
+    $('refine-btn').addEventListener('click',()=>{state.pairs=buildPairs();state.pairIndex=0;state.wins={};state.pairBusy=false;if(!state.pairs.length){state.refined=true;setRatingFeedback(t('refinementComplete'),'confirmed');updateProgress();return;}logEvent('pairwise_started',null,{comparisons:state.pairs.length,tiers:['high','medium','low']});$('pair-overlay').classList.add('active');renderPair();});
+    function choiceHtml(label,item){return `<b>${label}</b><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(short(item.summary,180))}</p>`;}
+    function renderPair(){if(state.pairIndex>=state.pairs.length){finishRefinement();return;}const [a,b]=state.pairs[state.pairIndex];$('pair-a').className='pair-choice';$('pair-b').className='pair-choice';$('pair-progress').textContent=`${state.pairIndex+1} / ${state.pairs.length}`;$('pair-a').innerHTML=choiceHtml('A',candidateById(a));$('pair-b').innerHTML=choiceHtml('B',candidateById(b));}
+    function choosePair(side){if(state.pairBusy)return;state.pairBusy=true;const [a,b,bucket]=state.pairs[state.pairIndex],winner=side==='a'?a:b,loser=side==='a'?b:a,chosen=side==='a'?$('pair-a'):$('pair-b'),other=side==='a'?$('pair-b'):$('pair-a');state.wins[winner]=(state.wins[winner]||0)+1;logEvent('pairwise_choice',winner,{winner,loser,tier:bucket});chosen.classList.add('chosen');other.classList.add('not-chosen');setTimeout(()=>{state.pairIndex++;state.pairBusy=false;renderPair();},220);}
+    $('pair-a').addEventListener('click',()=>choosePair('a'));$('pair-b').addEventListener('click',()=>choosePair('b'));$('skip-pair').addEventListener('click',()=>{if(state.pairBusy)return;const pair=state.pairs[state.pairIndex];logEvent('pairwise_skipped',null,{pair});state.pairIndex++;renderPair();});$('finish-refine').addEventListener('click',finishRefinement);
+    function finishRefinement(){state.refined=true;state.pairBusy=false;$('pair-overlay').classList.remove('active');logEvent('pairwise_finished',null,{completed:state.pairIndex,total:state.pairs.length});setRatingFeedback(t('refinementComplete'),'confirmed');updateProgress();}
+    function finalRanking(){const order={high:0,medium:1,low:2,exclude:3};return [...state.candidates].sort((a,b)=>(order[state.buckets[a.id]]-order[state.buckets[b.id]])-0 || (state.wins[b.id]||0)-(state.wins[a.id]||0) || state.candidates.indexOf(a)-state.candidates.indexOf(b)).map(item=>item.id);}
+    $('submit-btn').addEventListener('click',async()=>{if(Object.keys(state.buckets).length!==state.candidates.length){alert(t('mustRank'));return;}if(!state.refined){setRatingFeedback(t('triageComplete'),'refine-needed');return;}syncActive();const ranking=finalRanking();logEvent('ranking_derived',null,{method:'tier_then_pairwise_wins_then_seeded_display',comparisons_completed:state.pairIndex,ranking});await flushEvents();$('submit-btn').disabled=true;try{await api(`/api/studies/sessions/${state.session.session_id}/submit`,{method:'POST',body:JSON.stringify({ranking,buckets:state.buckets,active_seconds:state.activeMs/1000,wall_seconds:(Date.now()-state.startedAt)/1000})});clearInterval(state.flushTimer);state.activeSince=0;$('recording').classList.remove('live');$('recording').textContent=t('notRecording');alert(t('sessionComplete'));$('results-study-id').value=state.session.study_id;showView('results');await loadResults();}catch(err){alert(err.message);$('submit-btn').disabled=false;}});
+    $('pause-btn').addEventListener('click',()=>{syncActive();state.paused=!state.paused;$('pause-btn').textContent=state.paused?t('resume'):t('pause');$('recording').classList.toggle('live',!state.paused);logEvent(state.paused?'session_paused':'session_resumed');syncActive();});
+    $('end-btn').addEventListener('click',()=>{if(confirm(t('confirmEnd'))){flushEvents();clearInterval(state.flushTimer);setDirectoryOpen(false,false);state.session=null;state.pairwiseActive=false;state.activeSince=0;$('participant-id').value='';$('recording').classList.remove('live');$('session-label').textContent='';showView('setup');}});
+
+    function linePath(points,x,y){return points.filter(p=>p.experiment_seconds!=null).map((p,i,arr)=>`${i?'L':'M'} ${x(p.fraction)} ${y(p.experiment_seconds)}`).join(' ');}
+    function renderChart(curves) {
+      const svg=$('curve-chart'),available=Object.entries(curves||{}).filter(([,v])=>v?.some(p=>p.experiment_seconds!=null));if(!available.length){svg.innerHTML=`<text x="50%" y="50%" text-anchor="middle" fill="#69768a" font-size="12">${t('noData')}</text>`;return;}
+      const all=available.flatMap(([,v])=>v.map(p=>p.experiment_seconds).filter(x=>x!=null)),max=Math.max(...all,1),x=q=>46+q*520,y=v=>244-(v/max)*205,colors={manual:'#68758a',assisted:'#5866d8',generator:'#16856a'};
+      let html='<line x1="46" y1="244" x2="575" y2="244" stroke="#c7d1da"/><line x1="46" y1="35" x2="46" y2="244" stroke="#c7d1da"/>';
+      for(let i=1;i<=10;i++)html+=`<text x="${x(i/10)}" y="262" text-anchor="middle" fill="#69768a" font-size="9">${i*10}%</text>`;
+      available.forEach(([condition,points],idx)=>{html+=`<path d="${linePath(points,x,y)}" fill="none" stroke="${colors[condition]}" stroke-width="2.5"/>`;points.filter(p=>p.experiment_seconds!=null).forEach(p=>html+=`<circle cx="${x(p.fraction)}" cy="${y(p.experiment_seconds)}" r="3" fill="${colors[condition]}"/>`);html+=`<text x="610" y="${55+idx*20}" fill="${colors[condition]}" font-size="10">${t(condition+'Time')}</text>`;});svg.innerHTML=html;
+    }
+    async function loadResults(){const studyId=$('results-study-id').value.trim();if(!studyId)return;const content=$('results-content');content.innerHTML=`<div class="empty-results">${lang==='zh'?'正在加载…':'Loading…'}</div>`;try{const data=await api(`/api/studies/results?study_id=${encodeURIComponent(studyId)}`),sessionCount=data.sessions.length,manual=data.ranking_time.manual?.mean_active_seconds,assisted=data.ranking_time.assisted?.mean_active_seconds,saving=data.ranking_time_saving_percent;content.innerHTML=`<div class="result-grid"><div class="metric"><small>${t('rankingSaving')}</small><strong>${saving==null?'—':saving.toFixed(1)+'%'}</strong></div><div class="metric"><small>${t('completedSessions')}</small><strong>${sessionCount}</strong></div><div class="metric"><small>${t('runtimeResults')}</small><strong>${data.execution_results}</strong></div></div><div class="analysis"><section class="analysis-card"><h2>${t('discoveryCurve')}</h2><p>${t('discoveryDesc')}</p><svg id="curve-chart" viewBox="0 0 680 280"></svg></section><section class="analysis-card"><h2>${t('activeTime')}</h2><p>${t('manualMean')}: ${fmtTime(manual)} · ${t('assistedMean')}: ${fmtTime(assisted)}</p><table><thead><tr><th>${t('fraction')}</th><th>${t('manualTime')}</th><th>${t('assistedTime')}</th><th>${t('generatorTime')}</th></tr></thead><tbody>${Array.from({length:10},(_,i)=>{const q=(i+1)/10,get=condition=>data.curves[condition]?.[i]?.experiment_seconds;return `<tr><td>${Math.round(q*100)}%</td><td>${fmtTime(get('manual'))}</td><td>${fmtTime(get('assisted'))}</td><td>${fmtTime(get('generator'))}</td></tr>`}).join('')}</tbody></table><div class="import-row"><input id="runtime-path" placeholder="${t('importRuntime')}"><button class="secondary" id="import-runtime">${t('import')}</button></div><div class="error" id="import-error"></div></section></div>`;renderChart(data.curves);$('import-runtime').addEventListener('click',async()=>{try{const result=await api('/api/studies/execution-results/import',{method:'POST',body:JSON.stringify({study_id:studyId,path:$('runtime-path').value.trim()})});$('import-error').textContent=`${result.imported} ${lang==='zh'?'条结果已导入':'results imported'}`;await loadResults();}catch(err){$('import-error').textContent=err.message;}});}catch(err){content.innerHTML=`<div class="empty-results">${escapeHtml(err.message)}</div>`;}}
+    $('load-results').addEventListener('click',loadResults);
+    async function bootstrapAuth(){
+      if(!state.authToken){showView('auth');return;}
+      state.authenticated=true;
+      const loaded=await loadConfig();
+      if(loaded)showView(requestedView);
+    }
+    bootstrapAuth();
+  })();
+  </script>
+</body>
+</html>

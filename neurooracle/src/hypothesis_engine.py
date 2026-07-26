@@ -40,6 +40,11 @@ import networkx as nx
 from .graph_manager import KnowledgeGraph
 from .schema import ConceptNode
 from .feedback_state import FeedbackState
+from .case1_hypothesis import (
+    case1_directional_statement,
+    case1_directional_title,
+    propose_case1_direction,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -2433,7 +2438,8 @@ class HypothesisEngine:
 
         # Check if any hop mentions the target region
         for link in h.path:
-            raw = link.raw_text or link.evidence.get("raw_text", "") if isinstance(link.evidence, dict) else ""
+            evidence = link.evidence if isinstance(link.evidence, dict) else {}
+            raw = link.raw_text or evidence.get("raw_text", "")
             if raw:
                 raw_lower = raw.lower()
                 # If any target term appears in raw_text, evidence is OK
@@ -2468,11 +2474,12 @@ class HypothesisEngine:
 
         ``disease x atlas/ROI x feature``.
 
-        Direction is intentionally absent. Validation estimates the sign from
-        data, so a negative association means the disease group is lower and a
-        positive association means it is higher. Cross-disease clusters are a
-        downstream summary over validated single-disease candidates, not a
-        generator-time assumption. Four generation strategies are supported:
+        Each candidate asserts a measurable disease-associated alteration.
+        Validation estimates the effect sign from data rather than fabricating
+        an increase or decrease without feature-specific evidence. Cross-disease
+        clusters are a downstream summary over validated single-disease
+        candidates, not a generator-time assumption. Four generation strategies
+        are supported:
 
         - ``exhaustive``: stable enumeration baseline. It can cover the full
           disease x region x feature space when uncapped.
@@ -3004,10 +3011,15 @@ class HypothesisEngine:
         if feature.get("level") == "subject":
             testability -= 0.08
 
-        explanation = (
-            f"Test whether {feature['name']} in {region['name']} differs for "
-            f"{disease['name']} patients. "
-            "The generator does not assume direction; validation estimates the sign."
+        direction_proposal = propose_case1_direction(
+            disease,
+            region,
+            feature,
+            supported_links,
+        )
+        direction = direction_proposal["direction"]
+        explanation = case1_directional_statement(
+            disease["name"], region["name"], feature["name"], direction
         )
         h = Hypothesis(
             id=f"case1_{method}_{digest}",
@@ -3047,8 +3059,14 @@ class HypothesisEngine:
                     "feature_modality": feature.get("modality", ""),
                     "feature_level": feature.get("level", ""),
                     "feature_requires": tuple(feature.get("requires", ())),
+                    "direction": direction,
                 },
-                "direction_assumption": "none; infer sign during validation",
+                "direction_assumption": direction,
+                "direction_source": direction_proposal["source"],
+                "directional_evidence_votes": direction_proposal["directional_evidence_votes"],
+                "display_title": case1_directional_title(
+                    disease["name"], region["name"], feature["name"], direction
+                ),
                 "total_candidate_space": total_candidates,
                 "support_score": support_score,
                 "supporting_disease_count": covered,
@@ -4096,9 +4114,15 @@ class HypothesisEngine:
         all_claims = self._claims_by_triple.get(key, [])
         primary_pmids = set()
         for c in all_claims:
-            st = c.get("evidence", {}).get("study_type", "")
+            evidence = c.get("evidence", {})
+            if not isinstance(evidence, dict):
+                evidence = {}
+            st = evidence.get("study_type", "")
             if st not in _REVIEW_TYPES:
-                pmid = c.get("source_paper", {}).get("pmid", "")
+                source_paper = c.get("source_paper", {})
+                if not isinstance(source_paper, dict):
+                    source_paper = {}
+                pmid = source_paper.get("pmid", "")
                 if pmid:
                     primary_pmids.add(pmid)
 
@@ -4115,10 +4139,16 @@ class HypothesisEngine:
 
         Reviews get no time bonus (1.0). Primary studies decay 3% per year, floor 0.7.
         """
-        st = claim_meta.get("evidence", {}).get("study_type", "")
+        evidence = claim_meta.get("evidence", {})
+        if not isinstance(evidence, dict):
+            evidence = {}
+        st = evidence.get("study_type", "")
         if st in _REVIEW_TYPES:
             return 1.0
-        year = claim_meta.get("source_paper", {}).get("year", 0)
+        source_paper = claim_meta.get("source_paper", {})
+        if not isinstance(source_paper, dict):
+            source_paper = {}
+        year = source_paper.get("year", 0)
         if not year:
             return 0.85  # unknown year, neutral
         age = reference_year - year
@@ -4205,7 +4235,11 @@ class HypothesisEngine:
 
         # evidence diversity: more papers = better supported, less novel
         # fewer papers = more speculative, more novel
-        pmids = {l.source_paper.get("pmid", "") for l in path if l.source_paper.get("pmid")}
+        pmids = {
+            l.source_paper.get("pmid", "")
+            for l in path
+            if isinstance(l.source_paper, dict) and l.source_paper.get("pmid")
+        }
         if len(pmids) == 0:
             score += 0.10  # no paper support = speculative but novel
         elif len(pmids) == 1:
@@ -4230,16 +4264,18 @@ class HypothesisEngine:
         _REVIEW_TYPES = {"narrative_review", "review"}
         scores = []
         for link in path:
-            study_type = (link.evidence.get("study_type") or "").lower()
+            evidence = link.evidence if isinstance(link.evidence, dict) else {}
+            source_paper = link.source_paper if isinstance(link.source_paper, dict) else {}
+            study_type = (evidence.get("study_type") or "").lower()
             s = 0.2 if study_type in _REVIEW_TYPES else 0.3
 
             if link.raw_text and len(link.raw_text) > 20:
                 s += 0.20
             if link.claim_id:
                 s += 0.15
-            if link.source_paper.get("pmid"):
+            if source_paper.get("pmid"):
                 s += 0.15
-            if link.evidence.get("study_type"):
+            if evidence.get("study_type"):
                 s += 0.10
 
             scores.append(min(s, 1.0))
@@ -4373,7 +4409,8 @@ class HypothesisEngine:
         if not h.path:
             return False
         for link in h.path:
-            study_type = (link.evidence.get("study_type") or "").lower()
+            evidence = link.evidence if isinstance(link.evidence, dict) else {}
+            study_type = (evidence.get("study_type") or "").lower()
             if study_type and study_type not in _REVIEW_TYPES:
                 return False
         return True
@@ -4392,8 +4429,14 @@ class HypothesisEngine:
             return 0.8
 
         if p1 == p2 and not n1 and not n2:
-            d1 = m1.get("evidence", {}).get("direction", "")
-            d2 = m2.get("evidence", {}).get("direction", "")
+            e1 = m1.get("evidence", {})
+            e2 = m2.get("evidence", {})
+            if not isinstance(e1, dict):
+                e1 = {}
+            if not isinstance(e2, dict):
+                e2 = {}
+            d1 = e1.get("direction", "")
+            d2 = e2.get("direction", "")
             if d1 and d2 and d1 != d2:
                 return 0.6
 
@@ -4423,7 +4466,11 @@ class HypothesisEngine:
         if not path_str:
             return ""
 
-        pmids = {l.source_paper.get("pmid", "") for l in h.path if l.source_paper.get("pmid")}
+        pmids = {
+            l.source_paper.get("pmid", "")
+            for l in h.path
+            if isinstance(l.source_paper, dict) and l.source_paper.get("pmid")
+        }
         key_finding = ""
         for l in h.path:
             if l.raw_text:

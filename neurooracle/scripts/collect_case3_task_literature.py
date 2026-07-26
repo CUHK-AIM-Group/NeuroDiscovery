@@ -1,7 +1,7 @@
 """Collect Case Study 3 task-conditioned literature candidates.
 
 This script builds the literature pool for Hypothesis Hindcasting before claim
-extraction. It runs Phase-2 chain/task search in collect-only mode: abstracts
+extraction. It runs Phase-2 task search in collect-only mode: abstracts
 are cached and collection metadata is written, but no LLM extraction is called
 and the KG is not modified.
 """
@@ -22,12 +22,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from neurooracle.src.atoms import CANONICAL_CHAINS, CANONICAL_TASKS
+from neurooracle.src.case3_subtasks import case3_subtasks
 from neurooracle.src.chain_extract import run_chain_extraction
-
-
-EXCLUDED_TASKS = {"transdiagnostic_clustering"}
-EXCLUDED_CHAINS = {"pathway_polygenic_mediation"}
 
 
 def _split_names(raw: str | None) -> list[str] | None:
@@ -38,11 +34,7 @@ def _split_names(raw: str | None) -> list[str] | None:
 
 
 def _default_tasks() -> list[str]:
-    return [t.name for t in CANONICAL_TASKS if t.name not in EXCLUDED_TASKS]
-
-
-def _default_chains() -> list[str]:
-    return [c.name for c in CANONICAL_CHAINS if c.name not in EXCLUDED_CHAINS]
+    return [subtask.name for subtask in case3_subtasks("task")]
 
 
 def _ensure_graph(data_dir: Path, graph: Path, *, refresh_graph: bool) -> Path:
@@ -71,7 +63,7 @@ def main() -> None:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("neurooracle/data/cs_runs/case3_hindcasting/task_literature_20260616"),
+        default=Path("neurooracle/data/experiments/case3/task_literature_20260616"),
     )
     parser.add_argument("--year-start", type=int, default=2000)
     parser.add_argument("--year-end", type=int, default=2026)
@@ -82,21 +74,6 @@ def main() -> None:
         "--tasks",
         default=None,
         help="Comma-separated task names. Default: all canonical tasks except CS1-specific ones.",
-    )
-    parser.add_argument(
-        "--chains",
-        default=None,
-        help="Comma-separated chain names. Default: all canonical chains except CS2-specific ones.",
-    )
-    parser.add_argument(
-        "--skip-tasks",
-        action="store_true",
-        help="Only collect chain tasks.",
-    )
-    parser.add_argument(
-        "--skip-chains",
-        action="store_true",
-        help="Only collect flat tasks.",
     )
     parser.add_argument(
         "--refresh-graph",
@@ -116,8 +93,10 @@ def main() -> None:
     graph_path = _ensure_graph(data_dir, args.graph, refresh_graph=args.refresh_graph)
     logging.info("using query KG: %s", graph_path)
 
-    task_names = [] if args.skip_tasks else (_split_names(args.tasks) or _default_tasks())
-    chain_names = [] if args.skip_chains else (_split_names(args.chains) or _default_chains())
+    task_names = _split_names(args.tasks) or _default_tasks()
+    unknown_tasks = sorted(set(task_names) - set(_default_tasks()))
+    if unknown_tasks:
+        parser.error(f"unknown Case Study 3 tasks: {', '.join(unknown_tasks)}")
     summary_path = data_dir / "case3_task_literature_collection_summary.json"
 
     started_at = datetime.now().isoformat()
@@ -144,32 +123,7 @@ def main() -> None:
             "data_dir": str(data_dir),
             "graph": str(args.graph),
             "tasks": task_names,
-            "chains": chain_names,
-            "rows": rows,
-        })
-
-    for name in chain_names:
-        logging.info("collecting chain: %s", name)
-        result = run_chain_extraction(
-            name,
-            is_chain=True,
-            year_start=args.year_start,
-            year_end=args.year_end,
-            max_results_per_query=args.max_results,
-            terms_per_atom=args.terms_per_atom,
-            n_subqueries=args.n_subqueries,
-            data_dir=data_dir,
-            collect_only=True,
-            sample_rate_seen=0.0,
-        )
-        rows.append({"kind": "chain", "name": name, "result": result})
-        _write_summary(summary_path, {
-            "started_at": started_at,
-            "updated_at": datetime.now().isoformat(),
-            "data_dir": str(data_dir),
-            "graph": str(args.graph),
-            "tasks": task_names,
-            "chains": chain_names,
+            "chains": [],
             "rows": rows,
         })
 
@@ -179,7 +133,7 @@ def main() -> None:
         "data_dir": str(data_dir),
         "graph": str(args.graph),
         "tasks": task_names,
-        "chains": chain_names,
+        "chains": [],
         "rows": rows,
     }
     _write_summary(summary_path, payload)
@@ -187,7 +141,7 @@ def main() -> None:
         "data_dir": str(data_dir),
         "summary": str(summary_path),
         "n_tasks": len(task_names),
-        "n_chains": len(chain_names),
+        "n_chains": 0,
         "total_collected": sum(int(r["result"].get("total_collected", 0)) for r in rows),
     }, indent=2, ensure_ascii=False))
 

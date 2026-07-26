@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://yunwu.ai/v1")
 DEFAULT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "claude-sonnet-4-6")
+DEFAULT_MAX_TOKENS = int(os.environ.get("OPENAI_MAX_TOKENS", "16384"))
 
 # Multi-key pool: set OPENAI_API_KEYS env var as comma-separated keys
 # e.g. export OPENAI_API_KEYS="sk-aaa,sk-bbb,sk-ccc"
@@ -618,7 +619,7 @@ class ClaimExtractor:
         if not keys:
             raise ValueError("No API keys provided. Set OPENAI_API_KEYS or OPENAI_API_KEY env var.")
 
-        request_timeout = float(os.environ.get("OPENAI_REQUEST_TIMEOUT", "30"))
+        request_timeout = float(os.environ.get("OPENAI_REQUEST_TIMEOUT", "180"))
         self.max_attempts = max(1, int(os.environ.get("OPENAI_EXTRACTION_MAX_ATTEMPTS", "4")))
 
         self._clients: list[OpenAI] = []
@@ -725,7 +726,7 @@ class ClaimExtractor:
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.1,
-                    max_tokens=8192,
+                    max_tokens=DEFAULT_MAX_TOKENS,
                 )
 
                 latency = _time.time() - req_start

@@ -62,7 +62,7 @@ NEUROSTORM_ATLAS_ROOT = Path(
         "NEUROSTORM_ATLAS_ROOT",
         Path(__file__).resolve().parents[2] / "data" / "atlas",
     )
-)
+).expanduser()
 
 
 def _clean_atlas_label_cell(cell: str) -> str:

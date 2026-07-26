@@ -14,7 +14,11 @@ hcp_env/
 
 # Data
 data/
-neurooracle/data
+!neurooracle/data/
+neurooracle/data/*
+!neurooracle/data/user_study/
+neurooracle/data/user_study/*
+!neurooracle/data/user_study/case1_expert_subset_v1.json
 UKBAnalytica_v2-main
 
 # Experiment runs (harmonization pilots, model training outputs, etc.)
@@ -38,6 +42,7 @@ keys.txt
 # OS & IDE
 .DS_Store
 Thumbs.db
+node_modules/
 .vscode/
 .cursor/
 .claude
@@ -73,6 +78,7 @@ neuroclaw.tex
 
 # Local paper-reading and manuscript build artifacts
 papers/
+tex/
 tex/_preview*/
 tex/.render_check/
 tex/_layout_check*/
@@ -101,3 +107,8 @@ neurooracle/scripts/draw_*.py
 neurooracle/scripts/render_*.py
 tex/plot_*.py
 tex/fig/draw_*.py
+
+# Local scratch files
+b1927_review.txt
+chunk*.txt
+make1977.py

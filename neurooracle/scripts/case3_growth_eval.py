@@ -398,8 +398,8 @@ def _fmt(value: Any) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate Case Study 3 as iterative scientific-growth support.")
-    parser.add_argument("--rolling-root", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/rolling_windows_kge_complex_full_snapshot_v1"))
-    parser.add_argument("--output-dir", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/growth_eval_kge_complex_full_snapshot_v1"))
+    parser.add_argument("--rolling-root", type=Path, default=Path("neurooracle/data/experiments/case3/rolling_windows_kge_complex_full_v2"))
+    parser.add_argument("--output-dir", type=Path, default=Path("neurooracle/data/experiments/case3/growth_eval_kge_complex_full_v2"))
     parser.add_argument("--top-k", type=int, nargs="+", default=[10, 100, 1000])
     parser.add_argument("--random-trials", type=int, default=500)
     parser.add_argument("--role-random-pool-size", type=int, default=20000)

@@ -1,7 +1,7 @@
 """Map KG hypothesis brain region names to atlas ROI indices.
 
-Parses hypotheses_imaging_hcp.json, extracts brain region names from
-fMRI hypotheses, and maps them to AAL-116 ROI indices via fuzzy matching.
+Parses a hypothesis JSON file, extracts brain region names from fMRI
+hypotheses, and maps them to AAL-116 ROI indices via fuzzy matching.
 """
 from __future__ import annotations
 
@@ -160,7 +160,7 @@ def build_hypothesis_roi_pairs(hypotheses_path: str | Path, atlas: str = "aal_11
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
-    p.add_argument("--hypotheses", default="neurooracle/data/quick/hypotheses_imaging_hcp.json")
+    p.add_argument("--hypotheses", required=True)
     p.add_argument("--atlas", default="aal_116")
     args = p.parse_args()
 

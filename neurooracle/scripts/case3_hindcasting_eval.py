@@ -10,7 +10,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-from neurooracle.src.kge.complex_scorer import ComplExScorer
+try:
+    from neurooracle.src.kge.complex_scorer import ComplExScorer
+except ImportError:  # pragma: no cover
+    ComplExScorer = None  # type: ignore[assignment]
 
 
 TREE_RELATIONS = {"is_a", "part_of", "about"}
@@ -950,9 +953,9 @@ def write_report(output_dir: Path, manifest: dict[str, Any]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Case Study 3 hindcasting smoke evaluator.")
-    parser.add_argument("--kg", type=Path, default=Path("neurooracle/data/snapshots/kg_2020_from_full_snapshot_v1/knowledge_graph.json"))
-    parser.add_argument("--future-claims", type=Path, default=Path("neurooracle/data/full_snapshot_v1/extracted_claims.jsonl"))
-    parser.add_argument("--output-dir", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/kg2020_smoke_eval"))
+    parser.add_argument("--kg", type=Path, default=Path("neurooracle/data/experiments/case3/snapshots_full_v2_5year_2016_2020/kg_2020/knowledge_graph.json"))
+    parser.add_argument("--future-claims", type=Path, default=Path("neurooracle/data/full_v2/extracted_claims.jsonl"))
+    parser.add_argument("--output-dir", type=Path, default=Path("neurooracle/data/experiments/case3/kg2020_smoke_eval"))
     parser.add_argument("--freeze-year", type=int, default=None)
     parser.add_argument("--future-start-year", type=int, default=2021)
     parser.add_argument("--future-end-year", type=int, default=2026)
@@ -995,7 +998,12 @@ def main() -> None:
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    kge_scorer = ComplExScorer.load(args.kge_checkpoint) if args.kge_checkpoint else None
+    if args.kge_checkpoint:
+        if ComplExScorer is None:
+            raise RuntimeError("KGE scorer requested but torch/KGE dependencies are unavailable")
+        kge_scorer = ComplExScorer.load(args.kge_checkpoint)
+    else:
+        kge_scorer = None
     concepts, edges, names = load_kg_index(args.kg)
     gene_imaging, imaging_disease, gene_disease, historical_direct_pairs = build_pair_evidence(
         concepts,

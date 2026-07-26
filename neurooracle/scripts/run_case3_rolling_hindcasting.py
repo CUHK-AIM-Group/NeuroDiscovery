@@ -9,7 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from build_temporal_kg_snapshot import build_snapshot
+try:
+    from .build_temporal_kg_snapshot import build_snapshot
+except ImportError:  # Direct script execution.
+    from build_temporal_kg_snapshot import build_snapshot
 
 
 @dataclass(frozen=True)
@@ -24,10 +27,11 @@ class Window:
 
 
 DEFAULT_WINDOWS = (
-    Window(2016, 2017, 2018),
-    Window(2018, 2019, 2020),
-    Window(2020, 2021, 2022),
-    Window(2022, 2023, 2024),
+    Window(2016, 2017, 2021),
+    Window(2017, 2018, 2022),
+    Window(2018, 2019, 2023),
+    Window(2019, 2020, 2024),
+    Window(2020, 2021, 2025),
 )
 
 
@@ -278,9 +282,9 @@ def _fmt(value: Any) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run rolling-window Case Study 3 hindcasting evaluations.")
-    parser.add_argument("--input-dir", type=Path, default=Path("neurooracle/data/full_snapshot_v1"))
-    parser.add_argument("--snapshot-root", type=Path, default=Path("neurooracle/data/snapshots"))
-    parser.add_argument("--output-root", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/rolling_windows_full_snapshot_v1"))
+    parser.add_argument("--input-dir", type=Path, default=Path("neurooracle/data/full_v2"))
+    parser.add_argument("--snapshot-root", type=Path, default=Path("neurooracle/data/experiments/case3/snapshots_full_v2_5year_2016_2020"))
+    parser.add_argument("--output-root", type=Path, default=Path("neurooracle/data/experiments/case3/rolling_windows_full_v2"))
     parser.add_argument("--windows", nargs="*", type=parse_window, default=list(DEFAULT_WINDOWS), help="Windows as freeze:start:end, e.g. 2020:2021:2022.")
     parser.add_argument("--max-candidates", type=int, default=5000)
     parser.add_argument("--classification-max-examples", type=int, default=20000)
@@ -293,7 +297,7 @@ def main() -> None:
     parser.add_argument("--classification-endpoint-weight", type=float, default=0.0)
     parser.add_argument("--classification-kge-weight", type=float, default=0.0)
     parser.add_argument("--train-kge", action="store_true")
-    parser.add_argument("--kge-root", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/kge_checkpoints_full_snapshot_v1"))
+    parser.add_argument("--kge-root", type=Path, default=Path("neurooracle/data/experiments/case3/kge_checkpoints_full_v2"))
     parser.add_argument("--kge-dim", type=int, default=64)
     parser.add_argument("--kge-epochs", type=int, default=20)
     parser.add_argument("--kge-batch-size", type=int, default=4096)
@@ -310,7 +314,7 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     future_claims = args.input_dir / "extracted_claims.jsonl"
     for window in args.windows:
-        snapshot_dir = args.snapshot_root / f"kg_{window.freeze_year}_from_full_snapshot_v1"
+        snapshot_dir = args.snapshot_root / f"kg_{window.freeze_year}"
         snapshot_manifest_path = snapshot_dir / "manifest.json"
         if args.force or not snapshot_manifest_path.is_file():
             print(f"[snapshot] building KG_{window.freeze_year} -> {snapshot_dir}", flush=True)

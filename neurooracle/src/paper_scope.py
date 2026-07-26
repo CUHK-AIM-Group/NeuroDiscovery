@@ -8,7 +8,13 @@ VALID_PAPER_SCOPES = ("general", "case1", "case2", "case3")
 
 
 def normalize_paper_scope(scope: object) -> list[str]:
-    """Return canonical paper scopes, preserving known labels only."""
+    """Return canonical paper scopes with ``general`` as the shared base scope.
+
+    A paper may belong to any combination of the case studies, but every paper
+    represented in the KG also belongs to the general corpus.  Empty or wholly
+    unrecognised input remains empty so callers can still distinguish missing
+    scope metadata from a classified general paper.
+    """
     if scope is None or scope == "":
         return []
     if isinstance(scope, str):
@@ -33,7 +39,9 @@ def normalize_paper_scope(scope: object) -> list[str]:
             text = "general"
         if text in VALID_PAPER_SCOPES and text not in out:
             out.append(text)
-    return out
+    if not out:
+        return []
+    return ["general", *(item for item in VALID_PAPER_SCOPES if item != "general" and item in out)]
 
 
 def infer_paper_scope_from_claim_dict(

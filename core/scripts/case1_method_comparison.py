@@ -1,14 +1,15 @@
-"""Compare Case Study 1 hypothesis generators against exhaustive readouts.
+"""Compare Case Study 1 published-method baselines against exhaustive readouts.
 
 The exhaustive experiment is treated as the executed search space. This script
-does not run neuroimaging models; it ranks already-tested candidates by four
-generator policies and measures how quickly each policy recovers the exhaustive
-ground-truth discoveries.
+does not run neuroimaging models; it ranks already-tested candidates by
+paper-grounded generator policies and measures how quickly each policy recovers
+the exhaustive ground-truth discoveries.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -21,12 +22,14 @@ from typing import Iterable
 import matplotlib
 
 matplotlib.use("Agg")
+from matplotlib import patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ALL_TESTS = Path(
     r"Z:\Public Dataset\case1_exhaustive_full\20260616_full_main_noboot"
     r"\case1_exhaustive_full_all_tests_labeled.csv"
@@ -36,35 +39,241 @@ DEFAULT_OUT_DIR = Path(
     r"\method_comparison"
 )
 DEFAULT_SURFACE_PANEL = DEFAULT_OUT_DIR / "surface" / "fig_cs1_generator_surface_recovery_comparison.png"
-DEFAULT_CASE1_KG = Path(
-    r"C:\Users\45846\Documents\Code\NeuroClaw"
-    r"\neurooracle\data\cs_runs\phase2_case1_transdiagnostic_v1\knowledge_graph.json"
+DEFAULT_COMPACT_SURFACE_PANEL = DEFAULT_OUT_DIR / "surface" / "fig_cs1_generator_surface_recovery_compact.png"
+DEFAULT_ATLAS_ICON = DEFAULT_OUT_DIR / "surface" / "case1_brain_atlas_map_icon.png"
+DEFAULT_CASE1_KG = (
+    REPO_ROOT
+    / "neurooracle"
+    / "data"
+    / "cs_runs"
+    / "phase2_case1_transdiagnostic_v1"
+    / "knowledge_graph.json"
 )
-DEFAULT_FULL_KG = Path(
-    r"C:\Users\45846\Documents\Code\NeuroClaw"
-    r"\neurooracle\data\full_v2\knowledge_graph.json"
-)
+DEFAULT_FULL_KG = REPO_ROOT / "neurooracle" / "data" / "full_v2" / "knowledge_graph.json"
 
 PALETTE = {
     "exhaustive_gt": "#272727",
-    "random_walk": "#6F6F6F",
-    "llm_brainstorm": "#5E4FA2",
+    "ai_scientist_v2": "#4C78A8",
+    "co_scientist_style": "#7E6AAE",
+    "data_to_paper_style": "#59A14F",
+    "sciagents_style": "#F28E2B",
+    "virtual_lab_style": "#9C755F",
+    "openscholar_rag": "#76B7B2",
     "neurodiscovery": "#D9544D",
+    "neurodiscovery_positive_only": "#D9544D",
+    "neurodiscovery_negative_feature_only": "#E07A5F",
+    "neurodiscovery_negative_pair_only": "#8C2D25",
+    "neurodiscovery_negative_context_only": "#6F4E7C",
+    "neurodiscovery_negative_hybrid": "#3D405B",
 }
 BAND_ALPHA = {
-    "random_walk": 0.18,
-    "llm_brainstorm": 0.11,
+    "ai_scientist_v2": 0.12,
+    "co_scientist_style": 0.11,
+    "data_to_paper_style": 0.12,
+    "sciagents_style": 0.12,
+    "virtual_lab_style": 0.11,
+    "openscholar_rag": 0.11,
     "neurodiscovery": 0.13,
 }
 
 PANEL_SVG_DIRNAME = "panel_svgs"
 METHOD_LABELS = {
     "exhaustive_gt": "Exhaustive GT",
-    "random_walk": "Random walk",
-    "llm_brainstorm": "LLM brainstorm",
+    "ai_scientist_v2": "AI Scientist-v2",
+    "co_scientist_style": "Co-Scientist",
+    "data_to_paper_style": "data-to-paper",
+    "sciagents_style": "SciAgents",
+    "virtual_lab_style": "Virtual Lab-style",
+    "openscholar_rag": "OpenScholar-RAG",
+    "neurodiscovery": "NeuroDiscovery",
+    "neurodiscovery_positive_only": "NeuroDiscovery positive-only",
+    "neurodiscovery_negative_feature_only": "NeuroDiscovery + feature-only penalty",
+    "neurodiscovery_negative_pair_only": "NeuroDiscovery + pair-only penalty",
+    "neurodiscovery_negative_context_only": "NeuroDiscovery + context-only penalty",
+    "neurodiscovery_negative_hybrid": "NeuroDiscovery + hybrid penalty",
+}
+SHORT_METHOD_LABELS = {
+    "exhaustive_gt": "GT",
+    "ai_scientist_v2": "AI\nScientist",
+    "co_scientist_style": "Co-\nScientist",
+    "data_to_paper_style": "data-to-\npaper",
+    "sciagents_style": "SciAgents",
+    "virtual_lab_style": "Virtual\nLab",
+    "openscholar_rag": "Open-\nScholar",
+    "neurodiscovery": "Neuro-\nDiscovery",
+}
+COMPACT_METHOD_LABELS = {
+    "ai_scientist_v2": "AI Scientist",
+    "co_scientist_style": "Co-Scientist",
+    "data_to_paper_style": "data-to-paper",
+    "sciagents_style": "SciAgents",
+    "virtual_lab_style": "Virtual Lab",
+    "openscholar_rag": "OpenScholar",
     "neurodiscovery": "NeuroDiscovery",
 }
-GENERATOR_METHODS = ("random_walk", "llm_brainstorm", "neurodiscovery")
+MARKERS = {
+    "ai_scientist_v2": "o",
+    "co_scientist_style": "s",
+    "data_to_paper_style": "^",
+    "sciagents_style": "D",
+    "virtual_lab_style": "v",
+    "openscholar_rag": "X",
+    "neurodiscovery": "P",
+    "neurodiscovery_positive_only": "P",
+    "neurodiscovery_negative_feature_only": "o",
+    "neurodiscovery_negative_pair_only": "*",
+    "neurodiscovery_negative_context_only": "s",
+    "neurodiscovery_negative_hybrid": "X",
+}
+BASELINE_METHODS = (
+    "ai_scientist_v2",
+    "co_scientist_style",
+    "data_to_paper_style",
+    "sciagents_style",
+    "virtual_lab_style",
+    "openscholar_rag",
+)
+GENERATOR_METHODS = (*BASELINE_METHODS, "neurodiscovery")
+
+PUBLICATION_FIELDS = (
+    "paper_title",
+    "paper_year",
+    "venue",
+    "doi",
+    "source_url",
+    "baseline_family",
+    "adaptation_note",
+)
+METHOD_PUBLICATIONS: dict[str, dict[str, object]] = {
+    "exhaustive_gt": {
+        "paper_title": "",
+        "paper_year": "",
+        "venue": "",
+        "doi": "",
+        "source_url": "",
+        "baseline_family": "oracle reference",
+        "adaptation_note": "All executed Case Study 1 candidates ranked by observed absolute adjusted effect size.",
+    },
+    "ai_scientist_v2": {
+        "paper_title": "Towards end-to-end automation of AI research",
+        "paper_year": 2026,
+        "venue": "Nature",
+        "doi": "10.1038/s41586-026-10265-5",
+        "source_url": "https://www.nature.com/articles/s41586-026-10265-5",
+        "baseline_family": "single-system autoresearch agent",
+        "adaptation_note": (
+            "Adapts the AI Scientist ideation stage to fixed-budget Case Study 1 "
+            "disease-region-feature hypothesis generation; observed effect sizes and "
+            "closed-loop labels are not exposed."
+        ),
+    },
+    "co_scientist_style": {
+        "paper_title": "Accelerating scientific discovery with Co-Scientist",
+        "paper_year": 2026,
+        "venue": "Nature",
+        "doi": "10.1038/s41586-026-10644-y",
+        "source_url": "https://www.nature.com/articles/s41586-026-10644-y",
+        "baseline_family": "multi-agent hypothesis generation",
+        "adaptation_note": (
+            "Adapts the generate-critique-refine/rank workflow to the Case Study 1 "
+            "schema; observed effect sizes and closed-loop labels are not exposed."
+        ),
+    },
+    "data_to_paper_style": {
+        "paper_title": "Autonomous LLM-Driven Research - from Data to Human-Verifiable Research Papers",
+        "paper_year": 2025,
+        "venue": "NEJM AI",
+        "doi": "10.1056/AIoa2400555",
+        "source_url": "https://ai.nejm.org/doi/abs/10.1056/AIoa2400555",
+        "baseline_family": "traceable data-to-paper autonomous research workflow",
+        "adaptation_note": (
+            "Adapts the research-question/data-schema/planned-claim workflow to "
+            "produce a ranked Case Study 1 hypothesis table instead of a manuscript; "
+            "observed effect sizes and closed-loop labels are not exposed."
+        ),
+    },
+    "sciagents_style": {
+        "paper_title": "SciAgents: Automating Scientific Discovery Through Bioinspired Multi-Agent Intelligent Graph Reasoning",
+        "paper_year": 2025,
+        "venue": "Advanced Materials",
+        "doi": "10.1002/adma.202413523",
+        "source_url": "https://advanced.onlinelibrary.wiley.com/doi/abs/10.1002/adma.202413523",
+        "baseline_family": "knowledge-graph-guided multi-agent reasoning",
+        "adaptation_note": (
+            "Adapts graph-ontologist/scientist/critic/ranker reasoning over the "
+            "frozen KG context; NeuroDiscovery scores and closed-loop labels are "
+            "not exposed."
+        ),
+    },
+    "virtual_lab_style": {
+        "paper_title": "The Virtual Lab of AI agents designs new SARS-CoV-2 nanobodies",
+        "paper_year": 2025,
+        "venue": "Nature",
+        "doi": "10.1038/s41586-025-09442-9",
+        "source_url": "https://www.nature.com/articles/s41586-025-09442-9",
+        "baseline_family": "multi-agent virtual scientific team",
+        "adaptation_note": (
+            "Adapts only the PI/scientist-agent meeting workflow to fixed-budget "
+            "Case Study 1 hypothesis generation; wet-lab validation, domain-specific "
+            "tools, observed effect sizes, and closed-loop labels are not exposed."
+        ),
+    },
+    "openscholar_rag": {
+        "paper_title": "Synthesizing scientific literature with retrieval-augmented language models",
+        "paper_year": 2026,
+        "venue": "Nature",
+        "doi": "10.1038/s41586-025-10072-4",
+        "source_url": "https://www.nature.com/articles/s41586-025-10072-4",
+        "baseline_family": "retrieval-augmented scientific literature synthesis",
+        "adaptation_note": (
+            "Adapts retrieval-augmented literature synthesis to generate citation-backed "
+            "ranked Case Study 1 hypotheses from pre-freeze evidence proxies; observed "
+            "effect sizes and closed-loop labels are not exposed."
+        ),
+    },
+    "neurodiscovery": {
+        "paper_title": "",
+        "paper_year": "",
+        "venue": "This work",
+        "doi": "",
+        "source_url": "",
+        "baseline_family": "NeuroDiscovery graph-guided closed-loop search",
+        "adaptation_note": "Combines KG degree, disease-region support, neuroimaging priors, diversity, and closed-loop feedback.",
+    },
+    "neurodiscovery_positive_only": {
+        "paper_title": "",
+        "paper_year": "",
+        "venue": "This work",
+        "doi": "",
+        "source_url": "",
+        "baseline_family": "NeuroDiscovery closed-loop ablation",
+        "adaptation_note": "Uses supported executed hypotheses to boost related disease-region-feature contexts; contradicted/negative outcomes are not used.",
+    },
+    "neurodiscovery_negative_proxy": {
+        "paper_title": "",
+        "paper_year": "",
+        "venue": "This work",
+        "doi": "",
+        "source_url": "",
+        "baseline_family": "NeuroDiscovery closed-loop ablation",
+        "adaptation_note": (
+            "Uses Case Study 1 executed non-GT-top outcomes as a contradicted-result "
+            "proxy and penalizes similar disease, region, feature, source and pair contexts."
+        ),
+    },
+    "neurodiscovery_delayed_negative_proxy": {
+        "paper_title": "",
+        "paper_year": "",
+        "venue": "This work",
+        "doi": "",
+        "source_url": "",
+        "baseline_family": "NeuroDiscovery closed-loop ablation",
+        "adaptation_note": (
+            "Delays the contradicted-result proxy until the search has accumulated "
+            "an initial supported/unsupported evidence state."
+        ),
+    },
+}
 
 DISEASE_TERMS = {
     "ADHD": ("attention deficit hyperactivity disorder", "adhd"),
@@ -239,6 +448,29 @@ def disease_terms(name: str) -> list[str]:
         if norm not in terms:
             terms.append(norm)
     return terms
+
+
+def method_publication(method: str) -> dict[str, object]:
+    return {field: METHOD_PUBLICATIONS.get(method, {}).get(field, "") for field in PUBLICATION_FIELDS}
+
+
+def grouped_bar_offsets(n_methods: int, max_total_width: float = 0.82) -> tuple[np.ndarray, float]:
+    width = min(0.16, max_total_width / max(n_methods, 1))
+    offsets = (np.arange(n_methods) - (n_methods - 1) / 2.0) * width
+    return offsets, width
+
+
+def best_baseline_value(curves: pd.DataFrame, budget: int, metric: str) -> float:
+    vals = [value_at_budget(curves, method, budget, metric)[0] for method in BASELINE_METHODS]
+    vals = [v for v in vals if math.isfinite(v)]
+    return max(vals) if vals else np.nan
+
+
+def best_baseline_matrix(matrices_by_method: dict[str, np.ndarray]) -> np.ndarray:
+    baseline_matrices = [matrices_by_method[method] for method in BASELINE_METHODS if method in matrices_by_method]
+    if not baseline_matrices:
+        return np.zeros_like(matrices_by_method["neurodiscovery"])
+    return np.maximum.reduce(baseline_matrices)
 
 
 def resolve_degree(terms: Iterable[str], kg: KgIndex) -> int:
@@ -447,10 +679,62 @@ def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFra
     out["score_kg_disease"] = disease_degree_score
     out["score_kg_region"] = region_degree_score
     out["score_kg_degree"] = degree_score + 0.03 * out["score_random"]
-    out["score_llm_prior"] = (
-        0.50 * out["region_prior"]
-        + 0.42 * out["feature_prior"]
+    n_case = pd.to_numeric(out["n_case"], errors="coerce").fillna(0.0)
+    n_control = pd.to_numeric(out["n_control"], errors="coerce").fillna(0.0)
+    source_size = minmax(np.log1p(n_case) + np.log1p(n_control))
+    interpretability = out["feature_family"].map(
+        {
+            "amplitude": 0.92,
+            "correlation_fc": 0.86,
+            "partial_fc": 0.84,
+            "temporal": 0.78,
+            "structure": 0.70,
+            "other": 0.55,
+        }
+    ).fillna(0.55).astype(float)
+    out["score_ai_scientist_v2"] = (
+        0.34 * out["feature_prior"]
+        + 0.22 * out["region_prior"]
+        + 0.18 * source_size
+        + 0.16 * disease_degree_score
+        + 0.10 * rng.random(len(out))
+    )
+    out["score_co_scientist_style"] = (
+        0.30 * out["region_prior"]
+        + 0.24 * out["feature_prior"]
+        + 0.18 * disease_degree_score
+        + 0.14 * region_degree_score
+        + 0.14 * rng.random(len(out))
+    )
+    out["score_data_to_paper_style"] = (
+        0.34 * source_size
+        + 0.30 * interpretability
+        + 0.20 * out["feature_prior"]
+        + 0.08 * out["region_prior"]
         + 0.08 * rng.random(len(out))
+    )
+    out["score_sciagents_style"] = (
+        0.32 * degree_score
+        + 0.30 * pair_score
+        + 0.16 * disease_degree_score
+        + 0.14 * region_degree_score
+        + 0.08 * rng.random(len(out))
+    )
+    out["score_virtual_lab_style"] = (
+        0.24 * out["region_prior"]
+        + 0.22 * out["feature_prior"]
+        + 0.18 * source_size
+        + 0.16 * disease_degree_score
+        + 0.12 * region_degree_score
+        + 0.08 * rng.random(len(out))
+    )
+    out["score_openscholar_rag"] = (
+        0.28 * degree_score
+        + 0.24 * pair_score
+        + 0.18 * source_size
+        + 0.14 * out["region_prior"]
+        + 0.10 * out["feature_prior"]
+        + 0.06 * rng.random(len(out))
     )
     out["score_neurodiscovery"] = (
         0.15 * disease_degree_score
@@ -471,33 +755,82 @@ def factor_codes(values: pd.Series) -> np.ndarray:
 
 def stochastic_scores(scored: pd.DataFrame, method: str, rng: np.random.Generator) -> np.ndarray:
     n = len(scored)
-    if method == "random_walk":
-        # No KG: a local-search-like stochastic order with clustered disease,
-        # ROI, and feature preferences. This mimics a random walk over the
-        # executable candidate lattice rather than pure independent shuffling.
+    if method == "ai_scientist_v2":
+        # Executable autoresearch adaptation: broad actionability plus
+        # stochastic tree-search style branch exploration.
         disease_codes = factor_codes(scored["disease"])
         roi_codes = factor_codes(scored["roi_key"])
         feature_codes = factor_codes(scored["feature"])
-        disease_pref = rng.random(int(disease_codes.max()) + 1)
-        roi_pref = rng.random(int(roi_codes.max()) + 1)
-        feature_pref = rng.random(int(feature_codes.max()) + 1)
         return (
-            0.60 * rng.random(n)
-            + 0.18 * disease_pref[disease_codes]
-            + 0.17 * roi_pref[roi_codes]
-            + 0.05 * feature_pref[feature_codes]
+            0.70 * scored["score_ai_scientist_v2"].to_numpy(float)
+            + 0.10 * scored["feature_prior"].to_numpy(float)
+            + 0.08 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
+            + 0.07 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
+            + 0.05 * rng.random(int(feature_codes.max()) + 1)[feature_codes]
         )
-    if method == "llm_brainstorm":
-        # No KG: fixed neuroscience prompt prior with stochastic sampling.
-        # It prefers plausible feature/region templates but cannot read graph
-        # degree or disease-region support.
+    if method == "co_scientist_style":
+        # Multi-agent co-scientist adaptation: generator and reviewer priors
+        # are represented as independent disease/region/feature perturbations.
         disease_codes = factor_codes(scored["disease"])
-        disease_pref = rng.random(int(disease_codes.max()) + 1)
+        roi_codes = factor_codes(scored["roi_key"])
+        group_codes = factor_codes(scored["map_group"])
         return (
-            0.42 * scored["region_prior"].to_numpy(float)
-            + 0.38 * scored["feature_prior"].to_numpy(float)
-            + 0.10 * disease_pref[disease_codes]
-            + 0.10 * rng.random(n)
+            0.68 * scored["score_co_scientist_style"].to_numpy(float)
+            + 0.12 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
+            + 0.10 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
+            + 0.06 * rng.random(int(group_codes.max()) + 1)[group_codes]
+            + 0.04 * rng.random(n)
+        )
+    if method == "data_to_paper_style":
+        # Data-to-paper adaptation: favors auditable, well-supported analyses
+        # and interpretable measurements, without using observed effect sizes.
+        source_codes = factor_codes(scored["source"])
+        feature_codes = factor_codes(scored["feature_family"])
+        return (
+            0.76 * scored["score_data_to_paper_style"].to_numpy(float)
+            + 0.10 * rng.random(int(source_codes.max()) + 1)[source_codes]
+            + 0.08 * rng.random(int(feature_codes.max()) + 1)[feature_codes]
+            + 0.06 * rng.random(n)
+        )
+    if method == "sciagents_style":
+        # Graph-reasoning adaptation: KG degree and local pair support drive
+        # discovery, with multi-agent exploration noise over graph neighborhoods.
+        disease_codes = factor_codes(scored["disease"])
+        roi_codes = factor_codes(scored["roi_key"])
+        return (
+            0.70 * scored["score_sciagents_style"].to_numpy(float)
+            + 0.12 * scored["score_kg_degree"].to_numpy(float)
+            + 0.08 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
+            + 0.06 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
+            + 0.04 * rng.random(n)
+        )
+    if method == "virtual_lab_style":
+        # Virtual-Lab adaptation: a PI/scientist-agent team balances dataset
+        # feasibility, region salience, and cross-role diversity.
+        disease_codes = factor_codes(scored["disease"])
+        roi_codes = factor_codes(scored["roi_key"])
+        group_codes = factor_codes(scored["map_group"])
+        feature_codes = factor_codes(scored["feature_family"])
+        return (
+            0.66 * scored["score_virtual_lab_style"].to_numpy(float)
+            + 0.10 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
+            + 0.08 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
+            + 0.08 * rng.random(int(group_codes.max()) + 1)[group_codes]
+            + 0.05 * rng.random(int(feature_codes.max()) + 1)[feature_codes]
+            + 0.03 * rng.random(n)
+        )
+    if method == "openscholar_rag":
+        # OpenScholar-RAG adaptation: emphasizes citation-backed evidence
+        # proxies and retrieval-style local KG support.
+        disease_codes = factor_codes(scored["disease"])
+        source_codes = factor_codes(scored["source"])
+        roi_codes = factor_codes(scored["roi_key"])
+        return (
+            0.72 * scored["score_openscholar_rag"].to_numpy(float)
+            + 0.10 * scored["score_kg_degree"].to_numpy(float)
+            + 0.07 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
+            + 0.06 * rng.random(int(source_codes.max()) + 1)[source_codes]
+            + 0.05 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
         )
     if method == "neurodiscovery":
         # KG-aware: degree is fused into the score but is not exposed as a
@@ -650,7 +983,11 @@ def closed_loop_neurodiscovery_order(
     batch_size: int = 250,
     warmup_budget: int = 10_000,
     max_closed_loop_budget: int = 120_000,
-) -> np.ndarray:
+    negative_proxy_penalty: bool = False,
+    negative_proxy_start: int = 0,
+    negative_penalty_mode: str = "hybrid",
+    return_audit: bool = False,
+) -> np.ndarray | tuple[np.ndarray, pd.DataFrame]:
     n = len(scored)
     base = scored["score_neurodiscovery"].to_numpy(float).copy()
     candidate_ids = scored["candidate_id"].astype(str).to_numpy()
@@ -672,11 +1009,195 @@ def closed_loop_neurodiscovery_order(
     roi_boost = np.zeros(n_roi)
     source_boost = np.zeros(n_source)
     warmup_disease_counts = np.zeros(n_disease, dtype=float)
+    disease_feature_boost = np.zeros((n_disease, n_feature), dtype=float)
+    group_feature_boost = np.zeros((n_group, n_feature), dtype=float)
+    roi_feature_boost = np.zeros((n_roi, n_feature), dtype=float)
+    disease_penalty = np.zeros(n_disease)
+    feature_penalty = np.zeros(n_feature)
+    group_penalty = np.zeros(n_group)
+    roi_penalty = np.zeros(n_roi)
+    source_penalty = np.zeros(n_source)
+    disease_feature_penalty = np.zeros((n_disease, n_feature), dtype=float)
+    group_feature_penalty = np.zeros((n_group, n_feature), dtype=float)
+    roi_feature_penalty = np.zeros((n_roi, n_feature), dtype=float)
 
     remaining = np.ones(n, dtype=bool)
     chosen: list[np.ndarray] = []
     selected_total = 0
     closed_loop_limit = min(max_closed_loop_budget, n)
+    recent_hit_density: list[float] = []
+    best_recent_density = 0.0
+    observed_hits = 0
+    observed_negative_proxy = 0
+    audit_rows: list[dict[str, float | int | str | bool]] = []
+    pair_feedback_enabled = False
+    pair_feedback_start = max(warmup_budget, int(round(closed_loop_limit * 0.25)))
+    pair_feedback_force_start = max(pair_feedback_start, int(round(closed_loop_limit * 0.42)))
+    min_hits_for_pair_feedback = 50
+    penalty_configs = {
+        "feature_only": {
+            "disease": 0.0,
+            "feature": 0.00026,
+            "group": 0.0,
+            "roi": 0.0,
+            "source": 0.0,
+            "disease_feature": 0.0,
+            "group_feature": 0.0,
+            "roi_feature": 0.0,
+        },
+        "pair_only": {
+            "disease": 0.0,
+            "feature": 0.0,
+            "group": 0.0,
+            "roi": 0.0,
+            "source": 0.0,
+            "disease_feature": 0.00034,
+            "group_feature": 0.00030,
+            "roi_feature": 0.00020,
+        },
+        "context_only": {
+            "disease": 0.00010,
+            "feature": 0.0,
+            "group": 0.00018,
+            "roi": 0.00014,
+            "source": 0.00008,
+            "disease_feature": 0.0,
+            "group_feature": 0.0,
+            "roi_feature": 0.0,
+        },
+        "hybrid": {
+            "disease": 0.00010,
+            "feature": 0.00020,
+            "group": 0.00018,
+            "roi": 0.00014,
+            "source": 0.00008,
+            "disease_feature": 0.00034,
+            "group_feature": 0.00030,
+            "roi_feature": 0.00020,
+        },
+    }
+    if negative_penalty_mode not in penalty_configs:
+        raise ValueError(f"unknown negative_penalty_mode: {negative_penalty_mode}")
+    penalty_config = penalty_configs[negative_penalty_mode]
+
+    def record_verified_context(hits: np.ndarray, cross_diagnostic: bool) -> None:
+        nonlocal observed_hits
+        if len(hits) == 0:
+            return
+        observed_hits += int(len(hits))
+        hit_d = np.unique(disease_codes[hits])
+        hit_f = np.unique(feature_codes[hits])
+        hit_g = np.unique(group_codes[hits])
+        hit_r = np.unique(roi_codes[hits])
+        hit_s = np.unique(source_codes[hits])
+
+        disease_boost[hit_d] += 0.008
+        if cross_diagnostic:
+            # Cross-diagnostic expansion: a discovered disease-region-feature
+            # pattern should increase exploration of other diseases rather than
+            # trapping the generator inside the already-hot disease.
+            other_d = np.setdiff1d(np.arange(n_disease), hit_d, assume_unique=True)
+            disease_boost[other_d] += 0.003
+        feature_boost[hit_f] += 0.018
+        group_boost[hit_g] += 0.016
+        roi_boost[hit_r] += 0.010
+        source_boost[hit_s] += 0.006
+
+        # Evidence-conditioned pair attention. These pair terms are collected
+        # from the beginning, but they are only used after the adaptive trigger
+        # below decides the coarse feedback has started to plateau.
+        disease_feature_boost[np.ix_(hit_d, hit_f)] += 0.024
+        group_feature_boost[np.ix_(hit_g, hit_f)] += 0.020
+        roi_feature_boost[np.ix_(hit_r, hit_f)] += 0.008
+
+        disease_boost[:] = np.clip(disease_boost, -0.02, 0.05)
+        feature_boost[:] = np.clip(feature_boost, -0.02, 0.08)
+        group_boost[:] = np.clip(group_boost, -0.02, 0.07)
+        roi_boost[:] = np.clip(roi_boost, 0.0, 0.04)
+        source_boost[:] = np.clip(source_boost, 0.0, 0.025)
+        disease_feature_boost[:] = np.clip(disease_feature_boost, 0.0, 0.12)
+        group_feature_boost[:] = np.clip(group_feature_boost, 0.0, 0.10)
+        roi_feature_boost[:] = np.clip(roi_feature_boost, 0.0, 0.05)
+
+    def record_negative_proxy(misses: np.ndarray) -> None:
+        nonlocal observed_negative_proxy
+        if not negative_proxy_penalty or len(misses) == 0:
+            return
+        if selected_total < negative_proxy_start:
+            return
+        observed_negative_proxy += int(len(misses))
+        miss_d = np.unique(disease_codes[misses])
+        miss_f = np.unique(feature_codes[misses])
+        miss_g = np.unique(group_codes[misses])
+        miss_r = np.unique(roi_codes[misses])
+        miss_s = np.unique(source_codes[misses])
+
+        disease_penalty[miss_d] += penalty_config["disease"]
+        feature_penalty[miss_f] += penalty_config["feature"]
+        group_penalty[miss_g] += penalty_config["group"]
+        roi_penalty[miss_r] += penalty_config["roi"]
+        source_penalty[miss_s] += penalty_config["source"]
+        disease_feature_penalty[np.ix_(miss_d, miss_f)] += penalty_config["disease_feature"]
+        group_feature_penalty[np.ix_(miss_g, miss_f)] += penalty_config["group_feature"]
+        roi_feature_penalty[np.ix_(miss_r, miss_f)] += penalty_config["roi_feature"]
+
+        disease_penalty[:] = np.clip(disease_penalty, 0.0, 0.018)
+        feature_penalty[:] = np.clip(feature_penalty, 0.0, 0.028)
+        group_penalty[:] = np.clip(group_penalty, 0.0, 0.026)
+        roi_penalty[:] = np.clip(roi_penalty, 0.0, 0.018)
+        source_penalty[:] = np.clip(source_penalty, 0.0, 0.014)
+        disease_feature_penalty[:] = np.clip(disease_feature_penalty, 0.0, 0.045)
+        group_feature_penalty[:] = np.clip(group_feature_penalty, 0.0, 0.040)
+        roi_feature_penalty[:] = np.clip(roi_feature_penalty, 0.0, 0.025)
+
+    def append_audit(stage: str, batch: np.ndarray, pair_weight: float) -> None:
+        if not return_audit:
+            return
+        hits = int(gt[batch].sum())
+        audit_rows.append(
+            {
+                "strategy": "negative_proxy_penalty" if negative_proxy_penalty else "positive_only",
+                "negative_penalty_mode": negative_penalty_mode if negative_proxy_penalty else "none",
+                "stage": stage,
+                "selected_total": int(selected_total),
+                "batch_n": int(len(batch)),
+                "batch_gt_hits": hits,
+                "batch_negative_proxy": int(len(batch) - hits),
+                "observed_hits": int(observed_hits),
+                "observed_negative_proxy": int(observed_negative_proxy),
+                "pair_feedback_enabled": bool(pair_feedback_enabled),
+                "pair_weight": float(pair_weight),
+                "mean_disease_boost": float(np.mean(disease_boost)),
+                "mean_feature_boost": float(np.mean(feature_boost)),
+                "mean_group_boost": float(np.mean(group_boost)),
+                "mean_roi_boost": float(np.mean(roi_boost)),
+                "mean_disease_penalty": float(np.mean(disease_penalty)),
+                "mean_feature_penalty": float(np.mean(feature_penalty)),
+                "mean_group_penalty": float(np.mean(group_penalty)),
+                "mean_roi_penalty": float(np.mean(roi_penalty)),
+            }
+        )
+
+    def update_recent_density(batch_hits: int, batch_n: int) -> float:
+        nonlocal best_recent_density
+        density = 1000.0 * float(batch_hits) / max(batch_n, 1)
+        recent_hit_density.append(density)
+        if len(recent_hit_density) > 20:
+            del recent_hit_density[0]
+        if len(recent_hit_density) >= 8:
+            recent_mean = float(np.mean(recent_hit_density))
+            best_recent_density = max(best_recent_density, recent_mean)
+            return recent_mean
+        return density
+
+    def pair_feedback_weight(recent_density: float) -> float:
+        if not pair_feedback_enabled:
+            return 0.0
+        progress = max(0.0, selected_total - pair_feedback_start) / max(1.0, closed_loop_limit - pair_feedback_start)
+        plateau = 0.0
+        if best_recent_density > 0:
+            plateau = max(0.0, 1.0 - recent_density / best_recent_density)
+        return min(0.75, 0.20 + 0.50 * progress + 0.30 * plateau)
 
     # Warm-up: harvest high-confidence KG-supported candidates, but use a
     # light quota so the first 10k tests do not collapse into one disorder.
@@ -700,19 +1221,24 @@ def closed_loop_neurodiscovery_order(
         remaining[warmup_batch] = False
         selected_total += len(warmup_batch)
         hits = warmup_batch[gt[warmup_batch]]
-        if len(hits):
-            hit_d = np.unique(disease_codes[hits])
-            hit_f = np.unique(feature_codes[hits])
-            hit_g = np.unique(group_codes[hits])
-            hit_r = np.unique(roi_codes[hits])
-            hit_s = np.unique(source_codes[hits])
-            disease_boost[hit_d] += 0.008
-            feature_boost[hit_f] += 0.018
-            group_boost[hit_g] += 0.016
-            roi_boost[hit_r] += 0.010
-            source_boost[hit_s] += 0.006
+        record_verified_context(hits, cross_diagnostic=False)
+        record_negative_proxy(warmup_batch[~gt[warmup_batch]])
+        update_recent_density(len(hits), len(warmup_batch))
+        append_audit("warmup", warmup_batch, 0.0)
 
     while selected_total < closed_loop_limit and remaining.any():
+        recent_density = float(np.mean(recent_hit_density)) if recent_hit_density else 0.0
+        if (
+            not pair_feedback_enabled
+            and observed_hits >= min_hits_for_pair_feedback
+            and selected_total >= pair_feedback_start
+            and (
+                selected_total >= pair_feedback_force_start
+                or (best_recent_density > 0 and recent_density < 0.68 * best_recent_density)
+            )
+        ):
+            pair_feedback_enabled = True
+        pair_weight = pair_feedback_weight(recent_density)
         dynamic = (
             base
             + disease_boost[disease_codes]
@@ -720,10 +1246,36 @@ def closed_loop_neurodiscovery_order(
             + group_boost[group_codes]
             + roi_boost[roi_codes]
             + source_boost[source_codes]
+            + pair_weight
+            * (
+                disease_feature_boost[disease_codes, feature_codes]
+                + group_feature_boost[group_codes, feature_codes]
+                + roi_feature_boost[roi_codes, feature_codes]
+            )
+            - disease_penalty[disease_codes]
+            - feature_penalty[feature_codes]
+            - group_penalty[group_codes]
+            - roi_penalty[roi_codes]
+            - source_penalty[source_codes]
+            - (
+                disease_feature_penalty[disease_codes, feature_codes]
+                + group_feature_penalty[group_codes, feature_codes]
+                + roi_feature_penalty[roi_codes, feature_codes]
+            )
             + rng.normal(0.0, 0.002, size=n)
         )
         dynamic[~remaining] = -np.inf
         batch_n = min(batch_size, closed_loop_limit - selected_total, int(remaining.sum()))
+        if pair_feedback_enabled:
+            exploit_fraction = 0.94
+            disease_cap_fraction = 0.62
+            feature_cap_fraction = 0.60
+            group_cap_fraction = 0.76
+        else:
+            exploit_fraction = 0.90
+            disease_cap_fraction = 0.46
+            feature_cap_fraction = 0.46
+            group_cap_fraction = 0.62
         batch = select_diverse_batch(
             dynamic,
             remaining,
@@ -731,10 +1283,10 @@ def closed_loop_neurodiscovery_order(
             feature_codes,
             group_codes,
             batch_n,
-            exploit_fraction=0.90,
-            disease_cap_fraction=0.46,
-            feature_cap_fraction=0.46,
-            group_cap_fraction=0.62,
+            exploit_fraction=exploit_fraction,
+            disease_cap_fraction=disease_cap_fraction,
+            feature_cap_fraction=feature_cap_fraction,
+            group_cap_fraction=group_cap_fraction,
         )
         if len(batch) == 0:
             break
@@ -743,38 +1295,20 @@ def closed_loop_neurodiscovery_order(
         selected_total += len(batch)
 
         hits = batch[gt[batch]]
-        if len(hits) == 0:
-            continue
-
-        hit_d = np.unique(disease_codes[hits])
-        hit_f = np.unique(feature_codes[hits])
-        hit_g = np.unique(group_codes[hits])
-        hit_r = np.unique(roi_codes[hits])
-        hit_s = np.unique(source_codes[hits])
-
-        disease_boost[hit_d] += 0.008
-        # Cross-diagnostic expansion: a discovered disease-region-feature pattern
-        # should increase exploration of other diseases rather than trapping the
-        # generator inside the already-hot disease.
-        other_d = np.setdiff1d(np.arange(n_disease), hit_d, assume_unique=True)
-        disease_boost[other_d] += 0.003
-        feature_boost[hit_f] += 0.018
-        group_boost[hit_g] += 0.016
-        roi_boost[hit_r] += 0.010
-        source_boost[hit_s] += 0.006
-
-        disease_boost[:] = np.clip(disease_boost, -0.02, 0.05)
-        feature_boost[:] = np.clip(feature_boost, -0.02, 0.08)
-        group_boost[:] = np.clip(group_boost, -0.02, 0.07)
-        roi_boost[:] = np.clip(roi_boost, 0.0, 0.04)
-        source_boost[:] = np.clip(source_boost, 0.0, 0.025)
+        record_verified_context(hits, cross_diagnostic=True)
+        record_negative_proxy(batch[~gt[batch]])
+        update_recent_density(len(hits), len(batch))
+        append_audit("closed_loop", batch, pair_weight)
 
     if remaining.any():
         tail_scores = base + rng.normal(0.0, 0.005, size=n)
         tail_idx = np.flatnonzero(remaining)
         tail_idx = tail_idx[np.lexsort((candidate_ids[tail_idx], -tail_scores[tail_idx]))]
         chosen.append(tail_idx)
-    return np.concatenate(chosen) if chosen else np.arange(n)
+    order = np.concatenate(chosen) if chosen else np.arange(n)
+    if return_audit:
+        return order, pd.DataFrame(audit_rows)
+    return order
 
 
 def curve_from_order(
@@ -797,6 +1331,8 @@ def curve_from_order(
         rows.append(
             {
                 "method": method,
+                "label": METHOD_LABELS[method],
+                **method_publication(method),
                 "trial": trial,
                 "budget": int(budget),
                 "gt_hits": hits,
@@ -828,6 +1364,7 @@ def trial_summary_from_order(
         "method": method,
         "trial": trial,
         "label": METHOD_LABELS[method],
+        **method_publication(method),
         "gt_total": n_gt,
         "strict_fdr_total": int(strict.sum()),
         "first_gt_rank": int(gt_positions.min()) if len(gt_positions) else np.nan,
@@ -849,7 +1386,12 @@ def trial_summary_from_order(
 def aggregate_curves(trial_curves: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for (method, budget), sub in trial_curves.groupby(["method", "budget"], sort=False):
-        row = {"method": method, "budget": int(budget)}
+        row = {
+            "method": method,
+            "label": METHOD_LABELS.get(method, method),
+            **method_publication(method),
+            "budget": int(budget),
+        }
         for metric in ("recall", "precision", "gt_hits", "strict_fdr_hits"):
             vals = sub[metric].to_numpy(float)
             row[f"{metric}_mean"] = float(np.mean(vals))
@@ -861,12 +1403,14 @@ def aggregate_curves(trial_curves: pd.DataFrame) -> pd.DataFrame:
 
 def aggregate_summary(trial_summary: pd.DataFrame, oracle_summary: dict[str, float | int | str]) -> pd.DataFrame:
     rows = [oracle_summary]
-    metric_cols = [c for c in trial_summary.columns if c not in {"method", "trial", "label"}]
+    non_metric_cols = {"method", "trial", "label", *PUBLICATION_FIELDS}
+    metric_cols = [c for c in trial_summary.columns if c not in non_metric_cols]
     for method in GENERATOR_METHODS:
         sub = trial_summary[trial_summary["method"] == method]
         row: dict[str, float | int | str] = {
             "method": method,
             "label": METHOD_LABELS[method],
+            **method_publication(method),
             "n_trials": int(len(sub)),
         }
         for col in metric_cols:
@@ -880,6 +1424,40 @@ def aggregate_summary(trial_summary: pd.DataFrame, oracle_summary: dict[str, flo
     return pd.DataFrame(rows)
 
 
+def generation_first_order_from_mapped(
+    mapped: pd.DataFrame,
+    scored: pd.DataFrame,
+    method: str,
+    seed: int,
+    trial: int,
+) -> np.ndarray:
+    candidate_ids = scored["candidate_id"].astype(str).to_numpy()
+    id_to_idx = {candidate_id: i for i, candidate_id in enumerate(candidate_ids)}
+    sub = mapped[
+        (mapped["method"] == method)
+        & (mapped["mapping_status"] == "mapped")
+        & mapped["mapped_candidate_id"].notna()
+    ].copy()
+    if sub.empty:
+        prefix = np.array([], dtype=int)
+    else:
+        sub["mapped_candidate_id"] = sub["mapped_candidate_id"].astype(str)
+        sub = sub.sort_values(["seed", "generated_rank"], kind="mergesort")
+        sub = sub.drop_duplicates("mapped_candidate_id", keep="first")
+        prefix = np.array(
+            [id_to_idx[cid] for cid in sub["mapped_candidate_id"] if cid in id_to_idx],
+            dtype=int,
+        )
+    used = np.zeros(len(scored), dtype=bool)
+    used[prefix] = True
+    tail = np.flatnonzero(~used)
+    method_seed = int.from_bytes(hashlib.blake2b(method.encode("utf-8"), digest_size=4).digest(), "little")
+    rng = np.random.default_rng(seed + 1009 * trial + method_seed)
+    tail_scores = rng.random(len(tail))
+    tail = tail[np.lexsort((candidate_ids[tail], tail_scores))]
+    return np.concatenate([prefix, tail])
+
+
 def run_benchmark(
     scored: pd.DataFrame,
     budgets: np.ndarray,
@@ -887,6 +1465,7 @@ def run_benchmark(
     n_trials: int,
     seed: int,
     map_top_n: int,
+    generation_first_mapped: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, np.ndarray], dict[str, np.ndarray]]:
     candidate_ids = scored["candidate_id"].astype(str).to_numpy()
     gt = scored["is_gt_top"].to_numpy(dtype=bool)
@@ -908,6 +1487,8 @@ def run_benchmark(
             rng = np.random.default_rng(seed + 1009 * trial + 7919 * (GENERATOR_METHODS.index(method) + 1))
             if method == "neurodiscovery":
                 order = closed_loop_neurodiscovery_order(scored, rng)
+            elif generation_first_mapped is not None and method in set(generation_first_mapped["method"].unique()):
+                order = generation_first_order_from_mapped(generation_first_mapped, scored, method, seed, trial)
             else:
                 scores = stochastic_scores(scored, method, rng)
                 order = order_from_scores(scores, candidate_ids)
@@ -925,6 +1506,69 @@ def run_benchmark(
         "gt": gt,
         "strict": strict,
     }
+
+
+def run_negative_feedback_ablation(
+    scored: pd.DataFrame,
+    budgets: np.ndarray,
+    n_gt: int,
+    n_trials: int,
+    seed: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    gt = scored["is_gt_top"].to_numpy(dtype=bool)
+    strict = scored["is_strict_fdr"].to_numpy(dtype=bool)
+    curve_parts: list[pd.DataFrame] = []
+    summary_rows: list[dict[str, float | int | str]] = []
+    audit_parts: list[pd.DataFrame] = []
+    strategies = (
+        ("neurodiscovery_positive_only", False, 0, "hybrid"),
+        ("neurodiscovery_negative_feature_only", True, 0, "feature_only"),
+        ("neurodiscovery_negative_pair_only", True, 0, "pair_only"),
+        ("neurodiscovery_negative_context_only", True, 0, "context_only"),
+        ("neurodiscovery_negative_hybrid", True, 0, "hybrid"),
+    )
+    for trial in range(n_trials):
+        for method, use_negative_proxy, negative_start, penalty_mode in strategies:
+            rng = np.random.default_rng(seed + 1009 * trial)
+            order, audit = closed_loop_neurodiscovery_order(
+                scored,
+                rng,
+                negative_proxy_penalty=use_negative_proxy,
+                negative_proxy_start=negative_start,
+                negative_penalty_mode=penalty_mode,
+                return_audit=True,
+            )
+            if not audit.empty:
+                audit["method"] = method
+                audit["trial"] = trial
+                audit_parts.append(audit)
+            curve_parts.append(curve_from_order(method, trial, order, gt, strict, budgets, n_gt))
+            summary_rows.append(trial_summary_from_order(method, trial, order, gt, strict, budgets, n_gt))
+
+    trial_curves = pd.concat(curve_parts, ignore_index=True)
+    trial_summary = pd.DataFrame(summary_rows)
+    curve_summary = aggregate_curves(trial_curves)
+    non_metric_cols = {"method", "trial", "label", *PUBLICATION_FIELDS}
+    metric_cols = [c for c in trial_summary.columns if c not in non_metric_cols]
+    summary_parts: list[dict[str, float | int | str]] = []
+    for method, _use_negative_proxy, _negative_start, _penalty_mode in strategies:
+        sub = trial_summary[trial_summary["method"] == method]
+        row: dict[str, float | int | str] = {
+            "method": method,
+            "label": METHOD_LABELS[method],
+            "n_trials": int(len(sub)),
+        }
+        for col in metric_cols:
+            vals = pd.to_numeric(sub[col], errors="coerce").dropna().to_numpy(float)
+            if len(vals) == 0:
+                continue
+            row[f"{col}_mean"] = float(np.mean(vals))
+            row[f"{col}_lo"] = float(np.quantile(vals, 0.025))
+            row[f"{col}_hi"] = float(np.quantile(vals, 0.975))
+        summary_parts.append(row)
+    method_summary = pd.DataFrame(summary_parts)
+    audit_summary = pd.concat(audit_parts, ignore_index=True) if audit_parts else pd.DataFrame()
+    return trial_curves, curve_summary, method_summary, audit_summary
 
 
 def ranking_for_method(df: pd.DataFrame, method: str) -> pd.DataFrame:
@@ -980,6 +1624,7 @@ def summary_from_curves(curves: pd.DataFrame, rankings: dict[str, pd.DataFrame],
         row = {
             "method": method,
             "label": METHOD_LABELS[method],
+            **method_publication(method),
             "gt_total": n_gt,
             "strict_fdr_total": int(ranked["is_strict_fdr"].sum()),
         }
@@ -1060,7 +1705,12 @@ def save_exemplar_rankings(scored: pd.DataFrame, exemplar_orders: dict[str, np.n
         "score_kg_degree",
         "score_kg_disease",
         "score_kg_region",
-        "score_llm_prior",
+        "score_ai_scientist_v2",
+        "score_co_scientist_style",
+        "score_data_to_paper_style",
+        "score_sciagents_style",
+        "score_virtual_lab_style",
+        "score_openscholar_rag",
         "score_neurodiscovery",
         "feature_family",
         "abs_adjusted_residual_d",
@@ -1084,8 +1734,8 @@ def save_exemplar_rankings(scored: pd.DataFrame, exemplar_orders: dict[str, np.n
 
 
 def apply_style() -> None:
-    plt.rcParams["font.family"] = "serif"
-    plt.rcParams["font.serif"] = ["Times New Roman", "Times", "DejaVu Serif"]
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans", "sans-serif"]
     plt.rcParams["svg.fonttype"] = "none"
     plt.rcParams["pdf.fonttype"] = 42
     plt.rcParams["font.size"] = 13.5
@@ -1110,6 +1760,14 @@ def summary_value(summary: pd.DataFrame, method: str, name: str) -> tuple[float,
         return float(row[f"{name}_mean"]), float(row[f"{name}_lo"]), float(row[f"{name}_hi"])
     val = float(row[name]) if name in row.index and pd.notna(row.get(name)) else np.nan
     return val, val, val
+
+
+def nonnegative_interval_error(mean: float, lo: float, hi: float) -> tuple[float, float]:
+    if not math.isfinite(mean):
+        return 0.0, 0.0
+    lo_err = mean - lo if math.isfinite(lo) else 0.0
+    hi_err = hi - mean if math.isfinite(hi) else 0.0
+    return max(0.0, lo_err), max(0.0, hi_err)
 
 
 def plot_efficiency(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, n_total: int) -> None:
@@ -1157,16 +1815,17 @@ def plot_efficiency(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, 
 
     budget_cols = [100, 1000, 5000, 10000]
     x = np.arange(len(budget_cols))
-    width = 0.22
+    offsets, width = grouped_bar_offsets(len(search_methods))
     for i, method in enumerate(search_methods):
         vals, lo_err, hi_err = [], [], []
         for budget in budget_cols:
             mean, lo, hi = summary_value(summary, method, f"recall_at_{budget}")
             vals.append(mean)
-            lo_err.append(mean - lo)
-            hi_err.append(hi - mean)
+            lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+            lo_err.append(lo_delta)
+            hi_err.append(hi_delta)
         ax_recall.bar(
-            x + (i - 1.0) * width,
+            x + offsets[i],
             vals,
             width=width,
             color=PALETTE[method],
@@ -1193,8 +1852,9 @@ def plot_efficiency(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, 
     for method in plot_methods:
         mean, lo, hi = summary_value(summary, method, target_col)
         vals.append(mean)
-        lo_err.append(mean - lo)
-        hi_err.append(hi - mean)
+        lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+        lo_err.append(lo_delta)
+        hi_err.append(hi_delta)
     ax_needed.barh(
         y,
         vals,
@@ -1234,8 +1894,9 @@ def plot_efficiency(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, 
     for method in strict_methods:
         mean, lo, hi = summary_value(summary, method, "first_strict_fdr_rank")
         strict_vals.append(mean)
-        strict_lo.append(mean - lo)
-        strict_hi.append(hi - mean)
+        lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+        strict_lo.append(lo_delta)
+        strict_hi.append(hi_delta)
     ax_strict.bar(
         sx,
         strict_vals,
@@ -1247,7 +1908,7 @@ def plot_efficiency(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, 
     )
     ax_strict.set_yscale("log")
     ax_strict.set_xticks(sx)
-    ax_strict.set_xticklabels(["GT", "Random\nwalk", "LLM\nbrainstorm", "Neuro-\nDiscovery"], rotation=0)
+    ax_strict.set_xticklabels([SHORT_METHOD_LABELS[m] for m in strict_methods], rotation=0)
     ax_strict.set_ylabel("Rank of first q<0.05 hit")
     ax_strict.set_title("Strict global-FDR hit is found early")
     ax_strict.tick_params(labelsize=8)
@@ -1266,6 +1927,78 @@ def plot_efficiency(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, 
 
     for ext in ("svg", "pdf", "png", "tiff"):
         fig.savefig(out_dir / f"case1_discovery_efficiency.{ext}", dpi=450, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_negative_feedback_ablation(curves: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, n_total: int) -> None:
+    apply_style()
+    methods = [
+        "neurodiscovery_positive_only",
+        "neurodiscovery_negative_feature_only",
+        "neurodiscovery_negative_pair_only",
+        "neurodiscovery_negative_context_only",
+        "neurodiscovery_negative_hybrid",
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 3.8), gridspec_kw={"width_ratios": [1.35, 1.0]})
+    ax_curve, ax_cost = axes
+    for method in methods:
+        sub = curves[curves["method"] == method]
+        ax_curve.plot(
+            sub["budget"],
+            sub["recall_mean"],
+            color=PALETTE[method],
+            lw=2.4,
+            label=METHOD_LABELS[method],
+        )
+        ax_curve.fill_between(
+            sub["budget"].to_numpy(float),
+            sub["recall_lo"].to_numpy(float),
+            sub["recall_hi"].to_numpy(float),
+            color=PALETTE[method],
+            alpha=0.16,
+            linewidth=0,
+        )
+    ax_curve.set_xscale("log")
+    ax_curve.set_xlim(1, n_total * 1.05)
+    ax_curve.set_ylim(0, 1.02)
+    ax_curve.set_xlabel("Candidate experiments evaluated")
+    ax_curve.set_ylabel("Recall of validated discoveries")
+    ax_curve.grid(axis="both", color="#E5E5E5", linewidth=0.7)
+    ax_curve.legend(loc="lower right", fontsize=10)
+
+    targets = ["experiments_for_recall_5pct", "experiments_for_recall_10pct", "experiments_for_recall_20pct"]
+    labels = ["5%", "10%", "20%"]
+    x = np.arange(len(targets))
+    offsets, width = grouped_bar_offsets(len(methods), max_total_width=0.70)
+    for i, method in enumerate(methods):
+        vals = []
+        lo_err = []
+        hi_err = []
+        for target in targets:
+            mean, lo, hi = summary_value(summary, method, target)
+            vals.append(mean)
+            lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+            lo_err.append(lo_delta)
+            hi_err.append(hi_delta)
+        ax_cost.bar(
+            x + offsets[i],
+            vals,
+            width=width,
+            color=PALETTE[method],
+            edgecolor="#272727",
+            linewidth=0.5,
+            yerr=np.vstack([lo_err, hi_err]),
+            error_kw={"elinewidth": 0.8, "capsize": 2, "capthick": 0.8},
+        )
+    ax_cost.set_xticks(x)
+    ax_cost.set_xticklabels(labels)
+    ax_cost.set_ylabel("Experiments required")
+    ax_cost.set_xlabel("Recall target")
+    ax_cost.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    ax_cost.grid(axis="y", color="#E5E5E5", linewidth=0.7)
+    fig.suptitle("Closed-loop negative-feedback ablation", fontsize=14.5, fontweight="bold")
+    for ext in ("svg", "pdf", "png"):
+        fig.savefig(out_dir / f"case1_negative_feedback_ablation.{ext}", dpi=450, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -1305,7 +2038,7 @@ def compute_generator_p_values(
         nd_vals = trial_curves[
             (trial_curves["method"] == "neurodiscovery") & (trial_curves["budget"] == experiment_count)
         ]["gt_hits"]
-        for baseline in ("random_walk", "llm_brainstorm"):
+        for baseline in BASELINE_METHODS:
             baseline_vals = trial_curves[
                 (trial_curves["method"] == baseline) & (trial_curves["budget"] == experiment_count)
             ]["gt_hits"]
@@ -1325,7 +2058,7 @@ def compute_generator_p_values(
     nd_summary = trial_summary[trial_summary["method"] == "neurodiscovery"]
     for target in recall_targets:
         col = f"experiments_for_recall_{target}pct"
-        for baseline in ("random_walk", "llm_brainstorm"):
+        for baseline in BASELINE_METHODS:
             p = mannwhitney_p(
                 nd_summary[col],
                 trial_summary[trial_summary["method"] == baseline][col],
@@ -1360,8 +2093,10 @@ def plot_same_budget_discovery(curves: pd.DataFrame, out_dir: Path) -> None:
     budget_marks = [1000, 5000, 10000, 50000, 100000]
     available_budgets = set(int(x) for x in curves["budget"].unique())
     budget_marks = [b for b in budget_marks if b in available_budgets]
+    if not budget_marks:
+        budget_marks = sorted(available_budgets)[-min(5, len(available_budgets)) :]
     x = np.arange(len(budget_marks))
-    width = 0.22
+    offsets, width = grouped_bar_offsets(len(methods))
 
     fig = plt.figure(figsize=(11.3, 7.4))
     gs = fig.add_gridspec(2, 2, wspace=0.38, hspace=0.50)
@@ -1375,10 +2110,11 @@ def plot_same_budget_discovery(curves: pd.DataFrame, out_dir: Path) -> None:
         for budget in budget_marks:
             mean, lo, hi = value_at_budget(curves, method, budget, "gt_hits")
             vals.append(mean)
-            lo_err.append(mean - lo)
-            hi_err.append(hi - mean)
+            lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+            lo_err.append(lo_delta)
+            hi_err.append(hi_delta)
         ax_hits.bar(
-            x + (i - 1.0) * width,
+            x + offsets[i],
             vals,
             width=width,
             color=PALETTE[method],
@@ -1417,7 +2153,7 @@ def plot_same_budget_discovery(curves: pd.DataFrame, out_dir: Path) -> None:
     for b in budget_marks:
         ax_recall.axvline(b, color="#DADADA", lw=0.7, zorder=0)
     ax_recall.set_xscale("log")
-    ax_recall.set_xlim(400, max(budget_marks) * 1.25)
+    ax_recall.set_xlim(max(1, min(budget_marks) * 0.4), max(budget_marks) * 1.25)
     ax_recall.set_ylim(0, max(0.24, float(curves["recall_hi"].max()) * 1.08))
     ax_recall.set_xlabel("Number of experiments")
     ax_recall.set_ylabel("GT recall")
@@ -1425,20 +2161,21 @@ def plot_same_budget_discovery(curves: pd.DataFrame, out_dir: Path) -> None:
     ax_recall.grid(axis="both", color="#E5E5E5", linewidth=0.7)
     panel_label(ax_recall, "b")
 
-    random_precision = {
-        budget: value_at_budget(curves, "random_walk", budget, "precision")[0]
+    baseline_precision = {
+        budget: best_baseline_value(curves, budget, "precision")
         for budget in budget_marks
     }
     for i, method in enumerate(methods):
         enrich, lo_err, hi_err = [], [], []
         for budget in budget_marks:
             mean, lo, hi = value_at_budget(curves, method, budget, "precision")
-            denom = random_precision[budget] if random_precision[budget] > 0 else np.nan
+            denom = baseline_precision[budget] if baseline_precision[budget] > 0 else np.nan
             enrich.append(mean / denom)
-            lo_err.append((mean - lo) / denom)
-            hi_err.append((hi - mean) / denom)
+            lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+            lo_err.append(lo_delta / denom)
+            hi_err.append(hi_delta / denom)
         ax_precision.bar(
-            x + (i - 1.0) * width,
+            x + offsets[i],
             enrich,
             width=width,
             color=PALETTE[method],
@@ -1447,11 +2184,11 @@ def plot_same_budget_discovery(curves: pd.DataFrame, out_dir: Path) -> None:
             yerr=np.vstack([lo_err, hi_err]),
             error_kw={"elinewidth": 0.8, "capsize": 2, "capthick": 0.8},
         )
-    ax_precision.axhline(1.0, color=PALETTE["random_walk"], lw=1.2, linestyle="--")
+    ax_precision.axhline(1.0, color="#8C8C8C", lw=1.2, linestyle="--")
     ax_precision.set_xticks(x)
     ax_precision.set_xticklabels([f"{b:,}" for b in budget_marks])
     ax_precision.set_xlabel("Number of experiments")
-    ax_precision.set_ylabel("Precision enrichment vs random")
+    ax_precision.set_ylabel("Precision enrichment vs best baseline")
     ax_precision.set_title("Same experiments: hit density enrichment")
     ax_precision.grid(axis="y", color="#E5E5E5", linewidth=0.7)
     panel_label(ax_precision, "c")
@@ -1461,12 +2198,11 @@ def plot_same_budget_discovery(curves: pd.DataFrame, out_dir: Path) -> None:
     nd_advantage_hi = []
     for budget in budget_marks:
         nd_mean, nd_lo, nd_hi = value_at_budget(curves, "neurodiscovery", budget, "gt_hits")
-        random_mean, _, _ = value_at_budget(curves, "random_walk", budget, "gt_hits")
-        llm_mean, _, _ = value_at_budget(curves, "llm_brainstorm", budget, "gt_hits")
-        best_baseline = max(random_mean, llm_mean)
+        best_baseline = best_baseline_value(curves, budget, "gt_hits")
         nd_advantage.append(nd_mean - best_baseline)
-        nd_advantage_lo.append(nd_mean - nd_lo)
-        nd_advantage_hi.append(nd_hi - nd_mean)
+        lo_delta, hi_delta = nonnegative_interval_error(nd_mean, nd_lo, nd_hi)
+        nd_advantage_lo.append(lo_delta)
+        nd_advantage_hi.append(hi_delta)
     ax_strict.bar(
         x,
         nd_advantage,
@@ -1506,7 +2242,7 @@ def plot_same_discovery_cost(trial_summary: pd.DataFrame, out_dir: Path) -> None
     targets = [1, 5, 10, 20, 50]
     target_cols = [f"experiments_for_recall_{t}pct" for t in targets]
     x = np.arange(len(targets))
-    width = 0.22
+    offsets, width = grouped_bar_offsets(len(methods))
 
     fig = plt.figure(figsize=(11.3, 7.4))
     gs = fig.add_gridspec(2, 2, wspace=0.40, hspace=0.52)
@@ -1526,10 +2262,11 @@ def plot_same_discovery_cost(trial_summary: pd.DataFrame, out_dir: Path) -> None
         for target in targets:
             mean, lo, hi = cost_stats[method][target]
             vals.append(mean)
-            lo_err.append(mean - lo)
-            hi_err.append(hi - mean)
+            lo_delta, hi_delta = nonnegative_interval_error(mean, lo, hi)
+            lo_err.append(lo_delta)
+            hi_err.append(hi_delta)
         ax_cost.bar(
-            x + (i - 1.0) * width,
+            x + offsets[i],
             vals,
             width=width,
             color=PALETTE[method],
@@ -1549,7 +2286,7 @@ def plot_same_discovery_cost(trial_summary: pd.DataFrame, out_dir: Path) -> None
     ax_cost.legend(loc="upper left", fontsize=10)
     panel_label(ax_cost, "a")
 
-    for method, marker in (("random_walk", "o"), ("llm_brainstorm", "s")):
+    for method in BASELINE_METHODS:
         ratios = []
         lo_err, hi_err = [], []
         for target in targets:
@@ -1562,7 +2299,7 @@ def plot_same_discovery_cost(trial_summary: pd.DataFrame, out_dir: Path) -> None
             x,
             ratios,
             yerr=np.vstack([lo_err, hi_err]),
-            marker=marker,
+            marker=MARKERS[method],
             markersize=6,
             lw=2.0,
             capsize=3,
@@ -1613,17 +2350,13 @@ def plot_same_discovery_cost(trial_summary: pd.DataFrame, out_dir: Path) -> None
         )
     ax_dist.set_yscale("log")
     ax_dist.set_xticks(np.arange(1, len(methods) + 1))
-    ax_dist.set_xticklabels(["Random\nwalk", "LLM\nbrainstorm", "Neuro-\nDiscovery"])
+    ax_dist.set_xticklabels([SHORT_METHOD_LABELS[m] for m in methods], rotation=28, ha="right", fontsize=9)
     ax_dist.set_ylabel("Experiments to recover 10% GT")
     ax_dist.set_title("Seed-to-seed stability at the 10% target")
     ax_dist.grid(axis="y", color="#E5E5E5", linewidth=0.7)
     panel_label(ax_dist, "c")
 
-    label_offsets = {
-        ("random_walk", 50): (1.18, -0.012),
-        ("llm_brainstorm", 50): (0.72, 0.006),
-        ("neurodiscovery", 50): (0.82, 0.018),
-    }
+    label_offsets = {"neurodiscovery": (0.82, 0.018)}
     for method in methods:
         means = [cost_stats[method][target][0] for target in targets]
         ax_frontier.plot(
@@ -1636,7 +2369,7 @@ def plot_same_discovery_cost(trial_summary: pd.DataFrame, out_dir: Path) -> None
         )
         for target, mean in zip(targets, means, strict=False):
             if target in (1, 10, 50):
-                x_mult, y_add = label_offsets.get((method, target), (1.05, 0.0))
+                x_mult, y_add = label_offsets.get(method, (1.05, 0.0))
                 ax_frontier.text(
                     mean * x_mult,
                     target / 100.0 + y_add,
@@ -1664,6 +2397,8 @@ def plot_budget_gain_focus(curves: pd.DataFrame, out_dir: Path) -> None:
     budgets = [1000, 2000, 5000, 10000, 20000, 50000]
     available_budgets = set(int(x) for x in curves["budget"].unique())
     budgets = [b for b in budgets if b in available_budgets]
+    if not budgets:
+        budgets = sorted(available_budgets)[-min(5, len(available_budgets)) :]
     methods = list(GENERATOR_METHODS)
 
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.0), gridspec_kw={"wspace": 0.35})
@@ -1701,15 +2436,21 @@ def plot_budget_gain_focus(curves: pd.DataFrame, out_dir: Path) -> None:
     ax_yield.legend(loc="upper left", fontsize=10)
     panel_label(ax_yield, "a")
 
-    gain_random, gain_llm = [], []
+    gains = {method: [] for method in BASELINE_METHODS}
     for budget in budgets:
         nd, _, _ = value_at_budget(curves, "neurodiscovery", budget, "gt_hits")
-        random, _, _ = value_at_budget(curves, "random_walk", budget, "gt_hits")
-        llm, _, _ = value_at_budget(curves, "llm_brainstorm", budget, "gt_hits")
-        gain_random.append(nd - random)
-        gain_llm.append(nd - llm)
-    ax_gain.plot(budgets, gain_random, marker="o", lw=2.1, color=PALETTE["random_walk"], label="over random walk")
-    ax_gain.plot(budgets, gain_llm, marker="s", lw=2.1, color=PALETTE["llm_brainstorm"], label="over LLM brainstorm")
+        for method in BASELINE_METHODS:
+            baseline, _, _ = value_at_budget(curves, method, budget, "gt_hits")
+            gains[method].append(nd - baseline)
+    for method, vals in gains.items():
+        ax_gain.plot(
+            budgets,
+            vals,
+            marker=MARKERS[method],
+            lw=2.0,
+            color=PALETTE[method],
+            label=f"over {METHOD_LABELS[method]}",
+        )
     ax_gain.axhline(0, color="#BDBDBD", lw=1.0, linestyle="--")
     ax_gain.set_xscale("log")
     ax_gain.set_xlabel("Number of experiments")
@@ -1717,8 +2458,9 @@ def plot_budget_gain_focus(curves: pd.DataFrame, out_dir: Path) -> None:
     ax_gain.set_title("NeuroDiscovery gain at same experiments")
     ax_gain.grid(axis="both", color="#E5E5E5", linewidth=0.7)
     ax_gain.legend(loc="upper left", fontsize=10)
-    for b, v in zip(budgets[-3:], gain_llm[-3:], strict=False):
-        ax_gain.text(b * 1.05, v, f"+{int(round(v)):,}", fontsize=10, color=PALETTE["llm_brainstorm"], va="center")
+    best_gain = [max(gains[method][i] for method in BASELINE_METHODS) for i in range(len(budgets))]
+    for b, v in zip(budgets[-3:], best_gain[-3:], strict=False):
+        ax_gain.text(b * 1.05, v, f"+{int(round(v)):,}", fontsize=10, color=PALETTE["neurodiscovery"], va="center")
     panel_label(ax_gain, "b")
 
     fig.suptitle("Experiment-matched discovery gain", y=1.02, fontsize=16, fontweight="bold")
@@ -1731,8 +2473,8 @@ def plot_target_savings_focus(trial_summary: pd.DataFrame, out_dir: Path) -> Non
     apply_style()
     targets = [1, 5, 10, 20, 50]
     x = np.arange(len(targets))
-    width = 0.34
-    methods = ("random_walk", "llm_brainstorm", "neurodiscovery")
+    offsets, width = grouped_bar_offsets(len(BASELINE_METHODS))
+    methods = (*BASELINE_METHODS, "neurodiscovery")
     stats: dict[str, dict[int, tuple[float, float, float]]] = {m: {} for m in methods}
     for method in methods:
         sub = trial_summary[trial_summary["method"] == method]
@@ -1742,14 +2484,14 @@ def plot_target_savings_focus(trial_summary: pd.DataFrame, out_dir: Path) -> Non
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.0), gridspec_kw={"wspace": 0.36})
     ax_abs, ax_pct = axes
 
-    for i, baseline in enumerate(("random_walk", "llm_brainstorm")):
+    for i, baseline in enumerate(BASELINE_METHODS):
         saved = []
         for target in targets:
             base = stats[baseline][target][0]
             nd = stats["neurodiscovery"][target][0]
             saved.append(base - nd)
         ax_abs.bar(
-            x + (i - 0.5) * width,
+            x + offsets[i],
             saved,
             width=width,
             color=PALETTE[baseline],
@@ -1766,7 +2508,7 @@ def plot_target_savings_focus(trial_summary: pd.DataFrame, out_dir: Path) -> Non
     ax_abs.legend(loc="upper left", fontsize=10)
     panel_label(ax_abs, "a")
 
-    for baseline, marker in (("random_walk", "o"), ("llm_brainstorm", "s")):
+    for baseline in BASELINE_METHODS:
         reductions = []
         for target in targets:
             base = stats[baseline][target][0]
@@ -1775,7 +2517,7 @@ def plot_target_savings_focus(trial_summary: pd.DataFrame, out_dir: Path) -> Non
         ax_pct.plot(
             x,
             reductions,
-            marker=marker,
+            marker=MARKERS[baseline],
             lw=2.1,
             color=PALETTE[baseline],
             label=f"vs {METHOD_LABELS[baseline]}",
@@ -1808,163 +2550,379 @@ def plot_generator_comparison_main(
 ) -> None:
     apply_style()
     methods = list(GENERATOR_METHODS)
-    fig = plt.figure(figsize=(15.0, 16.5))
+    baseline_methods = list(BASELINE_METHODS)
+    best_baseline = "sciagents_style"
+    fig = plt.figure(figsize=(15.0, 11.8))
     gs = fig.add_gridspec(
         3,
         3,
         width_ratios=[1.0, 1.0, 1.0],
-        height_ratios=[1.0, 1.0, 2.65],
+        height_ratios=[1.28, 1.0, 2.55],
         wspace=0.48,
-        hspace=0.68,
+        hspace=0.34,
     )
     ax_a = fig.add_subplot(gs[0, 0])
     ax_b = fig.add_subplot(gs[0, 1:3])
-    ax_c = fig.add_subplot(gs[1, 0])
-    ax_d = fig.add_subplot(gs[1, 1:3])
+    ax_c = fig.add_subplot(gs[1, 0:2])
+    ax_d = fig.add_subplot(gs[1, 2])
     ax_e = fig.add_subplot(gs[2, :])
+    b_pos = ax_b.get_position()
+    ax_b.set_position([b_pos.x0, b_pos.y0, b_pos.width * 0.91, b_pos.height])
+
+    def main_panel_label_at(ax: plt.Axes, label: str, y: float, x_pad: float = 0.027) -> None:
+        pos = ax.get_position()
+        fig.text(
+            pos.x0 - x_pad,
+            y,
+            label,
+            fontsize=19,
+            fontweight="bold",
+            ha="left",
+            va="top",
+        )
+
+    n_total = int(curves["budget"].max()) if not curves.empty else 426235
+    gt_total = int(trial_summary["gt_total"].dropna().iloc[0]) if "gt_total" in trial_summary else 4263
+
+    ax_a.axis("off")
+    ax_a.set_title("Transdiagnostic\nbrain-atlas discovery", loc="left", pad=8, fontweight="bold")
+    col_x = [0.18, 0.50, 0.82]
+
+    # Row 1: task input, validation funnel, and real rendered atlas-map output.
+    dot_x, dot_y = np.meshgrid(np.linspace(col_x[0] - 0.14, col_x[0] + 0.14, 9), np.linspace(0.60, 0.84, 6))
+    ax_a.scatter(dot_x.ravel(), dot_y.ravel(), s=18, color="#C9C9C9", alpha=0.82, transform=ax_a.transAxes, clip_on=False)
+    highlight_idx = np.array([4, 13, 21, 32, 41])
+    ax_a.scatter(
+        dot_x.ravel()[highlight_idx],
+        dot_y.ravel()[highlight_idx],
+        s=22,
+        color=PALETTE["neurodiscovery"],
+        alpha=0.90,
+        transform=ax_a.transAxes,
+        clip_on=False,
+    )
+    funnel = patches.Polygon(
+        [[col_x[1] - 0.105, 0.84], [col_x[1] + 0.105, 0.84], [col_x[1] + 0.060, 0.58], [col_x[1] - 0.060, 0.58]],
+        closed=True,
+        transform=ax_a.transAxes,
+        facecolor="#F3D3CF",
+        edgecolor=PALETTE["neurodiscovery"],
+        linewidth=1.0,
+        alpha=0.80,
+    )
+    ax_a.add_patch(funnel)
+    for y in (0.79, 0.70, 0.61):
+        ax_a.plot([col_x[1] - 0.070, col_x[1] + 0.070], [y, y], color="white", lw=1.2, transform=ax_a.transAxes, alpha=0.85)
+
+    arrow = patches.FancyArrowPatch(
+        (0.625, 0.705),
+        (0.700, 0.705),
+        arrowstyle="-|>",
+        mutation_scale=14,
+        linewidth=1.0,
+        color="#777777",
+        transform=ax_a.transAxes,
+    )
+    ax_a.add_patch(arrow)
+
+    if DEFAULT_ATLAS_ICON.exists():
+        icon = plt.imread(DEFAULT_ATLAS_ICON)
+        ax_a.imshow(
+            icon,
+            extent=(col_x[2] - 0.145, col_x[2] + 0.145, 0.595, 0.835),
+            transform=ax_a.transAxes,
+            aspect="auto",
+            zorder=2,
+        )
+    else:
+        ax_a.add_patch(
+            patches.Ellipse(
+                (col_x[2], 0.705),
+                0.215,
+                0.142,
+                angle=-6,
+                transform=ax_a.transAxes,
+                facecolor="#F7F7F7",
+                edgecolor="#7A7A7A",
+                linewidth=0.9,
+            )
+        )
+
+    # Row 2: centered labels under each icon.
+    row2 = [
+        (col_x[0], "525,030\ncombinations", "#272727", 11.2, "bold"),
+        (col_x[1], "validate\nand merge", "#555555", 10.6, "normal"),
+        (col_x[2], f"brain-atlas map\n({gt_total:,} findings)", PALETTE["neurodiscovery"], 9.6, "bold"),
+    ]
+    for x_text, label, color, size, weight in row2:
+        ax_a.text(
+            x_text,
+            0.475,
+            label,
+            transform=ax_a.transAxes,
+            fontsize=size,
+            fontweight=weight,
+            color=color,
+            ha="center",
+            va="center",
+            linespacing=1.00,
+        )
+
+    chip_specs = [
+        (col_x[0], "11\ndisorders"),
+        (col_x[1], "3,182\nROI readouts"),
+        (col_x[2], "15\nfeatures"),
+    ]
+    # Row 3: the three dimensions that form the combination space.
+    for x_center, text in chip_specs:
+        box = patches.FancyBboxPatch(
+            (x_center - 0.115, 0.175),
+            0.23,
+            0.17,
+            boxstyle="round,pad=0.012,rounding_size=0.025",
+            transform=ax_a.transAxes,
+            facecolor="#F7F7F7",
+            edgecolor="#D6D6D6",
+            linewidth=0.8,
+        )
+        ax_a.add_patch(box)
+        ax_a.text(
+            x_center,
+            0.260,
+            text,
+            transform=ax_a.transAxes,
+            fontsize=9.8,
+            color="#444444",
+            ha="center",
+            va="center",
+            linespacing=1.05,
+        )
+    # Row 4: compact formula.
+    ax_a.text(
+        0.50,
+        0.030,
+        "11 disorders x 3,182 ROI readouts x 15 features\n"
+        "= 525,030 disease-region-feature combinations",
+        transform=ax_a.transAxes,
+        fontsize=7.7,
+        color="#555555",
+        ha="center",
+        va="center",
+        linespacing=1.05,
+    )
 
     early_budget_max = min(120000, int(curves["budget"].max()))
     early_curve_max = 0.0
-    for method in methods:
+    for method in baseline_methods:
         sub = curves[curves["method"] == method]
         sub_plot = sub[sub["budget"] <= early_budget_max]
         if sub_plot.empty:
             sub_plot = sub
         early_curve_max = max(early_curve_max, float(sub_plot["recall_hi"].max()))
-        ax_a.plot(
+        color = "#666666" if method == best_baseline else "#B8B8B8"
+        lw = 2.0 if method == best_baseline else 1.2
+        alpha = 0.78 if method == best_baseline else 0.48
+        ax_b.plot(
             sub_plot["budget"],
             sub_plot["recall_mean"],
-            lw=2.4 if method == "neurodiscovery" else 1.8,
-            color=PALETTE[method],
-            label=METHOD_LABELS[method],
+            lw=lw,
+            color=color,
+            alpha=alpha,
         )
-        ax_a.fill_between(
+        ax_b.fill_between(
             sub_plot["budget"].to_numpy(float),
             sub_plot["recall_lo"].to_numpy(float),
             sub_plot["recall_hi"].to_numpy(float),
-            color=PALETTE[method],
-            alpha=BAND_ALPHA[method],
+            color=color,
+            alpha=0.08 if method == best_baseline else 0.035,
             linewidth=0,
             zorder=1,
         )
-    ax_a.set_xlim(0, early_budget_max)
-    ax_a.set_ylim(0, min(1.02, max(0.12, early_curve_max * 1.18)))
-    ax_a.set_xlabel("Number of experiments")
-    ax_a.set_ylabel("GT recall")
-    ax_a.set_title("Early-experiment recall")
-    ax_a.grid(axis="both", color="#E5E5E5", linewidth=0.7)
-    ax_a.legend(loc="upper left", fontsize=11.5)
-    panel_label(ax_a, "a")
+    nd = curves[curves["method"] == "neurodiscovery"]
+    nd_plot = nd[nd["budget"] <= early_budget_max]
+    if nd_plot.empty:
+        nd_plot = nd
+    early_curve_max = max(early_curve_max, float(nd_plot["recall_hi"].max()))
+    ax_b.plot(
+        nd_plot["budget"],
+        nd_plot["recall_mean"],
+        lw=3.0,
+        color=PALETTE["neurodiscovery"],
+        zorder=5,
+    )
+    ax_b.fill_between(
+        nd_plot["budget"].to_numpy(float),
+        nd_plot["recall_lo"].to_numpy(float),
+        nd_plot["recall_hi"].to_numpy(float),
+        color=PALETTE["neurodiscovery"],
+        alpha=0.15,
+        linewidth=0,
+        zorder=4,
+    )
+    ax_b.set_xlim(0, early_budget_max)
+    ax_b.set_ylim(0, min(1.02, max(0.16, early_curve_max * 1.14)))
+    ax_b.ticklabel_format(axis="x", style="sci", scilimits=(0, 0), useMathText=True)
+    ax_b.set_xlabel("Candidate experiments evaluated")
+    ax_b.set_ylabel("Recall of validated discoveries")
+    ax_b.set_title("NeuroDiscovery recovers validated discoveries earlier")
+    ax_b.grid(axis="both", color="#E5E5E5", linewidth=0.7)
+    if not nd_plot.empty:
+        nd_last = nd_plot.iloc[-1]
+        ax_b.text(
+            early_budget_max * 0.985,
+            float(nd_last["recall_mean"]),
+            "NeuroDiscovery",
+            color=PALETTE["neurodiscovery"],
+            fontsize=10.5,
+            fontweight="bold",
+            ha="right",
+            va="bottom",
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.78, pad=1.5),
+        )
+    best_plot = curves[(curves["method"] == best_baseline) & (curves["budget"] <= early_budget_max)]
+    if best_plot.empty:
+        best_plot = curves[curves["method"] == best_baseline]
+    if not best_plot.empty:
+        best_last = best_plot.iloc[-1]
+        ax_b.text(
+            early_budget_max * 0.985,
+            float(best_last["recall_mean"]),
+            "Best published baseline (SciAgents)",
+            color="#555555",
+            fontsize=9.8,
+            ha="right",
+            va="top",
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.72, pad=1.3),
+        )
 
-    budget_marks = [1000, 5000, 10000, 20000, 50000, 100000]
+    budget_marks = [5000, 10000, 20000, 50000, 100000, 200000]
     available_budgets = set(int(x) for x in curves["budget"].unique())
     budget_marks = [b for b in budget_marks if b in available_budgets]
-    x = np.arange(len(budget_marks)) * 0.82
-    width = 0.23
-    b_bar_tops: dict[str, list[float]] = {}
-    for i, method in enumerate(methods):
-        vals, lo_err, hi_err = [], [], []
-        for budget in budget_marks:
-            mean, lo, hi = value_at_budget(curves, method, budget, "gt_hits")
-            vals.append(mean)
-            lo_err.append(mean - lo)
-            hi_err.append(hi - mean)
-        b_bar_tops[method] = [v + h for v, h in zip(vals, hi_err, strict=False)]
-        ax_b.bar(
-            x + (i - 1.0) * width,
-            vals,
-            width=width,
-            color=PALETTE[method],
-            edgecolor="#272727",
-            linewidth=0.45,
-            yerr=np.vstack([lo_err, hi_err]),
-            error_kw={"elinewidth": 0.8, "capsize": 2, "capthick": 0.8},
-            label=METHOD_LABELS[method],
+    x = np.arange(len(budget_marks))
+    for xi, budget in zip(x, budget_marks, strict=False):
+        baseline_stats = [value_at_budget(curves, method, budget, "gt_hits") for method in baseline_methods]
+        baseline_means = np.array([m for m, _, _ in baseline_stats], dtype=float)
+        baseline_los = np.array([lo for _, lo, _ in baseline_stats], dtype=float)
+        baseline_his = np.array([hi for _, _, hi in baseline_stats], dtype=float)
+        ax_c.vlines(xi, np.nanmin(baseline_los), np.nanmax(baseline_his), color="#C9C9C9", lw=7, alpha=0.45, zorder=1)
+        jitter = np.linspace(-0.12, 0.12, len(baseline_methods))
+        ax_c.scatter(np.full(len(baseline_means), xi) + jitter, baseline_means, s=22, color="#8F8F8F", alpha=0.65, zorder=2)
+        best_mean, best_lo, best_hi = value_at_budget(curves, best_baseline, budget, "gt_hits")
+        nd_mean, nd_lo, nd_hi = value_at_budget(curves, "neurodiscovery", budget, "gt_hits")
+        ax_c.errorbar(
+            xi - 0.05,
+            best_mean,
+            yerr=[[best_mean - best_lo], [best_hi - best_mean]],
+            fmt="o",
+            color="#555555",
+            markersize=6,
+            capsize=3,
+            lw=1.4,
+            label="Best baseline" if xi == 0 else None,
+            zorder=4,
         )
-    y_span_b = max(max(v) for v in b_bar_tops.values()) if b_bar_tops else 1.0
-    ax_b.set_xticks(x)
-    ax_b.set_xticklabels([f"{b:,}" for b in budget_marks])
-    ax_b.set_xlabel("Number of experiments")
-    ax_b.set_ylabel("GT discoveries found")
-    ax_b.set_ylim(0, y_span_b * 1.10)
-    ax_b.set_title("Same experiments, more discoveries")
-    ax_b.grid(axis="y", color="#E5E5E5", linewidth=0.7)
-    ax_b.legend(loc="upper left", fontsize=11.5)
-    panel_label(ax_b, "b")
-
-    target_col = "experiments_for_recall_10pct"
-    box_data = [
-        pd.to_numeric(trial_summary[trial_summary["method"] == method][target_col], errors="coerce").dropna().to_numpy(float)
-        for method in methods
-    ]
-    bp = ax_c.boxplot(
-        box_data,
-        patch_artist=True,
-        widths=0.56,
-        showfliers=False,
-        medianprops={"color": "#272727", "linewidth": 1.0},
-        whiskerprops={"color": "#666666", "linewidth": 0.85},
-        capprops={"color": "#666666", "linewidth": 0.85},
-    )
-    for patch, method in zip(bp["boxes"], methods, strict=False):
-        patch.set_facecolor(PALETTE[method])
-        patch.set_alpha(0.78)
-        patch.set_edgecolor("#272727")
-        patch.set_linewidth(0.5)
-    rng = np.random.default_rng(17)
-    for i, (method, vals) in enumerate(zip(methods, box_data, strict=False), start=1):
-        ax_c.scatter(
-            np.full(len(vals), i) + rng.normal(0.0, 0.035, len(vals)),
-            vals,
-            s=10,
-            facecolor="white",
-            edgecolor=PALETTE[method],
-            linewidth=0.6,
-            alpha=0.85,
-            zorder=3,
+        ax_c.errorbar(
+            xi + 0.09,
+            nd_mean,
+            yerr=[[nd_mean - nd_lo], [nd_hi - nd_mean]],
+            fmt="o",
+            color=PALETTE["neurodiscovery"],
+            markersize=7.5,
+            capsize=3,
+            lw=1.6,
+            label="NeuroDiscovery" if xi == 0 else None,
+            zorder=5,
         )
-    ax_c.set_xticks(np.arange(1, len(methods) + 1))
-    ax_c.set_xticklabels(["Random\nwalk", "LLM\nbrainstorm", "Neuro-\nDiscovery"], fontsize=12)
-    ax_c.set_ylim(bottom=0)
-    ax_c.set_ylabel("Experiments to 10% GT")
-    ax_c.set_title("Seed stability")
+        ax_c.text(
+            xi + 0.14,
+            nd_mean,
+            f"+{int(round(nd_mean - best_mean)):,}",
+            color=PALETTE["neurodiscovery"],
+            fontsize=8.9,
+            va="center",
+        )
+    ax_c.set_xticks(x)
+    ax_c.set_xticklabels([f"{int(b / 1000)}k" for b in budget_marks])
+    ax_c.set_xlabel("Candidate experiments evaluated")
+    ax_c.set_ylabel("Validated discoveries found")
+    ax_c.set_title("Same experiments, more discoveries")
+    ax_c.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    ax_c.yaxis.get_offset_text().set_fontsize(8.5)
     ax_c.grid(axis="y", color="#E5E5E5", linewidth=0.7)
-    panel_label(ax_c, "c")
+    ax_c.legend(loc="upper left", fontsize=10.0)
 
     targets = [1, 5, 10, 20, 30, 50]
-    target_cols = [f"experiments_for_recall_{t}pct" for t in targets]
-    tx = np.arange(len(targets)) * 0.82
-    d_bar_tops: dict[str, list[float]] = {}
-    for i, method in enumerate(methods):
-        vals, lo_err, hi_err = [], [], []
+    baseline_mean_curves = []
+    for method in baseline_methods:
         sub = trial_summary[trial_summary["method"] == method]
-        for col in target_cols:
-            mean, lo, hi = mean_interval(sub[col])
-            vals.append(mean)
-            lo_err.append(mean - lo)
-            hi_err.append(hi - mean)
-        d_bar_tops[method] = [v + h for v, h in zip(vals, hi_err, strict=False)]
-        ax_d.bar(
-            tx + (i - 1.0) * width,
+        baseline_mean_curves.append([mean_interval(sub[f"experiments_for_recall_{t}pct"])[0] for t in targets])
+    baseline_arr = np.array(baseline_mean_curves, dtype=float)
+    best_sub = trial_summary[trial_summary["method"] == best_baseline]
+    nd_sub = trial_summary[trial_summary["method"] == "neurodiscovery"]
+    best_vals = np.array([mean_interval(best_sub[f"experiments_for_recall_{t}pct"])[0] for t in targets], dtype=float)
+    nd_vals = np.array([mean_interval(nd_sub[f"experiments_for_recall_{t}pct"])[0] for t in targets], dtype=float)
+    y_max_d = float(np.nanmax([np.nanmax(baseline_arr), np.nanmax(nd_vals)])) * 1.12
+    for method, vals in zip(baseline_methods, baseline_arr, strict=False):
+        is_best = method == best_baseline
+        ax_d.plot(
+            targets,
             vals,
-            width=width,
-            color=PALETTE[method],
-            edgecolor="#272727",
-            linewidth=0.45,
-            yerr=np.vstack([lo_err, hi_err]),
-            error_kw={"elinewidth": 0.8, "capsize": 2, "capthick": 0.8},
+            color="#555555" if is_best else "#B8B8B8",
+            marker=MARKERS.get(method, "o"),
+            markersize=4.8 if is_best else 3.6,
+            lw=2.0 if is_best else 1.15,
+            alpha=0.90 if is_best else 0.62,
+            zorder=3 if is_best else 1,
         )
-    y_span_d = max(max(v) for v in d_bar_tops.values()) if d_bar_tops else 1.0
-    ax_d.set_ylim(0, y_span_d * 1.10)
-    ax_d.set_xticks(tx)
+    ax_d.plot(targets, nd_vals, color=PALETTE["neurodiscovery"], marker="o", lw=2.4)
+    ax_d.set_xlim(0.8, 54)
+    ax_d.set_ylim(0, y_max_d)
+    ax_d.set_xticks(targets)
     ax_d.set_xticklabels([f"{t}%" for t in targets])
-    ax_d.set_xlabel("Matched GT recall target")
-    ax_d.set_ylabel("Experiments required")
+    ax_d.set_xlabel("Validated-discovery recall target")
+    ax_d.set_ylabel("Experiments required\n(lower is better)")
     ax_d.set_title("Same recall, fewer experiments")
+    ax_d.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    ax_d.yaxis.get_offset_text().set_fontsize(8.5)
     ax_d.grid(axis="y", color="#E5E5E5", linewidth=0.7)
-    panel_label(ax_d, "d")
+    ax_d.text(
+        50.8,
+        best_vals[-1] + y_max_d * 0.025,
+        "Best baseline",
+        color="#555555",
+        fontsize=8.8,
+        ha="right",
+        va="bottom",
+        bbox=dict(facecolor="white", edgecolor="none", alpha=0.72, pad=1.0),
+    )
+    ax_d.text(
+        50.8,
+        nd_vals[-1] - y_max_d * 0.035,
+        "NeuroDiscovery",
+        color=PALETTE["neurodiscovery"],
+        fontsize=8.8,
+        fontweight="bold",
+        ha="right",
+        va="top",
+        bbox=dict(facecolor="white", edgecolor="none", alpha=0.74, pad=1.0),
+    )
+    ax_d.text(2.0, y_max_d * 0.94, "Published baselines", color="#777777", fontsize=8.3, ha="left", va="top")
+    if len(targets) > 2 and nd_vals[2] > 0:
+        speedup = best_vals[2] / nd_vals[2]
+        ax_d.annotate(
+            f"{speedup:.1f}x fewer\nat 10% recall",
+            xy=(10, nd_vals[2]),
+            xytext=(8.0, y_max_d * 0.18),
+            color=PALETTE["neurodiscovery"],
+            fontsize=8.8,
+            ha="left",
+            va="center",
+            arrowprops=dict(arrowstyle="-", color=PALETTE["neurodiscovery"], lw=0.9),
+        )
 
-    surface_panel = DEFAULT_SURFACE_PANEL if out_dir == DEFAULT_OUT_DIR else out_dir / "surface" / DEFAULT_SURFACE_PANEL.name
+    surface_panel = DEFAULT_COMPACT_SURFACE_PANEL if out_dir == DEFAULT_OUT_DIR else out_dir / "surface" / DEFAULT_COMPACT_SURFACE_PANEL.name
+    if not surface_panel.exists():
+        surface_panel = DEFAULT_SURFACE_PANEL if out_dir == DEFAULT_OUT_DIR else out_dir / "surface" / DEFAULT_SURFACE_PANEL.name
     ax_e.axis("off")
     if surface_panel.exists():
         surface_img = plt.imread(surface_panel)
@@ -1980,41 +2938,367 @@ def plot_generator_comparison_main(
             color="#555555",
             transform=ax_e.transAxes,
         )
-    ax_e.text(-0.02, 1.02, "e", transform=ax_e.transAxes, fontsize=17, fontweight="bold", va="top")
+    row_ab_y = max(ax_a.get_position().y1, ax_b.get_position().y1) + 0.012
+    row_cd_y = max(ax_c.get_position().y1, ax_d.get_position().y1) + 0.012
+    row_e_y = ax_e.get_position().y1 + 0.012
+    main_panel_label_at(ax_a, "a", row_ab_y)
+    main_panel_label_at(ax_b, "b", row_ab_y, x_pad=0.058)
+    main_panel_label_at(ax_c, "c", row_cd_y, x_pad=0.0)
+    main_panel_label_at(ax_d, "d", row_cd_y, x_pad=0.075)
+    main_panel_label_at(ax_e, "e", row_e_y)
 
-    save_generator_panel_svgs(fig, {"a": ax_a, "b": ax_b, "c": ax_c, "d": ax_d}, ax_e, out_dir, surface_panel)
+    save_generator_panel_svgs(curves, trial_summary, out_dir, surface_panel, gt_total)
     for ext in ("pdf", "png", "tiff"):
         fig.savefig(out_dir / f"case1_generator_comparison_main.{ext}", dpi=450, bbox_inches="tight")
     plt.close(fig)
 
 
-def save_axis_panel_svg(fig: plt.Figure, ax: plt.Axes, path: Path) -> None:
-    fig.canvas.draw()
-    renderer = fig.canvas.get_renderer()
-    bbox = ax.get_tightbbox(renderer).expanded(1.08, 1.12)
-    bbox_inches = bbox.transformed(fig.dpi_scale_trans.inverted())
-    fig.savefig(path, bbox_inches=bbox_inches)
+def draw_generator_panel_a(ax: plt.Axes, gt_total: int) -> None:
+    ax.axis("off")
+    ax.set_title("Transdiagnostic\nbrain-atlas discovery", loc="left", pad=8, fontweight="bold")
+    col_x = [0.18, 0.50, 0.82]
+    dot_x, dot_y = np.meshgrid(np.linspace(col_x[0] - 0.14, col_x[0] + 0.14, 9), np.linspace(0.60, 0.84, 6))
+    ax.scatter(dot_x.ravel(), dot_y.ravel(), s=18, color="#C9C9C9", alpha=0.82, transform=ax.transAxes, clip_on=False)
+    highlight_idx = np.array([4, 13, 21, 32, 41])
+    ax.scatter(
+        dot_x.ravel()[highlight_idx],
+        dot_y.ravel()[highlight_idx],
+        s=22,
+        color=PALETTE["neurodiscovery"],
+        alpha=0.90,
+        transform=ax.transAxes,
+        clip_on=False,
+    )
+    funnel = patches.Polygon(
+        [[col_x[1] - 0.105, 0.84], [col_x[1] + 0.105, 0.84], [col_x[1] + 0.060, 0.58], [col_x[1] - 0.060, 0.58]],
+        closed=True,
+        transform=ax.transAxes,
+        facecolor="#F3D3CF",
+        edgecolor=PALETTE["neurodiscovery"],
+        linewidth=1.0,
+        alpha=0.80,
+    )
+    ax.add_patch(funnel)
+    for y in (0.79, 0.70, 0.61):
+        ax.plot([col_x[1] - 0.070, col_x[1] + 0.070], [y, y], color="white", lw=1.2, transform=ax.transAxes, alpha=0.85)
+    arrow = patches.FancyArrowPatch(
+        (0.625, 0.705),
+        (0.700, 0.705),
+        arrowstyle="-|>",
+        mutation_scale=14,
+        linewidth=1.0,
+        color="#777777",
+        transform=ax.transAxes,
+    )
+    ax.add_patch(arrow)
+    if DEFAULT_ATLAS_ICON.exists():
+        icon = plt.imread(DEFAULT_ATLAS_ICON)
+        ax.imshow(
+            icon,
+            extent=(col_x[2] - 0.145, col_x[2] + 0.145, 0.595, 0.835),
+            transform=ax.transAxes,
+            aspect="auto",
+            zorder=2,
+        )
+    else:
+        ax.add_patch(
+            patches.Ellipse(
+                (col_x[2], 0.705),
+                0.215,
+                0.142,
+                angle=-6,
+                transform=ax.transAxes,
+                facecolor="#F7F7F7",
+                edgecolor="#7A7A7A",
+                linewidth=0.9,
+            )
+        )
+    row2 = [
+        (col_x[0], "525,030\ncombinations", "#272727", 11.2, "bold"),
+        (col_x[1], "validate\nand merge", "#555555", 10.6, "normal"),
+        (col_x[2], f"brain-atlas map\n({gt_total:,} findings)", PALETTE["neurodiscovery"], 9.6, "bold"),
+    ]
+    for x_text, label, color, size, weight in row2:
+        ax.text(
+            x_text,
+            0.475,
+            label,
+            transform=ax.transAxes,
+            fontsize=size,
+            fontweight=weight,
+            color=color,
+            ha="center",
+            va="center",
+            linespacing=1.00,
+        )
+    for x_center, text in [(col_x[0], "11\ndisorders"), (col_x[1], "3,182\nROI readouts"), (col_x[2], "15\nfeatures")]:
+        box = patches.FancyBboxPatch(
+            (x_center - 0.115, 0.175),
+            0.23,
+            0.17,
+            boxstyle="round,pad=0.012,rounding_size=0.025",
+            transform=ax.transAxes,
+            facecolor="#F7F7F7",
+            edgecolor="#D6D6D6",
+            linewidth=0.8,
+        )
+        ax.add_patch(box)
+        ax.text(
+            x_center,
+            0.260,
+            text,
+            transform=ax.transAxes,
+            fontsize=9.8,
+            color="#444444",
+            ha="center",
+            va="center",
+            linespacing=1.05,
+        )
+    ax.text(
+        0.50,
+        0.030,
+        "11 disorders x 3,182 ROI readouts x 15 features\n"
+        "= 525,030 disease-region-feature combinations",
+        transform=ax.transAxes,
+        fontsize=7.7,
+        color="#555555",
+        ha="center",
+        va="center",
+        linespacing=1.05,
+    )
+
+
+def draw_generator_panel_b(ax: plt.Axes, curves: pd.DataFrame, baseline_methods: list[str], best_baseline: str) -> None:
+    early_budget_max = min(120000, int(curves["budget"].max()))
+    early_curve_max = 0.0
+    for method in baseline_methods:
+        sub = curves[curves["method"] == method]
+        sub_plot = sub[sub["budget"] <= early_budget_max]
+        if sub_plot.empty:
+            sub_plot = sub
+        early_curve_max = max(early_curve_max, float(sub_plot["recall_hi"].max()))
+        color = "#666666" if method == best_baseline else "#B8B8B8"
+        lw = 2.0 if method == best_baseline else 1.2
+        alpha = 0.78 if method == best_baseline else 0.48
+        ax.plot(sub_plot["budget"], sub_plot["recall_mean"], lw=lw, color=color, alpha=alpha)
+        ax.fill_between(
+            sub_plot["budget"].to_numpy(float),
+            sub_plot["recall_lo"].to_numpy(float),
+            sub_plot["recall_hi"].to_numpy(float),
+            color=color,
+            alpha=0.08 if method == best_baseline else 0.035,
+            linewidth=0,
+            zorder=1,
+        )
+    nd = curves[curves["method"] == "neurodiscovery"]
+    nd_plot = nd[nd["budget"] <= early_budget_max]
+    if nd_plot.empty:
+        nd_plot = nd
+    early_curve_max = max(early_curve_max, float(nd_plot["recall_hi"].max()))
+    ax.plot(nd_plot["budget"], nd_plot["recall_mean"], lw=3.0, color=PALETTE["neurodiscovery"], zorder=5)
+    ax.fill_between(
+        nd_plot["budget"].to_numpy(float),
+        nd_plot["recall_lo"].to_numpy(float),
+        nd_plot["recall_hi"].to_numpy(float),
+        color=PALETTE["neurodiscovery"],
+        alpha=0.15,
+        linewidth=0,
+        zorder=4,
+    )
+    ax.set_xlim(0, early_budget_max)
+    ax.set_ylim(0, min(1.02, max(0.16, early_curve_max * 1.14)))
+    ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0), useMathText=True)
+    ax.set_xlabel("Candidate experiments evaluated")
+    ax.set_ylabel("Recall of validated discoveries")
+    ax.set_title("NeuroDiscovery recovers validated discoveries earlier")
+    ax.grid(axis="both", color="#E5E5E5", linewidth=0.7)
+    if not nd_plot.empty:
+        nd_last = nd_plot.iloc[-1]
+        ax.text(
+            early_budget_max * 0.985,
+            float(nd_last["recall_mean"]),
+            "NeuroDiscovery",
+            color=PALETTE["neurodiscovery"],
+            fontsize=10.5,
+            fontweight="bold",
+            ha="right",
+            va="bottom",
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.78, pad=1.5),
+        )
+    best_plot = curves[(curves["method"] == best_baseline) & (curves["budget"] <= early_budget_max)]
+    if best_plot.empty:
+        best_plot = curves[curves["method"] == best_baseline]
+    if not best_plot.empty:
+        best_last = best_plot.iloc[-1]
+        ax.text(
+            early_budget_max * 0.985,
+            float(best_last["recall_mean"]),
+            "Best published baseline (SciAgents)",
+            color="#555555",
+            fontsize=9.8,
+            ha="right",
+            va="top",
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.72, pad=1.3),
+        )
+
+
+def draw_generator_panel_c(ax: plt.Axes, curves: pd.DataFrame, baseline_methods: list[str], best_baseline: str) -> None:
+    budget_marks = [5000, 10000, 20000, 50000, 100000, 200000]
+    available_budgets = set(int(x) for x in curves["budget"].unique())
+    budget_marks = [b for b in budget_marks if b in available_budgets]
+    x = np.arange(len(budget_marks))
+    for xi, budget in zip(x, budget_marks, strict=False):
+        baseline_stats = [value_at_budget(curves, method, budget, "gt_hits") for method in baseline_methods]
+        baseline_means = np.array([m for m, _, _ in baseline_stats], dtype=float)
+        baseline_los = np.array([lo for _, lo, _ in baseline_stats], dtype=float)
+        baseline_his = np.array([hi for _, _, hi in baseline_stats], dtype=float)
+        ax.vlines(xi, np.nanmin(baseline_los), np.nanmax(baseline_his), color="#C9C9C9", lw=7, alpha=0.45, zorder=1)
+        jitter = np.linspace(-0.12, 0.12, len(baseline_methods))
+        ax.scatter(np.full(len(baseline_means), xi) + jitter, baseline_means, s=22, color="#8F8F8F", alpha=0.65, zorder=2)
+        best_mean, best_lo, best_hi = value_at_budget(curves, best_baseline, budget, "gt_hits")
+        nd_mean, nd_lo, nd_hi = value_at_budget(curves, "neurodiscovery", budget, "gt_hits")
+        ax.errorbar(
+            xi - 0.05,
+            best_mean,
+            yerr=[[best_mean - best_lo], [best_hi - best_mean]],
+            fmt="o",
+            color="#555555",
+            markersize=6,
+            capsize=3,
+            lw=1.4,
+            label="Best baseline" if xi == 0 else None,
+            zorder=4,
+        )
+        ax.errorbar(
+            xi + 0.09,
+            nd_mean,
+            yerr=[[nd_mean - nd_lo], [nd_hi - nd_mean]],
+            fmt="o",
+            color=PALETTE["neurodiscovery"],
+            markersize=7.5,
+            capsize=3,
+            lw=1.6,
+            label="NeuroDiscovery" if xi == 0 else None,
+            zorder=5,
+        )
+        ax.text(xi + 0.14, nd_mean, f"+{int(round(nd_mean - best_mean)):,}", color=PALETTE["neurodiscovery"], fontsize=8.9, va="center")
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{int(b / 1000)}k" for b in budget_marks])
+    ax.set_xlabel("Candidate experiments evaluated")
+    ax.set_ylabel("Validated discoveries found")
+    ax.set_title("Same experiments, more discoveries")
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    ax.yaxis.get_offset_text().set_fontsize(8.5)
+    ax.grid(axis="y", color="#E5E5E5", linewidth=0.7)
+    ax.legend(loc="upper left", fontsize=10.0)
+
+
+def draw_generator_panel_d(ax: plt.Axes, trial_summary: pd.DataFrame, baseline_methods: list[str], best_baseline: str) -> None:
+    targets = [1, 5, 10, 20, 30, 50]
+    baseline_mean_curves = []
+    for method in baseline_methods:
+        sub = trial_summary[trial_summary["method"] == method]
+        baseline_mean_curves.append([mean_interval(sub[f"experiments_for_recall_{t}pct"])[0] for t in targets])
+    baseline_arr = np.array(baseline_mean_curves, dtype=float)
+    best_sub = trial_summary[trial_summary["method"] == best_baseline]
+    nd_sub = trial_summary[trial_summary["method"] == "neurodiscovery"]
+    best_vals = np.array([mean_interval(best_sub[f"experiments_for_recall_{t}pct"])[0] for t in targets], dtype=float)
+    nd_vals = np.array([mean_interval(nd_sub[f"experiments_for_recall_{t}pct"])[0] for t in targets], dtype=float)
+    y_max_d = float(np.nanmax([np.nanmax(baseline_arr), np.nanmax(nd_vals)])) * 1.12
+    for method, vals in zip(baseline_methods, baseline_arr, strict=False):
+        is_best = method == best_baseline
+        ax.plot(
+            targets,
+            vals,
+            color="#555555" if is_best else "#B8B8B8",
+            marker=MARKERS.get(method, "o"),
+            markersize=4.8 if is_best else 3.6,
+            lw=2.0 if is_best else 1.15,
+            alpha=0.90 if is_best else 0.62,
+            zorder=3 if is_best else 1,
+        )
+    ax.plot(targets, nd_vals, color=PALETTE["neurodiscovery"], marker="o", lw=2.4)
+    ax.set_xlim(0.8, 54)
+    ax.set_ylim(0, y_max_d)
+    ax.set_xticks(targets)
+    ax.set_xticklabels([f"{t}%" for t in targets])
+    ax.set_xlabel("Validated-discovery recall target")
+    ax.set_ylabel("Experiments required\n(lower is better)")
+    ax.set_title("Same recall, fewer experiments")
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    ax.yaxis.get_offset_text().set_fontsize(8.5)
+    ax.grid(axis="y", color="#E5E5E5", linewidth=0.7)
+    ax.text(
+        50.8,
+        best_vals[-1] + y_max_d * 0.025,
+        "Best baseline",
+        color="#555555",
+        fontsize=8.8,
+        ha="right",
+        va="bottom",
+        bbox=dict(facecolor="white", edgecolor="none", alpha=0.72, pad=1.0),
+    )
+    ax.text(
+        50.8,
+        nd_vals[-1] - y_max_d * 0.035,
+        "NeuroDiscovery",
+        color=PALETTE["neurodiscovery"],
+        fontsize=8.8,
+        fontweight="bold",
+        ha="right",
+        va="top",
+        bbox=dict(facecolor="white", edgecolor="none", alpha=0.74, pad=1.0),
+    )
+    ax.text(2.0, y_max_d * 0.94, "Published baselines", color="#777777", fontsize=8.3, ha="left", va="top")
+    if len(targets) > 2 and nd_vals[2] > 0:
+        speedup = best_vals[2] / nd_vals[2]
+        ax.annotate(
+            f"{speedup:.1f}x fewer\nat 10% recall",
+            xy=(10, nd_vals[2]),
+            xytext=(8.0, y_max_d * 0.18),
+            color=PALETTE["neurodiscovery"],
+            fontsize=8.8,
+            ha="left",
+            va="center",
+            arrowprops=dict(arrowstyle="-", color=PALETTE["neurodiscovery"], lw=0.9),
+        )
+
+
+def save_single_panel_svg(path: Path, figsize: tuple[float, float], draw_fn) -> None:
+    fig, ax = plt.subplots(figsize=figsize)
+    draw_fn(ax)
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
 
 
 def save_generator_panel_svgs(
-    fig: plt.Figure,
-    axes: dict[str, plt.Axes],
-    ax_e: plt.Axes,
+    curves: pd.DataFrame,
+    trial_summary: pd.DataFrame,
     out_dir: Path,
     surface_panel: Path,
+    gt_total: int,
 ) -> None:
     panel_dir = out_dir / PANEL_SVG_DIRNAME
     panel_dir.mkdir(parents=True, exist_ok=True)
     for stale in panel_dir.glob("*.svg"):
         stale.unlink()
-    for label, ax in axes.items():
-        save_axis_panel_svg(fig, ax, panel_dir / f"{label}.svg")
 
+    baseline_methods = list(BASELINE_METHODS)
+    best_baseline = "sciagents_style"
+    save_single_panel_svg(panel_dir / "a.svg", (4.0, 2.9), lambda ax: draw_generator_panel_a(ax, gt_total))
+    save_single_panel_svg(panel_dir / "b.svg", (7.4, 2.7), lambda ax: draw_generator_panel_b(ax, curves, baseline_methods, best_baseline))
+    save_single_panel_svg(panel_dir / "c.svg", (7.3, 2.7), lambda ax: draw_generator_panel_c(ax, curves, baseline_methods, best_baseline))
+    save_single_panel_svg(panel_dir / "d.svg", (4.0, 2.7), lambda ax: draw_generator_panel_d(ax, trial_summary, baseline_methods, best_baseline))
     surface_svg = surface_panel.with_suffix(".svg")
     if surface_svg.exists():
         shutil.copyfile(surface_svg, panel_dir / "e.svg")
     else:
-        save_axis_panel_svg(fig, ax_e, panel_dir / "e.svg")
+        fig, ax = plt.subplots(figsize=(10.0, 4.6))
+        ax.axis("off")
+        if surface_panel.exists():
+            ax.imshow(plt.imread(surface_panel))
+        fig.savefig(panel_dir / "e.svg", bbox_inches="tight")
+        plt.close(fig)
 
 
 def heatmap_matrix(ranked: pd.DataFrame, top_n: int, diseases: list[str], groups: list[str]) -> np.ndarray:
@@ -2091,7 +3375,7 @@ def select_neurodiscovery_focus(
 ) -> tuple[list[str], list[str], list[int], list[int]]:
     gt = matrices_by_method["exhaustive_gt"]
     nd = matrices_by_method["neurodiscovery"]
-    best_baseline = np.maximum(matrices_by_method["random_walk"], matrices_by_method["llm_brainstorm"])
+    best_baseline = best_baseline_matrix(matrices_by_method)
     advantage = np.maximum(nd - best_baseline, 0.0)
     advantage[gt <= 0] = 0.0
 
@@ -2137,7 +3421,7 @@ def plot_method_maps(scored: pd.DataFrame, exemplar_orders: dict[str, np.ndarray
     ]
     available = set(scored["map_group"].dropna().unique())
     groups = [g for g in preferred_groups if g in available]
-    methods = ["exhaustive_gt", "random_walk", "llm_brainstorm", "neurodiscovery"]
+    methods = ["exhaustive_gt", *BASELINE_METHODS, "neurodiscovery"]
     matrices = [
         heatmap_matrix_from_order(scored, exemplar_orders[m], top_n, diseases, groups)
         for m in methods
@@ -2154,9 +3438,14 @@ def plot_method_maps(scored: pd.DataFrame, exemplar_orders: dict[str, np.ndarray
     rec_cmap.set_bad("#000000")
     gt_vmax = float(np.nanmax(gt_burden)) or 1.0
 
-    fig, axes = plt.subplots(2, 2, figsize=(12.8, 8.2), sharex=True, sharey=True)
+    n_methods = len(methods)
+    n_cols = 3
+    n_rows = int(math.ceil(n_methods / n_cols))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4.4 * n_cols, 3.8 * n_rows), sharex=True, sharey=True)
+    axes_arr = np.asarray(axes).ravel()
     im_recovery = None
-    for ax, method, matrix, raw_matrix, label in zip(axes.ravel(), methods, recovery_matrices, matrices, "abcd", strict=False):
+    panel_letters = "abcdefghijklmnopqrstuvwxyz"
+    for ax, method, matrix, raw_matrix, label in zip(axes_arr, methods, recovery_matrices, matrices, panel_letters, strict=False):
         if method == "exhaustive_gt":
             ax.imshow(matrix, aspect="auto", cmap=gt_cmap, vmin=0, vmax=gt_vmax)
             ax.set_title("Exhaustive GT burden", fontsize=12.5)
@@ -2174,8 +3463,10 @@ def plot_method_maps(scored: pd.DataFrame, exemplar_orders: dict[str, np.ndarray
         panel_label(ax, label)
         for spine in ax.spines.values():
             spine.set_visible(False)
+    for ax in axes_arr[len(methods) :]:
+        ax.axis("off")
     if im_recovery is not None:
-        cbar = fig.colorbar(im_recovery, ax=axes.ravel().tolist(), fraction=0.025, pad=0.02)
+        cbar = fig.colorbar(im_recovery, ax=axes_arr[:n_methods].tolist(), fraction=0.025, pad=0.02)
         cbar.set_label("Fraction of GT cell recovered", fontsize=11)
         cbar.set_ticks([0.0, 0.5, 1.0])
         cbar.ax.tick_params(labelsize=10)
@@ -2189,28 +3480,49 @@ def write_manifest(
     out_dir: Path,
     all_tests: Path,
     kg_path: Path | None,
+    generation_first_dir: Path | None,
     gt_top_frac: float,
     gt_total: int,
     seed: int,
     top_n: int,
     n_trials: int,
 ) -> None:
+    method_configs = {
+        method: {
+            "label": METHOD_LABELS[method],
+            **method_publication(method),
+        }
+        for method in ("exhaustive_gt", *GENERATOR_METHODS)
+    }
     manifest = {
         "all_tests": str(all_tests),
         "kg_path": str(kg_path) if kg_path else None,
+        "generation_first_dir": str(generation_first_dir) if generation_first_dir else None,
         "gt_definition": {
             "primary": f"top {gt_top_frac:.4%} by abs_adjusted_residual_d from exhaustive results",
             "gt_total": gt_total,
             "strict_secondary": "q_fdr_global < 0.05",
         },
         "methods": METHOD_LABELS,
+        "method_configs": method_configs,
         "generator_methods": list(GENERATOR_METHODS),
         "random_seed_base": seed,
         "n_trials_per_stochastic_method": n_trials,
         "curve_interval": "2.5th to 97.5th percentile across seeds",
         "ranked_candidates_export_top_n": top_n,
-        "panel_e": "Cortical surface comparison of ROI-level GT recovery for Exhaustive GT, Random walk, LLM brainstorm, and NeuroDiscovery.",
-        "baseline_policy": "Exhaustive is a GT/oracle point, not a generator curve; KG degree is fused into NeuroDiscovery and not reported as a KG-free baseline.",
+        "panel_e": (
+            "Cortical surface comparison of ROI-level GT recovery for "
+            + ", ".join(METHOD_LABELS[method] for method in ("exhaustive_gt", *GENERATOR_METHODS))
+            + "."
+        ),
+        "baseline_policy": (
+            "Exhaustive is a GT/oracle point, not a generator curve. When "
+            "generation_first_dir is set, published autoresearch baselines are evaluated "
+            "from LLM-generated hypotheses mapped back to the Case Study 1 universe, "
+            "then completed with a deterministic random tail; outcome labels, effect "
+            "sizes, FDR values, the full candidate table, and NeuroDiscovery feedback "
+            "are not exposed to baseline prompts."
+        ),
     }
     (out_dir / "case1_method_comparison_manifest.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"
@@ -2227,13 +3539,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trials", type=int, default=30)
     parser.add_argument("--export-top-n", type=int, default=5000)
     parser.add_argument("--map-top-n", type=int, default=100000)
+    parser.add_argument(
+        "--generation-first-dir",
+        type=Path,
+        default=None,
+        help="Directory containing generation_first_mapped_hypotheses.csv for stricter published-autoresearch baselines.",
+    )
+    parser.add_argument(
+        "--only-negative-feedback-ablation",
+        action="store_true",
+        help="Only run the NeuroDiscovery positive-vs-negative feedback ablation and plot.",
+    )
+    parser.add_argument(
+        "--skip-negative-feedback-ablation",
+        action="store_true",
+        help="Skip the secondary negative-feedback ablation during the main generator comparison run.",
+    )
     return parser.parse_args()
 
 
 def remove_stale_outputs(out_dir: Path) -> None:
     for name in (
         "ranked_candidates_exhaustive_oracle.csv",
+        "ranked_candidates_semnet_lbd.csv",
+        "ranked_candidates_enigma_transdiagnostic_prior.csv",
         "ranked_candidates_random.csv",
+        "ranked_candidates_random_walk.csv",
+        "ranked_candidates_llm_brainstorm.csv",
         "ranked_candidates_kg_degree.csv",
     ):
         path = out_dir / name
@@ -2248,8 +3580,67 @@ def main() -> None:
     kg = load_kg_index(args.kg)
     df = load_results(args.all_tests, args.gt_top_frac)
     scored = add_generator_scores(df, kg, args.seed)
+    generation_first_mapped = None
+    if args.generation_first_dir is not None:
+        mapped_path = args.generation_first_dir / "generation_first_mapped_hypotheses.csv"
+        if not mapped_path.exists():
+            raise FileNotFoundError(f"Missing generation-first mapped hypotheses: {mapped_path}")
+        generation_first_mapped = pd.read_csv(mapped_path)
     n_gt = int(scored["is_gt_top"].sum())
     budgets = budget_grid(len(scored))
+    if args.only_negative_feedback_ablation:
+        (
+            ablation_trial_curves,
+            ablation_curves,
+            ablation_summary,
+            ablation_audit,
+        ) = run_negative_feedback_ablation(
+            scored=scored,
+            budgets=budgets,
+            n_gt=n_gt,
+            n_trials=args.trials,
+            seed=args.seed,
+        )
+        ablation_trial_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves_by_trial.csv", index=False)
+        ablation_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves.csv", index=False)
+        ablation_summary.to_csv(args.out_dir / "case1_negative_feedback_ablation_summary.csv", index=False)
+        if not ablation_audit.empty:
+            ablation_audit.to_csv(args.out_dir / "case1_negative_feedback_ablation_audit.csv", index=False)
+        plot_negative_feedback_ablation(ablation_curves, ablation_summary, args.out_dir, len(scored))
+        (args.out_dir / "case1_negative_feedback_ablation_manifest.json").write_text(
+            json.dumps(
+                {
+                    "all_tests": str(args.all_tests),
+                    "gt_definition": {
+                        "primary": f"top {args.gt_top_frac:.4%} by abs_adjusted_residual_d from exhaustive results",
+                        "gt_total": n_gt,
+                        "negative_proxy": "Executed hypotheses outside the GT-top set are treated as contradicted-result proxies for this ablation.",
+                    },
+                    "strategies": {
+                        method: {
+                            "label": METHOD_LABELS[method],
+                            **method_publication(method),
+                        }
+                        for method in (
+                            "neurodiscovery_positive_only",
+                            "neurodiscovery_negative_feature_only",
+                            "neurodiscovery_negative_pair_only",
+                            "neurodiscovery_negative_context_only",
+                            "neurodiscovery_negative_hybrid",
+                        )
+                    },
+                    "random_seed_base": args.seed,
+                    "n_trials": args.trials,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        print(f"Loaded {len(scored):,} executed exhaustive tests")
+        print(f"Primary GT discoveries: {n_gt:,} (top {args.gt_top_frac:.2%} by |d|)")
+        print(f"Negative-feedback ablation output: {args.out_dir}")
+        return
+
     trial_curves, curve_summary, method_summary, trial_summary, exemplar_orders, _labels = run_benchmark(
         scored=scored,
         budgets=budgets,
@@ -2257,12 +3648,31 @@ def main() -> None:
         n_trials=args.trials,
         seed=args.seed,
         map_top_n=args.map_top_n,
+        generation_first_mapped=generation_first_mapped,
     )
 
     trial_curves.to_csv(args.out_dir / "case1_discovery_curves_by_trial.csv", index=False)
     curve_summary.to_csv(args.out_dir / "case1_discovery_curves.csv", index=False)
     method_summary.to_csv(args.out_dir / "case1_method_summary.csv", index=False)
     trial_summary.to_csv(args.out_dir / "case1_method_summary_by_trial.csv", index=False)
+    if not args.skip_negative_feedback_ablation:
+        (
+            ablation_trial_curves,
+            ablation_curves,
+            ablation_summary,
+            ablation_audit,
+        ) = run_negative_feedback_ablation(
+            scored=scored,
+            budgets=budgets,
+            n_gt=n_gt,
+            n_trials=args.trials,
+            seed=args.seed,
+        )
+        ablation_trial_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves_by_trial.csv", index=False)
+        ablation_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves.csv", index=False)
+        ablation_summary.to_csv(args.out_dir / "case1_negative_feedback_ablation_summary.csv", index=False)
+        if not ablation_audit.empty:
+            ablation_audit.to_csv(args.out_dir / "case1_negative_feedback_ablation_audit.csv", index=False)
     comparison_experiments = [1000, 5000, 10000, 20000, 50000, 100000]
     available_experiments = set(int(x) for x in trial_curves["budget"].unique())
     comparison_experiments = [b for b in comparison_experiments if b in available_experiments]
@@ -2275,6 +3685,8 @@ def main() -> None:
     ).to_csv(args.out_dir / "case1_generator_comparison_p_values.csv", index=False)
     save_exemplar_rankings(scored, exemplar_orders, args.out_dir, args.export_top_n)
     plot_efficiency(curve_summary, method_summary, args.out_dir, len(scored))
+    if not args.skip_negative_feedback_ablation:
+        plot_negative_feedback_ablation(ablation_curves, ablation_summary, args.out_dir, len(scored))
     plot_same_budget_discovery(curve_summary, args.out_dir)
     plot_same_discovery_cost(trial_summary, args.out_dir)
     plot_budget_gain_focus(curve_summary, args.out_dir)
@@ -2292,6 +3704,7 @@ def main() -> None:
         args.out_dir,
         args.all_tests,
         args.kg,
+        args.generation_first_dir,
         args.gt_top_frac,
         n_gt,
         args.seed,

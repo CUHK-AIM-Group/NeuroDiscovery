@@ -1,6 +1,6 @@
 {
   "name": "neuroclaw-desktop",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "NeuroClaw cross-platform desktop shell",
   "main": "main.js",
   "author": "NeuroClaw",
@@ -26,7 +26,7 @@
   },
   "build": {
     "appId": "org.neuroclaw.desktop",
-    "productName": "NeuroClaw",
+    "productName": "NeuroDiscovery",
     "directories": {
       "output": "dist"
     },

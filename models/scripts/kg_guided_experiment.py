@@ -14,7 +14,7 @@ Usage:
         --labels-csv data/hcp_age_labels.csv \
         --subjects-file data/ready_subjects.txt \
         --atlas aal_116 \
-        --hypotheses neurooracle/data/quick/hypotheses_imaging_hcp.json \
+        --hypotheses <path-to-hypotheses.json> \
         --models braingnn bnt \
         --kfold 5 --n-epochs 50 --n-random-trials 5
 """
@@ -33,7 +33,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-PYTHON = r"C:/Users/45846/anaconda3/envs/neuroclaw/python.exe"
+PYTHON = sys.executable
 TRAIN_SCRIPT = ROOT / "models" / "train_unified.py"
 
 from models.scripts.hypothesis_roi_mapper import build_kg_roi_mask, get_roi_names

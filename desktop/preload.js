@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
-const DESKTOP_VERSION = '0.2.1';
+const DESKTOP_VERSION = '0.2.2';
 
 contextBridge.exposeInMainWorld('neuroclawDesktop', {
   version: DESKTOP_VERSION,
@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('neuroclawDesktop', {
   selectAttachmentFiles: () => ipcRenderer.invoke('neuroclaw:select-attachment-files'),
   selectProjectFolder: () => ipcRenderer.invoke('neuroclaw:select-project-folder'),
   createProjectFolder: (name) => ipcRenderer.invoke('neuroclaw:create-project-folder', name),
+  exportUserStudyResults: (request) => ipcRenderer.invoke('neuroclaw:export-user-study-results', request),
   getPathForFile: (file) => {
     if (!file) return '';
     try {

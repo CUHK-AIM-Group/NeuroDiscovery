@@ -241,6 +241,7 @@ def render_help_response(request: AutoResearchHelpRequest) -> str:
     title = content["zh_title" if zh else "en_title"]
     scope = content["zh_scope" if zh else "en_scope"]
     items = content["zh_items" if zh else "en_items"]
+    scope_heading = "范围：" if zh else "Scope:"
     heading = "请提供以下资料" if zh else "Please provide"
     next_step = (
         "资料不完整也可以先发；NeuroClaw 会标出缺失项，并在你确认范围后再执行。"
@@ -248,7 +249,7 @@ def render_help_response(request: AutoResearchHelpRequest) -> str:
         "You can start with incomplete information; NeuroClaw will identify gaps and wait for scope confirmation before execution."
     )
     checklist = "\n".join(f"- [ ] {item}" for item in items)
-    return f"## {title}\n\n**范围：** {scope}\n\n### {heading}\n\n{checklist}\n\n{next_step}"
+    return f"## {title}\n\n**{scope_heading}** {scope}\n\n### {heading}\n\n{checklist}\n\n{next_step}"
 
 
 def build_autoresearch_scope_prompt(mode: object) -> str:

@@ -49,9 +49,6 @@ detectPythonDone:
   IfFileExists "C:\Program Files\FSL" 0 +2
     StrCpy $InstallerFslDir "C:\Program Files\FSL"
 
-  StrCmp $InstallerProxyUrl "" 0 +2
-    StrCpy $InstallerProxyUrl "http://127.0.0.1:7897"
-
   ${NSD_SetText} $RuntimePythonField "$InstallerPythonExe"
   ${NSD_SetText} $RuntimeCondaField "$InstallerCondaExe"
   ${NSD_SetText} $RuntimeCondaEnvField "$InstallerCondaEnv"
@@ -71,9 +68,6 @@ Function NeuroClawRuntimePage
     StrCpy $InstallerRuntimeMode "bundled"
   StrCmp $InstallerCondaEnv "" 0 +2
     StrCpy $InstallerCondaEnv "neuroclaw"
-  StrCmp $InstallerProxyUrl "" 0 +2
-    StrCpy $InstallerProxyUrl "http://127.0.0.1:7897"
-
   ${NSD_CreateLabel} 0u 0u 300u 12u "Configure NeuroClaw runtime"
   ${NSD_CreateLabel} 0u 15u 300u 18u "Choose the Python runtime and optional dependency paths."
   ${NSD_CreateLabel} 0u 42u 300u 12u "Default Python runtime"

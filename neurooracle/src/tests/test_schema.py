@@ -244,8 +244,8 @@ def test_claim_to_dict_infers_paper_scope_from_curation_scope():
 
     d = claim.to_dict()
 
-    assert d["paper_scope"] == ["case1"]
-    assert Claim.from_dict(d).paper_scope == ["case1"]
+    assert d["paper_scope"] == ["general", "case1"]
+    assert Claim.from_dict(d).paper_scope == ["general", "case1"]
 
 
 def test_claim_to_dict_defaults_unscoped_claims_to_general():

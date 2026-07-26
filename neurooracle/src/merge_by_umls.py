@@ -14,9 +14,9 @@ Steps:
 
 CLI:
     python -m neurooracle.src.merge_by_umls \\
-        --graph neurooracle/data/full_snapshot_v1/knowledge_graph.json \\
+        --graph neurooracle/data/full_v2/knowledge_graph.json \\
         --mrconso neurooracle/data/raw/MRCONSO.RRF \\
-        --output neurooracle/data/full_snapshot_v1/knowledge_graph.json \\
+        --output neurooracle/data/full_v2/knowledge_graph.json \\
         --backup
 """
 

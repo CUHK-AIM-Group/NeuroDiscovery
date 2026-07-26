@@ -16,7 +16,7 @@ Usage:
     python models/scripts/kg_prediction_tasks.py \
         --subjects-file data/ready_subjects.txt \
         --atlas aal_116 \
-        --hypotheses neurooracle/data/quick/hypotheses_imaging_hcp.json \
+        --hypotheses <path-to-hypotheses.json> \
         --n-random-trials 10 --kfold 5
 """
 from __future__ import annotations

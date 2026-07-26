@@ -556,9 +556,14 @@ def get_experiment_groups(hypotheses: list[dict]) -> dict[str, list[dict]]:
 
 
 if __name__ == "__main__":
+    import argparse
     import json
 
-    hyp_path = ROOT / "neurooracle" / "data" / "quick" / "hypotheses_imaging_hcp.json"
+    p = argparse.ArgumentParser()
+    p.add_argument("--hypotheses", required=True)
+    args = p.parse_args()
+
+    hyp_path = ROOT / args.hypotheses
     with open(hyp_path) as f:
         data = json.load(f)
 

@@ -1472,6 +1472,22 @@
       border-radius: 12px;
       background: var(--surface-elev);
     }
+    .embedded-study-page {
+      padding: 0;
+      overflow: hidden;
+      background: var(--surface-elev);
+      display: flex;
+      flex-direction: column;
+    }
+    .embedded-study-page[hidden] { display: none; }
+    .embedded-study-frame {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: var(--surface-elev);
+    }
     .search-result-list {
       display: grid;
       gap: 8px;
@@ -1628,6 +1644,65 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
       align-items: center;
+    }
+    .settings-proxy {
+      display: grid;
+      gap: 10px;
+      min-width: 320px;
+    }
+    .settings-proxy-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .settings-proxy-head strong {
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .settings-proxy-endpoint {
+      display: grid;
+      grid-template-columns: auto minmax(112px, 1fr) auto 92px;
+      align-items: center;
+      gap: 7px;
+    }
+    .settings-proxy-scheme,
+    .settings-proxy-separator {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .settings-proxy-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .settings-proxy-preset {
+      border: 1px solid color-mix(in oklab, var(--border), transparent 15%);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text-muted);
+      padding: 5px 9px;
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .settings-proxy-preset:hover,
+    .settings-proxy-preset.active {
+      border-color: color-mix(in oklab, var(--accent), var(--border) 45%);
+      background: color-mix(in oklab, var(--accent), transparent 92%);
+      color: var(--accent-strong);
+    }
+    .settings-proxy-preview {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .settings-proxy.disabled .settings-proxy-endpoint,
+    .settings-proxy.disabled .settings-proxy-presets,
+    .settings-proxy.disabled .settings-proxy-preview {
+      opacity: 0.5;
     }
     .settings-detect {
       border: 1px solid color-mix(in oklab, var(--border), transparent 15%);
@@ -2898,6 +2973,14 @@
         </div>
       </section>
 
+      <section class="workspace-page embedded-study-page" id="expert-study-page" hidden>
+        <iframe class="embedded-study-frame" id="expert-study-frame" title="Expert Study"></iframe>
+      </section>
+
+      <section class="workspace-page embedded-study-page" id="study-results-page" hidden>
+        <iframe class="embedded-study-frame" id="study-results-frame" title="Study Results"></iframe>
+      </section>
+
       <section class="workspace-page settings-page" id="settings-page" hidden>
         <div class="settings-layout">
           <aside class="settings-sidebar" aria-label="Settings navigation">
@@ -3069,6 +3152,10 @@
   const neurooracleDownloadBtn = document.getElementById('neurooracle-download-btn');
   const neurooracleRefreshBtn = document.getElementById('neurooracle-refresh-btn');
   const neurooracleFrameEl = document.getElementById('neurooracle-frame');
+  const expertStudyPageEl = document.getElementById('expert-study-page');
+  const expertStudyFrameEl = document.getElementById('expert-study-frame');
+  const studyResultsPageEl = document.getElementById('study-results-page');
+  const studyResultsFrameEl = document.getElementById('study-results-frame');
   const avatarPickerOverlayEl = document.getElementById('avatar-picker-overlay');
   const avatarPickerCloseEl = document.getElementById('avatar-picker-close');
   const avatarPickerGridEl = document.getElementById('avatar-picker-grid');
@@ -3211,7 +3298,7 @@
         { key: 'condaEnv', scope: 'desktop', label: 'Conda environment', desc: 'Environment name used to launch NeuroClaw.', type: 'text', whenRuntime: 'conda' },
         { key: 'host', scope: 'desktop', label: 'Backend host', desc: 'Local host address used by the embedded client.', type: 'text' },
         { key: 'port', scope: 'desktop', label: 'Backend port', desc: 'Local backend port. Current ROG setup uses 7080.', type: 'number' },
-        { key: 'proxyUrl', scope: 'desktop', label: 'Download proxy', desc: 'Proxy used by backend downloads, for example http://127.0.0.1:7897.', type: 'text' },
+        { key: 'proxyUrl', scope: 'desktop', label: 'VPN download proxy', desc: 'Route graph and dataset downloads through a local HTTP or mixed proxy port.', type: 'proxy' },
       ],
     },
     {
@@ -3319,6 +3406,9 @@
     neurooracleUpdateStatus: null,
     neurooraclePoller: null,
     neurooracleFrameLoaded: false,
+    neurooracleFrameKey: '',
+    expertStudyFrameKey: '',
+    studyResultsFrameKey: '',
     lastDesktopMenuAction: { action: '', at: 0 },
   };
 
@@ -3415,6 +3505,10 @@
     'Download graph': '下载图谱',
     'Download the latest NeuroOracle graph from HuggingFace now?': '现在从 HuggingFace 下载最新版 NeuroOracle 图谱吗？',
     'Check local graph': '检查本地图谱',
+    'NeuroOracle sections': 'NeuroOracle 功能区',
+    'Graph Explorer': '图谱浏览器',
+    'Expert Study': '专家研究',
+    'Study Results': '研究结果',
     'Checking local graph...': '正在检查本地图谱...',
     'Local graph is ready.': '本地图谱已就绪。',
     'Graph file is missing.': '图谱文件缺失。',
@@ -3542,8 +3636,15 @@
     'Local host address used by the embedded client.': '嵌入式客户端使用的本地主机地址。',
     'Backend port': '后端端口',
     'Local backend port. Current ROG setup uses 7080.': '本地后端端口。当前 ROG 配置使用 7080。',
-    'Download proxy': '下载代理',
-    'Proxy used by backend downloads, for example http://127.0.0.1:7897.': '后端下载使用的代理，例如 http://127.0.0.1:7897。',
+    'VPN download proxy': 'VPN 下载代理',
+    'Route graph and dataset downloads through a local HTTP or mixed proxy port.': '通过本地 HTTP 或混合代理端口下载图谱和数据集。',
+    'Use VPN proxy': '使用 VPN 代理',
+    'Proxy host': '代理主机',
+    'Proxy port': '代理端口',
+    'Common ports': '常用端口',
+    'Downloads use': '下载将使用',
+    'Direct connection': '直接连接',
+    'Proxy protocol mismatch. Use an HTTP or mixed proxy port in Settings > Desktop Runtime, then restart the app.': '代理协议不匹配。请在“设置 > 桌面运行时”中选择 HTTP 或混合代理端口，然后重启应用。',
     'LLM Backend': 'LLM 后端',
     'These values configure the model endpoint used by the local NeuroClaw backend.': '这些值用于配置本地 NeuroClaw 后端调用的模型接口。',
     'LLM provider': 'LLM 提供方',
@@ -3645,7 +3746,7 @@
     'done': '完成',
     'failed': '失败',
     'Skills:': '技能：',
-    'Workspace changes': '工作区变更',
+    'Changes this turn': '本轮文件变更',
     'changed file': '个文件已变更',
     'changed files': '个文件已变更',
     'Uploaded files': '已上传文件',
@@ -3759,6 +3860,11 @@
     setText('#neurooracle-refresh-btn', 'Check local graph');
     const graphFrame = document.getElementById('neurooracle-frame');
     if (graphFrame) graphFrame.title = tr('NeuroOracle graph viewer');
+    if (expertStudyFrameEl) expertStudyFrameEl.title = tr('Expert Study');
+    if (studyResultsFrameEl) studyResultsFrameEl.title = tr('Study Results');
+    if (state.activeView === 'expert-study' || state.activeView === 'study-results') {
+      openStudyWorkspace(state.activeView);
+    }
     setText('#search-page .page-eyebrow', 'Workspace Search');
     setText('#search-page .page-title', 'Search');
     setText('#search-page .page-subtitle', 'Search chats in the active project. Skill search lives in the Skills page.');
@@ -4202,6 +4308,11 @@
   function normalizeSessionState(session) {
     if (!session) return null;
     if (!Array.isArray(session.messages)) session.messages = [];
+    session.messages.forEach(message => {
+      if (Array.isArray(message.workspaceChanges) && message.workspaceChanges.length && message.workspaceChangeScope !== 'turn') {
+        message.workspaceChanges = [];
+      }
+    });
     if (typeof session.draft !== 'string') session.draft = '';
     if (!Array.isArray(session.selectedSkills)) session.selectedSkills = [];
     return session;
@@ -4269,7 +4380,6 @@
       theme: state.theme,
       textScale: state.textScale,
       sidebarCollapsed: state.sidebarCollapsed,
-      autoResearchMode: state.autoResearchMode,
     }));
   }
 
@@ -4321,11 +4431,6 @@
         }
         if (parsed && typeof parsed.sidebarCollapsed === 'boolean') {
           state.sidebarCollapsed = parsed.sidebarCollapsed;
-        }
-        if (parsed && AUTO_RESEARCH_MODES.includes(parsed.autoResearchMode)) {
-          state.autoResearchMode = parsed.autoResearchMode;
-        } else if (parsed && ['on', 'high'].includes(parsed.autoResearchMode)) {
-          state.autoResearchMode = AUTO_RESEARCH_MODE_END_TO_END;
         }
       }
     } catch (_e) {}
@@ -4464,9 +4569,80 @@
     return String(option);
   }
 
+  function parseProxySetting(value) {
+    let raw = String(value || '').trim();
+    if (!raw) return { enabled: false, host: '127.0.0.1', port: '7890' };
+    if (/^\d{1,5}$/.test(raw)) raw = `http://127.0.0.1:${raw}`;
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = `http://${raw}`;
+    try {
+      const parsed = new URL(raw);
+      return {
+        enabled: true,
+        host: parsed.hostname || '127.0.0.1',
+        port: parsed.port || '7890',
+      };
+    } catch (_error) {
+      return { enabled: true, host: '127.0.0.1', port: '7890' };
+    }
+  }
+
+  function proxyControlValue(control) {
+    const enabled = control.querySelector('[data-proxy-toggle]')?.classList.contains('active');
+    if (!enabled) return '';
+    const host = String(control.querySelector('[data-proxy-host]')?.value || '127.0.0.1').trim() || '127.0.0.1';
+    const portValue = Number(control.querySelector('[data-proxy-port]')?.value || 0);
+    const port = Number.isInteger(portValue) && portValue >= 1 && portValue <= 65535 ? portValue : 7890;
+    return `http://${host}:${port}`;
+  }
+
+  function updateProxyControl(control) {
+    if (!control) return;
+    const toggle = control.querySelector('[data-proxy-toggle]');
+    const enabled = Boolean(toggle?.classList.contains('active'));
+    control.classList.toggle('disabled', !enabled);
+    if (toggle) toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
+    control.querySelectorAll('[data-proxy-host], [data-proxy-port], [data-proxy-port-preset]').forEach(el => {
+      el.disabled = !enabled;
+    });
+    const port = String(control.querySelector('[data-proxy-port]')?.value || '');
+    control.querySelectorAll('[data-proxy-port-preset]').forEach(button => {
+      button.classList.toggle('active', enabled && button.dataset.proxyPortPreset === port);
+    });
+    const preview = control.querySelector('[data-proxy-preview]');
+    if (preview) {
+      preview.textContent = enabled
+        ? `${tr('Downloads use')}: ${proxyControlValue(control)}`
+        : tr('Direct connection');
+    }
+  }
+
   function renderSettingsControl(row) {
     const value = getSettingValue(row);
     const common = `data-setting-scope="${escapeAttr(row.scope)}" data-setting-key="${escapeAttr(row.key)}"`;
+    if (row.type === 'proxy') {
+      const proxy = parseProxySetting(value);
+      const active = proxy.enabled ? ' active' : '';
+      const disabled = proxy.enabled ? '' : ' disabled';
+      const preview = proxy.enabled ? `${tr('Downloads use')}: http://${proxy.host}:${proxy.port}` : tr('Direct connection');
+      return `
+        <div class="settings-proxy${proxy.enabled ? '' : ' disabled'}" ${common} data-proxy-control>
+          <div class="settings-proxy-head">
+            <strong>${escapeHtml(tr('Use VPN proxy'))}</strong>
+            <button class="settings-toggle${active}" type="button" role="switch" aria-checked="${proxy.enabled ? 'true' : 'false'}" data-proxy-toggle></button>
+          </div>
+          <div class="settings-proxy-endpoint">
+            <span class="settings-proxy-scheme">http://</span>
+            <input class="settings-control" type="text" value="${escapeAttr(proxy.host)}" aria-label="${escapeAttr(tr('Proxy host'))}" data-proxy-host${disabled}>
+            <span class="settings-proxy-separator">:</span>
+            <input class="settings-control" type="number" min="1" max="65535" value="${escapeAttr(proxy.port)}" aria-label="${escapeAttr(tr('Proxy port'))}" data-proxy-port${disabled}>
+          </div>
+          <div class="settings-proxy-presets" aria-label="${escapeAttr(tr('Common ports'))}">
+            ${['7890', '7897', '10809'].map(port => `<button class="settings-proxy-preset${proxy.enabled && proxy.port === port ? ' active' : ''}" type="button" data-proxy-port-preset="${port}"${disabled}>${port}</button>`).join('')}
+          </div>
+          <div class="settings-proxy-preview" data-proxy-preview>${escapeHtml(preview)}</div>
+        </div>
+      `;
+    }
     if (row.type === 'textScale') {
       const scale = clampTextScale(value || state.textScale);
       return `
@@ -4608,13 +4784,16 @@
     settingsContentEl.querySelectorAll('[data-setting-key]').forEach(control => {
       const key = control.dataset.settingKey;
       const scope = control.dataset.settingScope;
+      const isProxy = control.matches('[data-proxy-control]');
       const isToggle = control.classList.contains('settings-toggle');
       const isTextScale = control.classList.contains('settings-text-scale');
-      const value = isToggle
-        ? control.classList.contains('active')
-        : isTextScale
-          ? clampTextScale(control.dataset.settingValue || state.textScale)
-          : control.value;
+      const value = isProxy
+        ? proxyControlValue(control)
+        : isToggle
+          ? control.classList.contains('active')
+          : isTextScale
+            ? clampTextScale(control.dataset.settingValue || state.textScale)
+            : control.value;
       if (scope === 'desktop') {
         state.desktopConfig[key] = key === 'port' ? Number(value) || DEFAULT_DESKTOP_CONFIG.port : value;
       } else {
@@ -5069,6 +5248,7 @@
 
   function createSession(title, projectId = null, options = {}) {
     if (options.saveDraft !== false) saveActiveDraft();
+    state.autoResearchMode = AUTO_RESEARCH_MODE_OFF;
     const id = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     const s = {
       id,
@@ -5087,6 +5267,7 @@
     saveSessions();
     renderSidebarLists();
     renderActiveSession();
+    syncModelTrigger();
     return s;
   }
 
@@ -5147,6 +5328,7 @@
 
   function startFreshHomeSession(options = {}) {
     if (options.saveDraft !== false) saveActiveDraft();
+    state.autoResearchMode = AUTO_RESEARCH_MODE_OFF;
     state.activeProjectId = null;
     state.selectedSkills = [];
     state.editingMessageId = null;
@@ -5162,6 +5344,7 @@
       saveSessions();
       renderSidebarLists();
       renderActiveSession();
+      syncModelTrigger();
       return reusable;
     }
     return createSession('New Chat', null, { saveDraft: false });
@@ -5691,7 +5874,7 @@
       const resp = await fetch('/api/chat/title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: userText, assistant: assistantText }),
+        body: JSON.stringify({ user: userText, assistant: assistantText, language: currentUiLanguage() }),
       });
       const data = await resp.json();
       if (!resp.ok || data.type === 'error') return '';
@@ -5839,7 +6022,7 @@
           <summary class="tool-event-summary">
             <span class="tool-event-dot">Δ</span>
             <span class="tool-event-main">
-              <span class="tool-event-title">${escapeHtml(tr('Workspace changes'))}</span>
+              <span class="tool-event-title">${escapeHtml(tr('Changes this turn'))}</span>
               <span class="tool-event-sub">${escapeHtml(String(changes.length))} ${escapeHtml(tr(changes.length === 1 ? 'changed file' : 'changed files'))}</span>
             </span>
             <span class="tool-event-status">diff</span>
@@ -6281,6 +6464,7 @@
           modelUsed,
           toolEvents: Array.isArray(data.tool_events) ? data.tool_events : [],
           workspaceChanges: Array.isArray(data.workspace_changes) ? data.workspace_changes : [],
+          workspaceChangeScope: data.workspace_change_scope === 'turn' ? 'turn' : '',
           time: nowISO(),
         });
 
@@ -6380,6 +6564,7 @@
           modelUsed,
           toolEvents: Array.isArray(data.tool_events) ? data.tool_events : [],
           workspaceChanges: Array.isArray(data.workspace_changes) ? data.workspace_changes : [],
+          workspaceChangeScope: data.workspace_change_scope === 'turn' ? 'turn' : '',
           time: nowISO(),
         });
         session.updatedAt = nowISO();
@@ -6472,7 +6657,7 @@
   }
 
   function setActiveView(view, opts = {}) {
-    const nextView = ['skills', 'search', 'settings', 'neurooracle'].includes(view) ? view : 'chat';
+    const nextView = ['skills', 'search', 'settings', 'neurooracle', 'expert-study', 'study-results'].includes(view) ? view : 'chat';
     if (state.activeView === 'chat' && nextView !== 'chat') {
       cleanupEmptyActiveHomeSession();
     }
@@ -6485,6 +6670,8 @@
     if (inputAreaEl) inputAreaEl.hidden = !isChat;
     if (skillsPageEl) skillsPageEl.hidden = state.activeView !== 'skills';
     if (neurooraclePageEl) neurooraclePageEl.hidden = state.activeView !== 'neurooracle';
+    if (expertStudyPageEl) expertStudyPageEl.hidden = state.activeView !== 'expert-study';
+    if (studyResultsPageEl) studyResultsPageEl.hidden = state.activeView !== 'study-results';
     if (searchPageEl) searchPageEl.hidden = state.activeView !== 'search';
     if (settingsPageEl) settingsPageEl.hidden = state.activeView !== 'settings';
     updatePrimaryNav();
@@ -6500,6 +6687,9 @@
     } else if (state.activeView === 'neurooracle') {
       chatPanelEl.classList.remove('is-empty');
       ensureNeuroOracleReady({ askDownload: opts.askDownload !== false, open: true });
+    } else if (state.activeView === 'expert-study' || state.activeView === 'study-results') {
+      chatPanelEl.classList.remove('is-empty');
+      openStudyWorkspace(state.activeView);
     } else if (state.activeView === 'settings') {
       chatPanelEl.classList.remove('is-empty');
       renderSettings();
@@ -6599,7 +6789,7 @@
     }
 
     if (download.error) {
-      neurooracleStatusEl.innerHTML = `<strong>${escapeHtml(tr('Download failed:'))}</strong> ${escapeHtml(download.error)}`;
+      neurooracleStatusEl.innerHTML = `<strong>${escapeHtml(tr('Download failed:'))}</strong> ${escapeHtml(tr(download.error))}`;
       return;
     }
 
@@ -6707,10 +6897,27 @@
     if (!neurooraclePageEl || !neurooracleFrameEl) return;
     neurooraclePageEl.classList.add('ready');
     renderNeuroOracleUpdateStatus(state.neurooracleUpdateStatus);
-    if (!state.neurooracleFrameLoaded) {
-      neurooracleFrameEl.src = `/explore?v=${Date.now()}`;
+    const language = currentUiLanguage();
+    const frameKey = `explorer:${language}`;
+    if (!state.neurooracleFrameLoaded || state.neurooracleFrameKey !== frameKey) {
+      neurooracleFrameEl.src = `/explore?lang=${language}&v=${Date.now()}`;
       state.neurooracleFrameLoaded = true;
+      state.neurooracleFrameKey = frameKey;
     }
+  }
+
+  function openStudyWorkspace(view) {
+    const language = currentUiLanguage();
+    const isResults = view === 'study-results';
+    const frame = isResults ? studyResultsFrameEl : expertStudyFrameEl;
+    if (!frame) return;
+    const keyName = isResults ? 'studyResultsFrameKey' : 'expertStudyFrameKey';
+    const frameKey = `${view}:${language}`;
+    if (state[keyName] === frameKey) return;
+    const route = isResults ? '/study?view=results&embedded=1' : '/study?embedded=1';
+    const separator = route.includes('?') ? '&' : '?';
+    frame.src = `${route}${separator}lang=${language}&v=${Date.now()}`;
+    state[keyName] = frameKey;
   }
 
   function bindEvents() {
@@ -6732,6 +6939,14 @@
 
       if (normalized === 'open-settings') {
         setActiveView('settings');
+        return;
+      }
+      if (normalized === 'open-expert-study') {
+        setActiveView('expert-study');
+        return;
+      }
+      if (normalized === 'open-study-results') {
+        setActiveView('study-results');
         return;
       }
       if (normalized === 'new-chat') {
@@ -6793,6 +7008,11 @@
       });
     }
     if (settingsContentEl) {
+      settingsContentEl.addEventListener('input', (e) => {
+        const proxyControl = e.target.closest('[data-proxy-control]');
+        if (proxyControl) updateProxyControl(proxyControl);
+      });
+
       settingsContentEl.addEventListener('change', (e) => {
         const control = e.target.closest('[data-setting-key]');
         if (!control) return;
@@ -6817,6 +7037,24 @@
       });
 
       settingsContentEl.addEventListener('click', (e) => {
+        const proxyToggle = e.target.closest('[data-proxy-toggle]');
+        if (proxyToggle) {
+          e.preventDefault();
+          proxyToggle.classList.toggle('active');
+          updateProxyControl(proxyToggle.closest('[data-proxy-control]'));
+          return;
+        }
+
+        const proxyPreset = e.target.closest('[data-proxy-port-preset]');
+        if (proxyPreset) {
+          e.preventDefault();
+          const proxyControl = proxyPreset.closest('[data-proxy-control]');
+          const portInput = proxyControl?.querySelector('[data-proxy-port]');
+          if (portInput) portInput.value = proxyPreset.dataset.proxyPortPreset;
+          updateProxyControl(proxyControl);
+          return;
+        }
+
         const textScaleBtn = e.target.closest('[data-text-scale-action]');
         if (textScaleBtn) {
           e.preventDefault();

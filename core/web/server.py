@@ -23,6 +23,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import secrets
 import subprocess
 import time
 import re
@@ -58,6 +59,25 @@ def _client_surface_prompt(raw_surface: Any) -> str:
         "Proceed with the user's task using the inherited desktop runtime. If a specific "
         "external command is unavailable, diagnose that command directly."
     )
+
+
+def _response_language_prompt(raw_language: Any) -> str:
+    """Return an explicit response-language policy for model-backed UI output."""
+    language = str(raw_language or "").strip().lower()
+    if language in {"zh", "zh-cn", "chinese", "中文", "简体中文"} or language.startswith("zh-"):
+        return (
+            "[Client language requirement]\n"
+            "Respond in Simplified Chinese. Keep only established technical terms, "
+            "commands, paths, identifiers, and product names in their original form."
+        )
+    if language in {"en", "en-us", "en-gb", "english"} or language.startswith("en-"):
+        return (
+            "[Client language requirement]\n"
+            "Respond entirely in English. Do not use Chinese UI labels, headings, or "
+            "explanatory prose. Preserve Chinese only when quoting user-provided content "
+            "or source data verbatim."
+        )
+    return ""
 
 
 def _fallback_title_from_user_text(text: str) -> str:
@@ -109,12 +129,51 @@ def _summarize_web_tool_events(events: list[dict[str, Any]]) -> list[dict[str, A
     return compact
 
 
-def _workspace_change_summary(workspace: Path | None = None) -> list[dict[str, str]]:
-    """Summarize current git working tree changes for the web timeline."""
+def _workspace_status_path(workspace_root: Path, display_path: str) -> Path | None:
+    """Resolve the current side of a porcelain status path inside the workspace."""
+    raw_path = display_path.rsplit(" -> ", 1)[-1].strip().strip('"')
+    if not raw_path:
+        return None
+    try:
+        candidate = (workspace_root / raw_path).resolve()
+        candidate.relative_to(workspace_root)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return candidate
+
+
+def _workspace_path_fingerprint(workspace_root: Path, display_path: str) -> str:
+    """Fingerprint a dirty path so edits to an already-dirty file are detectable."""
+    candidate = _workspace_status_path(workspace_root, display_path)
+    if candidate is None or not candidate.exists():
+        return "missing"
+    try:
+        stat = candidate.stat()
+        if candidate.is_file():
+            digest = ""
+            if stat.st_size <= 2 * 1024 * 1024:
+                digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+            return f"file:{stat.st_size}:{stat.st_mtime_ns}:{digest}"
+        if candidate.is_dir():
+            children = []
+            for child in sorted(candidate.iterdir(), key=lambda item: item.name)[:256]:
+                try:
+                    child_stat = child.stat()
+                    children.append((child.name, child_stat.st_size, child_stat.st_mtime_ns))
+                except OSError:
+                    children.append((child.name, -1, -1))
+            return f"dir:{stat.st_mtime_ns}:{hashlib.sha256(repr(children).encode('utf-8')).hexdigest()}"
+        return f"other:{stat.st_size}:{stat.st_mtime_ns}"
+    except OSError:
+        return "unavailable"
+
+
+def _workspace_change_snapshot(workspace: Path | None = None) -> dict[str, tuple[str, str]]:
+    """Capture dirty paths, statuses, and fingerprints before or after one turn."""
     workspace_root = (workspace or REPO_ROOT).resolve()
     try:
         proc = subprocess.run(
-            ["git", "status", "--short"],
+            ["git", "-c", "core.quotepath=false", "status", "--short"],
             cwd=workspace_root,
             capture_output=True,
             text=True,
@@ -123,17 +182,39 @@ def _workspace_change_summary(workspace: Path | None = None) -> list[dict[str, s
             timeout=5,
         )
     except Exception:
-        return []
+        return {}
     if proc.returncode != 0:
-        return []
-    changes: list[dict[str, str]] = []
+        return {}
+    snapshot: dict[str, tuple[str, str]] = {}
     for line in proc.stdout.splitlines():
         if not line.strip():
             continue
         status = line[:2].strip() or "modified"
-        path = line[3:].strip() if len(line) > 3 else line.strip()
-        changes.append({"status": status, "path": path})
-    return changes[:40]
+        display_path = line[3:].strip() if len(line) > 3 else line.strip()
+        snapshot[display_path] = (
+            status,
+            _workspace_path_fingerprint(workspace_root, display_path),
+        )
+    return snapshot
+
+
+def _workspace_change_summary(
+    workspace: Path | None = None,
+    before: dict[str, tuple[str, str]] | None = None,
+) -> list[dict[str, str]]:
+    """Summarize only paths whose state changed during the current chat turn."""
+    after = _workspace_change_snapshot(workspace)
+    if before is None:
+        changed_paths = sorted(after)
+    else:
+        changed_paths = sorted(
+            path for path in set(before) | set(after) if before.get(path) != after.get(path)
+        )
+    changes: list[dict[str, str]] = []
+    for path in changed_paths:
+        current = after.get(path)
+        changes.append({"status": current[0] if current else "clean", "path": path})
+    return changes[:200]
 
 
 def _resolve_workspace_path(raw: Any) -> Path:
@@ -484,7 +565,7 @@ def create_app() -> Any:
     """Build and return the FastAPI application object."""
     _require_webdeps()
 
-    from fastapi import Body, FastAPI, WebSocket, WebSocketDisconnect  # type: ignore
+    from fastapi import Body, FastAPI, Request, WebSocket, WebSocketDisconnect  # type: ignore
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse  # type: ignore
     from fastapi.staticfiles import StaticFiles  # type: ignore
 
@@ -503,13 +584,18 @@ def create_app() -> Any:
         parse_help_command,
         render_help_response,
     )
-
     # SkillLoader lives in core/skill_loader/, so we use importlib for dynamic loading.
     _loader_mod = _import_from_path(
         "neuroclaw_skill_loader",
         REPO_ROOT / "core" / "skill_loader" / "loader.py",
     )
     SkillLoader = _loader_mod.SkillLoader
+    _study_mod = _import_from_path(
+        "neurodiscovery_user_study",
+        REPO_ROOT / "neurooracle" / "src" / "user_study.py",
+    )
+    UserStudyService = _study_mod.UserStudyService
+    USER_STUDY_PROTOCOL_VERSION = _study_mod.PROTOCOL_VERSION
 
     def _load_offline_skill_summaries() -> dict[str, dict[str, str]]:
         try:
@@ -689,6 +775,20 @@ def create_app() -> Any:
         return catalog
 
     app = FastAPI(title="NeuroClaw Web UI", docs_url=None, redoc_url=None)
+    study_service = UserStudyService()
+    study_password = os.environ.get("NEURODISCOVERY_STUDY_PASSWORD", "123456")
+    study_tokens: dict[str, float] = {}
+
+    @app.middleware("http")
+    async def protect_study_api(request: Request, call_next: Any) -> Any:
+        path = request.url.path.rstrip("/")
+        if path.startswith("/api/studies") and path != "/api/studies/auth" and request.method != "OPTIONS":
+            token = request.headers.get("X-NeuroDiscovery-Study-Token", "")
+            expires_at = study_tokens.get(token, 0.0)
+            if not token or expires_at <= time.time():
+                study_tokens.pop(token, None)
+                return JSONResponse({"error": "Study authentication required"}, status_code=401)
+        return await call_next(request)
 
     # ── Static files ────────────────────────────────────────────────────────────
     if STATIC_DIR.exists():
@@ -703,7 +803,13 @@ def create_app() -> Any:
     async def root() -> Any:
         index = STATIC_DIR / "index.html"
         if index.exists():
-            return FileResponse(str(index))
+            return FileResponse(
+                str(index),
+                headers={
+                    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                    "Pragma": "no-cache",
+                },
+            )
         return HTMLResponse(
             "<h1>NeuroClaw Web UI</h1>"
             f"<p>Static files not found at <code>{STATIC_DIR}</code>.</p>",
@@ -893,7 +999,8 @@ def create_app() -> Any:
         soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
         skill_names = ", ".join(s["name"] for s in skills)
         surface_prompt = _client_surface_prompt(client_surface)
-        system_parts = [soul, surface_prompt, f"Loaded skills: {skill_names}"]
+        language_prompt = _response_language_prompt(payload.get("language"))
+        system_parts = [soul, surface_prompt, language_prompt, f"Loaded skills: {skill_names}"]
         session.history = [{
             "role": "system",
             "content": "\n\n".join(part for part in system_parts if part),
@@ -923,6 +1030,7 @@ def create_app() -> Any:
 
         session.history.append({"role": "user", "content": user_payload})
 
+        workspace_before = _workspace_change_snapshot(workspace)
         reply = await asyncio.to_thread(session._chat)
         llm_cfg = session.env.get("llm_backend", {})
         provider_used = str(llm_cfg.get("provider", "unknown"))
@@ -933,7 +1041,8 @@ def create_app() -> Any:
             "provider_used": provider_used,
             "model_used": model_used,
             "tool_events": _summarize_web_tool_events(getattr(session, "_tool_events", [])),
-            "workspace_changes": _workspace_change_summary(workspace),
+            "workspace_changes": _workspace_change_summary(workspace, workspace_before),
+            "workspace_change_scope": "turn",
         }
 
     @app.post("/api/chat/title")
@@ -954,6 +1063,9 @@ def create_app() -> Any:
             "You are a conversation title generator. "
             "Return exactly one short title in plain text, 3-10 words, no quotes, no markdown."
         )
+        language_prompt = _response_language_prompt(payload.get("language"))
+        if language_prompt:
+            title_system = f"{title_system}\n\n{language_prompt}"
         convo = f"User message:\n{user_text}\n\nAssistant reply:\n{assistant_text}"
         session.history = [
             {"role": "system", "content": title_system},
@@ -1121,7 +1233,10 @@ def create_app() -> Any:
 
                     selected_ctx = _selected_skills_context(selected, skills)
                     scope_context = build_autoresearch_scope_prompt(autoresearch_mode)
+                    language_context = _response_language_prompt(msg.get("language"))
                     payload_parts = [user_text]
+                    if language_context:
+                        payload_parts.append(language_context)
                     if selected_ctx:
                         payload_parts.append(
                             "[Selected skill references from local SKILL.md files]\n"
@@ -1676,11 +1791,17 @@ def create_app() -> Any:
                 })
             return _neurooracle_graph_status()
         except Exception as exc:
+            error_message = str(exc)
+            if "WRONG_VERSION_NUMBER" in error_message:
+                error_message = (
+                    "Proxy protocol mismatch. Use an HTTP or mixed proxy port in "
+                    "Settings > Desktop Runtime, then restart the app."
+                )
             with _neurooracle_download_lock:
                 _neurooracle_download_state.update({
                     "running": False,
                     "completed": False,
-                    "error": str(exc),
+                    "error": error_message,
                 })
             return _neurooracle_graph_status()
 
@@ -2068,6 +2189,139 @@ def create_app() -> Any:
             f"<p>explore.html not found in <code>{STATIC_DIR}</code>.</p>",
             status_code=500,
         )
+
+    @app.get("/study")
+    async def expert_study_page() -> Any:
+        page = STATIC_DIR / "study.html"
+        if page.exists():
+            return FileResponse(
+                str(page),
+                headers={
+                    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                    "Pragma": "no-cache",
+                },
+            )
+        return HTMLResponse(
+            "<h1>Expert Study</h1>"
+            f"<p>study.html not found in <code>{STATIC_DIR}</code>.</p>",
+            status_code=500,
+        )
+
+    def _study_error(exc: Exception) -> JSONResponse:
+        status = 404 if isinstance(exc, (FileNotFoundError, KeyError)) else 400
+        return JSONResponse({"error": str(exc)}, status_code=status)
+
+    @app.post("/api/studies/auth")
+    async def authenticate_study(payload: dict = Body(...)) -> Any:
+        candidate = str(payload.get("password") or "")
+        if not secrets.compare_digest(candidate, study_password):
+            return JSONResponse({"error": "Incorrect study password"}, status_code=401)
+        now = time.time()
+        for token, expires_at in list(study_tokens.items()):
+            if expires_at <= now:
+                study_tokens.pop(token, None)
+        token = secrets.token_urlsafe(32)
+        expires_in = 12 * 60 * 60
+        study_tokens[token] = now + expires_in
+        return {"token": token, "expires_in": expires_in}
+
+    @app.get("/api/studies/config")
+    async def study_config() -> Any:
+        case_root = REPO_ROOT / "neurooracle" / "data" / "cs_runs" / "case1_transdiagnostic"
+        expert_subset = REPO_ROOT / "neurooracle" / "data" / "user_study" / "case1_expert_subset_v1.json"
+        candidates: list[Path] = []
+        if expert_subset.exists():
+            candidates.append(expert_subset)
+        if case_root.exists():
+            candidates.extend(
+                sorted(
+                    case_root.rglob("hypotheses*.json"),
+                    key=lambda item: item.stat().st_mtime,
+                    reverse=True,
+                )[:15]
+            )
+        graph_path = _neurooracle_graph_path()
+        return {
+            "protocol_version": USER_STUDY_PROTOCOL_VERSION,
+            "case_study": "case1_transdiagnostic",
+            "case_name": {
+                "en": "Transdiagnostic Brain Atlas of Psychiatric Disorders",
+                "zh": "跨诊断精神疾病脑影像图谱",
+            },
+            "conditions": ["manual", "assisted", "generator"],
+            "suggested_candidate_sources": [str(item) for item in candidates],
+            "graph_path": str(graph_path) if graph_path.exists() else "",
+            "study_root": str(study_service.root),
+        }
+
+    @app.post("/api/studies/sessions")
+    async def create_study_session(payload: dict = Body(...)) -> Any:
+        try:
+            return study_service.create_session(
+                study_id=str(payload.get("study_id") or ""),
+                participant_id=str(payload.get("participant_id") or ""),
+                condition=str(payload.get("condition") or "manual"),
+                candidate_path=str(payload.get("candidate_path") or ""),
+                case_study=str(payload.get("case_study") or "case1_transdiagnostic"),
+                random_seed=int(payload["random_seed"]) if payload.get("random_seed") not in (None, "") else 0,
+                graph_path=str(payload.get("graph_path") or "") or None,
+            )
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.get("/api/studies/sessions")
+    async def list_study_sessions(study_id: str) -> Any:
+        try:
+            return {"study_id": study_id, "sessions": study_service.list_sessions(study_id)}
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.get("/api/studies/sessions/{session_id}")
+    async def get_study_session(session_id: str, include_events: bool = False) -> Any:
+        try:
+            return study_service.get_session(session_id, include_events=include_events)
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.post("/api/studies/sessions/{session_id}/events")
+    async def append_study_events(session_id: str, payload: dict = Body(...)) -> Any:
+        try:
+            events = payload.get("events") if isinstance(payload.get("events"), list) else []
+            return {"accepted": study_service.append_events(session_id, events)}
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.post("/api/studies/sessions/{session_id}/submit")
+    async def submit_study_session(session_id: str, payload: dict = Body(...)) -> Any:
+        try:
+            ranking = payload.get("ranking") if isinstance(payload.get("ranking"), list) else []
+            buckets = payload.get("buckets") if isinstance(payload.get("buckets"), dict) else {}
+            return study_service.submit_session(
+                session_id,
+                ranking=[str(item) for item in ranking],
+                active_seconds=float(payload.get("active_seconds") or 0.0),
+                wall_seconds=float(payload.get("wall_seconds") or 0.0),
+                buckets={str(key): str(value) for key, value in buckets.items()},
+            )
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.post("/api/studies/execution-results/import")
+    async def import_study_execution_results(payload: dict = Body(...)) -> Any:
+        try:
+            return study_service.import_execution_results(
+                str(payload.get("study_id") or ""),
+                str(payload.get("path") or ""),
+            )
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.get("/api/studies/results")
+    async def study_results(study_id: str) -> Any:
+        try:
+            return study_service.results(study_id)
+        except Exception as exc:
+            return _study_error(exc)
 
     @app.get("/api/neurooracle/graph/status")
     async def neurooracle_graph_status() -> Any:

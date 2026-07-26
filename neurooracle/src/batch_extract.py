@@ -414,7 +414,7 @@ def run_batch_extraction(
     papers_per_year: int = PAPERS_PER_YEAR,
     resume: bool = True,
     broad: bool = False,
-    max_workers: int = 8,
+    max_workers: int = 24,
     data_dir: Optional[Path] = None,
     keep_noise: bool = False,
     strict_phase1: bool = False,
@@ -429,7 +429,7 @@ def run_batch_extraction(
         papers_per_year: Number of papers to fetch per disease per year.
         resume: Whether to resume from checkpoint.
         broad: Use broader PubMed query.
-        max_workers: Number of parallel LLM workers. Default 8.
+        max_workers: Number of parallel LLM workers. Default 24.
         data_dir: Output directory for KG/checkpoint/CSV/JSONL. Defaults to
             ``neurooracle/data/full_snapshot_v2``. Pass a different path to run
             isolated streams (e.g. quick 20-papers/year vs full 500-papers/year
@@ -714,7 +714,7 @@ def main():
     parser.add_argument("--papers-per-year", type=int, default=PAPERS_PER_YEAR)
     parser.add_argument("--no-resume", action="store_true", help="Start fresh (ignore checkpoint)")
     parser.add_argument("--broad", action="store_true", help="Use broader PubMed query (more results)")
-    parser.add_argument("--max-workers", type=int, default=8, help="Number of parallel LLM workers (default: 8)")
+    parser.add_argument("--max-workers", type=int, default=24, help="Number of parallel LLM workers (default: 8)")
     parser.add_argument("--data-dir", type=str, default=None,
                         help="Output directory for KG/checkpoint/CSV/JSONL "
                              "(default: neurooracle/data/full_snapshot_v2). "

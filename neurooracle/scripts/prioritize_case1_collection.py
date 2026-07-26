@@ -16,9 +16,6 @@ from datetime import datetime
 from pathlib import Path
 
 
-DEFAULT_DATA_DIR = Path("neurooracle/data/cs_runs/phase2_case1_transdiagnostic_v1")
-
-
 @dataclass(frozen=True)
 class PatternGroup:
     name: str
@@ -287,7 +284,7 @@ def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
+    parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--n-batches", type=int, default=10)
     args = parser.parse_args()

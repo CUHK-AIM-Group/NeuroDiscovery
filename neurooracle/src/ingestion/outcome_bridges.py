@@ -324,8 +324,8 @@ def _bridge_drug_indications(kg: KnowledgeGraph) -> int:
 # variable --modality_provides--> anchor) so brain_age / connectome_behavior /
 # task_brain_behavior / drug_imaging_outcome can route IM ↔ Idv either way.
 #
-# Anchor IDs are the modality-level CLM_CONCEPT nodes the KG actually carries
-# (verified against full_snapshot_v1). Endpoints that aren't present are
+# Anchor IDs are modality-level CLM_CONCEPT nodes carried by the KG. Endpoints
+# that aren't present are
 # silently skipped by `_add_edge_if_new`, so the dict can over-list candidates.
 IMAGING_DATASET_VAR_TO_IM_ANCHORS: dict[str, list[str]] = {
     # ADNI imaging domains

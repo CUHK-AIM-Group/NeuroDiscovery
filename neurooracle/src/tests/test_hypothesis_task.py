@@ -27,8 +27,8 @@ from neurooracle.src.schema import ConceptNode, Edge
 
 
 KG_CANDIDATES = [
+    Path("neurooracle/data/full_v2/knowledge_graph.json"),
     Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json"),
-    Path("neurooracle/data/full_snapshot_v1/knowledge_graph.json"),
     Path("neurooracle/data/quick/knowledge_graph.json"),
 ]
 

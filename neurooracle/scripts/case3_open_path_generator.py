@@ -9,7 +9,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from case3_hindcasting_eval import _is_negative_relation, _role_for_node, load_kg_index
+try:
+    from .case3_hindcasting_eval import _is_negative_relation, _role_for_node, load_kg_index
+except ImportError:  # Direct script execution.
+    from case3_hindcasting_eval import _is_negative_relation, _role_for_node, load_kg_index
 
 
 TREE_RELATIONS = {"is_a", "part_of", "about", "supported_by"}

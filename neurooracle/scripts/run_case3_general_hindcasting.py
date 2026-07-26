@@ -8,9 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from build_temporal_kg_snapshot import build_snapshot
-from case3_general_hindcasting_eval import evaluate
-from case3_open_path_generator import generate as generate_open_paths
+try:
+    from .build_temporal_kg_snapshot import build_snapshot
+    from .case3_general_hindcasting_eval import evaluate
+    from .case3_open_path_generator import generate as generate_open_paths
+except ImportError:  # Direct script execution.
+    from build_temporal_kg_snapshot import build_snapshot
+    from case3_general_hindcasting_eval import evaluate
+    from case3_open_path_generator import generate as generate_open_paths
 
 
 @dataclass(frozen=True)
@@ -25,10 +30,11 @@ class Window:
 
 
 DEFAULT_WINDOWS = (
-    Window(2016, 2017, 2018),
-    Window(2018, 2019, 2020),
-    Window(2020, 2021, 2022),
-    Window(2022, 2023, 2024),
+    Window(2016, 2017, 2021),
+    Window(2017, 2018, 2022),
+    Window(2018, 2019, 2023),
+    Window(2019, 2020, 2024),
+    Window(2020, 2021, 2025),
 )
 
 
@@ -145,9 +151,9 @@ def _fmt(value: Any) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run corrected general Case Study 3 rolling hindcasting.")
-    parser.add_argument("--input-dir", type=Path, default=Path("neurooracle/data/full_snapshot_v1"))
-    parser.add_argument("--snapshot-root", type=Path, default=Path("neurooracle/data/snapshots"))
-    parser.add_argument("--output-root", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/general_rolling_full_snapshot_v1"))
+    parser.add_argument("--input-dir", type=Path, default=Path("neurooracle/data/full_v2"))
+    parser.add_argument("--snapshot-root", type=Path, default=Path("neurooracle/data/experiments/case3/snapshots_full_v2_5year_2016_2020"))
+    parser.add_argument("--output-root", type=Path, default=Path("neurooracle/data/experiments/case3/general_rolling_full_v2"))
     parser.add_argument("--windows", nargs="*", type=parse_window, default=list(DEFAULT_WINDOWS))
     parser.add_argument("--max-hops", type=int, default=4)
     parser.add_argument("--min-hops", type=int, default=2)
@@ -162,13 +168,14 @@ def main() -> None:
     parser.add_argument("--per-mediator-neighbor-limit", type=int, default=50)
     parser.add_argument("--top-k", type=int, nargs="+", default=[10, 100, 1000])
     parser.add_argument("--random-trials", type=int, default=300)
+    parser.add_argument("--seed", type=int, default=31)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
     args.output_root.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
     for window in args.windows:
-        snapshot_dir = args.snapshot_root / f"kg_{window.freeze_year}_from_full_snapshot_v1"
+        snapshot_dir = args.snapshot_root / f"kg_{window.freeze_year}"
         manifest_path = snapshot_dir / "manifest.json"
         if args.force or not manifest_path.is_file():
             print(f"[snapshot] building KG_{window.freeze_year}", flush=True)
@@ -196,18 +203,23 @@ def main() -> None:
             force=args.force,
         )
         print(f"[evaluate] {window.label}", flush=True)
-        metrics = evaluate(
-            kg_path=snapshot_dir / "knowledge_graph.json",
-            hypotheses_path=hypotheses_path,
-            future_claims_path=args.input_dir / "extracted_claims.jsonl",
-            output_dir=run_dir / "general_hindcasting",
-            freeze_year=window.freeze_year,
-            future_start_year=window.future_start_year,
-            future_end_year=window.future_end_year,
-            top_ks=args.top_k,
-            random_trials=args.random_trials,
-            seed=31,
-        )
+        metrics_path = run_dir / "general_hindcasting" / "metrics.json"
+        if metrics_path.is_file() and not args.force:
+            print(f"[evaluate] reuse {metrics_path}", flush=True)
+            metrics = load_json(metrics_path)
+        else:
+            metrics = evaluate(
+                kg_path=snapshot_dir / "knowledge_graph.json",
+                hypotheses_path=hypotheses_path,
+                future_claims_path=args.input_dir / "extracted_claims.jsonl",
+                output_dir=run_dir / "general_hindcasting",
+                freeze_year=window.freeze_year,
+                future_start_year=window.future_start_year,
+                future_end_year=window.future_end_year,
+                top_ks=args.top_k,
+                random_trials=args.random_trials,
+                seed=args.seed,
+            )
         rows.append({
             "freeze_year": window.freeze_year,
             "future_start_year": window.future_start_year,

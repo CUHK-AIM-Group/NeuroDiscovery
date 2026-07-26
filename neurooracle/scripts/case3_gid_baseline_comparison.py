@@ -7,10 +7,18 @@ import math
 import random
 from collections import Counter, defaultdict
 from dataclasses import replace
+import sys
 from pathlib import Path
 from typing import Any
 
-import torch
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+try:  # Optional at import time: external-hypothesis evaluation does not need KGE.
+    import torch
+except ImportError:  # pragma: no cover
+    torch = None  # type: ignore[assignment]
 
 from case3_hindcasting_eval import (
     NeighborhoodGraph,
@@ -30,8 +38,15 @@ from case3_hindcasting_eval import (
     load_kg_index,
     recall_at_k,
 )
-from neurooracle.src.kge.complex_scorer import ComplExScorer, TrainConfig
-from neurooracle.src.kge.triple_loader import load_triples_from_kg, split_triples
+
+try:
+    from neurooracle.src.kge.complex_scorer import ComplExScorer, TrainConfig
+    from neurooracle.src.kge.triple_loader import load_triples_from_kg, split_triples
+except ImportError:  # pragma: no cover
+    ComplExScorer = None  # type: ignore[assignment]
+    TrainConfig = None  # type: ignore[assignment]
+    load_triples_from_kg = None  # type: ignore[assignment]
+    split_triples = None  # type: ignore[assignment]
 
 
 WINDOWS = (
@@ -419,6 +434,8 @@ def ensure_kge_scorer(
     seed: int,
     device: str | None,
 ) -> ComplExScorer:
+    if ComplExScorer is None or TrainConfig is None or load_triples_from_kg is None or split_triples is None:
+        raise RuntimeError("KGE dependencies are unavailable in this environment")
     if checkpoint_path.exists():
         return ComplExScorer.load(checkpoint_path, device=device)
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
@@ -651,15 +668,15 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Case Study 3 GENE-IMAGING-DISEASE baseline comparison.")
-    parser.add_argument("--snapshot-root", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/snapshots_full_v2_case1_case2_v1"))
-    parser.add_argument("--snapshot-template", type=str, default="kg_{freeze}_from_full_snapshot_v1")
+    parser.add_argument("--snapshot-root", type=Path, default=Path("neurooracle/data/experiments/case3/snapshots_full_v2_5year_2016_2020"))
+    parser.add_argument("--snapshot-template", type=str, default="kg_{freeze}")
     parser.add_argument("--future-claims", type=Path, default=Path("neurooracle/data/full_v2/extracted_claims.jsonl"))
-    parser.add_argument("--output-dir", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/gid_baselines_full_v2_case1_case2_v1"))
+    parser.add_argument("--output-dir", type=Path, default=Path("neurooracle/data/experiments/case3/gid_baselines_full_v2_5year_2016_2020"))
     parser.add_argument("--candidate-universe", choices=("full-chain", "neurodiscovery-top"), default="full-chain")
     parser.add_argument("--max-candidates", type=int, default=0, help="0 means no cap for --candidate-universe full-chain.")
     parser.add_argument("--random-trials", type=int, default=100)
     parser.add_argument("--seed", type=int, default=260617)
-    parser.add_argument("--kge-dir", type=Path, default=Path("neurooracle/data/cs_runs/case3_hindcasting/kge_cache_full_v2_case1_case2"))
+    parser.add_argument("--kge-dir", type=Path, default=Path("neurooracle/data/experiments/case3/kge_cache_full_v2_5year_2016_2020"))
     parser.add_argument("--kge-dim", type=int, default=64)
     parser.add_argument("--kge-epochs", type=int, default=12)
     parser.add_argument("--kge-batch-size", type=int, default=4096)

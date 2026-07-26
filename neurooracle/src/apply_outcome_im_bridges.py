@@ -2,7 +2,7 @@
 
 Usage:
     python -m neurooracle.src.apply_outcome_im_bridges \
-        --graph neurooracle/data/full_snapshot_v1/knowledge_graph.json
+        --graph neurooracle/data/full_v2/knowledge_graph.json
 """
 
 from __future__ import annotations

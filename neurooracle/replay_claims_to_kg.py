@@ -14,14 +14,15 @@ Atomic save at the end (storage.save_graph already writes via .tmp + rename).
 Usage::
 
     python -m neurooracle.replay_claims_to_kg \
-        --snapshot neurooracle/data/full_snapshot_v1/knowledge_graph.json \
-        --claims neurooracle/data/full_snapshot_v2/extracted_claims.jsonl \
-        --out neurooracle/data/full_snapshot_v2/knowledge_graph.json
+        --snapshot neurooracle/data/full_v2/knowledge_graph.json \
+        --claims neurooracle/data/full_v2/extracted_claims.jsonl \
+        --out neurooracle/data/full_v2/knowledge_graph.json
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import time
@@ -31,6 +32,14 @@ from neurooracle.src.schema import Claim, ConceptNode, Edge
 from neurooracle.src.storage import load_graph, save_graph
 
 logger = logging.getLogger(__name__)
+
+
+def _canonical_legacy_id(value: str, prefix: str) -> str:
+    value = str(value or "").strip()
+    if not value.upper().startswith("MANUAL") or ":" not in value:
+        return value
+    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}:{digest}"
 
 
 def replay(
@@ -94,7 +103,9 @@ def replay(
                 d = json.loads(line)
             except Exception:
                 continue
-            cid = d.get("id", "")
+            legacy_cid = d.get("id", "")
+            cid = _canonical_legacy_id(legacy_cid, "CLM")
+            d["id"] = cid
             if cid in snapshot_clm:
                 n_already += 1
                 continue
@@ -103,8 +114,16 @@ def replay(
                 continue
             seen_ids.add(cid)
 
-            sid = d.get("subject_id", "")
-            oid = d.get("object_id", "")
+            legacy_sid = d.get("subject_id", "")
+            legacy_oid = d.get("object_id", "")
+            sid = _canonical_legacy_id(legacy_sid, "CLM_CONCEPT")
+            oid = _canonical_legacy_id(legacy_oid, "CLM_CONCEPT")
+            d["subject_id"] = sid
+            d["object_id"] = oid
+            if sid != legacy_sid:
+                d.setdefault("metadata", {})["legacy_subject_id"] = legacy_sid
+            if oid != legacy_oid:
+                d.setdefault("metadata", {})["legacy_object_id"] = legacy_oid
             pred = d.get("predicate", "")
             sname = d.get("subject_name", "")
             oname = d.get("object_name", "")

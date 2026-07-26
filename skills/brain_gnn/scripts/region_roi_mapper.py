@@ -221,9 +221,14 @@ def build_edge_boost_matrix(hypothesis: dict, n_roi: int = 116) -> np.ndarray:
 
 
 if __name__ == "__main__":
+    import argparse
     import json
 
-    hyp_path = ROOT / "neurooracle" / "data" / "quick" / "hypotheses_imaging_hcp.json"
+    p = argparse.ArgumentParser()
+    p.add_argument("--hypotheses", required=True)
+    args = p.parse_args()
+
+    hyp_path = ROOT / args.hypotheses
     with open(hyp_path) as f:
         data = json.load(f)
 

@@ -7,8 +7,9 @@ const os = require('node:os');
 const path = require('node:path');
 
 const APP_NAME = 'NeuroClaw';
+const APP_OPENED_AT_MS = Date.now();
 const STARTUP_TIMEOUT_MS = 90_000;
-const BUNDLED_RUNTIME_VERSION = '0.2.1';
+const BUNDLED_RUNTIME_VERSION = '0.2.2';
 const WINDOWS_RESERVED_FOLDER_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
 
 app.setName(APP_NAME);
@@ -76,6 +77,14 @@ function escapeHtml(value) {
 
 function desktopDataUrl(html) {
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+}
+
+function formatDurationMs(milliseconds) {
+  const totalSeconds = Math.max(0, Math.round((Number(milliseconds) || 0) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function startupPageHtml(status, detail = '') {
@@ -236,7 +245,9 @@ function userConfigPath() {
 }
 
 function packagedRuntimeSourceRoot() {
-  return path.join(process.resourcesPath || __dirname, 'runtime');
+  return app.isPackaged
+    ? path.join(process.resourcesPath || __dirname, 'runtime')
+    : path.join(__dirname, 'runtime');
 }
 
 function userRuntimeRoot() {
@@ -360,8 +371,20 @@ function runBundledCondaUnpack(runtimeRoot) {
 }
 
 function ensureBundledRuntime() {
-  if (!app.isPackaged || !bundledRuntimeSourceExists()) return null;
   const sourceRoot = packagedRuntimeSourceRoot();
+  if (!app.isPackaged) {
+    if (!bundledRuntimeReady(sourceRoot)) return null;
+    ensureBundledRuntimeExecutables(sourceRoot);
+    runBundledCondaUnpack(sourceRoot);
+    log(`Using development bundled runtime at ${sourceRoot}`);
+    return {
+      pythonExe: bundledPythonExe(sourceRoot),
+      // In development, execute the live checkout so frontend/backend edits are
+      // available immediately without regenerating the packaged backend copy.
+      repoRoot: path.resolve(__dirname, '..'),
+    };
+  }
+  if (!bundledRuntimeSourceExists()) return null;
   const runtimeRoot = userRuntimeRoot();
   const marker = path.join(runtimeRoot, '.runtime-version');
   const expectedMarker = bundledRuntimeMarkerValue();
@@ -410,6 +433,27 @@ function defaultPythonExe(home) {
 
 function defaultLlmBaseUrl() {
   return process.env.NEUROCLAW_LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+}
+
+function normalizeProxyUrl(value) {
+  let raw = String(value || '').trim().replace(/^"|"$/g, '');
+  if (!raw) return '';
+  if (/^\d{1,5}$/.test(raw)) raw = `http://127.0.0.1:${raw}`;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = `http://${raw}`;
+  try {
+    const parsed = new URL(raw);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+    const hostname = parsed.hostname.toLowerCase();
+    if (['127.0.0.1', 'localhost', '::1', '[::1]'].includes(hostname)) {
+      parsed.protocol = 'http:';
+    }
+    parsed.pathname = '';
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString().replace(/\/$/, '');
+  } catch (_error) {
+    return '';
+  }
 }
 
 function pushUniquePath(out, seen, filePath) {
@@ -544,7 +588,7 @@ function defaultConfig() {
     localPythonExe: process.env.NEUROCLAW_LOCAL_PYTHON_EXE || '',
     fslDir: process.env.FSLDIR || '',
     language: process.env.NEUROCLAW_LANGUAGE || 'English',
-    proxyUrl: process.env.NEUROCLAW_PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '',
+    proxyUrl: process.env.NEUROCLAW_PROXY_URL || '',
     llmProvider: process.env.NEUROCLAW_LLM_PROVIDER || 'openai',
     llmModel: process.env.NEUROCLAW_LLM_MODEL || 'gpt-5.5',
     llmBaseUrl: defaultLlmBaseUrl(),
@@ -565,6 +609,7 @@ function normalizeConfig(config) {
       next.llmBaseUrl = defaultLlmBaseUrl();
     }
   }
+  next.proxyUrl = normalizeProxyUrl(next.proxyUrl);
   return next;
 }
 
@@ -748,6 +793,29 @@ function applyLlmProcessEnv(env, config) {
   if (apiKeyEnv) env[apiKeyEnv] = apiKey;
 }
 
+function applyProxyProcessEnv(env, config) {
+  for (const key of [
+    'NEUROCLAW_PROXY_URL',
+    'HTTP_PROXY',
+    'HTTPS_PROXY',
+    'ALL_PROXY',
+    'http_proxy',
+    'https_proxy',
+    'all_proxy',
+  ]) {
+    delete env[key];
+  }
+  const proxyUrl = normalizeProxyUrl(config.proxyUrl);
+  if (!proxyUrl) return;
+  env.NEUROCLAW_PROXY_URL = proxyUrl;
+  env.HTTP_PROXY = proxyUrl;
+  env.HTTPS_PROXY = proxyUrl;
+  env.http_proxy = proxyUrl;
+  env.https_proxy = proxyUrl;
+  env.NO_PROXY = env.NO_PROXY || '127.0.0.1,localhost';
+  env.no_proxy = env.no_proxy || env.NO_PROXY;
+}
+
 function ensureLogStream() {
   if (logStream) return logStream;
   const logDir = path.join(app.getPath('userData'), 'logs');
@@ -890,13 +958,7 @@ async function ensureBackend() {
   if (config.fslDir) env.FSLDIR = config.fslDir;
   if (config.language && config.language !== 'System default') env.NEUROCLAW_LANGUAGE = config.language;
   applyLlmProcessEnv(env, config);
-  if (config.proxyUrl) {
-    env.NEUROCLAW_PROXY_URL = config.proxyUrl;
-    env.HTTP_PROXY = config.proxyUrl;
-    env.HTTPS_PROXY = config.proxyUrl;
-    env.ALL_PROXY = config.proxyUrl;
-    env.NO_PROXY = env.NO_PROXY || '127.0.0.1,localhost';
-  }
+  applyProxyProcessEnv(env, config);
 
   const command = config.runtimeMode === 'python' || config.runtimeMode === 'bundled' ? config.pythonExe : config.condaExe;
   const args = config.runtimeMode === 'python' || config.runtimeMode === 'bundled'
@@ -967,6 +1029,16 @@ function createWindow() {
   });
   mainWindow.once('ready-to-show', () => {
     focusMainWindow();
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        void shell.openExternal(parsed.href);
+      }
+    } catch (_error) {}
+    return { action: 'deny' };
   });
 
   installContextMenu(mainWindow);
@@ -1110,6 +1182,20 @@ function settingsMenuItem(accelerator = null) {
   return item;
 }
 
+function expertStudyMenuItem() {
+  return {
+    label: desktopText('Expert Study', '专家研究'),
+    click: () => sendMenuAction('open-expert-study'),
+  };
+}
+
+function studyResultsMenuItem() {
+  return {
+    label: desktopText('Study Results', '研究结果'),
+    click: () => sendMenuAction('open-study-results'),
+  };
+}
+
 function aboutMenuItem() {
   return {
     label: desktopText('About NeuroClaw', '关于 NeuroClaw'),
@@ -1133,6 +1219,9 @@ function setApplicationMenu() {
         { type: 'separator' },
         settingsMenuItem('Cmd+,'),
         { type: 'separator' },
+        expertStudyMenuItem(),
+        studyResultsMenuItem(),
+        { type: 'separator' },
         { label: desktopText('Services', '服务'), role: 'services' },
         { type: 'separator' },
         { label: desktopText(`Hide ${APP_NAME}`, `隐藏 ${APP_NAME}`), role: 'hide' },
@@ -1143,6 +1232,9 @@ function setApplicationMenu() {
       ]
     : [
         newChatMenuItem(),
+        { type: 'separator' },
+        expertStudyMenuItem(),
+        studyResultsMenuItem(),
         { type: 'separator' },
         settingsMenuItem(),
         { type: 'separator' },
@@ -1287,6 +1379,50 @@ ipcMain.handle('neuroclaw:create-project-folder', async (_event, requestedName) 
   }
 });
 
+ipcMain.handle('neuroclaw:export-user-study-results', async (_event, request) => {
+  try {
+    const payload = request && typeof request === 'object' && request.payload && typeof request.payload === 'object'
+      ? request.payload
+      : {};
+    const requestedName = path.basename(String(request && request.defaultFileName ? request.defaultFileName : 'NeuroDiscovery-user-study-results.json'));
+    const safeName = requestedName
+      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+      .replace(/[. ]+$/g, '') || 'NeuroDiscovery-user-study-results.json';
+    const defaultFileName = safeName.toLowerCase().endsWith('.json') ? safeName : `${safeName}.json`;
+    const exportedAtMs = Date.now();
+    const totalAppOpenTimeMs = exportedAtMs - APP_OPENED_AT_MS;
+    const exportPayload = {
+      ...payload,
+      desktop_metadata: {
+        ...(payload.desktop_metadata && typeof payload.desktop_metadata === 'object' ? payload.desktop_metadata : {}),
+        app_name: APP_NAME,
+        app_version: app.getVersion(),
+        platform: process.platform,
+        app_opened_at: new Date(APP_OPENED_AT_MS).toISOString(),
+        exported_at: new Date(exportedAtMs).toISOString(),
+        total_app_open_time: formatDurationMs(totalAppOpenTimeMs),
+        total_app_open_time_ms: totalAppOpenTimeMs,
+      },
+    };
+    const owner = BrowserWindow.getFocusedWindow() || mainWindow;
+    const options = {
+      title: desktopText('Export expert study results', '导出专家研究结果'),
+      buttonLabel: desktopText('Export', '导出'),
+      defaultPath: path.join(app.getPath('documents'), defaultFileName),
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    };
+    const result = owner && !owner.isDestroyed()
+      ? await dialog.showSaveDialog(owner, options)
+      : await dialog.showSaveDialog(options);
+    if (result.canceled || !result.filePath) return { canceled: true };
+    const filePath = result.filePath.toLowerCase().endsWith('.json') ? result.filePath : `${result.filePath}.json`;
+    fs.writeFileSync(filePath, `${JSON.stringify(exportPayload, null, 2)}\n`, 'utf8');
+    return { canceled: false, path: filePath };
+  } catch (error) {
+    return { canceled: false, error: String(error && error.message ? error.message : error) };
+  }
+});
+
 ipcMain.handle('neuroclaw:restart', () => {
   log('Restart requested from settings');
   stopBackend();
@@ -1313,7 +1449,9 @@ async function boot() {
         ? desktopText('Connected to an existing NeuroClaw backend.', '已连接到正在运行的 NeuroClaw 后端。')
         : desktopText('The backend is ready. Opening the desktop UI.', '后端已就绪，正在打开桌面界面。'),
     );
-    await mainWindow.loadURL(backend.url);
+    const desktopUiUrl = new URL(backend.url);
+    desktopUiUrl.searchParams.set('desktop', app.isPackaged ? app.getVersion() : String(Date.now()));
+    await mainWindow.loadURL(desktopUiUrl.toString());
     focusMainWindow();
   } catch (err) {
     log(`Startup failed: ${err.stack || err.message || err}`);

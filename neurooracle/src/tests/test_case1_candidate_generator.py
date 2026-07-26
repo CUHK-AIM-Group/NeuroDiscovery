@@ -86,8 +86,21 @@ def test_case1_candidate_generator_emits_four_methods():
     methods = {h.metadata["generation_method"] for h in hypotheses}
     assert methods == {"exhaustive", "random_walk", "llm_brainstorm", "neurodiscovery"}
     assert all(h.hypothesis_type == "case1_candidate" for h in hypotheses)
-    assert all("direction" not in h.metadata["candidate_tuple"] for h in hypotheses)
-    assert all(h.metadata["direction_assumption"].startswith("none") for h in hypotheses)
+    assert all(h.explanation.startswith("Patients with ") for h in hypotheses)
+    assert all("are hypothesized to show" in h.explanation for h in hypotheses)
+    assert all(
+        "increased" in h.explanation or "decreased" in h.explanation
+        for h in hypotheses
+    )
+    assert all("relative to healthy controls." in h.explanation for h in hypotheses)
+    assert all("Test whether" not in h.explanation for h in hypotheses)
+    assert {h.metadata["candidate_tuple"]["direction"] for h in hypotheses} <= {
+        "increase",
+        "decrease",
+    }
+    assert {h.metadata["direction_assumption"] for h in hypotheses} <= {"increase", "decrease"}
+    assert all(h.metadata["direction_source"] == "generator_directional_prior" for h in hypotheses)
+    assert all("is associated with" in h.metadata["display_title"] for h in hypotheses)
     assert {len(h.metadata["candidate_tuple"]["diseases"]) for h in hypotheses} == {1}
     assert {h.metadata["total_candidate_space"] for h in hypotheses} == {16}
 

@@ -4,13 +4,12 @@ const crypto = require('crypto');
 
 const repo = path.resolve(__dirname, '..', '..');
 const stagingDir = path.join(repo, 'neurooracle', 'data', 'phase2_staging', 'general_neuromed_manual_20260610');
-const defaultClaims = path.join(stagingDir, 'manual_claims.jsonl');
-const defaultGraph = path.join(repo, 'neurooracle', 'data', 'cs_runs', 'phase2_case1_transdiagnostic_v1', 'knowledge_graph.json');
-const defaultExtracted = path.join(repo, 'neurooracle', 'data', 'cs_runs', 'phase2_case1_transdiagnostic_v1', 'extracted_claims.jsonl');
+const defaultGraph = path.join(repo, 'neurooracle', 'data', 'full_v2', 'knowledge_graph.json');
+const defaultExtracted = path.join(repo, 'neurooracle', 'data', 'full_v2', 'extracted_claims.jsonl');
 
 function parseArgs(argv) {
   const args = {
-    claims: defaultClaims,
+    claims: '',
     graph: defaultGraph,
     extracted: defaultExtracted,
     dryRun: false,
@@ -43,12 +42,25 @@ function stableAnchorId(name) {
   return `CLM_CONCEPT:${slug}_${hash}`;
 }
 
+function canonicalClaimId(value) {
+  const id = String(value || '').trim();
+  if (!id.toUpperCase().startsWith('MANUAL') || !id.includes(':')) return id;
+  return `CLM:${crypto.createHash('sha256').update(id).digest('hex').slice(0, 16)}`;
+}
+
+function canonicalConceptId(value) {
+  const id = String(value || '').trim();
+  if (!id.toUpperCase().startsWith('MANUAL') || !id.includes(':')) return id;
+  return `CLM_CONCEPT:${crypto.createHash('sha256').update(id).digest('hex').slice(0, 16)}`;
+}
+
 function normalizeClaimShape(raw, exactNameToId) {
   const claim = JSON.parse(JSON.stringify(raw));
-  claim.id = claim.id || claim.claim_id;
-  if (!claim.id) throw new Error('Manual claim is missing both id and claim_id.');
+  const legacyId = claim.id || claim.claim_id;
+  if (!legacyId) throw new Error('Manual claim is missing both id and claim_id.');
 
   claim.metadata = claim.metadata || {};
+  claim.id = canonicalClaimId(legacyId);
   claim.metadata.subject_type = claim.metadata.subject_type || claim.subject_type || '';
   claim.metadata.object_type = claim.metadata.object_type || claim.object_type || 'OUTCOME';
   claim.metadata.curation_scope = claim.metadata.curation_scope || 'general_neuromed_manual_strict_neuroscience';
@@ -56,8 +68,12 @@ function normalizeClaimShape(raw, exactNameToId) {
 
   const subjectNameKey = String(claim.subject_name || '').trim().toLowerCase();
   const objectNameKey = String(claim.object_name || '').trim().toLowerCase();
-  claim.subject_id = claim.subject_id || exactNameToId.get(subjectNameKey) || stableAnchorId(claim.subject_name);
-  claim.object_id = claim.object_id || exactNameToId.get(objectNameKey) || stableAnchorId(claim.object_name);
+  claim.subject_id = canonicalConceptId(
+    claim.subject_id || exactNameToId.get(subjectNameKey) || stableAnchorId(claim.subject_name)
+  );
+  claim.object_id = canonicalConceptId(
+    claim.object_id || exactNameToId.get(objectNameKey) || stableAnchorId(claim.object_name)
+  );
 
   claim.source_paper = claim.source_paper || {
     pmid: claim.pmid || '',
@@ -86,7 +102,8 @@ function normalizePaperScope(scope) {
     else if (['general_neuromed', 'manual_general', 'base', 'full_v2_base'].includes(value)) value = 'general';
     if (['general', 'case1', 'case2', 'case3'].includes(value) && !out.includes(value)) out.push(value);
   }
-  return out.length ? out : ['general'];
+  if (!out.length) return ['general'];
+  return ['general', ...['case1', 'case2', 'case3'].filter((value) => out.includes(value))];
 }
 
 function conceptNode(id, name, domainTags, sourceVocab, metadata = {}, definition = '') {
@@ -237,6 +254,7 @@ function computeStats(data) {
 
 function main() {
   const args = parseArgs(process.argv);
+  if (!args.claims) throw new Error('--claims is required.');
   const graph = JSON.parse(fs.readFileSync(args.graph, 'utf8'));
   graph.concepts = graph.concepts || {};
   graph.edges = graph.edges || [];

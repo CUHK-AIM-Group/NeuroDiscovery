@@ -2,19 +2,23 @@ const fs = require('fs');
 const path = require('path');
 
 const repo = path.resolve(__dirname, '..', '..');
-const stage = path.join(repo, 'neurooracle', 'data', 'phase2_staging', 'general_neuromed_manual_20260610');
+const stage = process.env.GENMED_STAGE
+  ? path.resolve(process.env.GENMED_STAGE)
+  : path.join(repo, 'neurooracle', 'data', 'phase2_staging', 'general_neuromed_manual_20260610');
 const queuePath = path.join(stage, 'abstracts_queue.jsonl');
-const manifestPath = path.join(stage, 'manifest_10k_expansion.json');
+const manifestPath = path.join(stage, process.env.GENMED_MANIFEST || 'manifest_10k_expansion.json');
 const logDir = path.join(stage, 'logs');
 
 const TARGET = Number(process.env.GENMED_TARGET || 10000);
 const COVER_ALL_DISEASES = String(process.env.GENMED_COVER_ALL || '').trim().toLowerCase() === '1'
   || String(process.env.GENMED_COVER_ALL || '').trim().toLowerCase() === 'true';
-const YEAR_START = 2000;
-const YEAR_END = 2026;
+const YEAR_START = Number(process.env.GENMED_YEAR_START || 2000);
+const YEAR_END = Number(process.env.GENMED_YEAR_END || 2026);
 const PER_QUERY = Number(process.env.GENMED_PER_QUERY || 90);
 const EMAIL = process.env.NCBI_EMAIL || 'neuroclaw@example.com';
 const API_KEY = process.env.NCBI_API_KEY || '1e72705978ad50249ffc129798ba3958f308';
+const RUN_LABEL = process.env.GENMED_RUN_LABEL || `${YEAR_START}_${YEAR_END}`;
+const CURATION_ROUND = process.env.GENMED_CURATION_ROUND || 'general_neuromed_10k_expansion';
 
 const DISEASES = [
   "Alzheimer's disease",
@@ -260,7 +264,7 @@ async function main() {
   const injectedPmids = new Set(claims.map((r) => String(r.source_paper?.pmid || r.pmid || '')).filter(Boolean));
   let total = queue.length;
   let nextIndex = total + 1;
-  const sweepLog = path.join(logDir, `search_10k_2000_2026_${new Date().toISOString().replace(/[:.]/g, '-')}.jsonl`);
+  const sweepLog = path.join(logDir, `search_10k_${RUN_LABEL}_${new Date().toISOString().replace(/[:.]/g, '-')}.jsonl`);
 
   const manifest = {
     created_or_updated: new Date().toISOString(),
@@ -308,7 +312,7 @@ async function main() {
           query_total_hits: totalHits,
           abstract: ref.abstract || '',
           status: 'pending_manual_review',
-          curation_round: 'general_neuromed_10k_expansion',
+          curation_round: CURATION_ROUND,
           prior_manual_injected: injectedPmids.has(String(ref.pmid)),
           created_at: new Date().toISOString(),
         });
