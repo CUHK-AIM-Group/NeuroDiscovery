@@ -80,14 +80,56 @@ GRID = [
 ]
 
 
+def cap_graph_edges(data_list, max_edges_per_graph):
+    """Keep strongest undirected edges while preserving both directions."""
+    if max_edges_per_graph is None:
+        return data_list
+    max_edges = int(max_edges_per_graph)
+    if max_edges < 2:
+        raise ValueError("max_edges_per_graph must be at least 2")
+    max_pairs = max(1, max_edges // 2)
+    for data in data_list:
+        if data.edge_index.size(1) <= 2 * max_pairs:
+            continue
+        source, target = data.edge_index
+        pair_index = torch.nonzero(source < target, as_tuple=False).reshape(-1)
+        if pair_index.numel() <= max_pairs:
+            continue
+        weights = data.edge_attr.reshape(-1)
+        strongest = torch.topk(
+            weights[pair_index].abs(),
+            k=max_pairs,
+            sorted=False,
+        ).indices
+        selected = pair_index[strongest]
+        left = source[selected]
+        right = target[selected]
+        selected_weights = weights[selected]
+        data.edge_index = torch.stack(
+            [
+                torch.cat([left, right]),
+                torch.cat([right, left]),
+            ],
+            dim=0,
+        )
+        data.edge_attr = torch.cat(
+            [selected_weights, selected_weights], dim=0
+        ).reshape(-1, 1)
+    return data_list
+
+
 def train_ibgnn_safe(atlas, train_df, val_df, test_df, y_mean, y_std,
                      n_epochs, batch_size, lr, wd, hidden_dim, n_gnn_layers,
-                     normalize_input, grad_clip, seed=42):
+                     normalize_input, grad_clip, seed=42,
+                     max_edges_per_graph=None):
     """Train IBGNN with grad clip + NaN guard + early-abort on divergence."""
     torch.manual_seed(seed); np.random.seed(seed)
     train_ds = PyGLifespanDataset(atlas, train_df, y_mean, y_std)
     val_ds = PyGLifespanDataset(atlas, val_df, y_mean, y_std)
     test_ds = PyGLifespanDataset(atlas, test_df, y_mean, y_std)
+    cap_graph_edges(train_ds.data_list, max_edges_per_graph)
+    cap_graph_edges(val_ds.data_list, max_edges_per_graph)
+    cap_graph_edges(test_ds.data_list, max_edges_per_graph)
     if not train_ds.data_list:
         return {"error": "empty train"}
     indim = int(train_ds.data_list[0].x.size(1))
@@ -162,7 +204,8 @@ def train_ibgnn_safe(atlas, train_df, val_df, test_df, y_mean, y_std,
     return {"val_mae_z": best_val, "test_mae_z": test_mae_z,
             "test_mae_yr": test_mae_z * y_std,
             "n_train": len(train_ds), "n_val": len(val_ds), "n_test": len(test_ds),
-            "epochs_run": epochs_run}
+            "epochs_run": epochs_run,
+            "max_edges_per_graph": max_edges_per_graph}
 
 
 def main():

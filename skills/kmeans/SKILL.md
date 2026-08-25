@@ -12,6 +12,10 @@ dependencies:
 ---
 # K-means Model Doc
 
+For subject-level disease subtyping, use the maintained implementation in
+`models/subtyping/` through the `subject-subtyping` skill. This document and the
+Nilearn K-means reference remain specific to spatial brain parcellation.
+
 ## Overview
 K-means is a classical non-deep-learning method for data-driven brain parcellation.
 

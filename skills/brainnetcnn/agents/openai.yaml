@@ -1,0 +1,4 @@
+interface:
+  display_name: "BrainNetCNN"
+  short_description: "Train BrainNetCNN on dense ROI functional-connectivity matrices."
+  default_prompt: "Train and evaluate BrainNetCNN on NeuroClaw ROI connectivity data using subject-level cross-validation."

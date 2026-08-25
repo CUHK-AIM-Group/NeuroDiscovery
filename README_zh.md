@@ -337,6 +337,7 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 | `wmh-segmentation` | 白质高信号分割（MARS-WMH nnU-Net） | ✅ |
 | `brain_gnn` | BrainGNN：用于 fMRI 分类的图神经网络 | ✅ |
 | `bnt` | BrainNetworkTransformer：基于稠密 FC 矩阵的 Transformer，配合 DEC 池化做表型预测 | ✅ |
+| `brainnetcnn` | BrainNetCNN：在稠密连接矩阵上使用 E2E/E2N/N2G 卷积进行表型预测 | ✅ |
 | `combraintf` | Com-BrainTF：稠密 FC 输入下的两级（社区内 + 全局）社区感知 Transformer | ✅ |
 | `ibgnn` | IBGNN：基于 PyG 的可解释 GNN，使用 MLP 消息函数并支持边遮罩解释 | ✅ |
 | `lggnn` | LG-GNN：基于 PyG 的 GNN，集成 SABP 自注意力脑池化与互信息正则化 | ✅ |
@@ -345,12 +346,27 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 | `glm` | 用于任务态 fMRI 激活分析与组水平推断的一二级 GLM | ✅ |
 | `ica` | 基于独立成分分析的静息态网络分解 | ✅ |
 | `dictlearning` | 基于字典学习的稀疏静息态网络分解 | ✅ |
-| `svm` | 基于 ROI/表格特征的经典神经影像疾病分类 | ✅ |
 | `spacenet` | 带稀疏系数图的体素级神经影像疾病分类 | ✅ |
 | `kmeans` | 基于 K-means 聚类的脑区划分 | ✅ |
 | `hierarchical` | 基于层次聚类的多尺度脑区划分 | ✅ |
 | `filtering` | 面向神经影像时序信号的时间滤波去噪 | ✅ |
 | `detrending` | 面向神经影像时序信号的时间漂移去除 | ✅ |
+| `statistical-ml` | 统一的表格型 OLS/GLM、SVM/SVR、Ridge、Elastic Net、XGBoost 与混合效应模型 | ✅ |
+| `subject-subtyping` | 基于聚类与潜在嵌入的受试者亚型发现 | ✅ |
+| `survival-models` | 支持删失数据的 Cox、RSF、DeepSurv 与 XGBoost 生存模型 | ✅ |
+| `causal-treatment-models` | 交叉拟合的治疗效应估计与个体化治疗策略模型 | ✅ |
+| `temporal-models` | LSTM、GRU、TCN 与时序 Transformer | ✅ |
+| `imaging-genetics-models` | Association、LMM、PRS、PLS 与 CCA 影像遗传学模型 | ✅ |
+| `cnn3d` | 面向体素级预测的紧凑残差 3D CNN | ✅ |
+| `cpm` | 在训练折内选择连接边的 Connectome Predictive Modeling | ✅ |
+| `kg-link-prediction` | ComplEx、R-GCN、GraphSAGE 与 GAT 知识图谱链接预测 | ✅ |
+
+#### Workflow
+| Skill | 功能 | 状态 |
+|------|----------|--------|
+| `neuroimaging-decoding` | 编排 ROI MVPA、ROI GLM 与体素级 SearchLight 分析 | ✅ |
+| `connectome-discovery` | 将连接组模型输出转化为显著网络图谱与候选靶点排序 | ✅ |
+| `brain-age-modeling` | 采用训练折内偏差校正的交叉验证脑龄分析 | ✅ |
 
 #### Dataset
 | Skill | 功能 | 状态 |

@@ -341,6 +341,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `wmh-segmentation` | White matter hyperintensity segmentation (MARS-WMH nnU-Net) | ✅ |
 | `brain_gnn` | BrainGNN: graph neural network for fMRI classification | ✅ |
 | `bnt` | BrainNetworkTransformer: dense FC Transformer with DEC pooling for phenotype prediction | ✅ |
+| `brainnetcnn` | BrainNetCNN: E2E/E2N/N2G convolutions over dense connectivity matrices | ✅ |
 | `combraintf` | Com-BrainTF: community-aware two-level Transformer over dense FC matrices | ✅ |
 | `ibgnn` | IBGNN: interpretable PyG-based GNN with MLP message function and edge-mask explainer | ✅ |
 | `lggnn` | LG-GNN: PyG-based GNN with Self-Attention Brain Pooling and mutual-information regularization | ✅ |
@@ -349,12 +350,27 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `glm` | Classical first-level and second-level GLM for task-fMRI activation and group inference | ✅ |
 | `ica` | Resting-state network decomposition via independent component analysis | ✅ |
 | `dictlearning` | Sparse resting-state network decomposition via dictionary learning | ✅ |
-| `svm` | Classical neuroimaging disease classification with ROI/tabular features | ✅ |
 | `spacenet` | Voxel-wise neuroimaging disease classification with sparse coefficient maps | ✅ |
 | `kmeans` | Brain parcellation via K-means clustering | ✅ |
 | `hierarchical` | Multi-scale brain parcellation via hierarchical clustering | ✅ |
 | `filtering` | Temporal filtering for neuroimaging signal denoising | ✅ |
 | `detrending` | Temporal drift removal for neuroimaging signal denoising | ✅ |
+| `statistical-ml` | Unified tabular OLS/GLM, SVM/SVR, Ridge, Elastic Net, XGBoost, and mixed-effects models | ✅ |
+| `subject-subtyping` | Subject-level subtyping with clustering and latent embeddings | ✅ |
+| `survival-models` | Censor-aware Cox, RSF, DeepSurv, and XGBoost survival models | ✅ |
+| `causal-treatment-models` | Cross-fitted treatment-effect and individualized policy models | ✅ |
+| `temporal-models` | LSTM, GRU, TCN, and temporal Transformer sequence models | ✅ |
+| `imaging-genetics-models` | Association, LMM, PRS, PLS, and CCA imaging-genetics models | ✅ |
+| `cnn3d` | Compact residual 3D CNN for voxel-level prediction | ✅ |
+| `cpm` | Connectome Predictive Modeling with fold-local edge selection | ✅ |
+| `kg-link-prediction` | ComplEx, R-GCN, GraphSAGE, and GAT knowledge-graph link prediction | ✅ |
+
+#### Workflow
+| Skill | Function | Status |
+|------|----------|--------|
+| `neuroimaging-decoding` | Coordinates ROI MVPA, ROI GLM, and voxel-wise SearchLight analysis | ✅ |
+| `connectome-discovery` | Converts connectome-model outputs into significant maps and ranked targets | ✅ |
+| `brain-age-modeling` | Cross-validated brain-age prediction with fold-local bias correction | ✅ |
 
 #### Dataset
 | Skill | Function | Status |

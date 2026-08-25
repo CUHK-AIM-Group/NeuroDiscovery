@@ -3,6 +3,27 @@ name = "neuroclaw"
 version = "0.1.0"
 requires-python = ">=3.10"
 
+[project.optional-dependencies]
+tabular-models = [
+    "statsmodels>=0.14",
+    "xgboost>=2.0",
+]
+survival-models = [
+    "statsmodels>=0.14",
+    "scikit-survival>=0.23",
+    "xgboost>=2.0",
+]
+causal-models = [
+    "econml>=0.15",
+]
+neuroimaging-models = [
+    "nilearn>=0.10",
+    "nibabel>=5.0",
+]
+graph-models = [
+    "torch-geometric>=2.5",
+]
+
 [tool.setuptools.packages.find]
 include = [
     "core*",
@@ -13,6 +34,7 @@ include = [
 [tool.pytest.ini_options]
 testpaths = [
     "core/checkpoint",
+    "models/tests",
     "neurooracle/tests",
     "core/skill_loader",
     "core/session",

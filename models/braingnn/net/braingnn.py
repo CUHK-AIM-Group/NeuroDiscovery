@@ -45,7 +45,7 @@ class MyNNConv(MessagePassing):
 
     def forward(self, x, edge_index, edge_weight=None, pseudo=None, size=None):
         if edge_weight is not None:
-            edge_weight = edge_weight.squeeze()
+            edge_weight = edge_weight.reshape(-1)
         if size is None and torch.is_tensor(x):
             edge_index, edge_weight = add_remaining_self_loops(
                 edge_index, edge_weight, fill_value=1.0, num_nodes=x.size(0)
@@ -136,7 +136,8 @@ class BrainGNN(nn.Module):
         x1 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
         if edge_attr is not None:
-            edge_attr = edge_attr.squeeze()
+            # Keep the edge dimension when TopK pooling leaves exactly one edge.
+            edge_attr = edge_attr.reshape(-1)
         edge_index, edge_attr = self.augment_adj(edge_index, edge_attr, x.size(0))
 
         # Layer 2

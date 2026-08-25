@@ -264,7 +264,8 @@ def train_bnt(atlas, train_df, val_df, test_df, y_mean, y_std,
 
 def train_brainnetcnn(atlas, train_df, val_df, test_df, y_mean, y_std,
                        n_epochs=80, batch_size=16, lr=1e-4, wd=5e-4,
-                       dropout=0.5, seed=42):
+                       dropout=0.5, seed=42, e2e_channels=32,
+                       e2n_channels=64, n2g_channels=256):
     torch.manual_seed(seed); np.random.seed(seed)
     train_ds = DenseFCLifespanDataset(atlas, train_df, y_mean, y_std)
     val_ds = DenseFCLifespanDataset(atlas, val_df, y_mean, y_std)
@@ -277,8 +278,15 @@ def train_brainnetcnn(atlas, train_df, val_df, test_df, y_mean, y_std,
     val_loader = TorchDataLoader(val_ds, batch_size=batch_size, collate_fn=dense_collate)
     test_loader = TorchDataLoader(test_ds, batch_size=batch_size, collate_fn=dense_collate)
 
-    model = BrainNetCNN(n_roi=n_roi, nclass=1, e2e_channels=32, e2n_channels=64,
-                         n2g_channels=256, dropout=dropout, task="regression").to(DEVICE)
+    model = BrainNetCNN(
+        n_roi=n_roi,
+        nclass=1,
+        e2e_channels=e2e_channels,
+        e2n_channels=e2n_channels,
+        n2g_channels=n2g_channels,
+        dropout=dropout,
+        task="regression",
+    ).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=n_epochs)
     best_val = float("inf"); best_state = None

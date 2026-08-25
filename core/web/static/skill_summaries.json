@@ -43,6 +43,10 @@
     "en": "Use this model doc whenever the user wants to run BrainNetworkTransformer for fMRI phenotype prediction, including data loading, training, and evaluation. BNT uses dense FC matrices (no PyG dependency) with DEC pooling + interpretable transformer encoder.",
     "zh": "该技能用于 bnt 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run BrainNetworkTransformer for fMRI phenotype prediction, including data loading, training, and evaluation. BNT uses dense FC matrices (no PyG dependency) with DEC pooling + interpretable transformer encoder."
   },
+  "brainnetcnn": {
+    "en": "Train and evaluate BrainNetCNN for classification or regression from dense ROI connectivity matrices.",
+    "zh": "使用 BrainNetCNN 的 E2E、E2N 和 N2G 卷积，对稠密 ROI 连接矩阵执行分类或回归。"
+  },
   "bold5000-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the BOLD5000 dataset, including download, BIDS organization, and processing of task-fMRI data with visual image stimuli. Triggers include: 'BOLD5000', 'BOLD 5000', 'process BOLD5000', 'visual...",
     "zh": "该技能用于 bold5000-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the BOLD5000 dataset, including download, BIDS organization, and processing of task-fMRI data with visual image stimuli. Triggers include: 'BOLD5000', 'BOLD 5000', 'process BOLD5000', 'visual..."
@@ -323,9 +327,53 @@
     "en": "Use this model doc whenever the user wants to perform disease classification with SpaceNet. This is a non-deep-learning supervised route focused on voxel-wise neuroimaging-based case-control prediction with sparse and interpretable weight maps.",
     "zh": "该技能用于 spacenet 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform disease classification with SpaceNet. This is a non-deep-learning supervised route focused on voxel-wise neuroimaging-based case-control prediction with sparse and interpretable weight maps."
   },
-  "svm": {
-    "en": "Use this model doc whenever the user wants to perform disease classification with SVM. This is a non-deep-learning supervised route focused on neuroimaging-based case-control prediction from ROI-wise or tabular features.",
-    "zh": "该技能用于 svm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform disease classification with SVM. This is a non-deep-learning supervised route focused on neuroimaging-based case-control prediction from ROI-wise or tabular features."
+  "brain-age-modeling": {
+    "en": "Cross-validated brain-age workflow with training-fold-only age-bias correction and Brain-PAD export.",
+    "zh": "交叉验证脑龄工作流，在训练折内完成年龄偏差校正并导出 Brain-PAD。"
+  },
+  "causal-treatment-models": {
+    "en": "Treatment-effect model family covering IPW, meta-learners, doubly robust learning, causal forests, TARNet, and DragonNet.",
+    "zh": "治疗效应模型族，覆盖 IPW、元学习器、双重稳健学习、因果森林、TARNet 与 DragonNet。"
+  },
+  "cnn3d": {
+    "en": "Canonical compact residual 3D CNN for voxel-level neuroimaging classification and regression.",
+    "zh": "用于体素级神经影像分类与回归的标准紧凑残差 3D CNN。"
+  },
+  "connectome-discovery": {
+    "en": "Workflow for map similarity, permutation significance, atlas-aware interpretation, and connectome target ranking.",
+    "zh": "用于图谱相似度、置换显著性、分区感知解释与连接组靶点排序的工作流。"
+  },
+  "cpm": {
+    "en": "Canonical Connectome Predictive Modeling with fold-local functional-connectivity edge selection.",
+    "zh": "标准 Connectome Predictive Modeling，在每个训练折内独立选择功能连接边。"
+  },
+  "imaging-genetics-models": {
+    "en": "Imaging-genetics model family for association, LMM, PRS, PLS, CCA, and PLINK2 command construction.",
+    "zh": "影像遗传学模型族，支持关联分析、LMM、PRS、PLS、CCA 与 PLINK2 命令构建。"
+  },
+  "kg-link-prediction": {
+    "en": "NeuroOracle link-prediction family with ComplEx, R-GCN, GraphSAGE, and GAT.",
+    "zh": "NeuroOracle 链接预测模型族，支持 ComplEx、R-GCN、GraphSAGE 与 GAT。"
+  },
+  "neuroimaging-decoding": {
+    "en": "Workflow coordinating ROI MVPA, ROI GLM, and voxel-wise SearchLight decoding.",
+    "zh": "编排 ROI MVPA、ROI GLM 与体素级 SearchLight 解码的科学工作流。"
+  },
+  "statistical-ml": {
+    "en": "Canonical tabular statistical and machine-learning family for OLS/GLM, SVM/SVR, Ridge, Elastic Net, XGBoost, and mixed effects.",
+    "zh": "标准表格统计与机器学习模型族，支持 OLS/GLM、SVM/SVR、Ridge、Elastic Net、XGBoost 与混合效应。"
+  },
+  "subject-subtyping": {
+    "en": "Subject-level disease subtyping with clustering, consensus analysis, PCA, NMF, and autoencoder embeddings.",
+    "zh": "受试者级疾病亚型发现，支持聚类、共识分析、PCA、NMF 与自编码器嵌入。"
+  },
+  "survival-models": {
+    "en": "Censor-aware survival model family with Cox, Random Survival Forest, DeepSurv, and XGBoost survival.",
+    "zh": "支持删失数据的生存模型族，包括 Cox、随机生存森林、DeepSurv 与 XGBoost survival。"
+  },
+  "temporal-models": {
+    "en": "Shared sequence-model family for LSTM, GRU, TCN, and temporal Transformer experiments.",
+    "zh": "共享时序模型族，用于 LSTM、GRU、TCN 与时序 Transformer 实验。"
   },
   "tcp-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the Transdiagnostic Connectome Project (TCP) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers include:...",

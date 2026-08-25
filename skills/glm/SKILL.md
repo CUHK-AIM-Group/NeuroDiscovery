@@ -11,6 +11,10 @@ dependencies:
 ---
 # GLM Model Doc
 
+Task-fMRI first/second-level GLM remains implemented through `nilearn-tool`.
+For tabular formula OLS, robust covariance, Cohen's d, mixed-effects, and
+prediction baselines, route to the `statistical-ml` skill.
+
 ## Overview
 GLM refers to the classical General Linear Model used for task-based fMRI activation analysis.
 

@@ -68,19 +68,27 @@ def _hash_community(name: str, k: int) -> int:
     return int(h[:8], 16) % k
 
 
+def _contiguous_community_ids(values: List[int]) -> List[int]:
+    unique = sorted(set(values))
+    remap = {value: index for index, value in enumerate(unique)}
+    return [remap[value] for value in values]
+
+
 def build_community_ids(roi_names: List[str], atlas: str,
                         n_communities: Optional[int] = None) -> List[int]:
     """Return list[int] of community ids per ROI, dropping background labels."""
     if atlas.startswith("schaefer_") and "_7net" in atlas:
-        return [_schaefer_community(n) for n in roi_names]
-    if atlas.startswith("aal"):
-        return [_aal_community(n) for n in roi_names]
-    if atlas.startswith("destrieux") or atlas.startswith("dk_") or \
+        raw = [_schaefer_community(n) for n in roi_names]
+    elif atlas.startswith("aal"):
+        raw = [_aal_community(n) for n in roi_names]
+    elif atlas.startswith("destrieux") or atlas.startswith("dk_") or \
             atlas.startswith("harvard_oxford"):
-        return [_aal_community(n) for n in roi_names]
-    # Fallback for atlases without semantic labels
-    k = n_communities or 8
-    return [_hash_community(n, k) for n in roi_names]
+        raw = [_aal_community(n) for n in roi_names]
+    else:
+        # Fallback for atlases without semantic labels.
+        k = n_communities or 8
+        raw = [_hash_community(n, k) for n in roi_names]
+    return _contiguous_community_ids(raw)
 
 
 def get_community_ids(atlas: str, n_communities: Optional[int] = None,
