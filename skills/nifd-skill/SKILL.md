@@ -41,12 +41,23 @@ It strictly follows the NeuroClaw hierarchical design principles:
 
 | Task | What needs to be done | Delegate to | Expected output |
 |---|---|---|---|
+| Data access | Apply for NIFD/FTLDNI access and accept the DUA in LONI IDA | Manual access gate | Approved IDA project access |
 | BIDS validation | Validate NIFD BIDS structure | `scripts/validate_nifd.py` | Validation report |
 | sMRI processing | Brain extraction, tissue segmentation, cortical thickness | `smri-skill` | `smri_output/` derivatives |
 | rs-fMRI processing | Preprocessing, denoising, connectivity | `fmri-skill` | `fmri_output/` connectivity |
 | dMRI processing | Diffusion preprocessing, tensor metrics, tractography | `dwi-skill` | `dwi_output/` metrics |
 | Phenotype extraction | Diagnosis, cognitive scores, clinical measures | `scripts/extract_nifd_phenotype.py` | Merged phenotype CSV |
 | QC summary | Per-subject quality control | `scripts/nifd_qc_summary.py` | QC summary + exclusion list |
+
+---
+
+## Access Stage
+
+- Official route: https://ida.loni.usc.edu/collaboration/access/appApply.jsp?project=NIFD
+- NIFD/FTLDNI is a controlled LONI IDA project. Create an IDA account, submit the requested use information, and accept the project DUA before downloading.
+- The previously cited OpenNeuro dataset `ds004403` has been deleted as a duplicate. Do not use it as a download source or claim that NIFD is anonymously downloadable.
+- After approval, record the IDA project, export date, query, subject/session selection, and checksum manifest before staging.
+- Treat the IDA export as source data. Convert or organize it into BIDS before running the validation and modality workflows below.
 
 ---
 
@@ -60,8 +71,8 @@ It strictly follows the NeuroClaw hierarchical design principles:
 - **Scanner**: 3T Siemens TIM Trio
 - **Modalities**: T1w sMRI, rs-fMRI, dMRI/DTI
 - **Clinical**: CDR, MMSE, neuropsychological battery
-- **Access**: OpenNeuro ds004403 (or UCSF MAC portal)
-- **Format**: BIDS-compliant
+- **Access**: Controlled download through the NIFD/FTLDNI project in LONI IDA
+- **Format**: IDA export; BIDS staging and validation are required before BIDS-native tools
 
 ---
 
@@ -166,6 +177,7 @@ For benchmark-style prompts, do not force the full orchestration when the task o
 
 ## Important Notes and Limitations
 - NIFD is a clinical cohort; patient data requires careful handling.
+- NIFD data may not be redistributed; preserve the DUA, required acknowledgement, release/export date, and local access controls.
 - Diagnostic groups (bvFTD, svPPA, nfvPPA) have distinct atrophy patterns; group-level analyses should account for heterogeneity.
 - Cortical thickness and voxel-based morphometry are commonly used structural measures.
 - Network degeneration hypothesis: FTD targets specific large-scale networks.
@@ -196,10 +208,10 @@ For benchmark-style prompts, do not force the full orchestration when the task o
 ---
 
 ## Reference
+- NIFD/FTLDNI LONI DUA: https://ida.loni.usc.edu/collaboration/access/appApply.jsp?project=NIFD
 - NIFD: UCSF Memory and Aging Center
 - Frontotemporal Dementia: FTDC clinical diagnostic criteria
-- OpenNeuro ds004403
 
 Created At: 2026-05-06 13:55 HKT
-Last Updated At: 2026-05-06 13:55 HKT
+Last Updated At: 2026-08-11 HKT
 Author: chengwang96

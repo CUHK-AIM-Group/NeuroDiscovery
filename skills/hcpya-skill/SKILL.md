@@ -40,7 +40,7 @@ It strictly follows the NeuroClaw hierarchical design principles:
 
 | Task | What needs to be done | Delegate to | Expected output |
 |---|---|---|---|
-| Data download | Download HCP-YA from ConnectomeDB via NeuroSTORM scripts | `claw-shell` | Raw HCP-YA files |
+| Data download | Select HCP-YA packages in ConnectomeDB powered by BALSA after registration and terms acceptance | `claw-shell` | Raw or preprocessed HCP-YA packages |
 | BIDS staging | Reorganize HCP-YA native layout to BIDS | `scripts/reorganize_hcpya.py` | BIDS-compliant dataset |
 | sMRI processing | Brain extraction, tissue segmentation, cortical reconstruction | `smri-skill` | `smri_output/` derivatives |
 | fMRI processing | Preprocessing, denoising, connectivity, task GLM | `fmri-skill` | `fmri_output/` derivatives |
@@ -53,23 +53,24 @@ It strictly follows the NeuroClaw hierarchical design principles:
 ## Download Stage (Mandatory First Step)
 
 ### Source
-HCP-YA data is distributed through **ConnectomeDB**:
-- Website: https://db.humanconnectome.org/
-- Requires ConnectomeDB account and data use agreement
-- NeuroSTORM download scripts available at: https://github.com/CUHK-AIM-Group/NeuroSTORM/tree/main/scripts/dataset_download
+The current HCP-YA release is distributed through **ConnectomeDB powered by BALSA**:
+- Release: https://www.humanconnectome.org/study/hcp-young-adult/document/hcp-young-adult-2025-release
+- Platform: https://balsa.wustl.edu/ (open the ConnectomeDB tab)
+- Register and accept the applicable HCP data-use terms before downloading.
+- Restricted non-imaging variables require the corresponding restricted-data approval.
 
-### Supported Download Entry Scripts
-- `download_HCP_1200_all.py` (all modalities)
-- `download_HCP_1200_rfMRI.py` (resting-state fMRI)
-- `download_HCP_1200_tfMRI.py` (task fMRI)
-- `download_HCP_1200_t1t2.py` (structural T1w/T2w)
-- `all_pid.pkl` (subject list metadata)
+### Release Selection
+- Prefer the **HCP-YA 2025 Release** for new work. It contains updated processing and package organization.
+- Do not mix 2025 processed packages with the legacy 2017 S1200 processed release in one analysis.
+- Use the legacy controlled-access S3 route only when reproducing an S1200-era workflow and after satisfying HCP access terms.
+- Download a modality-specific package or explicit subject subset instead of assuming the entire cohort is needed.
 
 ### Download Inputs to Confirm in Plan
-- ConnectomeDB credentials/token
-- Target subset (`all`, `rfMRI`, `tfMRI`, `t1t2`)
-- Subject list scope (full 1,200 or custom subset)
-- Destination directory with sufficient disk space (~80 TB for full dataset)
+- BALSA/ConnectomeDB account and accepted data-use terms
+- Release (`2025` by default or legacy `S1200` for reproduction)
+- Target package and modalities (structural, resting fMRI, task fMRI, diffusion, or non-imaging)
+- Subject list scope and restricted-variable requirements
+- Destination directory with capacity calculated from the selected packages
 
 ---
 
@@ -174,8 +175,8 @@ For benchmark-style prompts, do not force the full `download -> staging -> multi
 
 ## Important Notes and Limitations
 - HCP-YA processing is resource intensive (CPU, RAM, and storage).
-- Full HCP-YA dataset is ~80 TB; plan storage accordingly.
-- HCP-YA has 1,200 subjects with complete multimodal data.
+- HCP-YA releases span many large packages; estimate storage from the selected BALSA packages before transfer.
+- The 2025 release reports processed data for 1,071 subjects and unprocessed imaging for 1,113 subjects; "HCP1200" is the cohort/release name, not a complete-case count.
 - Age range: 22-35 years.
 - For HCP-native preprocessing (minimal preprocessing pipelines), optionally delegate to `hcppipeline-tool`.
 - `hcpya-skill` is orchestration-only; detailed preprocessing logic remains in modality skills.
@@ -205,10 +206,10 @@ For benchmark-style prompts, do not force the full `download -> staging -> multi
 
 ## Reference
 - HCP-YA: https://www.humanconnectome.org/study/hcp-young-adult
-- ConnectomeDB: https://db.humanconnectome.org/
-- NeuroSTORM download scripts: https://github.com/CUHK-AIM-Group/NeuroSTORM/tree/main/scripts/dataset_download
+- HCP-YA 2025 release: https://www.humanconnectome.org/study/hcp-young-adult/document/hcp-young-adult-2025-release
+- HCP data-use terms: https://www.humanconnectome.org/study/hcp-young-adult/data-use-terms
 - Glasser et al. (2013): The Human Connectome Project minimally preprocessed pipelines
 
 Created At: 2026-05-06 13:02 HKT
-Last Updated At: 2026-05-06 13:02 HKT
+Last Updated At: 2026-08-11 HKT
 Author: chengwang96

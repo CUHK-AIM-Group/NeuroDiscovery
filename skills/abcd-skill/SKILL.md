@@ -1,6 +1,6 @@
 ---
 name: abcd-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the ABCD Study dataset, including download via NIMH Data Archive, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'ABCD Study', 'ABCD data', 'process ABCD', 'ABCD fMRI', 'ABCD sMRI', 'ABCD diffusion', or any request to run the ABCD multimodal pipeline. This is the NeuroClaw dataset-orchestration layer for ABCD."
+description: "Use this skill whenever the user wants an end-to-end workflow for the ABCD Study dataset, including controlled access through the NIH Brain Development Cohorts (NBDC) platform, BIDS organization, and multimodal processing of sMRI, fMRI, and dMRI. Triggers include: 'ABCD Study', 'ABCD data', 'process ABCD', 'ABCD fMRI', 'ABCD sMRI', 'ABCD diffusion', or any request to run the ABCD multimodal pipeline."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -17,7 +17,7 @@ dependencies:
 `abcd-skill` is the NeuroClaw orchestration skill for the **ABCD Study (Adolescent Brain Cognitive Development)** dataset.
 
 It coordinates a fixed three-phase workflow:
-1. Download ABCD data from the NIMH Data Archive (NDA).
+1. Obtain approved ABCD data from the NBDC Data Sharing Platform.
 2. Prepare and validate BIDS-style data organization for downstream processing.
 3. Delegate modality pipelines to `smri-skill`, `fmri-skill`, and `dwi-skill`.
 
@@ -37,26 +37,30 @@ This skill follows NeuroClaw hierarchy:
 ## Download Stage (Mandatory First Step)
 
 ### Source
-ABCD data is distributed through the **NIMH Data Archive (NDA)**:
-- Website: https://abcdstudy.org/
-- Data access: https://nda.nih.gov/ (requires NDA account and data use agreement)
+Current ABCD data is distributed through the **NIH Brain Development Cohorts (NBDC) Data Sharing Platform**:
+- Access instructions: https://docs.abcdstudy.org/latest/usage/access.html
+- Data access process: https://www.nbdc-datahub.org/data-access-process
+- Download applications: Data Exploration and Analysis Portal (DEAP) or the NBDC Data Access Platform
+- Access requires an approved NBDC Data Use Certification (DUC), an NIH-recognized institutional affiliation, institutional signing-official approval, and an active Federalwide Assurance (FWA).
+
+Beginning with ABCD release 6.0, current releases are no longer held at NDA. Use NDA only when the task explicitly targets a legacy release that remains there.
 
 ### Supported ABCD Data Packages
-- **ABCD Study 5.1** (latest release): includes imaging, phenotype, and biospecimen data
+- **ABCD Study 7.0** (current release as of 2026-08-25): includes imaging and non-imaging data documented by NBDC
 - **Imaging data**: T1w, T2w, dMRI, rs-fMRI, task-fMRI (NIfTI format)
 - **Phenotype data**: tab-delimited files (abcd_p_tab, mental_health, cbcl, etc.)
-- **Derived imaging data**: FreeSurfer, fMRIPrep outputs (if available from NDA)
+- **Derived imaging data**: release-specific derived packages when available through NBDC
 
 ### Delegation Rules for Download
 - Environment/setup checks: `dependency-planner` + `conda-env-manager`
-- NDA download tool installation and execution: `claw-shell`
+- NBDC package/query preparation and approved download execution: `claw-shell`
 - Optional raw-data organization to BIDS-style staging: `bids-organizer`
 
 ### Download Inputs to Confirm in Plan
-- NDA credentials/authorized access
+- Approved NBDC DUC and authorized platform access
 - Target data package (imaging only, phenotype only, or both)
 - Subject list scope (full cohort or custom subset)
-- ABCD release version (e.g., 5.1)
+- ABCD release version (for example, 7.0)
 - Destination directory with sufficient disk space (ABCD imaging data can exceed 10 TB for full cohort)
 
 ---
@@ -258,14 +262,15 @@ For benchmark-style prompts, do not force the full `download -> staging -> multi
 - All execution must be routed via `claw-shell`.
 - Missing dependencies must be resolved by `dependency-planner` before running.
 - If download fails for partial subjects, continue batch with clear failure report and retry list.
+- Never place NBDC credentials, signed DUC materials, or restricted subject manifests in the repository.
 
 ---
 
 ## Important Notes and Limitations
 - ABCD multimodal processing is resource intensive (CPU, RAM, and storage). Full cohort imaging data exceeds 10 TB.
-- NDA download requires authenticated access and compliance with the ABCD Data Use Agreement.
+- NBDC download requires authenticated access and an approved institutional DUC.
 - ABCD subject IDs use NDAR format; normalization to BIDS labels must be consistent across all stages.
-- ABCD has multiple follow-up timepoints (baselineYear1Arm1 through 4YearFollowUpYArm1); session handling must account for longitudinal structure.
+- ABCD has multiple longitudinal follow-up events; derive session handling from the selected release instead of hard-coding a maximum follow-up year.
 - ABCD phenotype tables use tab-delimited format with specific column naming conventions; column names may change across releases.
 - `abcd-skill` is orchestration-only; detailed preprocessing logic remains in `smri-skill`, `fmri-skill`, and `dwi-skill`.
 - For highest-fidelity preprocessing, optionally delegate to `fmriprep-tool` and `hcppipeline-tool` as alternative routes.
@@ -299,10 +304,12 @@ For benchmark-style prompts, do not force the full `download -> staging -> multi
 
 ## Reference
 - ABCD Study: https://abcdstudy.org/
-- NIMH Data Archive: https://nda.nih.gov/
+- ABCD data access: https://docs.abcdstudy.org/latest/usage/access.html
+- ABCD 7.0 release notes: https://docs.abcdstudy.org/latest/documentation/release_notes/7_0.html
+- NBDC repository transition notice: https://grants.nih.gov/grants/guide/notice-files/NOT-DA-24-038.html
 - ABCD BIDS App: https://github.com/ABCD-STUDY/abcd-bids-tfmri
 - BIDS spec: https://bids.neuroimaging.io/
 
 Created At: 2026-05-06 01:30 HKT
-Last Updated At: 2026-05-06 01:30 HKT
+Last Updated At: 2026-08-25 HKT
 Author: chengwang96

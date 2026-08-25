@@ -1,0 +1,4 @@
+interface:
+  display_name: "SCAN Dataset"
+  short_description: "Access and process the NACC SCAN imaging cohort"
+  default_prompt: "Use $scan-skill to stage and process an approved SCAN imaging export."

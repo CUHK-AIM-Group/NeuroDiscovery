@@ -1,6 +1,6 @@
 ---
 name: adni-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroClaw dataset-orchestration layer for ADNI."
+description: "Use this skill whenever the user wants an end-to-end workflow for ADNI or ADNI-DOD data, including controlled LONI IDA access, BIDS preparation, fMRIPrep preprocessing, and DK68 ROI processing. Trigger on ADNI, ADNI-DOD, ADNIDOD, DoD-ADNI, SCRNO, or ADNI imaging requests."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -33,6 +33,17 @@ This skill follows NeuroClaw hierarchy:
 - Delegates all execution via `claw-shell` to tool skills.
 
 **Research use only.**
+
+---
+
+## Access Stage
+
+- Official route: https://adni.loni.usc.edu/data-samples/adni-data/
+- ADNI is not an anonymous download. Accept the ADNI DUA and submit the LONI IDA application with institutional affiliation and proposed use. ADNI states that applications are generally reviewed within two weeks.
+- After approval, build the image/clinical query in IDA and record the project, release/export date, filters, subject/session count, modalities, and checksum manifest.
+- For **ADNI-DOD**, log in to IDA and select `Projects -> ADNIDOD`. Use the project's study-data tables, including `VAELG.csv` where applicable, and query images by `SCRNO`.
+- Never merge ADNI-DOD `SCRNO` values into the standard ADNI RID/PTID namespace. Keep a project-qualified source key and create a separate BIDS-safe label.
+- Do not place IDA credentials, download tokens, signed agreements, or controlled subject manifests in the repository.
 
 ---
 
@@ -322,6 +333,8 @@ All assets should be organized under `./adni_output/`:
 ---
 
 ## Important Notes and Limitations
+- ADNI and ADNI-DOD are controlled-access projects; do not redistribute source data or restricted derivatives.
+- Confirm the selected project before querying because ADNI-DOD uses different cohort tables and identifiers from standard ADNI.
 - ADNI subject naming must be normalized (e.g., `130_S_0969` -> `130S0969`).
 - fMRIPrep requires FreeSurfer license and sufficient disk space.
 - DK68 pipeline assumes `aparc+aseg.mgz` is available in fMRIPrep outputs.
@@ -331,6 +344,7 @@ All assets should be organized under `./adni_output/`:
 
 ## When to Call This Skill
 - User asks for ADNI end-to-end processing (fMRI + T1).
+- User asks to access, stage, or process ADNI-DOD/ADNIDOD data or `SCRNO` subject lists.
 - User needs BIDS staging + fMRIPrep + DK68 ROI outputs.
 - User requests VQA generation for VLM from ADNI.
 
@@ -349,10 +363,12 @@ All assets should be organized under `./adni_output/`:
 ---
 
 ## Reference
+- ADNI data access: https://adni.loni.usc.edu/data-samples/adni-data/
+- ADNI-DOD project and SCRNO guidance: https://adni.loni.usc.edu/support/experts-knowledge-base/question/?QID=920
 - fMRIPrep: https://fmriprep.org/
 - BIDS spec: https://bids.neuroimaging.io/
 - OmniBrainBench: https://github.com/CUHK-AIM-Group/OmniBrainBench
 
 Created At: 2026-03-28 20:38 HKT
-Last Updated At: 2026-03-28 20:38 HKT
+Last Updated At: 2026-08-11 HKT
 Author: chengwang96

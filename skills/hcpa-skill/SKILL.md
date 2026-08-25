@@ -8,6 +8,7 @@ dependencies:
   - smri-skill
   - fmri-skill
   - dwi-skill
+  - asl-skill
   - bids-organizer
   - claw-shell
 complementary_skills:
@@ -40,11 +41,12 @@ It strictly follows the NeuroClaw hierarchical design principles:
 
 | Task | What needs to be done | Delegate to | Expected output |
 |---|---|---|---|
-| Data download | Download HCP-A from ConnectomeDB | `claw-shell` | Raw HCP-A files |
+| Data download | Select HCP-A/AABC packages in ConnectomeDB powered by BALSA | `claw-shell` | Raw or preprocessed imaging packages |
 | BIDS staging | Reorganize HCP-A native layout to BIDS | `scripts/reorganize_hcpa.py` | BIDS-compliant dataset |
 | sMRI processing | Brain extraction, tissue segmentation, cortical reconstruction | `smri-skill` | `smri_output/` derivatives |
 | fMRI processing | Preprocessing, denoising, connectivity, task GLM | `fmri-skill` | `fmri_output/` derivatives |
 | dMRI processing | Eddy correction, tensor metrics, tractography | `dwi-skill` | `dwi_output/` metrics |
+| ASL processing | Perfusion preprocessing and CBF quantification | `asl-skill` | `asl_output/` derivatives |
 | Phenotype extraction | Cognitive, health, demographic data | `scripts/extract_hcpa_phenotype.py` | Merged phenotype CSV |
 | QC summary | Per-subject quality control | `scripts/hcpa_qc_summary.py` | QC summary + exclusion list |
 
@@ -53,37 +55,35 @@ It strictly follows the NeuroClaw hierarchical design principles:
 ## Download Stage (Mandatory First Step)
 
 ### Source
-HCP-A data is distributed through **ConnectomeDB**:
-- Website: https://db.humanconnectome.org/
-- Requires ConnectomeDB account and data use agreement
-- Part of the HCP Lifespan initiative
+Current HCP-A/AABC data is distributed through **ConnectomeDB powered by BALSA**:
+- Release page: https://www.humanconnectome.org/study/hcp-lifespan-aging/data-releases
+- Current release: AABC Release 2 (2026-01-28)
+- Register for BALSA and accept the AABC Data Use Terms. An academic, nonprofit, or government email address is required.
+- Imaging packages transfer through IBM Aspera Connect. Select a modality package or subject subset and calculate storage before transfer.
 
 ### Dataset Characteristics
-- **Cohort**: ~700+ adults ages 36-100 years
-- **Modalities**: T1w, T2w, dMRI, rs-fMRI, task-fMRI
+- **AABC Release 2**: 1,396 participants and 2,878 sessions; imaging is available for 1,390 participants across 2,789 sessions
+- **Modalities**: T1w, T2w, high-resolution hippocampal T2, dMRI, rs-fMRI, task-fMRI, and ASL
 - **Focus**: Normal aging, cognitive decline, brain structure-function changes across the lifespan
 - **Unique feature**: Complements HCP-YA to cover the full adult lifespan (22-100 years)
 
 ### Download Inputs to Confirm in Plan
-- ConnectomeDB credentials/token
-- Target modalities (all, structural, functional, diffusion)
+- BALSA/ConnectomeDB account and accepted AABC terms
+- Release (`AABC Release 2` by default or legacy `HCP-A Lifespan 2.0` for reproduction)
+- Target modalities (structural, functional, diffusion, ASL, or non-imaging)
 - Subject list scope (full or custom subset)
-- Destination directory with sufficient disk space
+- Destination directory with capacity calculated from selected package sizes
 
 ---
 
 ## HCP-A Task Paradigms
 
-| Task | Description | Duration |
-|---|---|---|
-| MOTOR | Finger tapping, toe movement, tongue movement | ~3 min |
-| EMOTION | Faces and shapes matching | ~2 min |
-| GAMBLING | Card guessing with reward/loss | ~3 min |
-| LANGUAGE | Story comprehension and math | ~4 min |
-| RELATIONAL | Relational reasoning matching | ~3 min |
-| SOCIAL | Social cognition (mentalizing) movie clips | ~3 min |
-| WM | Working memory (faces, places, tools, body parts) | ~5 min |
-| REST | Resting-state (eyes open) | ~15 min × 4 runs |
+| Task | Description |
+|---|---|
+| VISMOTOR | Simultaneous visual and motor activation paradigm |
+| CARIT | Conditioned Approach Response Inhibition Task |
+| FACENAME | Face-name paired-associates memory task |
+| REST | Resting-state functional MRI |
 
 ---
 
@@ -120,9 +120,10 @@ Features:
 6. Delegate to `smri-skill` for structural MRI processing.
 7. Delegate to `fmri-skill` for functional MRI processing.
 8. Delegate to `dwi-skill` for diffusion MRI processing.
-9. If phenotype extraction is requested, run `scripts/extract_hcpa_phenotype.py`.
-10. If QC summary is requested, run `scripts/hcpa_qc_summary.py`.
-11. Save outputs into `hcpa_output/`.
+9. Delegate to `asl-skill` when ASL data is selected.
+10. If phenotype extraction is requested, run `scripts/extract_hcpa_phenotype.py`.
+11. If QC summary is requested, run `scripts/hcpa_qc_summary.py`.
+12. Save outputs into `hcpa_output/`.
 
 ---
 
@@ -133,6 +134,7 @@ Features:
 | sMRI (T1w/T2w) | `smri-skill` | brain extraction, tissue segmentation, cortical reconstruction, ROI morphometry | `smri_output/` derivatives |
 | fMRI (rs-fMRI/task-fMRI) | `fmri-skill` | preprocessing, denoising, ROI time series, connectivity, task GLM | `fmri_output/` derivatives |
 | dMRI (DWI) | `dwi-skill` | eddy correction, tensor metrics, tractography, connectome | `dwi_output/` metrics |
+| ASL | `asl-skill` | perfusion preprocessing and cerebral blood-flow quantification | `asl_output/` derivatives |
 
 ---
 
@@ -145,6 +147,7 @@ hcpa_output/
 ├── smri/                   # Structural MRI derivatives
 ├── fmri/                   # Functional MRI derivatives
 ├── dwi/                    # Diffusion MRI derivatives
+├── asl/                    # ASL/perfusion derivatives
 ├── phenotype/              # Merged phenotype tables
 ├── qc/                     # QC summaries and exclusion lists
 └── logs/                   # Download + orchestration logs
@@ -173,7 +176,8 @@ For benchmark-style prompts, do not force the full orchestration when the task o
 ## Important Notes and Limitations
 - HCP-A complements HCP-YA to cover the full adult lifespan (22-100 years).
 - HCP-A processing is resource intensive; plan storage and compute accordingly.
-- Age range: 36-100 years; includes both cognitively normal and impaired participants.
+- The HCP-A/AABC cohort is designed around typical aging; do not infer a clinical impairment cohort from age alone.
+- Do not mix legacy Lifespan 2.0 packages with AABC Release 2 without documenting and harmonizing release-specific processing differences.
 - For HCP-native preprocessing, optionally delegate to `hcppipeline-tool`.
 - `hcpa-skill` is orchestration-only; detailed preprocessing logic remains in modality skills.
 
@@ -202,9 +206,10 @@ For benchmark-style prompts, do not force the full orchestration when the task o
 
 ## Reference
 - HCP Aging: https://www.humanconnectome.org/study/hcp-lifespan-aging
-- ConnectomeDB: https://db.humanconnectome.org/
+- AABC Release 2: https://www.humanconnectome.org/study/hcp-lifespan-aging/data-releases
+- HCP-A task protocols: https://www.humanconnectome.org/study/hcp-lifespan-aging/project-protocols
 - Bookheimer et al. (2019): The Lifespan Human Connectome Project in Aging
 
 Created At: 2026-05-06 13:02 HKT
-Last Updated At: 2026-05-06 13:02 HKT
+Last Updated At: 2026-08-11 HKT
 Author: chengwang96

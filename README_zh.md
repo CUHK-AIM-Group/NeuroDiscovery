@@ -71,7 +71,7 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 
 | 数据集 | 支持模态 | 附加数据 | 队列规模 | 官方链接 |
 | :---: | --- | --- | --- | :--- |
-| ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 身体与心理健康、物质使用、文化/环境、神经认知、生物学数据 | 目标队列约 11,500 名儿童；完整批次通过 NIMH Data Archive 发布 | https://abcdstudy.org/ |
+| ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 身体与心理健康、物质使用、文化/环境、神经认知、生物学数据 | 目标队列约 11,500 名儿童；当前版本通过 NBDC Data Sharing Platform 发布 | https://abcdstudy.org/ |
 | ABIDE | T1w; rs-fMRI | ASD/对照表型数据 | 来自 17 个国际站点的 1,112 份数据集 | https://fcon_1000.projects.nitrc.org/indi/abide/ |
 | ADHD-200 | T1w; rs-fMRI | 诊断状态、ADHD 症状量表、人口统计学信息、用药史、质控指标 | 8 个成像站点共 776 名参与者/数据集 | https://fcon_1000.projects.nitrc.org/indi/adhd200/ |
 | AIBL | T1w; PET (PiB, FDG, tau) | 认知评估、血液生物标志物、生活方式与人口统计学数据、APOE 基因型 | 约 1,100+ 名参与者（健康对照、MCI、AD） | https://aibl.csiro.au/ |
@@ -82,10 +82,10 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 | COBRE | T1w; rs-fMRI | 人口统计学信息、利手信息、诊断信息 | 147 名参与者：72 名精神分裂症患者和 75 名健康对照 | https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html |
 | DMT-HAR-MED | rs-fMRI | 致幻剂干预条件、行为与生理测量 | OpenNeuro ds006644 中的 40 名参与者 | https://openneuro.org/datasets/ds006644/versions/1.0.1 |
 | HBN | T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG | 精神病学、行为、认知、生活方式、遗传学、活动记录 | 已发布约 3,900+ 名参与者；目标资源不少于 10,000 名 5-21 岁个体 | https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/ |
-| HCP Aging | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 行为、认知、健康与人口统计学测量 | 约 700+ 名 36-100 岁成人 | https://www.humanconnectome.org/study/hcp-lifespan-aging |
+| HCP Aging | T1w; T2w; dMRI; rs-fMRI; task-fMRI; ASL | 行为、认知、健康与人口统计学测量 | AABC Release 2：1,396 名参与者、2,878 个扫描时点 | https://www.humanconnectome.org/study/hcp-lifespan-aging |
 | HCP Development | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 行为、认知、健康与人口统计学测量 | 约 600+ 名 5-21 岁儿童与青少年 | https://www.humanconnectome.org/study/hcp-lifespan-development |
 | HCP Early Psychosis | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 诊断、临床、行为与认知测量 | 约 250 名早期精神病与对照参与者 | https://www.humanconnectome.org/study/hcp-early-psychosis |
-| HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 行为与认知测量 | 约 1,200 名青年成人参与者 | https://www.humanconnectome.org/study/hcp-young-adult |
+| HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | 行为与认知测量 | 2025 版：1,113 名受试者有未处理影像，1,071 名有处理后数据 | https://www.humanconnectome.org/study/hcp-young-adult |
 | IXI | T1w; T2w; MRA | 来自伦敦三家医院的健康脑 MRI 数据 | 约 600 名受试者 | https://brain-development.org/ixi-dataset/ |
 | MS Challenge | T1w; T2w; FLAIR; PD | 专家手动病灶分割标注，用于 MS 分割基准 | 5 名 MS 患者的多时间点纵向数据 | https://smart-stats-tools.org/lesion-challenge |
 | MND | rs-fMRI; task-fMRI | 运动神经元病诊断与临床测量 | OpenNeuro ds005874 中的 59 名参与者 | https://openneuro.org/datasets/ds005874/versions/1.1.0 |
@@ -95,6 +95,7 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 | PNC | T1w; dMRI; ASL; rs-fMRI; task-fMRI | 基因分型、临床与神经精神评估、计算机化神经认知电池 | 青少年队列超过 9,500 人；其中 1,445 人具有神经影像数据 | https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html |
 | PPMI | T1w; rs-fMRI; DAT-SPECT; PET | 帕金森病的临床、遗传、生物样本和可穿戴传感器数据 | 约 2,000+ 名参与者，覆盖全球 30+ 个临床站点 | https://www.ppmi-info.org/ |
 | REST-meta-MDD | rs-fMRI | MDD 诊断、临床与人口统计学测量 | 25 个队列共 2,428 名参与者 | http://rfmri.org/REST-meta-MDD |
+| SCAN | T1w; FLAIR; 可选 dMRI; rs-fMRI; ASL; 淀粉样蛋白/tau/FDG PET | 关联 NACC 纵向临床与认知数据、集中质控和影像汇总指标 | 持续增长的多 ADRC 资源；可申请数量取决于去面部化和质控进度 | https://scan.naccdata.org/ |
 | SEED-IV | EEG | 四类情绪标签、试次级会话元数据 | 15 名受试者，覆盖 3 次会话，用于情绪解码基准 | https://bcmi.sjtu.edu.cn/home/seed/ |
 | SEED-VIG | EEG | 警觉性/疲劳标签、连续清醒度标注、行为元数据 | 23 名受试者的持续注意驾驶场景警觉性记录 | https://bcmi.sjtu.edu.cn/home/seed/ |
 | TCP | rs-fMRI | 精神科诊断访谈、认知与临床评估 | 245 名跨诊断参与者 | https://openneuro.org/datasets/ds004215 |
@@ -102,6 +103,8 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 | UK Biobank | T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI | 基因型/基因组数据、问卷、医院记录、环境数据、社会人口学数据、体格测量 | 约 50,000 名参与者具有多模态影像数据 | https://www.ukbiobank.ac.uk/ |
 
 </details>
+
+“可访问”不等于“可匿名直接下载”。注册、DUA、审批、费用和当前开放状态见[已核验的数据访问矩阵](docs/DATASET_ACCESS.md)。
 
 ### 🎯 可执行性与可复现性
 - **自动依赖管理**：无需手动安装，系统自动检测并解决依赖
@@ -373,19 +376,19 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 |------|----------|--------|
 | `abide-skill` | ABIDE 数据集下载、BIDS 整理与 sMRI/rs-fMRI 处理 | ✅ |
 | `aibl-skill` | AIBL 数据集访问、BIDS 整理与 sMRI/PET 处理 | ✅ |
-| `abcd-skill` | ABCD Study 数据集下载、BIDS 整理与多模态处理 | ✅ |
+| `abcd-skill` | ABCD Study 的 NBDC 受控访问、BIDS 整理与多模态处理 | ✅ |
 | `adhd200-skill` | ADHD-200 数据集下载、BIDS 整理与 sMRI/rs-fMRI 处理 | ✅ |
-| `adni-skill` | ADNI 数据集自动化处理流程 | ✅ |
+| `adni-skill` | ADNI 与 ADNI-DOD 的受控访问、BIDS 整理与处理流程 | ✅ |
 | `aomic-skill` | AOMIC 数据集验证、BIDS 整理与 sMRI/rs-fMRI/task-fMRI 处理 | ✅ |
 | `bold5000-skill` | BOLD5000 数据集 BIDS 验证与视觉任务态 fMRI 处理 | ✅ |
 | `camcan-skill` | Cam-CAN 数据集 BIDS 验证与多模态 sMRI/rs-fMRI/task-fMRI/dMRI 处理 | ✅ |
 | `cobre-skill` | COBRE 数据集 BIDS 整理与精神分裂症对照 fMRI 处理 | ✅ |
 | `dmt-har-med-skill` | DMT-HAR-MED 数据集 BIDS 验证与致幻剂 rs-fMRI 处理 | ✅ |
 | `hbn-skill` | HBN 数据集下载、BIDS 整理与多模态 sMRI/fMRI/dMRI/EEG 处理 | ✅ |
-| `hcpa-skill` | HCP Aging 数据集下载、BIDS 整理与多模态 sMRI/fMRI/dMRI 处理 | ✅ |
+| `hcpa-skill` | HCP Aging/AABC 访问、BIDS 整理与多模态 sMRI/fMRI/dMRI/ASL 处理 | ✅ |
 | `hcpd-skill` | HCP Development 数据集下载、BIDS 整理与多模态 sMRI/fMRI/dMRI 处理 | ✅ |
 | `hcpep-skill` | HCP Early Psychosis 数据集下载、BIDS 整理与多模态 sMRI/fMRI/dMRI 处理 | ✅ |
-| `hcpya-skill` | HCP Young Adult (HCP1200) 数据集下载、BIDS 整理与多模态 sMRI/fMRI/dMRI 处理 | ✅ |
+| `hcpya-skill` | HCP Young Adult 2025/S1200 访问、BIDS 整理与多模态 sMRI/fMRI/dMRI 处理 | ✅ |
 | `ixi-skill` | IXI 数据集 BIDS 验证与多模态 sMRI/MRA/dMRI 处理 | ✅ |
 | `mnd-skill` | MND 数据集 BIDS 验证、rs-fMRI/task-fMRI 处理与表型数据提取 | ✅ |
 | `mschallenge-skill` | MS 病灶挑战赛 BIDS 验证、病灶分析与纵向追踪 | ✅ |
@@ -395,6 +398,7 @@ NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**m
 | `pnc-skill` | PNC 数据集 BIDS 验证与多模态 sMRI/rs-fMRI/task-fMRI/dMRI 处理（发育研究） | ✅ |
 | `ppmi-skill` | PPMI 数据集 BIDS 验证与多模态 sMRI/rs-fMRI/dMRI 处理（帕金森病） | ✅ |
 | `rest-mneta-mdd-skill` | REST-meta-MDD 多站点 rs-fMRI 处理、站点协调与抑郁症表型数据提取 | ✅ |
+| `scan-skill` | SCAN/NACC 访问规划、批准数据包整理、表型关联与多模态 MRI/PET 处理 | ✅ |
 | `seed-iv-skill` | SEED-IV EEG 情绪识别（4 类情绪）、特征提取与分类 | ✅ |
 | `seed-vig-skill` | SEED-VIG EEG 警觉度/疲劳检测、特征提取与困倦分类 | ✅ |
 | `tcp-skill` | Transdiagnostic Connectome Project BIDS 验证与多模态 sMRI/rs-fMRI/dMRI 处理 | ✅ |

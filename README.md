@@ -73,7 +73,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 
 | Dataset | Supported Modalities | Additional Data | Cohort Scale | Official Link |
 | :---: | --- | --- | --- | :--- |
-| ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Physical and mental health; substance use; culture/environment; neurocognition; biological data | Target cohort of ~11,500 children; full cohort releases through the NIMH Data Archive | https://abcdstudy.org/ |
+| ABCD Study | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Physical and mental health; substance use; culture/environment; neurocognition; biological data | Target cohort of ~11,500 children; current releases through the NBDC Data Sharing Platform | https://abcdstudy.org/ |
 | ABIDE | T1w; rs-fMRI | ASD/control phenotypic data | 1,112 datasets from 17 international sites | https://fcon_1000.projects.nitrc.org/indi/abide/ |
 | ADHD-200 | T1w; rs-fMRI | Diagnostic status; ADHD symptom measures; demographics; medication history; QC measures | 776 participants/datasets across 8 imaging sites | https://fcon_1000.projects.nitrc.org/indi/adhd200/ |
 | AIBL | T1w; PET (PiB, FDG, tau) | Cognitive assessments; blood biomarkers; lifestyle and demographic data; APOE genotype | ~1,100+ participants (healthy controls, MCI, AD) | https://aibl.csiro.au/ |
@@ -84,10 +84,10 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | COBRE | T1w; rs-fMRI | Demographics; handedness; diagnostic information | 147 participants: 72 schizophrenia patients and 75 healthy controls | https://fcon_1000.projects.nitrc.org/indi/retro/cobre.html |
 | DMT-HAR-MED | rs-fMRI | Psychedelic intervention conditions; behavioral and physiological measures | 40 participants in OpenNeuro ds006644 | https://openneuro.org/datasets/ds006644/versions/1.0.1 |
 | HBN | T1w; T2w; dMRI; rs-fMRI; task-fMRI; EEG | Psychiatric, behavioral, cognitive, lifestyle, genetics, actigraphy | ~3,900+ released participants; target resource of at least 10,000 ages 5-21 | https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/ |
-| HCP Aging | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral, cognitive, health, and demographic measures | ~700+ adults ages 36-100 | https://www.humanconnectome.org/study/hcp-lifespan-aging |
+| HCP Aging | T1w; T2w; dMRI; rs-fMRI; task-fMRI; ASL | Behavioral, cognitive, health, and demographic measures | AABC Release 2: 1,396 participants and 2,878 sessions | https://www.humanconnectome.org/study/hcp-lifespan-aging |
 | HCP Development | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral, cognitive, health, and demographic measures | ~600+ children and adolescents ages 5-21 | https://www.humanconnectome.org/study/hcp-lifespan-development |
 | HCP Early Psychosis | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Diagnostic, clinical, behavioral, and cognitive measures | ~250 early psychosis and control participants | https://www.humanconnectome.org/study/hcp-early-psychosis |
-| HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral and cognitive measures | ~1,200 young adult participants | https://www.humanconnectome.org/study/hcp-young-adult |
+| HCP Young Adult | T1w; T2w; dMRI; rs-fMRI; task-fMRI | Behavioral and cognitive measures | 2025 release: unprocessed imaging for 1,113 subjects and processed data for 1,071 | https://www.humanconnectome.org/study/hcp-young-adult |
 | IXI | T1w; T2w; MRA | Healthy brain MRI from three London hospitals | ~600 subjects | https://brain-development.org/ixi-dataset/ |
 | MS Challenge | T1w; T2w; FLAIR; PD | Expert manual lesion segmentations for MS benchmarking | 5 MS patients with multiple longitudinal timepoints | https://smart-stats-tools.org/lesion-challenge |
 | MND | rs-fMRI; task-fMRI | Motor neuron disease diagnosis and clinical measures | 59 participants in OpenNeuro ds005874 | https://openneuro.org/datasets/ds005874/versions/1.1.0 |
@@ -97,6 +97,7 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | PNC | T1w; dMRI; ASL; rs-fMRI; task-fMRI | Genotyping; clinical and neuropsychiatric assessment; Computerized Neurocognitive Battery | >9,500 youth cohort; 1,445 participants with neuroimaging | https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html |
 | PPMI | T1w; rs-fMRI; DAT-SPECT; PET | Clinical, genetic, biospecimen, and wearable sensor data for Parkinson's disease | ~2,000+ participants across 30+ clinical sites worldwide | https://www.ppmi-info.org/ |
 | REST-meta-MDD | rs-fMRI | MDD diagnosis; clinical and demographic measures | 2,428 participants across 25 cohorts | http://rfmri.org/REST-meta-MDD |
+| SCAN | T1w; FLAIR; optional dMRI; rs-fMRI; ASL; amyloid/tau/FDG PET | Linked NACC longitudinal clinical/cognitive data; centralized QC and imaging summaries | Growing multi-ADRC resource; requestable data depend on completed defacing and QC | https://scan.naccdata.org/ |
 | SEED-IV | EEG | Emotion labels across four affective categories; trial-level session metadata | 15 subjects across 3 sessions for emotion decoding benchmarks | https://bcmi.sjtu.edu.cn/home/seed/ |
 | SEED-VIG | EEG | Vigilance/fatigue labels; continuous alertness annotations; behavioral metadata | 23 subjects in sustained-attention driving-style vigilance recordings | https://bcmi.sjtu.edu.cn/home/seed/ |
 | TCP | rs-fMRI | Psychiatric diagnostic interviews; cognitive and clinical assessments | 245 transdiagnostic participants | https://openneuro.org/datasets/ds004215 |
@@ -104,6 +105,8 @@ NeuroClaw prioritizes **data processing** and **model configuration/execution**.
 | UK Biobank | T1w; T2w; FLAIR; dMRI; rs-fMRI; task-fMRI | Genotype/genomic data; questionnaires; hospital records; environmental data; sociodemographic data; physical measures | ~50,000 participants with multimodal imaging data | https://www.ukbiobank.ac.uk/ |
 
 </details>
+
+Access is not equivalent to anonymous download. See the [verified access matrix](docs/DATASET_ACCESS.md) for registration, DUA, review, fee, and current availability details.
 
 ### 🎯 Executability and Reproducibility
 - **Automatic Dependency Management**: No manual installation needed; the system detects and resolves dependencies
@@ -377,19 +380,19 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 |------|----------|--------|
 | `abide-skill` | ABIDE dataset download, BIDS staging, and sMRI/rs-fMRI processing | ✅ |
 | `aibl-skill` | AIBL dataset access, BIDS staging, and sMRI/PET processing | ✅ |
-| `abcd-skill` | ABCD Study dataset download, BIDS staging, and multimodal processing | ✅ |
+| `abcd-skill` | ABCD Study controlled NBDC access, BIDS staging, and multimodal processing | ✅ |
 | `adhd200-skill` | ADHD-200 dataset download, BIDS staging, and sMRI/rs-fMRI processing | ✅ |
-| `adni-skill` | ADNI dataset automated processing workflow | ✅ |
+| `adni-skill` | ADNI and ADNI-DOD controlled access, BIDS staging, and processing workflow | ✅ |
 | `aomic-skill` | AOMIC dataset validation, BIDS staging, and sMRI/rs-fMRI/task-fMRI processing | ✅ |
 | `bold5000-skill` | BOLD5000 dataset BIDS validation and visual task-fMRI processing | ✅ |
 | `camcan-skill` | Cam-CAN dataset BIDS validation, multimodal sMRI/rs-fMRI/task-fMRI/dMRI processing | ✅ |
 | `cobre-skill` | COBRE dataset BIDS staging and schizophrenia-control fMRI processing | ✅ |
 | `dmt-har-med-skill` | DMT-HAR-MED dataset BIDS validation and psychedelic rs-fMRI processing | ✅ |
 | `hbn-skill` | HBN dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI/EEG processing | ✅ |
-| `hcpa-skill` | HCP Aging dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
+| `hcpa-skill` | HCP Aging/AABC access, BIDS staging, and multimodal sMRI/fMRI/dMRI/ASL processing | ✅ |
 | `hcpd-skill` | HCP Development dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
 | `hcpep-skill` | HCP Early Psychosis dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
-| `hcpya-skill` | HCP Young Adult (HCP1200) dataset download, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
+| `hcpya-skill` | HCP Young Adult 2025/S1200 access, BIDS staging, and multimodal sMRI/fMRI/dMRI processing | ✅ |
 | `ixi-skill` | IXI dataset BIDS validation and multimodal sMRI/MRA/dMRI processing | ✅ |
 | `mnd-skill` | MND dataset BIDS validation, rs-fMRI/task-fMRI processing, and phenotype extraction | ✅ |
 | `mschallenge-skill` | MS Lesion Challenge BIDS validation, lesion analysis, and longitudinal tracking | ✅ |
@@ -399,6 +402,7 @@ Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**
 | `pnc-skill` | PNC dataset BIDS validation, multimodal sMRI/rs-fMRI/task-fMRI/dMRI processing for developmental studies | ✅ |
 | `ppmi-skill` | PPMI dataset BIDS validation, multimodal sMRI/rs-fMRI/dMRI processing for Parkinson's disease | ✅ |
 | `rest-mneta-mdd-skill` | REST-meta-MDD multi-site rs-fMRI processing, site harmonization, and depression phenotype extraction | ✅ |
+| `scan-skill` | SCAN/NACC access planning, approved-export staging, phenotype linkage, and multimodal MRI/PET processing | ✅ |
 | `seed-iv-skill` | SEED-IV EEG emotion recognition (4 emotions), feature extraction, and classification | ✅ |
 | `seed-vig-skill` | SEED-VIG EEG vigilance/fatigue detection, feature extraction, and drowsiness classification | ✅ |
 | `tcp-skill` | Transdiagnostic Connectome Project BIDS validation, multimodal sMRI/rs-fMRI/dMRI processing | ✅ |

@@ -41,12 +41,23 @@ It strictly follows the NeuroClaw hierarchical design principles:
 
 | Task | What needs to be done | Delegate to | Expected output |
 |---|---|---|---|
+| Data access | Accept the PPMI DUA and submit the IDA application | Manual access gate | Approved PPMI project access |
 | BIDS validation | Validate PPMI BIDS structure | `scripts/validate_ppmi.py` | Validation report |
 | sMRI processing | Brain extraction, tissue segmentation | `smri-skill` | `smri_output/` derivatives |
 | rs-fMRI processing | Preprocessing, denoising, connectivity | `fmri-skill` | `fmri_output/` connectivity |
 | dMRI processing | Diffusion preprocessing, tensor metrics | `dwi-skill` | `dwi_output/` metrics |
 | Phenotype extraction | Motor scores, cognitive, biomarkers | `scripts/extract_ppmi_phenotype.py` | Merged phenotype CSV |
 | QC summary | Per-subject quality control | `scripts/ppmi_qc_summary.py` | QC summary + exclusion list |
+
+---
+
+## Access Stage
+
+- Official route: https://www.ppmi-info.org/access-data-specimens/download-data
+- PPMI individual-level clinical, imaging, omics, genetic, sensor, and biomarker data require a signed DUA and online application.
+- PPMI states that the Data and Publications Committee normally reviews applications within one week.
+- After approval, download through the PPMI project in LONI IDA and record the export date, query, subject/session filters, modalities, and checksums.
+- Review the current DUA before using external compute or AI services. Keep credentials, controlled manifests, and participant-level data out of the repository and unapproved services.
 
 ---
 
@@ -59,8 +70,8 @@ It strictly follows the NeuroClaw hierarchical design principles:
 - **Scanner**: 3T Siemens (multi-site)
 - **Modalities**: T1w sMRI, rs-fMRI, dMRI/DTI, DaTscan SPECT
 - **Clinical**: MDS-UPDRS, MoCA, UPSIT, REM sleep, DAT imaging
-- **Access**: LONI IDA (ida.loni.usc.edu), PPMI data portal
-- **Format**: BIDS-compliant (community conversion)
+- **Access**: Controlled PPMI project in LONI IDA after DUA and application approval
+- **Format**: IDA export; use a documented community conversion or local BIDS staging before BIDS-native tools
 - **Reference**: Marek et al. (2011), Lancet Neurology
 
 ---
@@ -168,6 +179,7 @@ For benchmark-style prompts, do not force the full orchestration when the task o
 ---
 
 ## Important Notes and Limitations
+- PPMI is controlled data and must not be redistributed. Preserve the governing DUA and required publication/ongoing-analysis obligations with project provenance.
 - PPMI is a multi-site study; site effects should be modeled in group analyses.
 - Early-stage PD patients are often drug-naive, which is valuable for studying untreated disease.
 - DaTscan SPECT provides dopaminergic imaging but may not follow standard BIDS conventions.
@@ -200,10 +212,11 @@ For benchmark-style prompts, do not force the full orchestration when the task o
 ---
 
 ## Reference
+- PPMI data access: https://www.ppmi-info.org/access-data-specimens/download-data
 - PPMI: https://www.ppmi-info.org/
 - Marek et al. (2011): The Parkinson Progression Marker Initiative (PPMI). Lancet Neurology.
 - LONI IDA: https://ida.loni.usc.edu/
 
 Created At: 2026-05-06 13:55 HKT
-Last Updated At: 2026-05-06 13:55 HKT
+Last Updated At: 2026-08-11 HKT
 Author: chengwang96
