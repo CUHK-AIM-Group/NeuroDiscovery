@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-NeuroClaw Setup Entry Point
+NeuroOracle Setup Entry Point
 
 Usage:
     python installer/setup.py          # Interactive wizard
     python installer/setup.py --check  # Validate existing neuroclaw_environment.json
     python installer/setup.py --non-interactive  # Write defaults without prompting
 
-This script is the primary entry point for installing and configuring NeuroClaw
+This script is the primary entry point for installing and configuring NeuroOracle
 as a self-contained system. It does NOT require OpenClaw to be pre-installed.
 """
 from __future__ import annotations
@@ -30,14 +30,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from core.llm.provider_profiles import OPENAI_COMPATIBLE_PROVIDERS
 
-# Minimum Python version required by NeuroClaw
+# Minimum Python version required by NeuroRuntime
 MIN_PYTHON = (3, 10)
 
 
 def _check_python_version() -> None:
     if sys.version_info < MIN_PYTHON:
         print(
-            f"ERROR: NeuroClaw requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+. "
+            f"ERROR: NeuroRuntime requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+. "
             f"Current: {sys.version_info.major}.{sys.version_info.minor}"
         )
         sys.exit(1)
@@ -91,7 +91,7 @@ def _check_existing_config() -> int:
                 "  ⚠  LLM API key is not exported. "
                 "Set the environment variable specified in "
                 "neuroclaw_environment.json → llm_backend.api_key_env "
-                "before starting NeuroClaw."
+                "before starting NeuroOracle."
             )
         return 1
 
@@ -132,7 +132,7 @@ def _write_defaults() -> None:
 
 
 def _print_summary(config: dict) -> None:
-    print("\n── NeuroClaw Environment Summary ──────────────────────────")
+    print("\n── NeuroRuntime Environment Summary ───────────────────────")
     print(f"  Setup type  : {config.get('setup_type')}")
     print(f"  Python      : {config.get('python_path')}")
     if config.get("conda_env"):
@@ -158,7 +158,7 @@ def main() -> None:
     _check_python_version()
 
     parser = argparse.ArgumentParser(
-        description="NeuroClaw Setup — configure the self-contained neuroscience AI assistant."
+        description="NeuroOracle Setup — configure the NeuroRuntime execution environment."
     )
     parser.add_argument(
         "--check",

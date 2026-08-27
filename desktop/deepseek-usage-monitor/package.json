@@ -1,0 +1,43 @@
+{
+  "name": "deepseek-usage-monitor",
+  "version": "0.1.0",
+  "description": "自建 DeepSeek API 余额/用量监控客户端（纯 Electron，无第三方运行时依赖）",
+  "main": "main.js",
+  "author": "NeuroClaw",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "pack:win": "electron-builder --win dir"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.7"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.neuroclaw.deepseek-usage-monitor",
+    "productName": "DeepSeekUsageMonitor",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "history.js",
+      "renderer/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "dir",
+        "zip"
+      ]
+    }
+  }
+}

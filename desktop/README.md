@@ -1,6 +1,7 @@
-# NeuroClaw Desktop
+# NeuroDiscovery Desktop
 
-Electron desktop shell for NeuroClaw.
+Electron desktop client for NeuroDiscovery. The NeuroOracle knowledge graph is
+available as a dedicated graph and hypothesis-generation feature.
 
 ## macOS build
 
@@ -12,7 +13,7 @@ npm run dist:mac
 ```
 
 The macOS runtime script stages a relocatable conda prefix in `desktop/runtime/python`
-and the NeuroClaw backend in `desktop/runtime/backend`. It uses the Python minor
+and the NeuroRuntime backend in `desktop/runtime/backend`. It uses the Python minor
 version from the `neuroclaw` conda environment by default.
 
 The desktop Settings page stores the same LLM fields on Windows and macOS:

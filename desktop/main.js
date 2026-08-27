@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell, clipboard } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell, clipboard, session, nativeTheme } = require('electron');
 const { spawn, spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -6,12 +6,16 @@ const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 
-const APP_NAME = 'NeuroClaw';
+const APP_NAME = 'NeuroDiscovery';
+const LEGACY_USER_DATA_NAME = 'NeuroClaw';
 const APP_OPENED_AT_MS = Date.now();
 const STARTUP_TIMEOUT_MS = 90_000;
 const BUNDLED_RUNTIME_VERSION = '0.2.2';
 const WINDOWS_RESERVED_FOLDER_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
 
+// Keep existing desktop settings, logs, and bundled runtime after the product
+// rename. Internal storage can migrate separately without resetting users.
+app.setPath('userData', path.join(app.getPath('appData'), LEGACY_USER_DATA_NAME));
 app.setName(APP_NAME);
 
 function validateProjectFolderName(value) {
@@ -32,6 +36,19 @@ let backendStartedByDesktop = false;
 let backendUrl = '';
 let logStream = null;
 let isBooting = false;
+
+function normalizeTheme(value) {
+  return String(value || '').toLowerCase() === 'dark' ? 'dark' : 'light';
+}
+
+function applyNativeTheme(value) {
+  const theme = normalizeTheme(value);
+  nativeTheme.themeSource = theme;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setBackgroundColor(theme === 'dark' ? '#0e141c' : '#eef4f6');
+  }
+  return theme;
+}
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -89,8 +106,9 @@ function formatDurationMs(milliseconds) {
 
 function startupPageHtml(status, detail = '') {
   const title = escapeHtml(APP_NAME);
-  const message = escapeHtml(status || desktopText('Starting NeuroClaw', '正在启动 NeuroClaw'));
-  const subtext = escapeHtml(detail || desktopText('Checking the local backend and runtime...', '正在检查本地后端和运行环境...'));
+  const message = escapeHtml(status || desktopText('Starting NeuroDiscovery', '正在启动 NeuroDiscovery'));
+  const subtext = escapeHtml(detail || desktopText('Checking NeuroRuntime and the local environment...', '正在检查 NeuroRuntime 和本地运行环境...'));
+  const dark = nativeTheme.shouldUseDarkColors;
   return `<!doctype html>
 <html>
 <head>
@@ -99,10 +117,10 @@ function startupPageHtml(status, detail = '') {
   <title>${title}</title>
   <style>
     :root {
-      color-scheme: light;
+      color-scheme: ${dark ? 'dark' : 'light'};
       font-family: "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
-      background: #eef4f6;
-      color: #162638;
+      background: ${dark ? '#0e141c' : '#eef4f6'};
+      color: ${dark ? '#d7e0ea' : '#162638'};
     }
     body {
       margin: 0;
@@ -111,7 +129,7 @@ function startupPageHtml(status, detail = '') {
       place-items: center;
       background:
         radial-gradient(760px 360px at 50% 42%, rgba(91, 184, 198, .16), transparent 70%),
-        linear-gradient(180deg, #f8fcfc, #eef4f6);
+        linear-gradient(180deg, ${dark ? '#161d27, #0e141c' : '#f8fcfc, #eef4f6'});
     }
     .startup {
       width: min(520px, calc(100vw - 64px));
@@ -148,7 +166,7 @@ function startupPageHtml(status, detail = '') {
     }
     p {
       margin: 0;
-      color: #637484;
+      color: ${dark ? '#8da0b4' : '#637484'};
       font-size: 14px;
       line-height: 1.7;
     }
@@ -158,10 +176,10 @@ function startupPageHtml(status, detail = '') {
       justify-content: center;
       min-height: 28px;
       padding: 0 13px;
-      border: 1px solid #c9dde2;
+      border: 1px solid ${dark ? '#2b3a4b' : '#c9dde2'};
       border-radius: 999px;
-      background: rgba(255, 255, 255, .72);
-      color: #0a6370;
+      background: ${dark ? 'rgba(29, 39, 52, .82)' : 'rgba(255, 255, 255, .72)'};
+      color: ${dark ? '#7bc7ff' : '#0a6370'};
       font-size: 12px;
       font-weight: 700;
       line-height: 1;
@@ -189,6 +207,7 @@ async function loadStartupPage(status, detail) {
 async function loadErrorPage(err) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const message = escapeHtml(String(err && (err.stack || err.message) ? (err.stack || err.message) : err));
+  const dark = nativeTheme.shouldUseDarkColors;
   await mainWindow.loadURL(desktopDataUrl(`<!doctype html>
 <html>
 <head>
@@ -202,33 +221,34 @@ async function loadErrorPage(err) {
       padding: 48px;
       box-sizing: border-box;
       font-family: "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
-      background: #eef4f6;
-      color: #162638;
+      color-scheme: ${dark ? 'dark' : 'light'};
+      background: ${dark ? '#0e141c' : '#eef4f6'};
+      color: ${dark ? '#d7e0ea' : '#162638'};
     }
     main {
       max-width: 880px;
       margin: 0 auto;
-      border: 1px solid #d7e4e7;
+      border: 1px solid ${dark ? '#2b3a4b' : '#d7e4e7'};
       border-radius: 16px;
-      background: white;
+      background: ${dark ? '#171f2a' : 'white'};
       padding: 24px;
       box-shadow: 0 16px 40px rgba(25, 42, 62, .08);
     }
     h1 { margin: 0 0 12px; font-size: 24px; }
-    p { color: #637484; }
+    p { color: ${dark ? '#8da0b4' : '#637484'}; }
     pre {
       overflow: auto;
       white-space: pre-wrap;
       padding: 14px;
       border-radius: 12px;
-      background: #f3f7f8;
-      border: 1px solid #d7e4e7;
+      background: ${dark ? '#111923' : '#f3f7f8'};
+      border: 1px solid ${dark ? '#2b3a4b' : '#d7e4e7'};
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>${escapeHtml(desktopText('NeuroClaw failed to start', 'NeuroClaw 启动失败'))}</h1>
+    <h1>${escapeHtml(desktopText('NeuroDiscovery failed to start', 'NeuroDiscovery 启动失败'))}</h1>
     <p>${escapeHtml(path.join(app.getPath('userData'), 'logs'))}</p>
     <pre>${message}</pre>
   </main>
@@ -588,6 +608,7 @@ function defaultConfig() {
     localPythonExe: process.env.NEUROCLAW_LOCAL_PYTHON_EXE || '',
     fslDir: process.env.FSLDIR || '',
     language: process.env.NEUROCLAW_LANGUAGE || 'English',
+    theme: process.env.NEUROCLAW_THEME || 'light',
     proxyUrl: process.env.NEUROCLAW_PROXY_URL || '',
     llmProvider: process.env.NEUROCLAW_LLM_PROVIDER || 'openai',
     llmModel: process.env.NEUROCLAW_LLM_MODEL || 'gpt-5.5',
@@ -676,6 +697,28 @@ function defaultApiKeyEnvForProvider(provider) {
 
 function providerNeedsNoApiKey(provider) {
   return ['ollama', 'llamacpp', 'local'].includes(String(provider || '').trim().toLowerCase());
+}
+
+function describeLlmConnectionStatus(config) {
+  const provider = String(config && config.llmProvider || '').trim().toLowerCase() || 'openai';
+  const apiKey = String(config && config.llmApiKey || '').trim();
+  const apiKeyEnv = String(config && config.llmApiKeyEnv || '').trim() || defaultApiKeyEnvForProvider(provider);
+  const environmentKey = apiKeyEnv ? String(process.env[apiKeyEnv] || '').trim() : '';
+  const apiKeyRequired = !providerNeedsNoApiKey(provider);
+  const apiKeySource = !apiKeyRequired
+    ? 'not-required'
+    : apiKey
+      ? 'desktop-config'
+      : environmentKey
+        ? 'environment'
+        : 'missing';
+  return {
+    provider,
+    apiKeyRequired,
+    apiKeyConfigured: !apiKeyRequired || Boolean(apiKey || environmentKey),
+    apiKeySource,
+    endpointConfigured: Boolean(String(config && config.llmBaseUrl || '').trim()),
+  };
 }
 
 function readJsonObject(filePath) {
@@ -820,7 +863,7 @@ function ensureLogStream() {
   if (logStream) return logStream;
   const logDir = path.join(app.getPath('userData'), 'logs');
   fs.mkdirSync(logDir, { recursive: true });
-  logStream = fs.createWriteStream(path.join(logDir, 'neuroclaw-desktop.log'), { flags: 'a' });
+  logStream = fs.createWriteStream(path.join(logDir, 'neurodiscovery-desktop.log'), { flags: 'a' });
   log(`=== ${APP_NAME} desktop start ${new Date().toISOString()} ===`);
   return logStream;
 }
@@ -886,7 +929,7 @@ async function waitForBackend(url, timeoutMs) {
 function validateConfig(config) {
   if (config.runtimeMode === 'bundled') {
     if (!fs.existsSync(config.repoRoot)) {
-      throw new Error(`Bundled NeuroClaw backend not found: ${config.repoRoot}`);
+      throw new Error(`Bundled NeuroRuntime backend not found: ${config.repoRoot}`);
     }
     if (!fs.existsSync(config.pythonExe)) {
       throw new Error(`Bundled Python executable not found: ${config.pythonExe}`);
@@ -895,7 +938,7 @@ function validateConfig(config) {
   }
   if (config.runtimeMode === 'python') {
     if (!fs.existsSync(config.repoRoot)) {
-      throw new Error(`NeuroClaw repo root not found: ${config.repoRoot}`);
+      throw new Error(`NeuroDiscovery repo root not found: ${config.repoRoot}`);
     }
     if (!fs.existsSync(config.pythonExe)) {
       throw new Error(`Python executable not found: ${config.pythonExe}`);
@@ -903,7 +946,7 @@ function validateConfig(config) {
     return;
   }
   if (!fs.existsSync(config.repoRoot)) {
-    throw new Error(`NeuroClaw repo root not found: ${config.repoRoot}`);
+    throw new Error(`NeuroDiscovery repo root not found: ${config.repoRoot}`);
   }
   if (!fs.existsSync(config.condaExe)) {
     throw new Error(`Conda executable not found: ${config.condaExe}`);
@@ -935,7 +978,7 @@ async function ensureBackend() {
 
   if (await requestDesktopCompatible(backendUrl)) {
     const isDesktopManagedBackend = Boolean(backendProcess && !backendProcess.killed);
-    log(`Reusing ${isDesktopManagedBackend ? 'desktop-managed' : 'existing'} NeuroClaw backend at ${backendUrl}`);
+    log(`Reusing ${isDesktopManagedBackend ? 'desktop-managed' : 'existing'} NeuroRuntime backend at ${backendUrl}`);
     backendStartedByDesktop = isDesktopManagedBackend;
     return { url: backendUrl, reused: true };
   }
@@ -986,13 +1029,13 @@ async function ensureBackend() {
 
   const backendExit = new Promise((resolve, reject) => {
     backendProcess.once('error', (err) => {
-      reject(new Error(`Failed to start NeuroClaw backend: ${err.message || err}`));
+      reject(new Error(`Failed to start NeuroRuntime backend: ${err.message || err}`));
     });
     backendProcess.once('exit', (code, signal) => {
       log(`Backend exited code=${code} signal=${signal || ''}`);
       backendProcess = null;
       reject(new Error([
-        `NeuroClaw backend exited before it was ready (code=${code}, signal=${signal || 'none'}).`,
+        `NeuroRuntime backend exited before it was ready (code=${code}, signal=${signal || 'none'}).`,
         backendOutputTail.trim(),
       ].filter(Boolean).join('\n\n')));
     });
@@ -1003,7 +1046,7 @@ async function ensureBackend() {
     backendExit,
   ]);
   if (!ready) {
-    throw new Error(`NeuroClaw backend did not become ready at ${backendUrl} within ${STARTUP_TIMEOUT_MS / 1000}s`);
+    throw new Error(`NeuroRuntime backend did not become ready at ${backendUrl} within ${STARTUP_TIMEOUT_MS / 1000}s`);
   }
   return { url: backendUrl, reused: false };
 }
@@ -1016,7 +1059,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 680,
     title: APP_NAME,
-    backgroundColor: '#eef4f6',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0e141c' : '#eef4f6',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -1196,9 +1239,19 @@ function studyResultsMenuItem() {
   };
 }
 
+function textScaleMenuItem(action, accelerator, labelEn, labelZh, visible = true) {
+  return {
+    label: desktopText(labelEn, labelZh),
+    accelerator,
+    visible,
+    acceleratorWorksWhenHidden: true,
+    click: () => sendMenuAction(action),
+  };
+}
+
 function aboutMenuItem() {
   return {
-    label: desktopText('About NeuroClaw', '关于 NeuroClaw'),
+    label: desktopText('About NeuroDiscovery', '关于 NeuroDiscovery'),
     click: () => dialog.showMessageBox({
       type: 'info',
       title: desktopText(`About ${APP_NAME}`, `关于 ${APP_NAME}`),
@@ -1276,9 +1329,12 @@ function setApplicationMenu() {
         { label: desktopText('Reload', '重新加载'), role: 'reload' },
         { label: desktopText('Force Reload', '强制重新加载'), role: 'forceReload' },
         { type: 'separator' },
-        { label: desktopText('Actual Size', '实际大小'), role: 'resetZoom' },
-        { label: desktopText('Zoom In', '放大'), role: 'zoomIn' },
-        { label: desktopText('Zoom Out', '缩小'), role: 'zoomOut' },
+        textScaleMenuItem('text-scale-reset', 'CmdOrCtrl+0', 'Actual Size', '实际大小'),
+        textScaleMenuItem('text-scale-increase', 'CmdOrCtrl+Plus', 'Zoom In', '放大'),
+        textScaleMenuItem('text-scale-decrease', 'CmdOrCtrl+-', 'Zoom Out', '缩小'),
+        textScaleMenuItem('text-scale-increase', 'CmdOrCtrl+=', 'Zoom In', '放大', false),
+        textScaleMenuItem('text-scale-increase', 'CmdOrCtrl+numadd', 'Zoom In', '放大', false),
+        textScaleMenuItem('text-scale-decrease', 'CmdOrCtrl+numsub', 'Zoom Out', '缩小', false),
         { type: 'separator' },
         { label: desktopText('Toggle Full Screen', '切换全屏'), role: 'togglefullscreen' },
       ],
@@ -1304,19 +1360,104 @@ function setApplicationMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-ipcMain.handle('neuroclaw:get-config', () => ({
-  config: loadConfig(),
-  configPath: userConfigPath(),
-  logsPath: path.join(app.getPath('userData'), 'logs'),
-  isPackaged: app.isPackaged,
-  platform: process.platform,
-}));
+ipcMain.handle('neuroclaw:get-config', () => {
+  const config = loadConfig();
+  return {
+    config,
+    llmConnectionStatus: describeLlmConnectionStatus(config),
+    configPath: userConfigPath(),
+    logsPath: path.join(app.getPath('userData'), 'logs'),
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+  };
+});
 
-ipcMain.handle('neuroclaw:save-config', (_event, config) => ({
-  config: saveConfig(config),
-  configPath: userConfigPath(),
-  restartRequired: true,
-}));
+ipcMain.handle('neuroclaw:save-config', (_event, config) => {
+  const previousLanguage = loadConfig().language;
+  const savedConfig = saveConfig(config);
+  if (savedConfig.language !== previousLanguage) setApplicationMenu();
+  return {
+    config: savedConfig,
+    llmConnectionStatus: describeLlmConnectionStatus(savedConfig),
+    configPath: userConfigPath(),
+    restartRequired: true,
+  };
+});
+
+ipcMain.handle('neuroclaw:set-language', (_event, requestedLanguage) => {
+  const language = ['System default', 'English', 'Simplified Chinese'].includes(requestedLanguage)
+    ? requestedLanguage
+    : 'System default';
+  const config = loadConfig();
+  if (config.language !== language) saveConfig({ ...config, language });
+  setApplicationMenu();
+  return { language };
+});
+
+ipcMain.handle('neuroclaw:set-theme', (_event, requestedTheme) => {
+  const theme = applyNativeTheme(requestedTheme);
+  const config = loadConfig();
+  if (config.theme !== theme) saveConfig({ ...config, theme });
+  return { theme, shouldUseDarkColors: nativeTheme.shouldUseDarkColors };
+});
+
+ipcMain.handle('neuroclaw:reset-application', async () => {
+  const owner = BrowserWindow.getFocusedWindow() || mainWindow;
+  const confirmation = await dialog.showMessageBox(owner && !owner.isDestroyed() ? owner : undefined, {
+    type: 'warning',
+    title: desktopText('Reset NeuroDiscovery', '重置 NeuroDiscovery'),
+    message: desktopText(
+      'Clear all NeuroDiscovery settings and local application data?',
+      '清除 NeuroDiscovery 的全部设置和本地应用数据？',
+    ),
+    detail: desktopText(
+      'This removes API settings, chats, project history, Expert Study progress, local memory, logs, caches, and the extracted bundled runtime. Your project folders, datasets, generated outputs, and exported result files are not deleted. NeuroDiscovery will restart.',
+      '这会删除 API 设置、对话、项目历史、Expert Study 进度、本地记忆、日志、缓存和已解压的 bundled runtime。不会删除项目文件夹、数据集、生成的输出或已导出的结果文件。NeuroDiscovery 随后会重启。',
+    ),
+    buttons: [
+      desktopText('Cancel', '取消'),
+      desktopText('Reset and restart', '重置并重启'),
+    ],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  });
+  if (confirmation.response !== 1) return { canceled: true };
+
+  const currentConfig = loadConfig();
+  const backendPid = backendProcess && !backendProcess.killed ? backendProcess.pid : null;
+  stopBackend();
+  if (process.platform === 'win32' && backendPid) {
+    spawnSync('taskkill', ['/PID', String(backendPid), '/T', '/F'], { windowsHide: true });
+  }
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  await session.defaultSession.clearStorageData();
+  await session.defaultSession.clearCache();
+
+  const resetTargets = [
+    userConfigPath(),
+    path.join(app.getPath('userData'), 'logs'),
+    userRuntimeRoot(),
+    path.join(os.homedir(), '.neurodiscovery'),
+    path.join(os.homedir(), '.neuroclaw', 'memory'),
+  ].filter(Boolean);
+  if (String(currentConfig.repoRoot || '').trim()) {
+    resetTargets.push(path.join(String(currentConfig.repoRoot).trim(), 'neuroclaw_environment.json'));
+  }
+  for (const target of [...new Set(resetTargets.map(item => path.resolve(item)))]) {
+    fs.rmSync(target, {
+      recursive: true,
+      force: true,
+      maxRetries: 5,
+      retryDelay: 200,
+    });
+  }
+
+  app.relaunch();
+  app.exit(0);
+  return { canceled: false };
+});
 
 ipcMain.handle('neuroclaw:detect-local-pythons', () => ({
   candidates: detectLocalPythons(),
@@ -1379,6 +1520,71 @@ ipcMain.handle('neuroclaw:create-project-folder', async (_event, requestedName) 
   }
 });
 
+ipcMain.handle('neuroclaw:export-chat-session', async (_event, request) => {
+  try {
+    const requestedFormat = String(request && request.format ? request.format : 'json').toLowerCase();
+    const format = requestedFormat === 'md' || requestedFormat === 'markdown' ? 'md' : 'json';
+    const extension = format === 'md' ? '.md' : '.json';
+    const fallbackName = format === 'md' ? 'NeuroDiscovery-chat_conversation.md' : 'NeuroDiscovery-chat_conversation.json';
+    const requestedName = path.basename(String(request && request.defaultFileName ? request.defaultFileName : fallbackName));
+    const safeName = requestedName
+      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+      .replace(/[. ]+$/g, '') || fallbackName;
+    const nameWithoutKnownExtension = safeName.replace(/\.(?:json|md|markdown)$/i, '');
+    const defaultFileName = safeName.toLowerCase().endsWith(extension)
+      ? safeName
+      : `${nameWithoutKnownExtension}${extension}`;
+    const conversationContent = String(
+      request && request.conversationContent !== undefined
+        ? request.conversationContent
+        : request && request.content !== undefined
+          ? request.content
+          : '',
+    );
+    const worklogContent = String(request && request.worklogContent !== undefined ? request.worklogContent : '');
+    if (!conversationContent.trim()) {
+      throw new Error(desktopText('There is no chat content to export.', '当前对话没有可导出的内容。'));
+    }
+    if (!worklogContent.trim()) {
+      throw new Error(desktopText('There is no agent work log to export.', '当前对话没有可导出的 agent 工作记录。'));
+    }
+
+    const owner = BrowserWindow.getFocusedWindow() || mainWindow;
+    const options = {
+      title: desktopText('Export conversation and agent work log', '导出会话内容和 agent 工作记录'),
+      buttonLabel: desktopText('Export', '导出'),
+      defaultPath: path.join(app.getPath('documents'), defaultFileName),
+      filters: format === 'md'
+        ? [{ name: 'Markdown', extensions: ['md'] }]
+        : [{ name: 'JSON', extensions: ['json'] }],
+    };
+    const result = owner && !owner.isDestroyed()
+      ? await dialog.showSaveDialog(owner, options)
+      : await dialog.showSaveDialog(options);
+    if (result.canceled || !result.filePath) return { canceled: true };
+
+    const conversationPath = result.filePath.toLowerCase().endsWith(extension)
+      ? result.filePath
+      : `${result.filePath}${extension}`;
+    const conversationStem = path.basename(conversationPath, extension);
+    const sharedStem = conversationStem.replace(/(?:[_-]conversation)$/i, '') || conversationStem;
+    const worklogPath = path.join(path.dirname(conversationPath), `${sharedStem}_agent-worklog${extension}`);
+    const conversationOutput = conversationContent.endsWith('\n') ? conversationContent : `${conversationContent}\n`;
+    const worklogOutput = worklogContent.endsWith('\n') ? worklogContent : `${worklogContent}\n`;
+    fs.writeFileSync(conversationPath, conversationOutput, 'utf8');
+    fs.writeFileSync(worklogPath, worklogOutput, 'utf8');
+    return {
+      canceled: false,
+      path: conversationPath,
+      directory: path.dirname(conversationPath),
+      conversationPath,
+      worklogPath,
+    };
+  } catch (error) {
+    return { canceled: false, error: String(error && error.message ? error.message : error) };
+  }
+});
+
 ipcMain.handle('neuroclaw:export-user-study-results', async (_event, request) => {
   try {
     const payload = request && typeof request === 'object' && request.payload && typeof request.payload === 'object'
@@ -1435,19 +1641,20 @@ async function boot() {
   if (focusMainWindow() || isBooting) return;
   isBooting = true;
   try {
+    applyNativeTheme(loadConfig().theme);
     createWindow();
     setApplicationMenu();
     await loadStartupPage(
       desktopText('Starting local runtime', '正在启动本地运行环境'),
-      desktopText('Checking backend health, Python, and configured paths.', '正在检查后端健康状态、Python 和已配置路径。'),
+      desktopText('Checking NeuroRuntime health, Python, and configured paths.', '正在检查 NeuroRuntime 健康状态、Python 和已配置路径。'),
     );
     const backend = await ensureBackend();
     log(`Loading ${backend.url} reused=${backend.reused}`);
     await loadStartupPage(
       desktopText('Loading workspace', '正在加载工作台'),
       backend.reused
-        ? desktopText('Connected to an existing NeuroClaw backend.', '已连接到正在运行的 NeuroClaw 后端。')
-        : desktopText('The backend is ready. Opening the desktop UI.', '后端已就绪，正在打开桌面界面。'),
+        ? desktopText('Connected to an existing NeuroRuntime backend.', '已连接到正在运行的 NeuroRuntime 后端。')
+        : desktopText('NeuroRuntime is ready. Opening NeuroDiscovery.', 'NeuroRuntime 已就绪，正在打开 NeuroDiscovery。'),
     );
     const desktopUiUrl = new URL(backend.url);
     desktopUiUrl.searchParams.set('desktop', app.isPackaged ? app.getVersion() : String(Date.now()));
@@ -1456,7 +1663,7 @@ async function boot() {
   } catch (err) {
     log(`Startup failed: ${err.stack || err.message || err}`);
     dialog.showErrorBox(
-      'NeuroClaw failed to start',
+      'NeuroDiscovery failed to start',
       `${err.message || err}\n\nLogs: ${path.join(app.getPath('userData'), 'logs')}`,
     );
     await loadErrorPage(err);

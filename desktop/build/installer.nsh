@@ -68,7 +68,7 @@ Function NeuroClawRuntimePage
     StrCpy $InstallerRuntimeMode "bundled"
   StrCmp $InstallerCondaEnv "" 0 +2
     StrCpy $InstallerCondaEnv "neuroclaw"
-  ${NSD_CreateLabel} 0u 0u 300u 12u "Configure NeuroClaw runtime"
+  ${NSD_CreateLabel} 0u 0u 300u 12u "Configure NeuroRuntime"
   ${NSD_CreateLabel} 0u 15u 300u 18u "Choose the Python runtime and optional dependency paths."
   ${NSD_CreateLabel} 0u 42u 300u 12u "Default Python runtime"
   ${NSD_CreateRadioButton} 10u 62u 270u 14u "Built-in Python"

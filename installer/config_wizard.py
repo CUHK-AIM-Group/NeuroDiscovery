@@ -1,5 +1,5 @@
 """
-NeuroClaw interactive configuration wizard.
+NeuroOracle interactive configuration wizard for NeuroRuntime.
 
 Run once after cloning the repository:
 
@@ -130,7 +130,7 @@ def _system_snapshot() -> dict:
 # ── Step 2: Python environment ─────────────────────────────────────────────────
 def _setup_python(snap: dict) -> dict:
     print("\n" + "=" * 60)
-    print("[NeuroClaw Setup] Step 1 — Python Environment")
+    print("[NeuroOracle Setup] Step 1 — Python Environment")
     print("=" * 60)
     print("  1. System Python  → auto-detect or enter path")
     print("  2. Conda env      → enter env name (created if missing)")
@@ -222,7 +222,7 @@ def _setup_cuda(snap: dict, python_path: str) -> dict:
         for any automatic PyTorch installation.
     """
     print("\n" + "=" * 60)
-    print("[NeuroClaw Setup] Step 2 — CUDA / GPU Settings")
+    print("[NeuroOracle Setup] Step 2 — CUDA / GPU Settings")
     print("=" * 60)
 
     detected = snap["cuda_detected"]
@@ -306,7 +306,7 @@ def _setup_toolchain(snap: dict, python_path: str) -> tuple[dict, dict]:
         Boolean feature-enable flags for core/config/features.json.
     """
     print("\n" + "=" * 60)
-    print("[NeuroClaw Setup] Step 3 — Neuroscience Toolchain")
+    print("[NeuroOracle Setup] Step 3 — Neuroscience Toolchain")
     print("=" * 60)
 
     toolchain: dict = {
@@ -390,7 +390,7 @@ def _setup_toolchain(snap: dict, python_path: str) -> tuple[dict, dict]:
 # ── Step 5: LLM backend ────────────────────────────────────────────────────────
 def _setup_llm() -> dict:
     print("\n" + "=" * 60)
-    print("[NeuroClaw Setup] Step 4 — LLM Backend")
+    print("[NeuroOracle Setup] Step 4 — LLM Backend")
     print("=" * 60)
     print("  1. OpenAI API               → configure provider/model only")
     for idx, (_, label) in enumerate(INSTALLER_PROVIDER_CHOICES, start=2):
@@ -417,7 +417,7 @@ def _setup_llm() -> dict:
         llm["api_key_env"] = "ANTHROPIC_API_KEY"
         _log(
             "LLM API key is not collected during setup. Pass it at runtime via "
-            "--api-key or export ANTHROPIC_API_KEY before starting NeuroClaw."
+            "--api-key or export ANTHROPIC_API_KEY before starting NeuroOracle."
         )
         _log(f"LLM: Anthropic {llm['model']}")
 
@@ -438,7 +438,7 @@ def _setup_llm() -> dict:
         llm["api_key_env"] = env_var
         _log(
             f"LLM API key is not collected during setup. Pass it at runtime via --api-key "
-            f"or export {env_var} before starting NeuroClaw."
+            f"or export {env_var} before starting NeuroOracle."
         )
         _log(f"LLM: OpenAI-compatible {llm['model']} at {base_url}")
 
@@ -467,7 +467,7 @@ def _setup_llm() -> dict:
         else:
             _log(
                 f"LLM API key is not collected during setup. Pass it at runtime via --api-key "
-                f"or export {env_var} before starting NeuroClaw."
+                f"or export {env_var} before starting NeuroOracle."
             )
         _log(f"LLM: {profile.get('label', provider)} {llm['model']} at {base_url}")
 
@@ -477,7 +477,7 @@ def _setup_llm() -> dict:
         llm["api_key_env"] = "OPENAI_API_KEY"
         _log(
             "LLM API key is not collected during setup. Pass it at runtime via "
-            "--api-key or export OPENAI_API_KEY before starting NeuroClaw."
+            "--api-key or export OPENAI_API_KEY before starting NeuroOracle."
         )
         _log(f"LLM: OpenAI {llm['model']}")
 
@@ -487,7 +487,7 @@ def _setup_llm() -> dict:
 # ── Step 6: Neuro defaults ─────────────────────────────────────────────────────
 def _setup_neuro_defaults() -> dict:
     print("\n" + "=" * 60)
-    print("[NeuroClaw Setup] Step 5 — Neuroscience Defaults")
+    print("[NeuroOracle Setup] Step 5 — Neuroscience Defaults")
     print("=" * 60)
     bids_root = _ask("Default BIDS data root", "~/data/bids")
     output_root = _ask("Default output root", "~/data/outputs")
@@ -511,10 +511,10 @@ def _setup_webui(python_path: str) -> None:
         Full path to the Python executable to install packages into.
     """
     print("\n" + "=" * 60)
-    print("[NeuroClaw Setup] Step 6 — Browser Web UI (optional)")
+    print("[NeuroOracle Setup] Step 6 — Browser Web UI (optional)")
     print("=" * 60)
     print(
-        "  NeuroClaw can serve a browser-based chat interface at\n"
+        "  NeuroOracle can serve a browser-based chat interface at\n"
         "  http://localhost:7080  (start with: python core/agent/main.py --web)\n"
     )
 
@@ -601,12 +601,12 @@ def _write_log() -> None:
 def main() -> None:
     print(textwrap.dedent("""
     ╔══════════════════════════════════════════════════════════╗
-    ║         NeuroClaw Setup — Self-Contained Installer       ║
+    ║        NeuroOracle Setup — Self-Contained Installer      ║
     ║  Neuroscience-first AI assistant, no OpenClaw required   ║
     ╚══════════════════════════════════════════════════════════╝
     This wizard configures your Python environment, CUDA, neuroimaging
     toolchain, and LLM backend, then writes neuroclaw_environment.json
-    so every NeuroClaw session picks up your settings automatically.
+    so every NeuroRuntime session picks up your settings automatically.
     """))
 
     snap = _system_snapshot()
@@ -644,7 +644,7 @@ def main() -> None:
     Features config at:    {FEATURES_FILE}
     Install log at:        {LOG_FILE}
 
-    To start NeuroClaw (interactive REPL):
+    To start NeuroOracle (interactive REPL):
         python core/agent/main.py
 
     To open the browser-based Web UI:

@@ -22,7 +22,7 @@ Options:
   --conda-exe PATH       Conda executable. Defaults to miniforge/miniconda/anaconda under $HOME.
   --conda-env NAME       Source conda environment used to choose the Python minor version. Default: neuroclaw.
   --python-version VER   Python minor version for the bundled runtime, for example 3.11.
-  --repo-root PATH       NeuroClaw repository root. Default: parent of desktop/.
+  --repo-root PATH       NeuroDiscovery repository root. Default: parent of desktop/.
   --runtime-root PATH    Output runtime directory. Default: desktop/runtime.
   --requirements PATH    Runtime requirements file. Default: desktop/runtime-requirements.txt.
   --skip-python          Reuse an existing runtime/python directory.
@@ -231,7 +231,7 @@ if [ "$SKIP_PYTHON" -eq 0 ]; then
 fi
 
 if [ "$SKIP_BACKEND" -eq 0 ]; then
-  step "Stage NeuroClaw backend source"
+  step "Stage NeuroRuntime backend source"
   rm -rf "$BACKEND_TARGET"
   mkdir -p "$BACKEND_TARGET"
 

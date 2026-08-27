@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none';" />
+  <title>DeepSeek 用量监控</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="brand"><img src="../build/icon.png" width="18" height="18" alt="" class="logo" />DeepSeek 用量监控</div>
+    <select id="account-select" title="切换账号"></select>
+    <div class="spacer"></div>
+    <span id="last-updated" class="muted"></span>
+    <button id="btn-refresh" class="btn" title="刷新数据">⟳ 刷新</button>
+    <button id="btn-theme" class="btn" title="切换日间/夜间模式">☀️ 日间</button>
+    <nav id="nav">
+      <button class="nav-btn active" data-view="dashboard">总览</button>
+      <button class="nav-btn" data-view="settings">设置</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ── 总览 ── -->
+    <section id="view-dashboard">
+      <div class="month-bar">
+        <button id="btn-prev" class="btn small">‹ 上月</button>
+        <span id="month-label" class="month-label"></span>
+        <button id="btn-next" class="btn small">下月 ›</button>
+      </div>
+
+      <div class="cards" id="cards"></div>
+
+      <div class="row">
+        <div class="panel">
+          <h3>余额趋势（本地历史，近 30 天）</h3>
+          <div class="chart-wrap"><canvas id="chart-balance"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>本月消耗累计（每次刷新记录）</h3>
+          <div class="chart-wrap"><canvas id="chart-monthcost"></canvas></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="panel">
+          <h3>每日 Token（缓存命中 / 未命中 / 输出）</h3>
+          <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>每日费用（元）</h3>
+          <div class="chart-wrap"><canvas id="chart-cost"></canvas></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="panel half">
+          <h3>模型费用占比</h3>
+          <div class="chart-wrap"><canvas id="chart-model"></canvas></div>
+        </div>
+        <div class="panel half">
+          <h3>模型明细</h3>
+          <div class="table-wrap">
+            <table id="model-table">
+              <thead><tr><th>模型</th><th class="num">输入</th><th class="num">输出</th><th class="num">费用(元)</th><th class="num">占比</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <h3 style="margin-top:20px">按天明细</h3>
+          <div class="table-wrap">
+            <table id="days-table">
+              <thead><tr><th>日期</th><th class="num">输入</th><th class="num">缓存命中</th><th class="num">缓存未命中</th><th class="num">输出</th><th class="num">费用(元)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 设置 ── -->
+    <section id="view-settings" hidden>
+      <div class="panel settings-panel">
+        <h3>账号</h3>
+        <p class="muted small">支持多个 DeepSeek 账号，各自保存独立的 API Key / Session Token 与历史记录。
+          凭证仅保存在本机（userData/config.json，ACL 锁定为仅当前用户），
+          只会发送到 <a href="#" data-link="https://platform.deepseek.com">platform.deepseek.com</a> 与 api.deepseek.com。</p>
+
+        <div id="account-list" class="account-list"></div>
+
+        <div class="btn-row">
+          <button id="btn-add-account" class="btn">＋ 添加账号</button>
+          <button id="btn-clear" class="btn danger">清除当前账号凭证</button>
+          <button id="btn-clear-history" class="btn danger">清空当前账号历史</button>
+        </div>
+
+        <div id="account-form" hidden class="account-form">
+          <h3 id="account-form-title" style="margin-top:20px">添加账号</h3>
+          <label>账号名称（可选，用于区分）
+            <input type="text" id="inp-acc-name" autocomplete="off" placeholder="例如：工作号 / 个人号" />
+          </label>
+          <label>API Key
+            <input type="password" id="inp-acc-key" autocomplete="off" placeholder="sk-…" />
+          </label>
+          <label>Session Token（可选）
+            <input type="password" id="inp-acc-token" autocomplete="off" placeholder="登录态 Bearer Token" />
+          </label>
+          <p class="muted small">Session Token 获取：浏览器登录 platform.deepseek.com → F12 → Network →
+            任意请求的 <code>Authorization: Bearer xxx</code> 中 xxx。用于查询消耗明细（按天/按模型/缓存命中）。
+            等同控制台登录凭证，请勿外泄。</p>
+          <div class="btn-row">
+            <button id="btn-acc-save" class="btn primary">保存账号</button>
+            <button id="btn-acc-test" class="btn">测试连接</button>
+            <button id="btn-acc-cancel" class="btn">取消</button>
+          </div>
+          <p id="account-form-status" class="muted small"></p>
+        </div>
+
+        <h3 style="margin-top:24px">刷新与告警</h3>
+        <div class="form-row">
+          <label>自动刷新间隔（秒，10–3600）
+            <input type="number" id="inp-interval" min="10" max="3600" step="10" />
+          </label>
+          <label>余额告警阈值（元）
+            <input type="number" id="inp-threshold" min="0" step="1" />
+          </label>
+          <label class="check">
+            <input type="checkbox" id="chk-alert" /> 余额低于阈值时通知
+          </label>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-save" class="btn primary">保存设置</button>
+        </div>
+        <p class="muted small" style="margin-top:10px">历史数据（余额/消耗快照）按账号保存在本机
+          <code>userData/history-&lt;账号id&gt;.jsonl</code>，每次刷新自动追加一条，用于绘制趋势曲线。</p>
+        <p id="settings-status" class="muted small"></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="status-bar"></div>
+
+  <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

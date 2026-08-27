@@ -10,3 +10,4 @@ pypdf>=5,<7
 python-docx>=1.1,<2
 openpyxl>=3.1,<4
 python-pptx>=1.0,<2
+networkx>=3,<4

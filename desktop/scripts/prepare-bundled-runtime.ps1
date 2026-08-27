@@ -166,7 +166,7 @@ if (-not $SkipPython) {
 }
 
 if (-not $SkipBackend) {
-  Invoke-Step "Stage NeuroClaw backend source" {
+  Invoke-Step "Stage NeuroRuntime backend source" {
     Remove-DirectoryFresh -Path $BackendTarget
     New-Item -ItemType Directory -Path $BackendTarget -Force | Out-Null
 
@@ -201,7 +201,10 @@ if (-not $SkipBackend) {
       $source = Join-Path $RepoRoot $dirName
       if (Test-Path -LiteralPath $source -PathType Container) {
         $dirExcludes = @($ExcludeDirs)
-        if ($dirName -eq "core") {
+        # Research orchestration scripts can contain machine-specific dataset
+        # paths and are not required by the desktop runtime. Keep them out of
+        # release artifacts while preserving reusable scripts shipped by skills.
+        if ($dirName -in @("core", "neurooracle")) {
           $dirExcludes += "scripts"
         }
         Invoke-Robocopy -Source $source -Target (Join-Path $BackendTarget $dirName) -ExcludeDirs $dirExcludes -ExcludeFiles $ExcludeFiles
