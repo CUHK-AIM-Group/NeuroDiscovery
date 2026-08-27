@@ -1,0 +1,15 @@
+{
+  "schema_version": "neuroclaw_academic_mcp_dependencies.v1",
+  "created_at": "2026-08-11",
+  "python": "3.11.15",
+  "transport": "stdio",
+  "direct_dependencies": {
+    "mcp": "2.0.0",
+    "networkx": "3.6.1"
+  },
+  "lock_file": "requirements-lock.txt",
+  "isolated_environment": ".venv-academic-mcp",
+  "formal_kg_dependency_mode": "read_only",
+  "network_provider": "Europe PMC official REST API",
+  "year_window": [1980, 2026]
+}

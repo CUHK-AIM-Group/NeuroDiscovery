@@ -9,6 +9,7 @@ logs/
 output/
 deploy/
 benchmark-env/
+.venv-academic-mcp/
 hcp_env/
 .tmp_*
 

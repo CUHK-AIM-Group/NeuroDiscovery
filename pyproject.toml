@@ -23,6 +23,10 @@ neuroimaging-models = [
 graph-models = [
     "torch-geometric>=2.5",
 ]
+academic-mcp = [
+    "mcp==2.0.0",
+    "networkx==3.6.1",
+]
 
 [tool.setuptools.packages.find]
 include = [

@@ -1,0 +1,42 @@
+<evaluation>
+  <qa_pair>
+    <question>Find the sealed collection containing exactly 100,000 papers, validate its seal, and return the observed ready-queue SHA-256 exactly as lowercase hexadecimal.</question>
+    <answer>dbe0fbe644045726a8d423f403f050b6b87a22eb89587dc80d4b575d243f802c</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Find and seal-validate the 100,000-paper collection. Cross-reference its search targets with the canonical Case Study catalog. What English Case Study name corresponds to canonical display number 16?</question>
+    <answer>Brain Age</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>After locating and seal-validating the 100,000-paper collection, compare every target's collected primary-paper count. Return the Case Study ID with the largest count.</question>
+    <answer>cognitive_decoding</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>After locating and seal-validating the 100,000-paper collection, subtract each target's planned primary quota from its collected primary-paper count. Which Case Study ID has the largest positive difference?</question>
+    <answer>cognitive_decoding</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>After locating and seal-validating the 100,000-paper collection, subtract collected primary papers from non-exclusive search-provenance papers for every target. Which Case Study ID has the largest gap?</question>
+    <answer>prognosis</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Seal-validate the 100,000-paper collection, page through all 100 records of extraction batch 1, and find the record with the largest abstract_characters value. Return its title exactly.</question>
+    <answer>Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia: a proof-of-concept demonstration.</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Seal-validate the 100,000-paper collection, page through all 100 records of extraction batch 1, and find the record with the greatest cited_by_count. Return its canonical paper_id.</question>
+    <answer>pmid:19104670</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Seal-validate the 100,000-paper collection and page through all 100 records of extraction batch 2. How many records contain Review in publication_types? Return only the integer.</question>
+    <answer>16</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Seal-validate the 100,000-paper collection. For each of extraction batches 1 through 5, page through all 100 records and sum cited_by_count. Which one-based batch number has the largest sum? Return only the integer.</question>
+    <answer>1</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Seal-validate the 100,000-paper collection, page through every record in extraction batches 1 through 5, and count papers published before 2000. Return only the integer.</question>
+    <answer>4</answer>
+  </qa_pair>
+</evaluation>
