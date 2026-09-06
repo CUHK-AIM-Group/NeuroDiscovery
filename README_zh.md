@@ -39,6 +39,21 @@
 
 NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独立可用的 GUI 和 CLI 工具，也可以作为技能库集成到 OpenClaw、Hermes、Claude Code 等 agent 项目中。
 
+### NeuroDiscovery 与研究材料
+
+**NeuroDiscovery** 是面向神经影像自动科研的闭环框架，由神经科学知识图谱、假设生成器和执行平台 **NeuroRuntime** 组成。本仓库提供 NeuroClaw 应用及相关公开资源。为保持兼容，`neurooracle/`、`neurobench/` 等已有目录和接口名称继续保留。
+
+不同公开材料分别管理版本：
+
+| 资源 | 公开状态 |
+| --- | --- |
+| 神经影像执行任务 | 已包含 **500 项任务定义**，编号 T01–T500，以及覆盖七类任务的完整[注册表](neurobench/task_atlas.json)。详见 [benchmark README](neurobench/README.md)。 |
+| 知识图谱浏览器 | [NeuroOracle demo](https://huggingface.co/spaces/zxcvb20001/NeuroOracle) 提供交互式图谱浏览，其加载的快照可能与研究图谱不同。详见[图谱版本说明](materials/huggingface/NeuroOracle/README.md#graph-versions)。 |
+| Benchmark 输出 | 已提供[部分历史评价结果](materials/benchmark_results/README.md)，任务覆盖范围以各次运行的记录为准。 |
+| NeuroDiscovery 论文配套版本 | 冻结图谱、论文对应的完整评价结果及图表源数据正在整理，将作为带版本号的研究材料发布。发布后将在此提供版本标识及产物清单。 |
+
+目前链接的 [NeuroClaw 技术报告](https://arxiv.org/abs/2604.24696) 描述较早的项目版本。该报告的实验和公开 demo 应依据各自版本信息理解，与 NeuroDiscovery 论文使用的材料分别标识。
+
 ## 🚀 更新日志
 
 - **[2026.06.20]**：NeuroClaw 现已提供 Windows 和 macOS 桌面客户端；Linux 仍可通过仓库源码、命令行和 Web 工作流使用。
@@ -195,7 +210,9 @@ python installer/install_agent_integration.py --target codex
 
 ### Benchmark 测试
 
-NeuroBench 任务位于 `neurobench/`，每个任务目录都包含一个 `task.md` 指令文件。
+500 项神经影像执行任务位于 `neurobench/`，每个任务目录都包含一个 `task.md` 指令文件，[task_atlas.json](neurobench/task_atlas.json) 将全部任务映射到七个类别。已有 benchmark 接口继续使用 NeuroBench 名称。
+
+`materials/benchmark_results/` 中保留的是历史运行产物。使用前请阅读其[任务覆盖与评分说明](materials/benchmark_results/README.md)，确认结果对应的任务集版本。
 
 NeuroBench 目前接受以下几种测试设定：
 - `with-skills`：Agent 可以使用 `skills/` 目录中加载的技能
@@ -271,7 +288,7 @@ NeuroClaw/
 ├── models/                         # 脑模型适配器与训练/评估脚本
 ├── neurooracle/                    # 知识图谱与 autoresearch 流程
 │
-├── neurobench/                     # NeuroBench 评估任务（T01-T120）
+├── neurobench/                     # 500 项神经影像执行任务（T01-T500）
 │
 ├── docs/                           # 项目网页
 ├── materials/                      # 研究材料与 benchmark 输出

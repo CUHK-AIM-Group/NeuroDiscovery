@@ -39,6 +39,21 @@ Neuroimaging datasets demand specialized preprocessing, and preprocessing qualit
 
 NeuroClaw prioritizes **data processing** and **model configuration/execution**. It ships with independent GUI and CLI interfaces for day-to-day use, and can also be installed as a reusable skill library inside agent projects such as OpenClaw, Hermes, and Claude Code.
 
+### NeuroDiscovery and research materials
+
+**NeuroDiscovery** is our closed-loop framework for evidence-grounded neuroimaging autoresearch. It combines a neuroscience knowledge graph, a hypothesis generator and **NeuroRuntime**, the execution platform. This repository hosts the NeuroClaw application and related public resources. Existing directory and interface names, including `neurooracle/` and `neurobench/`, are retained for compatibility.
+
+Public materials have separate versions:
+
+| Resource | Availability |
+| --- | --- |
+| Neuroimaging execution tasks | **500 task definitions**, T01–T500, with a complete seven-category [task registry](neurobench/task_atlas.json). See the [benchmark README](neurobench/README.md). |
+| Knowledge-graph explorer | The [NeuroOracle demo](https://huggingface.co/spaces/zxcvb20001/NeuroOracle) provides interactive graph exploration. Its loaded snapshot can differ from the research graph. See the [graph version notes](materials/huggingface/NeuroOracle/README.md#graph-versions). |
+| Benchmark outputs | [Selected historical evaluation outputs](materials/benchmark_results/README.md) are available. Their task coverage is recorded per run. |
+| NeuroDiscovery manuscript release | The frozen graph, paper-specific evaluation outputs and figure source data are being prepared for a versioned research release. A release identifier and artifact manifest will be linked here when available. |
+
+The linked [NeuroClaw technical report](https://arxiv.org/abs/2604.24696) describes an earlier project version. Its experiments and the public demo should be interpreted using their own version information, separately from the NeuroDiscovery manuscript.
+
 ---
 
 ## 🚀 Updates
@@ -195,11 +210,11 @@ After installation, ask the host agent to **use NeuroClaw** or **enter NeuroClaw
   <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
 </div>
 
-> Note: We provide benchmark run results and per-model outputs under `materials/benchmark_results/`. These artifacts can be used as practical references when running NeuroClaw benchmarks or reproducing model outputs.
+> Benchmark output files under `materials/benchmark_results/` are historical run artifacts. See their [coverage and scoring notes](materials/benchmark_results/README.md) before comparing them with a newer task registry.
 
 ### Benchmark Evaluation
 
-NeuroBench tasks live under `neurobench/`, and each task directory contains a `task.md` instruction file.
+The 500 neuroimaging execution tasks live under `neurobench/`. Each task directory contains a `task.md` instruction file, and [task_atlas.json](neurobench/task_atlas.json) assigns every task to one of seven categories. NeuroBench remains the name used by the existing benchmark interface.
 
 NeuroBench currently accepts these benchmark configurations:
 - `with-skills`: the agent can use the skills loaded from `skills/`
@@ -275,7 +290,7 @@ NeuroClaw/
 ├── models/                         # Brain model adapters and training/evaluation scripts
 ├── neurooracle/                    # Knowledge graph and autoresearch pipeline
 │
-├── neurobench/                     # NeuroBench evaluation tasks (T01-T120)
+├── neurobench/                     # 500 neuroimaging execution tasks (T01-T500)
 │
 ├── docs/                           # Project website pages
 ├── materials/                      # Research materials and benchmark outputs

@@ -37,9 +37,17 @@ NeuroOracle is the knowledge-graph component of **NeuroClaw**, an autonomous res
 1. **Curated structured databases** — concepts and relations imported from NeuroNames, MeSH, DisGeNET, BrainMap, and Cognitive Atlas, all aligned to UMLS semantic types.
 2. **PubMed-derived scientific claims** — evidence-weighted edges extracted from neuroimaging literature using LLM-based claim extractors, with provenance (PMID, p-value, sample size, study type) preserved on every edge.
 
-Together they form a graph of approximately **89K concept nodes** and **174K edges**, covering brain anatomy, diseases, genes, neurotransmitters, drugs, cognitive functions, imaging features, connectivity, visual stimuli, and emotion/vigilance labels.
+Together they form a graph covering brain anatomy, diseases, genes, neurotransmitters, drugs, cognitive functions, imaging features, connectivity, visual stimuli, and emotion/vigilance labels. Graph size depends on the loaded snapshot; see the version information below.
 
 This Space provides an interactive explorer for browsing the graph, inspecting evidence chains behind individual claims, and visualising multi-hop hypothesis paths.
+
+## Graph versions
+
+The earlier demo documentation reported approximately **89K concept nodes** and **174K edges**. These are historical snapshot statistics, not live counts for this Space or statistics for the expanded NeuroDiscovery research graph.
+
+**NeuroDiscovery** is the research framework that combines a neuroscience knowledge graph, a hypothesis generator and **NeuroRuntime** for neuroimaging autoresearch. Its manuscript uses a separately versioned research graph. The paper-specific frozen graph and supporting source tables are being prepared for release; a release identifier and manifest will be provided through the [main repository](https://github.com/CUHK-AIM-Group/NeuroClaw#neurodiscovery-and-research-materials).
+
+For a reproducible graph-size comparison, identify the exact snapshot and distinguish concept nodes, biomedical relations, evidence records and links from evidence records to concepts. An aggregate edge count can include different link types and should not be compared directly with a count of biomedical relations alone.
 
 ## Why dual-source matters
 
@@ -49,17 +57,19 @@ Existing autoresearch systems either rely on free-form LLM ideation (no quality 
 - Filter or re-rank hypotheses using **evidence weights** (effect size, sample size, replicability)
 - Iterate the graph itself in response to new findings, rather than treating the KG as a static asset
 
-## NeuroClaw ecosystem
+## NeuroClaw and NeuroDiscovery
 
-NeuroOracle is one of three modules within the broader NeuroClaw system:
+The project uses the following names:
 
-| Module | Role |
+| Name | Role |
 |--------|------|
-| **NeuroClaw** | Top-level system: data processing, model execution, skill library (85 skills across 29 datasets) |
-| **NeuroOracle** | Knowledge graph and hypothesis engine (this Space) |
-| **NeuroBench** | Multi-agent neuroimaging workflow benchmark |
+| **NeuroClaw** | Application, command-line workflows and skill library |
+| **NeuroDiscovery** | Research framework for evidence-grounded neuroimaging autoresearch |
+| **NeuroRuntime** | Execution platform in the NeuroDiscovery framework |
+| **NeuroOracle** | Existing knowledge-graph module and explorer name (this Space) |
+| **NeuroBench** | Existing interface name for the neuroimaging execution-task collection |
 
-NeuroClaw is the umbrella framework; NeuroOracle is its scientific memory; NeuroBench measures how effectively the agent can use that memory to do real research work.
+The graph explorer, execution-task collection and manuscript experiments are distinct resources. Their sizes and results should be read using the corresponding snapshot or run metadata.
 
 ## What you can do here
 
@@ -77,7 +87,7 @@ NeuroClaw is the umbrella framework; NeuroOracle is its scientific memory; Neuro
 
 ## Citation
 
-If NeuroOracle or NeuroClaw is useful for your research, please cite the NeuroClaw technical report:
+For the earlier NeuroOracle/NeuroClaw release, cite the NeuroClaw technical report below. It is a separate report from the NeuroDiscovery manuscript; the manuscript citation will be added when available.
 
 ```bibtex
 @article{neuroclaw2026,

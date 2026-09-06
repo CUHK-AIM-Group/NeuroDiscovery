@@ -1,41 +1,29 @@
-# NeuroBench
+# Neuroimaging execution tasks
 
-NeuroBench is the benchmark part of NeuroClaw for neuroscience workflow evaluation.
-It focuses on whether an agent can complete real neuroimaging workflows end-to-end: organize raw data, run preprocessing pipelines, produce analysis outputs, and keep results reproducible.
+This directory contains **500 neuroimaging execution tasks**, numbered **T01–T500**, for evaluating workflow planning, tool use, data processing and model execution. The NeuroDiscovery manuscript describes this collection as the 500 neuroimaging execution tasks. **NeuroBench** remains the name used by the existing NeuroClaw benchmark interface and directory.
 
-Current status: 120 tasks (T01-T120) covering data orchestration, single-tool execution, multi-step pipelines, dev environment, research tooling, and **model training / evaluation**. These are *engineering* benchmarks - does the agent run the right tool / model with the right configuration? The full registry mapping every task to its category lives in [`task_atlas.json`](task_atlas.json).
+The complete mapping of task directories to categories is in [`task_atlas.json`](task_atlas.json). Task definitions specify the inputs, outputs and checks needed to evaluate a workflow. Evaluation outputs are versioned separately from the task registry.
 
-## Operational benchmarks (T01-T120)
+## Task registry (T01–T500)
 
-The 120 tasks are organised into seven categories:
+All 500 tasks are assigned to seven categories:
 
 | Category | Count | What it tests |
 |---|---:|---|
-| `data_orchestration` | 7 | BIDS organisation, dataset staging, format conversion (DICOM->NIfTI, downloads) |
-| `tool_use` | 68 | Single-tool calls - DIPY metric, FSL extraction, FreeSurfer command, Nilearn function, etc. |
-| `pipeline_execution` | 19 | End-to-end pipelines (fMRIPrep, HCP full, ADNI end-to-end, multi-modal full) |
-| `dev_environment` | 4 | Conda envs, git workflows, dependency planning, Overleaf tooling |
-| `research_tooling` | 2 | Literature search, multi-engine retrieval |
-| `model_training` | 17 | Train + evaluate a brain model (FC / ROI time-series / voxel) on shared HCP-age + ABIDE-dx settings |
-| `cross_model_evaluation` | 3 | Multi-atlas sweep, cross-dataset generalisation with harmonization, site-stratified vs leave-site-out |
+| `data_orchestration` | 75 | Dataset staging, BIDS organisation, format conversion and metadata checks |
+| `tool_use` | 80 | Single-tool execution with neuroimaging software and libraries |
+| `pipeline_execution` | 75 | Multi-step preprocessing and analysis workflows |
+| `dev_environment` | 70 | Environment setup, dependencies, containers and computing infrastructure |
+| `research_tooling` | 70 | Literature retrieval, evidence handling and research reporting |
+| `model_training` | 70 | Model training, validation and evaluation |
+| `cross_model_evaluation` | 60 | Comparisons across models, atlases, sites and datasets |
+| **Total** | **500** | |
 
-Historical numbering (T01-T100) is preserved for backwards compatibility with prior leaderboard runs; the categorisation is overlaid via `task_atlas.json` rather than by moving directories. The model-training and cross-model-evaluation categories (T101-T120) were added 2026-05-24.
+Task identifiers remain stable as the registry expands. Category membership is defined by `task_atlas.json`, rather than by contiguous task-number ranges.
 
-Original family-by-pipeline grouping:
-- **T01-T09**: Data organization, BIDS conversion, environment and utility tasks
-- **T10-T14**: Basic DWI pipeline (load, mask, tensor fit, metrics, ROI)
-- **T15-T20**: FreeSurfer-focused structural tasks
-- **T21-T33**: Core FSL tasks (structural, functional, diffusion)
-- **T34-T47**: Core HCPPipeline-style stages
-- **T48-T54**: Nilearn ROI/connectivity/GLM tasks
-- **T55-T61**: Extended DWI pipeline (QSIPrep, tractography, connectome)
-- **T62-T72**: General multimodal workflows (BIDS, fMRIPrep, FEAT, CONN, EEG, WMH)
-- **T73-T80**: Advanced fMRI workflows (XCP-D, FC/EC, first/group GLM)
-- **T81-T89**: sMRI workflows (BIDS, FSL, FreeSurfer, fMRIPrep anat, ROI)
-- **T90-T94**: ADNI workflows
-- **T95-T100**: HCP dataset workflows (download, staging, sMRI/fMRI/DWI, full multimodal)
-- **T101-T117**: Model training and evaluation (BrainGNN, BNT, BrainNetCNN, IBGNN, LGGNN, ComBrainTF, Ridge baseline, STAGIN, BolT, FBNetGen, Brain Graphormer, Hierarchical GNN, SpaceNet, ROI-MLP, ROI-LSTM, NeuroSTORM, SwiFT)
-- **T118-T120**: Cross-model / cross-dataset evaluation (multi-atlas sweep, cross-dataset generalisation with harmonization, site-stratified vs leave-site-out)
+## Task definitions and published results
+
+The 500 task definitions are included in the repository. The [benchmark results directory](../materials/benchmark_results/README.md) currently contains selected historical evaluation artifacts. Each artifact has its own task coverage and evaluation date; an older leaderboard does not become a 500-task result when the registry expands. The complete NeuroDiscovery manuscript evaluation bundle is being prepared for a separate versioned release.
 
 ## Task Structure
 
@@ -58,6 +46,8 @@ NeuroBench accepts the following benchmark configurations:
 - paired comparison: `--benchmark-compare-skills` runs both variants for the same task set
 
 Benchmark scoring is handled separately with `--score-benchmark`. It reads reports in `output/`, applies a GPT-5.4 weighted rubric, and generates numeric scores for planning completeness, tool/skill reasonableness, and command/code correctness. For fairness, each task case is jointly scored across all comparable models in one batch to reduce scoring-standard drift. Skill-call counts are tracked separately for efficiency analysis.
+
+These rubric scores describe the evaluated reports. Execution completion, artifact validity, numerical correctness and reproducibility must be established from the corresponding run logs, outputs and verification records. The scoring rubric alone does not establish those execution outcomes.
 
 To score existing benchmark reports:
 ```bash
