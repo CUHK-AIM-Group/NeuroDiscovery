@@ -364,8 +364,16 @@
     "zh": "标准表格统计与机器学习模型族，支持 OLS/GLM、SVM/SVR、Ridge、Elastic Net、XGBoost 与混合效应。"
   },
   "subject-subtyping": {
-    "en": "Subject-level disease subtyping with clustering, consensus analysis, PCA, NMF, and autoencoder embeddings.",
-    "zh": "受试者级疾病亚型发现，支持聚类、共识分析、PCA、NMF 与自编码器嵌入。"
+    "en": "Patient clustering and frozen-assignment reports with subtype profiles, embeddings, patient-level QA and agreement across supplied replicate runs.",
+    "zh": "患者聚类与分型报告，提供亚型特征、嵌入图、患者级质控，以及已有重复运行间的稳定性评估；不将聚类解释为临床诊断。"
+  },
+  "ctp-skill": {
+    "en": "Research 4D CT perfusion motion correction, AIF/VOF-based cSVD CBF/CBV/MTT/Tmax maps, supplied-map validation, ROI summaries and QC.",
+    "zh": "研究级 4D CT 灌注处理：运动校正、AIF/VOF 反卷积、CBF/CBV/MTT/Tmax 图、已有灌注图校验、ROI 汇总与质控。"
+  },
+  "model-interpretability": {
+    "en": "Target-specific Integrated Gradients and Grad-CAM, actual attention weights, patient feature/spatial exports and required-output verification.",
+    "zh": "模型解释输出：目标特异的积分梯度与 Grad-CAM、真实注意力权重、患者特征归因或空间图，以及输出完整性校验。"
   },
   "survival-models": {
     "en": "Censor-aware survival model family with Cox, Random Survival Forest, DeepSurv, and XGBoost survival.",

@@ -58,7 +58,6 @@ The linked [NeuroClaw technical report](https://arxiv.org/abs/2604.24696) descri
 
 ## 🚀 Updates
 
-- **[2026.09.14]**: The project is now named **NeuroDiscovery**. Documentation follows the manuscript's three-component framework, with **NeuroRuntime** as the execution platform; existing interfaces and historical release names are retained.
 - **[2026.06.20]**: NeuroClaw now provides Windows and macOS desktop clients, while Linux remains supported through the repository and command-line/web workflows.
 - **[2026.05.23]**: NeuroBench now covers both data processing and model training/evaluation.
 - **[2026.05.20]**: 7 atoms × 15 canonical tasks + 4 mediation chains in `neurooracle.atoms`.

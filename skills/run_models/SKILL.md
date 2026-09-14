@@ -27,6 +27,22 @@ This skill does not hardcode detailed install/run commands for each model. Those
 
 **Research use only.**
 
+## Requested outputs beyond prediction
+
+When the user asks for clinical research outputs, record them before execution
+and check their presence after training. Predictions/accuracy alone do not
+satisfy a request for patient subtypes, attribution maps or attention weights.
+
+- `ctp-skill`: 4D CT perfusion preparation or supplied Tmax/CBF/CBV/MTT maps.
+- `subject-subtyping`: frozen patient assignments, profiles, group sizes,
+  embeddings and descriptive reporting; stability only from real replicate runs.
+- `model-interpretability`: target-specific IG/Grad-CAM or actual model attention,
+  with subject identity, feature/spatial mapping and numerical QA.
+
+Use each skill's manifest validator with all requested roles. Missing metadata,
+unsupported model adapters or failed QA must be reported as incomplete outputs.
+Do not retrain a frozen model or launch an additional study just to fill a report.
+
 ---
 
 ## Core Workflow (Never Bypassed)
@@ -491,5 +507,5 @@ All model-running artifacts should be managed under `./run_models_output/`:
   - https://nilearn.github.io/stable/glm/index.html
 
 Created At: 2026-03-28 20:38 HKT
-Last Updated At: 2026-07-31 14:24:19 HKT
+Last Updated At: 2026-09-14 15:05:32.353 HKT
 Author: chengwang96
