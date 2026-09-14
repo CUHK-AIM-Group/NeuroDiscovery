@@ -179,7 +179,9 @@ if (-not $SkipBackend) {
       "build",
       "node_modules",
       "data",
-      "models",
+      "checkpoints",
+      "benchmark_results",
+      "experiment_results",
       "papers",
       "runs",
       "logs",
@@ -194,20 +196,32 @@ if (-not $SkipBackend) {
       "test_*.py",
       "*_test.py",
       "*.log",
-      ".env"
+      ".env",
+      "*.pt",
+      "*.pth",
+      "*.ckpt",
+      "*.safetensors"
     )
 
-    foreach ($dirName in @("core", "skills", "neurooracle")) {
+    # Skills import reusable models.common and model-family modules. Ship source,
+    # but never local checkpoints, weights, datasets or experimental results.
+    foreach ($dirName in @("core", "skills", "neurooracle", "models")) {
       $source = Join-Path $RepoRoot $dirName
       if (Test-Path -LiteralPath $source -PathType Container) {
         $dirExcludes = @($ExcludeDirs)
+        $fileExcludes = @($ExcludeFiles)
         # Research orchestration scripts can contain machine-specific dataset
         # paths and are not required by the desktop runtime. Keep them out of
         # release artifacts while preserving reusable scripts shipped by skills.
         if ($dirName -in @("core", "neurooracle")) {
           $dirExcludes += "scripts"
         }
-        Invoke-Robocopy -Source $source -Target (Join-Path $BackendTarget $dirName) -ExcludeDirs $dirExcludes -ExcludeFiles $ExcludeFiles
+        if ($dirName -eq "models") {
+          # Development-only sweeps carry local experiment paths; runtime skills
+          # use the reusable trainers/adapters, not these batch launchers.
+          $fileExcludes += @("sweep_atlases.py", "sweep_targets.py", "tune_braingnn.py", "run_benchmark.py")
+        }
+        Invoke-Robocopy -Source $source -Target (Join-Path $BackendTarget $dirName) -ExcludeDirs $dirExcludes -ExcludeFiles $fileExcludes
       }
     }
 
@@ -221,6 +235,18 @@ if (-not $SkipBackend) {
       New-Item -ItemType Directory -Path $StudySubsetTarget -Force | Out-Null
       Copy-Item -LiteralPath $StudySubsetSource -Destination (Join-Path $StudySubsetTarget "case1_tcp_external_expert_study_v1.json") -Force
     }
+
+    # Required import-time policy asset, not a graph/dataset or mutable run state.
+    $policyRelativePath = "neurooracle\data\case_study_reaudit\full_graph_v3\RUBRIC.md"
+    $policySource = Join-Path $RepoRoot $policyRelativePath
+    $policyTarget = Join-Path $BackendTarget $policyRelativePath
+    Assert-File $policySource "Required NeuroOracle policy asset is missing: $policyRelativePath"
+    New-Item -ItemType Directory -Path (Split-Path -Parent $policyTarget) -Force | Out-Null
+    Copy-Item -LiteralPath $policySource -Destination $policyTarget -Force
+
+    Assert-File $PythonExe "Bundled Python is required to validate runtime helper staging"
+    & $PythonExe -I (Join-Path $PSScriptRoot "stage-runtime-helpers.py") --source $RepoRoot --backend $BackendTarget
+    if ($LASTEXITCODE -ne 0) { throw "Failed to stage required runtime helpers" }
 
     $defaultEnvironment = [ordered]@{
       setup_type = "bundled"

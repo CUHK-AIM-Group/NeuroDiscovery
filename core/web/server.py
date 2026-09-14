@@ -134,6 +134,7 @@ def _summarize_web_tool_events(events: list[dict[str, Any]]) -> list[dict[str, A
         compact.append(
             {
                 "id": idx,
+                "autoresearch_evidence_id": result.get("autoresearch_evidence_id"),
                 "tool": str(event.get("tool", "tool")),
                 "command": str(event.get("command", "")),
                 "executed": bool(event.get("executed", False)),
@@ -520,7 +521,7 @@ def _require_webdeps() -> None:
 # ── Streaming helpers ──────────────────────────────────────────────────────────
 
 async def _stream_openai(
-    websocket: Any, llm_client: Any, model: str, history: list[dict]
+    websocket: Any, llm_client: Any, model: str, history: list[dict], cancel_event: Any = None
 ) -> str:
     """
     Stream an OpenAI response chunk-by-chunk.
@@ -530,45 +531,84 @@ async def _stream_openai(
     to the browser.
     """
     q: stdlib_queue.Queue[tuple[str, str | None]] = stdlib_queue.Queue()
+    stopped = threading.Event()
 
     def _produce() -> None:
+        stream = None
         try:
+            if cancel_event is not None and cancel_event.is_set():
+                return
             stream = llm_client.chat.completions.create(
                 model=model, messages=history, stream=True
             )
             for chunk in stream:
+                if stopped.is_set() or (cancel_event is not None and cancel_event.is_set()):
+                    break
                 content = ""
                 if chunk.choices and chunk.choices[0].delta:
                     content = chunk.choices[0].delta.content or ""
                 if content:
                     q.put(("chunk", content))
         except Exception as exc:
-            q.put(("error", str(exc)))
+            q.put(("error", f"Model stream incomplete ({type(exc).__name__})"))
         finally:
+            if stream is not None and callable(getattr(stream, "close", None)):
+                try:
+                    stream.close()
+                except Exception:
+                    pass  # cleanup must not leave the consumer waiting for its done sentinel
             q.put(("done", None))
 
     threading.Thread(target=_produce, daemon=True).start()
 
     full = ""
-    while True:
-        try:
-            kind, data = q.get_nowait()
-        except stdlib_queue.Empty:
-            await asyncio.sleep(0.01)
-            continue
+    try:
+        while True:
+            if cancel_event is not None and cancel_event.is_set():
+                raise RuntimeError("Model stream cancelled; response is incomplete")
+            try:
+                kind, data = q.get_nowait()
+            except stdlib_queue.Empty:
+                await asyncio.sleep(0.01)
+                continue
 
-        if kind == "chunk":
-            full += data  # type: ignore[operator]
-            await websocket.send_text(json.dumps({"type": "chunk", "content": data}))
-        elif kind == "error":
-            raise RuntimeError(data)
-        else:  # "done"
-            break
+            if kind == "chunk":
+                full += data  # type: ignore[operator]
+                await websocket.send_text(json.dumps({"type": "chunk", "content": data}))
+            elif kind == "error":
+                raise RuntimeError(data)
+            else:  # "done"
+                break
+    finally:
+        stopped.set()  # the producer closes the iterator as soon as its in-flight read returns
 
     return full
 
 
-async def _respond(websocket: Any, session: Any) -> str:
+async def _run_autoresearch_websocket(websocket: Any, session: Any) -> str:
+    """Keep the receive side alive for cancel/disconnect while tools execute serially."""
+    worker = asyncio.create_task(asyncio.to_thread(session._chat))
+    incoming = asyncio.create_task(websocket.receive_text())
+    try:
+        while True:
+            ready, _ = await asyncio.wait({worker, incoming}, return_when=asyncio.FIRST_COMPLETED)
+            if incoming in ready:
+                control = json.loads(incoming.result())  # disconnect raises here, signalling the worker below
+                if control.get("type") == "cancel":
+                    session.request_cancel()
+                else:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "AutoResearch is running; cancel or wait for delivery before sending another task."}))
+                incoming = asyncio.create_task(websocket.receive_text())
+            if worker in ready:
+                return worker.result()
+    finally:
+        incoming.cancel()
+        if not worker.done():
+            session.request_cancel()
+            worker.add_done_callback(lambda task: task.exception() if not task.cancelled() else None)
+
+
+async def _respond(websocket: Any, session: Any, *, novelty_mode: str | None = None) -> str:
     """
     Generate a reply for the latest message in session.history.
 
@@ -580,13 +620,41 @@ async def _respond(websocket: Any, session: Any) -> str:
     model = session.env.get("llm_backend", {}).get("model", "gpt-4o")
     from core.llm.provider_profiles import is_openai_compatible_provider
 
-    if is_openai_compatible_provider(provider) and session._llm is not None:
-        full = await _stream_openai(websocket, session._llm, model, session.history)
+    autoresearch_active = getattr(session, "autoresearch_mode", "off") != "off"
+    if autoresearch_active:
+        full = await _run_autoresearch_websocket(websocket, session)
+    elif (is_openai_compatible_provider(provider) or provider == "anthropic") and session._llm is not None:
+        worker = asyncio.create_task(_stream_openai(websocket, session._llm, model, session.history, getattr(session, "_cancel_event", None)))
+        incoming = asyncio.create_task(websocket.receive_text())
+        try:
+            while not worker.done():
+                ready, _ = await asyncio.wait({worker, incoming}, return_when=asyncio.FIRST_COMPLETED)
+                if incoming in ready:
+                    control = json.loads(incoming.result())
+                    if control.get("type") == "cancel":
+                        session.request_cancel()
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "Wait for the current response or cancel it before sending another task."}))
+                    incoming = asyncio.create_task(websocket.receive_text())
+            full = await worker
+        finally:
+            incoming.cancel()
+            if not worker.done():
+                session.request_cancel()
+                worker.cancel()
+        from core.agent.main import _extract_token_usage_from_response
+        session._last_token_usage = _extract_token_usage_from_response(getattr(session._llm, "last_response", None))
     else:
         # Non-streaming fallback: run blocking _chat() in a thread pool
         full = await asyncio.to_thread(session._chat)
 
-    await websocket.send_text(json.dumps({"type": "done", "content": full}))
+    response = {"type": "done", "content": full}
+    if novelty_mode is not None:
+        response["novelty_mode"] = novelty_mode
+    if autoresearch_active:
+        response["autoresearch"] = getattr(session, "autoresearch_state", None)
+    response["token_usage"] = getattr(session, "_last_token_usage", None)
+    await websocket.send_text(json.dumps(response))
     return full
 
 
@@ -614,6 +682,11 @@ def create_app() -> Any:
         build_autoresearch_scope_prompt,
         parse_help_command,
         render_help_response,
+        normalize_autoresearch_mode,
+    )
+    from neurooracle.src.novelty_policy import (
+        DEFAULT_MODE, MODES, POLICY_VERSION, WEIGHTS,
+        build_selection_prompt, select_reviewed, validate_mode,
     )
     # SkillLoader lives in core/skill_loader/, so we use importlib for dynamic loading.
     _loader_mod = _import_from_path(
@@ -700,15 +773,21 @@ def create_app() -> Any:
         api_key_env = str(llm.get("api_key_env") or "").strip()
         if api_key_env:
             api_key = os.environ.get(api_key_env, "")
-        api_key = api_key or str(llm.get("api_key") or llm.get("apiKey") or "").strip()
+        api_key = str(llm.get("api_key") or llm.get("apiKey") or "").strip() or api_key
         url = base_url.rstrip("/") + "/models"
-        headers = {"Accept": "application/json", "User-Agent": "NeuroDiscovery/0.2.2"}
+        headers = {"Accept": "application/json", "User-Agent": "NeuroDiscovery/1.0.0"}
         configured_headers = llm.get("default_headers") or llm.get("headers")
         if isinstance(configured_headers, dict):
             for key, value in configured_headers.items():
                 if str(key).strip() and value is not None:
                     headers[str(key)] = str(value)
-        if api_key:
+        from core.llm.model_capabilities import api_mode
+        if api_mode(llm) == "anthropic":
+            url = base_url.rstrip("/") + ("/models" if base_url.rstrip("/").endswith("/v1") else "/v1/models")
+            headers["anthropic-version"] = "2023-06-01"
+            if api_key:
+                headers["x-api-key"] = api_key
+        elif api_key:
             headers["Authorization"] = f"Bearer {api_key}"
         req = urllib.request.Request(url, headers=headers, method="GET")
         try:
@@ -794,12 +873,9 @@ def create_app() -> Any:
     def _runtime_model_catalog(llm: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         configured = llm.get("available_models", [])
         base = configured if isinstance(configured, list) else []
-        probe = _probe_openai_compatible_models(llm)
-        remote = probe.get("models", []) if isinstance(probe.get("models"), list) else []
-        # A successful live probe is authoritative. Configured entries are only
-        # a fallback for offline or non-discoverable providers.
-        catalog_source = remote if probe.get("ok") else base
-        return _dedupe_model_catalog(catalog_source), _public_model_probe(probe)
+        # Startup, chat menus and model switching read the user's saved choices.
+        # Discovery is an explicit settings action and never adds models by itself.
+        return _dedupe_model_catalog(base), _public_model_probe({"attempted": False})
 
     def _runtime_available_models(llm: dict[str, Any]) -> list[dict[str, Any]]:
         catalog, _probe = _runtime_model_catalog(llm)
@@ -916,6 +992,21 @@ def create_app() -> Any:
             "api_key_present": api_key_present,
         }
 
+    @app.get("/api/llm/providers")
+    async def llm_provider_presets() -> dict:
+        from core.llm.model_capabilities import provider_catalog
+        return provider_catalog()
+
+    @app.post("/api/llm/validate")
+    async def llm_validate(payload: dict) -> Any:
+        from core.llm.model_capabilities import validate_config
+        # Pure preflight accepts controls only. Never return or resolve credentials.
+        fields = {"provider", "model", "base_url", "api_mode", "reasoning_effort", "thinking_mode", "max_output_tokens", "temperature"}
+        try:
+            return validate_config({key: value for key, value in payload.items() if key in fields})
+        except (TypeError, ValueError, OverflowError) as exc:
+            return JSONResponse({"message": str(exc)}, status_code=400)
+
     @app.get("/api/env/models")
     async def get_available_models() -> dict:
         """Probe the configured model endpoint and return a safe, sorted catalog."""
@@ -923,7 +1014,9 @@ def create_app() -> Any:
         llm = env.get("llm_backend", {})
         if not isinstance(llm, dict):
             llm = {}
-        available_models, model_probe = await asyncio.to_thread(_runtime_model_catalog, llm)
+        probe = await asyncio.to_thread(_probe_openai_compatible_models, llm)
+        available_models = _dedupe_model_catalog(probe.get("models", []))
+        model_probe = _public_model_probe(probe)
         return {
             "provider": str(llm.get("provider") or "unknown"),
             "model": str(llm.get("model") or "unknown"),
@@ -961,6 +1054,9 @@ def create_app() -> Any:
                 status_code=400,
             )
 
+        if llm.get("provider") != provider:
+            for key in ("api_key", "apiKey", "api_key_env", "base_url", "baseUrl", "headers", "default_headers", "extra_body", "thinking", "thinking_mode", "reasoning_effort", "api_mode", "temperature", "top_p", "max_output_tokens"):
+                llm.pop(key, None)
         llm["provider"] = provider
         llm["model"] = model
         for key in (
@@ -975,9 +1071,12 @@ def create_app() -> Any:
             "default_headers",
             "headers",
             "tool_calling",
+            "api_mode",
         ):
             if key in selected_model:
                 llm[key] = selected_model[key]
+        from core.llm.provider_profiles import apply_openai_compatible_profile_defaults
+        apply_openai_compatible_profile_defaults(llm)
         save_environment(env)
         return {
             "type": "done",
@@ -986,13 +1085,109 @@ def create_app() -> Any:
             "available_models": _public_model_catalog(_runtime_available_models(llm)),
         }
 
-    @app.post("/api/chat")
-    async def chat_http(payload: dict) -> Any:
+    @app.get("/api/hypotheses/selection-policy")
+    async def hypothesis_selection_policy() -> Any:
+        return {"policy_version": POLICY_VERSION, "default_mode": DEFAULT_MODE,
+                "modes": list(MODES), "weights": dict(WEIGHTS)}
+
+    @app.post("/api/hypotheses/select")
+    async def select_hypotheses(payload: dict) -> Any:
+        try:
+            return select_reviewed(payload.get("candidates"), payload.get("novelty_mode", DEFAULT_MODE),
+                                   payload.get("limit", 5))
+        except ValueError as exc:
+            return JSONResponse({"type": "error", "message": str(exc)}, status_code=400)
+
+    # Opaque per-request keys prevent a late cancel from stopping a newer turn in the same chat.
+    active_chat_requests: dict[str, Any] = {}
+    active_chat_ids: dict[str, str] = {}
+    from core.web.workbench import WorkbenchStore, WorkbenchRun, ObservedClient, StateConflict, observe_local_call
+    workbench = WorkbenchStore()
+    workbench_runs: dict[str, Any] = {}
+    chat_workers: set[Any] = set()
+
+    @app.get("/api/workbench/state")
+    async def workbench_state() -> Any:
+        return await asyncio.to_thread(workbench.state)
+
+    @app.put("/api/workbench/state")
+    async def save_workbench_state(payload: dict) -> Any:
+        try:
+            return await asyncio.to_thread(workbench.save_state, payload.get("revision"), payload.get("state"))
+        except StateConflict as exc:
+            return JSONResponse({"message": str(exc), "recovery_id": getattr(exc, "recovery_id", None)}, status_code=409)
+        except ValueError as exc:
+            return JSONResponse({"message": str(exc)}, status_code=400)
+
+    @app.get("/api/workbench/recovery/{recovery_id}")
+    async def workbench_recovery(recovery_id: str) -> Any:
+        data = await asyncio.to_thread(workbench.recovery, recovery_id)
+        if data is None:
+            return JSONResponse({"message": "Recovery copy not found"}, status_code=404)
+        return JSONResponse(data, headers={"Content-Disposition": 'attachment; filename="neurodiscovery-history-recovery.json"'})
+
+    @app.post("/api/workbench/validate-workspace")
+    async def validate_workspace(payload: dict) -> Any:
+        try:
+            path = _resolve_workspace_path(payload.get("path"))
+            return {"path": str(path), "name": path.name, "identity": os.path.normcase(str(path))}
+        except ValueError as exc:
+            return JSONResponse({"message": str(exc)}, status_code=400)
+
+    @app.get("/api/workbench/usage")
+    async def workbench_usage(days: int = 0, provider: str = "", model: str = "", project_id: str = "",
+                              chat_id: str = "", request_id: str = "") -> Any:
+        return await asyncio.to_thread(workbench.usage, days=days, provider=provider, model=model,
+                                       project_id=project_id, chat_id=chat_id, request_id=request_id)
+
+    @app.get("/api/chat/runs/{request_id}")
+    async def chat_run_events(request_id: str, after: int = 0) -> Any:
+        run = workbench_runs.get(request_id)
+        if run is not None:
+            return run.poll(max(0, after))
+        saved = await asyncio.to_thread(workbench.saved_run, request_id)
+        if saved is None:
+            return JSONResponse({"message": "Request not found; no request was replayed."}, status_code=404)
+        return {"snapshot": saved, "events": [], "seq": saved["seq"], "status": saved["status"], "result": saved["result"]}
+
+    def observe_session(session: Any, run: Any, project_id: str, source: str = "main") -> None:
+        cfg = session.env.get("llm_backend", {})
+        meta = {"request_id": run.id, "chat_id": run.chat_id, "project_id": project_id,
+                "provider": str(cfg.get("provider") or "unknown"), "model": str(cfg.get("model") or "unknown"), "source": source}
+        def emit(event: dict) -> None:
+            if "tool_id" in event:
+                event = {**event, "tool_id": source + ":" + event["tool_id"], "source": source}
+            run.emit(event)
+        if not isinstance(session._llm, dict):
+            session.set_llm_client(ObservedClient(session._llm, workbench, meta, emit, getattr(session, "_cancel_event", None)))
+        else:
+            session._local_chat_observer = lambda request: observe_local_call(
+                request, workbench, meta, emit, getattr(session, "_cancel_event", None))
+        session._execution_observer = emit
+        session._configure_child_observer = lambda child, child_id: observe_session(child, run, project_id, "subagent:" + child_id)
+
+    @app.post("/api/chat/cancel")
+    async def cancel_chat(payload: dict) -> Any:
+        request_id = str(payload.get("request_id") or "")
+        session = active_chat_requests.get(request_id)
+        if session is not None:
+            session.request_cancel()
+            run = workbench_runs.get(request_id)
+            if run is not None:
+                run.status = "stopping"
+                run.emit({"type": "status", "status": "stopping"})
+        return {"cancelled": session is not None}
+
+    async def chat_http(payload: dict, request: Request) -> Any:
         """HTTP fallback for chat when WebSocket is unavailable."""
         user_text = str(payload.get("message", "")).strip()
         raw_history = payload.get("history", [])
         raw_selected_skills = payload.get("selected_skills", [])
-        autoresearch_mode = payload.get("autoresearch_mode", "off")
+        autoresearch_mode = normalize_autoresearch_mode(payload.get("autoresearch_mode", "off"))
+        try:
+            novelty_mode = validate_mode(payload.get("novelty_mode", DEFAULT_MODE))
+        except ValueError as exc:
+            return JSONResponse({"type": "error", "message": str(exc)}, status_code=400)
         client_surface = payload.get("client_surface", "web")
         if not user_text:
             return JSONResponse({"type": "error", "message": "Empty message"}, status_code=400)
@@ -1005,6 +1200,7 @@ def create_app() -> Any:
                 "provider_used": "NeuroOracle",
                 "model_used": "local help",
                 "autoresearch_mode": help_request.mode,
+                "novelty_mode": novelty_mode,
                 "tool_events": [],
                 "workspace_changes": [],
             }
@@ -1015,9 +1211,22 @@ def create_app() -> Any:
             return JSONResponse({"type": "error", "message": str(exc)}, status_code=400)
 
         chat_id = str(payload.get("chat_id") or "").strip()[:200]
+        request_id = str(payload.get("request_id") or secrets.token_urlsafe(24))
+        if not re.fullmatch(r"[A-Za-z0-9_-]{16,128}", request_id):
+            return JSONResponse({"type": "error", "message": "Invalid request_id"}, status_code=400)
+        if request_id in active_chat_requests:
+            return JSONResponse({"type": "error", "message": "Request is already running"}, status_code=409)
+        saved_run = await asyncio.to_thread(workbench.saved_run, request_id)
+        if saved_run is not None:
+            return JSONResponse({"type": "accepted", "request_id": request_id}, status_code=202)
+        if request_id in active_chat_requests:
+            return JSONResponse({"type": "error", "message": "Request is already running"}, status_code=409)
+        if chat_id and chat_id in active_chat_ids:
+            return JSONResponse({"type": "error", "message": "This conversation already has an active request."}, status_code=409)
         session = AgentSession(
             workspace=workspace,
             checkpoint_scope=chat_id or None,
+            autoresearch_mode=autoresearch_mode,
         )
 
         try:
@@ -1045,6 +1254,7 @@ def create_app() -> Any:
         surface_prompt = _client_surface_prompt(client_surface)
         language_prompt = _response_language_prompt(payload.get("language"))
         system_parts = [soul, surface_prompt, language_prompt, f"Loaded skills: {skill_names}"]
+        system_parts.append(build_selection_prompt(novelty_mode))
         session.history = [{
             "role": "system",
             "content": "\n\n".join(part for part in system_parts if part),
@@ -1075,19 +1285,80 @@ def create_app() -> Any:
         session.history.append({"role": "user", "content": user_payload})
 
         workspace_before = _workspace_change_snapshot(workspace)
-        reply = await asyncio.to_thread(session._chat)
-        llm_cfg = session.env.get("llm_backend", {})
-        provider_used = str(llm_cfg.get("provider", "unknown"))
-        model_used = str(llm_cfg.get("model", "unknown"))
-        return {
-            "type": "done",
-            "content": reply,
-            "provider_used": provider_used,
-            "model_used": model_used,
-            "tool_events": _summarize_web_tool_events(getattr(session, "_tool_events", [])),
-            "workspace_changes": _workspace_change_summary(workspace, workspace_before),
-            "workspace_change_scope": "turn",
-        }
+        active_chat_requests[request_id] = session
+        if chat_id:
+            active_chat_ids[chat_id] = request_id
+        run = WorkbenchRun(request_id, chat_id, workbench)
+        workbench_runs[request_id] = run
+        workbench.save_run(run)
+        observe_session(session, run, str(payload.get("project_id") or ""))
+
+        async def execute_turn() -> dict:
+            try:
+                reply = await asyncio.to_thread(session._chat)
+                llm_cfg = session.env.get("llm_backend", {})
+                research = getattr(session, "autoresearch_state", None)
+                cancelled = getattr(session, "_cancel_event", None)
+                status = "cancelled" if cancelled is not None and cancelled.is_set() else "completed"
+                if isinstance(research, dict) and research.get("status") not in {None, "completed"}:
+                    status = str(research["status"])
+                result = {"type": "done", "content": reply,
+                          "provider_used": str(llm_cfg.get("provider", "unknown")),
+                          "model_used": str(llm_cfg.get("model", "unknown")),
+                          "request_id": request_id, "novelty_mode": novelty_mode, "autoresearch": research,
+                          "tool_events": _summarize_web_tool_events(getattr(session, "_tool_events", [])),
+                          "workspace_changes": await asyncio.to_thread(_workspace_change_summary, workspace, workspace_before),
+                          "workspace_change_scope": "turn", "execution": run.snapshot(),
+                          "usage": await asyncio.to_thread(workbench.usage, request_id=request_id)}
+                result["execution"]["status"] = status
+                run.finish(result, status)
+                return result
+            except Exception as exc:
+                cancelled = getattr(session, "_cancel_event", None)
+                status = "cancelled" if cancelled is not None and cancelled.is_set() else "interrupted"
+                result = {"type": "error", "request_id": request_id,
+                          "message": f"Execution {status} ({type(exc).__name__}); partial output and usage are preserved. No request was replayed.",
+                          "execution": run.snapshot(), "usage": await asyncio.to_thread(workbench.usage, request_id=request_id)}
+                result["execution"]["status"] = status
+                run.finish(result, status)
+                return result
+            finally:
+                active_chat_requests.pop(request_id, None)
+                if active_chat_ids.get(chat_id) == request_id:
+                    active_chat_ids.pop(chat_id, None)
+                # Completed requests remain durable; keep only recent in-memory snapshots.
+                completed = [key for key, value in workbench_runs.items() if value.status not in {"running", "stopping"}]
+                for key in completed[:-100]:
+                    workbench_runs.pop(key, None)
+
+        worker = asyncio.create_task(execute_turn())
+        chat_workers.add(worker)
+        worker.add_done_callback(chat_workers.discard)
+        if payload.get("stream_events") is True:
+            # Browser reconnect/reload observes this request; only an explicit Stop cancels it.
+            return JSONResponse({"type": "accepted", "request_id": request_id}, status_code=202)
+
+        async def watch_disconnect() -> None:
+            while True:
+                if await request.is_disconnected():
+                    session.request_cancel()
+                    return
+                await asyncio.sleep(0.25)
+
+        disconnect_watch = asyncio.create_task(watch_disconnect())
+        try:
+            result = await asyncio.shield(worker)
+        except asyncio.CancelledError:
+            session.request_cancel()
+            raise
+        finally:
+            disconnect_watch.cancel()
+            # A cancelled HTTP handler must not erase the handle while its worker is draining.
+            worker.add_done_callback(lambda _task: active_chat_requests.pop(request_id, None))
+        return result
+
+    chat_http.__annotations__["request"] = Request
+    app.post("/api/chat")(chat_http)
 
     @app.post("/api/chat/title")
     async def chat_title(payload: dict) -> Any:
@@ -1097,9 +1368,17 @@ def create_app() -> Any:
         if not user_text and not assistant_text:
             return JSONResponse({"type": "error", "message": "Missing conversation content"}, status_code=400)
 
-        session = AgentSession()
+        session = AgentSession(no_skill_mode=True)
         try:
             session.set_llm_client(build_llm_client(session.env))
+            title_cfg = session.env.get("llm_backend", {})
+            title_meta = {"request_id": secrets.token_urlsafe(24), "chat_id": str(payload.get("chat_id") or ""),
+                          "project_id": str(payload.get("project_id") or ""), "provider": title_cfg.get("provider"),
+                          "model": title_cfg.get("model"), "source": "title"}
+            if not isinstance(session._llm, dict):
+                session.set_llm_client(ObservedClient(session._llm, workbench, title_meta, lambda event: None))
+            else:
+                session._local_chat_observer = lambda request: observe_local_call(request, workbench, title_meta, lambda event: None)
         except Exception as exc:
             return JSONResponse({"type": "error", "message": f"LLM backend error: {exc}"}, status_code=500)
 
@@ -1227,7 +1506,6 @@ def create_app() -> Any:
 
     # ── WebSocket chat endpoint ─────────────────────────────────────────────────
 
-    @app.websocket("/ws/chat")
     async def chat_endpoint(websocket: WebSocket) -> None:
         try:
             await websocket.accept()
@@ -1289,6 +1567,11 @@ def create_app() -> Any:
                     user_text = msg.get("message", "").strip()
                     raw_selected = msg.get("selected_skills", [])
                     autoresearch_mode = msg.get("autoresearch_mode", "off")
+                    try:
+                        novelty_mode = validate_mode(msg.get("novelty_mode", DEFAULT_MODE))
+                    except ValueError as exc:
+                        await websocket.send_text(json.dumps({"type": "error", "message": str(exc)}))
+                        continue
                     if not user_text:
                         continue
 
@@ -1301,6 +1584,7 @@ def create_app() -> Any:
                             "provider_used": "NeuroOracle",
                             "model_used": "local help",
                             "autoresearch_mode": help_request.mode,
+                            "novelty_mode": novelty_mode,
                         }))
                         session.history.append({"role": "user", "content": user_text})
                         session.history.append({"role": "assistant", "content": reply})
@@ -1314,7 +1598,19 @@ def create_app() -> Any:
 
                     selected_ctx = _selected_skills_context(selected, skills)
                     scope_context = build_autoresearch_scope_prompt(autoresearch_mode)
+                    try:
+                        session.workspace = _resolve_workspace_path(msg.get("workspace_path"))
+                    except ValueError as exc:
+                        await websocket.send_text(json.dumps({"type": "error", "message": str(exc)}))
+                        continue
+                    session.configure_autoresearch(autoresearch_mode)
                     language_context = _response_language_prompt(msg.get("language"))
+                    # Replace per-request preferences; stale turns must not override this turn.
+                    session.history[0]["content"] = (
+                        f"{soul}\n\nLoaded skills: {skill_names}\n\n"
+                        + _client_surface_prompt(msg.get("client_surface", "web"))
+                        + "\n\n" + build_selection_prompt(novelty_mode)
+                    )
                     payload_parts = [user_text]
                     if language_context:
                         payload_parts.append(language_context)
@@ -1329,7 +1625,7 @@ def create_app() -> Any:
 
                     session.history.append({"role": "user", "content": user_payload})
                     try:
-                        reply = await _respond(websocket, session)
+                        reply = await _respond(websocket, session, novelty_mode=novelty_mode)
                         session.history.append({"role": "assistant", "content": reply})
                     except Exception as exc:
                         err_msg = f"[Agent error: {exc}]"
@@ -1345,6 +1641,11 @@ def create_app() -> Any:
             print(f"[WS] Error occurred: {type(e).__name__}: {e}", flush=True)
             import traceback
             traceback.print_exc()
+
+    # With postponed annotations, factory-local WebSocket is otherwise treated
+    # as a query parameter by FastAPI. Bind the concrete type before registration.
+    chat_endpoint.__annotations__["websocket"] = WebSocket
+    app.websocket("/ws/chat")(chat_endpoint)
 
     # ── Knowledge Graph Explorer ───────────────────────────────────────────
 

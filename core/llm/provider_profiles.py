@@ -12,6 +12,8 @@ from typing import Any
 
 OPENAI_COMPATIBLE_PROVIDERS = {
     "openai",
+    "gemini",
+    "grok",
     "deepseek",
     "minimax",
     "kimi",
@@ -28,10 +30,13 @@ OPENAI_COMPATIBLE_PROVIDERS = {
     "groq",
     "fireworks",
     "ollama",
+    "ollama_cloud",
     "llamacpp",
 }
 
 INSTALLER_PROVIDER_CHOICES = [
+    ("gemini", "Google Gemini"),
+    ("grok", "xAI Grok"),
     ("deepseek", "DeepSeek"),
     ("minimax", "MiniMax"),
     ("kimi", "Kimi / Moonshot"),
@@ -44,11 +49,26 @@ INSTALLER_PROVIDER_CHOICES = [
     ("groq", "Groq"),
     ("fireworks", "Fireworks AI"),
     ("ollama", "Ollama OpenAI-compatible"),
+    ("ollama_cloud", "Ollama Cloud API"),
     ("llamacpp", "llama.cpp OpenAI-compatible"),
 ]
 
 
 OPENAI_COMPATIBLE_PROVIDER_PROFILES: dict[str, dict[str, Any]] = {
+    "gemini": {
+        "label": "Google Gemini",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "api_key_env": "GEMINI_API_KEY",
+        "default_model": "gemini-3.8-flash",
+        "models": [{"provider": "gemini", "model": "gemini-3.8-flash", "label": "Gemini / gemini-3.8-flash"}],
+    },
+    "grok": {
+        "label": "xAI Grok",
+        "base_url": "https://api.x.ai/v1",
+        "api_key_env": "XAI_API_KEY",
+        "default_model": "grok-4.6",
+        "models": [{"provider": "grok", "model": "grok-4.6", "label": "Grok / grok-4.6"}],
+    },
     "deepseek": {
         "label": "DeepSeek",
         "base_url": "https://api.deepseek.com",
@@ -97,6 +117,8 @@ OPENAI_COMPATIBLE_PROVIDER_PROFILES: dict[str, dict[str, Any]] = {
         "default_model": "qwen-plus",
         "tool_calling": "supported",
         "models": [
+            {"provider": "qwen", "model": "qwen3.8-max", "label": "Qwen / qwen3.8-max"},
+            {"provider": "qwen", "model": "qwen3.8-flash", "label": "Qwen / qwen3.8-flash"},
             {"provider": "qwen", "model": "qwen-plus", "label": "Qwen / qwen-plus"},
             {"provider": "qwen", "model": "qwen-max", "label": "Qwen / qwen-max"},
             {"provider": "qwen", "model": "qwen-turbo", "label": "Qwen / qwen-turbo"},
@@ -122,6 +144,8 @@ OPENAI_COMPATIBLE_PROVIDER_PROFILES: dict[str, dict[str, Any]] = {
         "default_model": "glm-4-flash",
         "tool_calling": "supported",
         "models": [
+            {"provider": "zhipu", "model": "glm-5.1", "label": "GLM / glm-5.1"},
+            {"provider": "zhipu", "model": "glm-5", "label": "GLM / glm-5"},
             {"provider": "zhipu", "model": "glm-4-flash", "label": "Zhipu GLM / glm-4-flash"},
             {"provider": "zhipu", "model": "glm-4-plus", "label": "Zhipu GLM / glm-4-plus"},
             {"provider": "zhipu", "model": "glm-4-air", "label": "Zhipu GLM / glm-4-air"},
@@ -185,6 +209,16 @@ OPENAI_COMPATIBLE_PROVIDER_PROFILES: dict[str, dict[str, Any]] = {
             {"provider": "fireworks", "model": "accounts/fireworks/models/llama-v3p1-70b-instruct", "label": "Fireworks / llama-v3p1-70b-instruct"},
             {"provider": "fireworks", "model": "accounts/fireworks/models/llama-v3p1-8b-instruct", "label": "Fireworks / llama-v3p1-8b-instruct"},
             {"provider": "fireworks", "model": "accounts/fireworks/models/deepseek-v3", "label": "Fireworks / deepseek-v3"},
+        ],
+    },
+    "ollama_cloud": {
+        "label": "Ollama Cloud",
+        "base_url": "https://ollama.com/v1",
+        "api_key_env": "OLLAMA_API_KEY",
+        "default_model": "deepseek-v4.1-flash",
+        "tool_calling": "model_dependent",
+        "models": [
+            {"provider": "ollama_cloud", "model": "deepseek-v4.1-flash", "label": "Ollama Cloud / deepseek-v4.1-flash"},
         ],
     },
     "ollama": {
@@ -260,6 +294,12 @@ for _provider, _profile in OPENAI_COMPATIBLE_PROVIDER_PROFILES.items():
 def canonical_provider(provider: str) -> str:
     """Return the normalized provider key used by the runtime."""
     value = str(provider or "").strip().lower()
+    if value in {"google", "google-gemini"}:
+        return "gemini"
+    if value in {"xai", "x.ai"}:
+        return "grok"
+    if value == "claude":
+        return "anthropic"
     if value in {"moonshotai", "moonshot-ai"}:
         return "moonshot"
     if value in {"kimi-ai", "kimi_k2"}:
@@ -287,6 +327,13 @@ def apply_openai_compatible_profile_defaults(llm_cfg: dict[str, Any]) -> None:
     """Fill endpoint/model/key defaults for named OpenAI-compatible providers."""
     provider = canonical_provider(str(llm_cfg.get("provider") or "openai"))
     llm_cfg["provider"] = provider
+    if provider == "ollama_cloud":
+        endpoint = str(llm_cfg.get("base_url") or llm_cfg.get("baseUrl") or "https://ollama.com/v1")
+        if endpoint.rstrip("/") != "https://ollama.com/v1":
+            raise ValueError("Ollama Cloud credentials require https://ollama.com/v1")
+        llm_cfg["api_key_env"] = "OLLAMA_API_KEY"
+        llm_cfg.pop("no_api_key_required", None)
+        llm_cfg.pop("dummy_api_key", None)
 
     profile = get_openai_compatible_profile(provider)
     if profile is None:
@@ -296,7 +343,7 @@ def apply_openai_compatible_profile_defaults(llm_cfg: dict[str, Any]) -> None:
         llm_cfg["base_url"] = profile.get("base_url")
     if not llm_cfg.get("api_key_env"):
         llm_cfg["api_key_env"] = profile.get("api_key_env")
-    if not llm_cfg.get("model"):
+    if not llm_cfg.get("model") and not llm_cfg.get("model_selection_managed"):
         llm_cfg["model"] = profile.get("default_model")
     llm_cfg.setdefault("openai_compatible", True)
     llm_cfg.setdefault("provider_label", profile.get("label"))
@@ -304,5 +351,5 @@ def apply_openai_compatible_profile_defaults(llm_cfg: dict[str, Any]) -> None:
     if profile.get("no_api_key_required"):
         llm_cfg.setdefault("no_api_key_required", True)
 
-    if not llm_cfg.get("available_models"):
+    if not llm_cfg.get("available_models") and not llm_cfg.get("model_selection_managed"):
         llm_cfg["available_models"] = profile.get("models", [])

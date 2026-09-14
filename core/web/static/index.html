@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NeuroDiscovery</title>
+  <script>
+    if (window.neuroclawDesktop?.titleBarOverlay && window.parent === window) {
+      document.documentElement.dataset.desktopTitlebar = 'true';
+    }
+  </script>
+  <link rel="icon" href="/static/logo.png" type="image/png">
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -3388,6 +3394,8 @@
     ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--text-muted), transparent 35%); border-radius: 999px; }
   </style>
+  <link rel="stylesheet" href="/static/workspace-tokens.css">
+  <link rel="stylesheet" href="/static/research-workspace.css">
 </head>
 <body>
 <div id="app">
@@ -3399,6 +3407,7 @@
     <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M10 5v14"/><path d="m16 9-3 3 3 3"/></svg>
     </button>
+    <div class="header-context"><span id="header-view-name">NeuroRuntime</span></div>
     <div class="spacer"></div>
     <div class="theme-switch" role="tablist" aria-label="Theme switcher">
       <button class="theme-btn" data-theme="light" type="button">Day</button>
@@ -3408,6 +3417,9 @@
       <div class="status-dot" id="status-dot"></div>
       <span id="status-text">Ready</span>
     </div>
+    <button class="desktop-menu-btn" id="desktop-menu-btn" type="button" title="Application menu" aria-label="Application menu" aria-haspopup="menu" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+    </button>
   </header>
 
   <div id="error-banner"></div>
@@ -3444,10 +3456,6 @@
         <button class="primary-nav-btn" id="nav-neurooracle" data-view-button="neurooracle" type="button">
           <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 8.2 10 10"/><path d="m14 10 3-1.8"/><path d="m10.2 14-2.7 2.7"/><path d="m13.8 14 2.7 2.7"/></svg></span>
           <span>NeuroOracle Graph</span>
-        </button>
-        <button class="primary-nav-btn" id="nav-settings" data-view-button="settings" type="button">
-          <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.05a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 0 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.05A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 0 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.05a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 0 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.05A1.7 1.7 0 0 0 19.4 15z"/></svg></span>
-          <span>Settings</span>
         </button>
       </nav>
 
@@ -3499,9 +3507,16 @@
                   style="margin:4px 12px 10px;font-size:11px;">Refresh</button>
         </div>
       </section>
+      <div class="sidebar-footer">
+        <button class="primary-nav-btn" id="nav-settings" data-view-button="settings" type="button">
+          <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.05a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 0 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.05A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 0 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.05a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 0 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.05A1.7 1.7 0 0 0 19.4 15z"/></svg></span>
+          <span>Settings</span>
+        </button>
+      </div>
     </aside>
+    <button class="sidebar-backdrop" id="sidebar-backdrop" type="button" aria-label="Collapse sidebar" tabindex="-1"></button>
 
-    <div class="chat-panel" id="chat-panel">
+    <div class="chat-panel" id="chat-panel" tabindex="-1">
       <section class="workspace-page" id="skills-page" hidden>
         <div class="page-eyebrow">Skill Library</div>
         <h1 class="page-title">Skills</h1>
@@ -3571,7 +3586,7 @@
             </div>
             <section class="settings-reset-zone" id="settings-reset-zone" aria-labelledby="settings-reset-title" hidden>
               <h2 id="settings-reset-title">Reset application</h2>
-              <p id="settings-reset-desc">Clear desktop configuration, chats, project history, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.</p>
+              <p id="settings-reset-desc">Clear desktop configuration, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.</p>
               <button class="settings-reset-button" id="settings-reset-btn" type="button">Reset and restart</button>
             </section>
           </div>
@@ -3612,23 +3627,31 @@
               <option value="">Loading model...</option>
             </select>
           </div>
+          <button id="generation-parameters-btn" class="generation-parameters" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="generation-parameters-dialog" title="Generation parameters">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--surface-elev)"/><circle cx="15" cy="17" r="3" fill="var(--surface-elev)"/></svg>
+            <span data-parameter-button-label>Generation parameters</span><span data-parameter-current>Strict</span>
+          </button>
           <button id="send-btn" title="Send" type="button">➤</button>
         </div>
       </div>
         <div class="starter-grid" aria-label="Starter prompts">
           <button class="starter-btn" type="button" data-starter-prompt="Plan a BIDS validation and quality-control pass for my neuroimaging dataset.">
+            <span class="starter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 4H5v16h14V4h-4"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 13 3 3 5-6"/></svg></span>
             <span class="starter-title">BIDS QC</span>
             <span class="starter-desc">Validate layout, metadata, and next checks.</span>
           </button>
           <button class="starter-btn" type="button" data-starter-prompt="Help me design an fMRI preprocessing and first-level analysis workflow.">
+            <span class="starter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></span>
             <span class="starter-title">fMRI workflow</span>
             <span class="starter-desc">Preprocess, model, and inspect results.</span>
           </button>
           <button class="starter-btn" type="button" data-starter-prompt="Draft a FreeSurfer cortical reconstruction QC checklist with commands.">
+            <span class="starter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/></svg></span>
             <span class="starter-title">FreeSurfer QC</span>
             <span class="starter-desc">Surface checks, outputs, and repair notes.</span>
           </button>
           <button class="starter-btn" type="button" data-starter-prompt="Use the NeuroOracle Graph to generate and evaluate a neuroscience hypothesis.">
+            <span class="starter-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="7" cy="20" r="2"/><path d="m6.5 6.5 3.3 3.3m4.5.2 3.2-2.7M10.4 14.5 8 18"/></svg></span>
             <span class="starter-title">NeuroOracle Graph</span>
             <span class="starter-desc">Generate hypotheses from graph evidence.</span>
           </button>
@@ -3703,6 +3726,26 @@
   </div>
 </div>
 
+<dialog id="generation-parameters-dialog" class="generation-dialog" aria-labelledby="generation-parameters-title" aria-describedby="generation-parameters-note">
+  <div class="generation-eyebrow" data-parameter-copy="eyebrow">HYPOTHESIS GENERATOR</div>
+  <h2 id="generation-parameters-title" data-parameter-copy="title">Generation parameters</h2>
+  <p class="generation-intro" data-parameter-copy="intro">Choose how reviewed hypotheses are selected.</p>
+  <fieldset class="novelty-options">
+    <legend data-parameter-copy="label">Novelty strategy</legend>
+    <label class="novelty-option"><input type="radio" name="novelty-mode" value="strict" checked><span><strong>Strict</strong><span data-mode-description>Only evidence-backed novelty; fewer or no candidates is valid.</span></span></label>
+    <label class="novelty-option"><input type="radio" name="novelty-mode" value="novelty_first"><span><strong>Novelty first</strong><span data-mode-description>Novel candidates first, then uncertain exploration, then replication.</span></span></label>
+    <label class="novelty-option"><input type="radio" name="novelty-mode" value="weighted"><span><strong>Weighted</strong><span data-mode-description>Balance novelty, structure, GNN, and scientific review.</span></span></label>
+  </fieldset>
+  <div class="novelty-weights" hidden>
+    <div><b>40%</b><span data-weight-label>Novelty</span></div><div><b>20%</b><span data-weight-label>Structure</span></div><div><b>20%</b><span data-weight-label>GNN</span></div><div><b>20%</b><span data-weight-label>Review</span></div>
+  </div>
+  <p class="generation-note" id="generation-parameters-note" data-parameter-copy="note">Selection does not change literature facts. Known relations remain replications, never new discoveries.</p>
+  <footer><p data-parameter-copy="scope">Saved for this chat. Applies to new workflows, not frozen or running experiments.</p><button type="button" data-parameter-done data-parameter-copy="done">Done</button></footer>
+</dialog>
+<script src="/static/hypothesis-controls.js"></script>
+<link rel="stylesheet" href="/static/client-workbench.css">
+<script src="/static/client-workbench.js"></script>
+<script src="/static/model-library.js"></script>
 <script>
   function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -3896,6 +3939,14 @@
     llmBaseUrl: 'https://api.openai.com/v1',
     llmApiKey: '',
     llmApiKeyEnv: 'OPENAI_API_KEY',
+    llmApiKeyFile: '',
+    llmApiKeySlot: 'primary',
+    llmAddedModels: null,
+    llmApiMode: 'auto',
+    llmReasoningEffort: 'default',
+    llmThinkingMode: 'default',
+    llmMaxOutputTokens: '',
+    llmTemperature: '',
     repoRoot: '',
   };
   const DEFAULT_LOCAL_SETTINGS = {
@@ -3933,15 +3984,24 @@
     {
       id: 'llm',
       group: 'Configuration',
-      title: 'Model & API',
-      note: 'Configure the model endpoint used by NeuroRuntime.',
+      title: 'Models',
+      note: 'Connect an endpoint, discover models, and add only the models you want to use.',
       rows: [
-        { key: 'llmProvider', scope: 'desktop', label: 'LLM provider', desc: 'Provider adapter used by the backend.', type: 'select', options: ['openai', 'deepseek', 'qwen', 'openrouter', 'anthropic', 'ollama', 'llamacpp'] },
-        { key: 'llmModel', scope: 'desktop', label: 'LLM model', desc: 'Model name sent to the provider endpoint.', type: 'text' },
+        { key: 'llmProvider', scope: 'desktop', label: 'LLM provider', desc: 'Provider adapter used by the backend.', type: 'select', options: ['openai', 'anthropic', 'gemini', 'grok', 'deepseek', 'kimi', 'glm', 'qwen', 'openrouter', 'ollama_cloud', 'ollama', 'llamacpp'] },
         { key: 'llmBaseUrl', scope: 'desktop', label: 'LLM base URL', desc: 'OpenAI-compatible API address, for example https://api.openai.com/v1 or a local proxy.', type: 'text' },
-        { key: 'llmApiKey', scope: 'desktop', label: 'LLM API key', desc: 'Stored locally in the desktop config and passed only to the local backend process.', type: 'password' },
+        { key: 'llmApiKey', scope: 'desktop', label: 'LLM API key', desc: 'Saved on this device. Used to authenticate model discovery and requests at your configured endpoint.', type: 'password' },
         { key: 'llmApiKeyEnv', scope: 'desktop', label: 'API key env var', desc: 'Optional environment variable name used by the backend when API key is blank.', type: 'text' },
+        { key: 'llmApiKeyFile', scope: 'desktop', whenProvider: 'ollama_cloud', label: 'Ollama key file', desc: 'Absolute path. The last two lines are primary and reserve keys; leave the pasted API key blank. Keys are read at runtime and never copied into settings.', type: 'text' },
+        { key: 'llmApiKeySlot', scope: 'desktop', whenProvider: 'ollama_cloud', label: 'Active Ollama key', desc: 'Manual selection only; no automatic key rotation.', type: 'select', options: ['primary', 'reserve'] },
+        { key: 'llmApiMode', scope: 'desktop', label: 'API protocol', desc: 'Auto selects Responses for official GPT-6 and Messages for Claude. Proxies may require an explicit protocol.', type: 'select', options: ['auto', 'chat_completions', 'responses', 'anthropic'] },
+        { key: 'llmReasoningEffort', scope: 'desktop', label: 'Reasoning effort', desc: 'Provider default keeps existing behavior. Unsupported values are rejected before saving.', type: 'select', options: ['default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] },
+        { key: 'llmThinkingMode', scope: 'desktop', label: 'Thinking mode', desc: 'Claude uses adaptive; DeepSeek, Kimi, GLM and Qwen use enabled/disabled. Gemini uses reasoning effort.', type: 'select', options: ['default', 'enabled', 'disabled', 'adaptive'] },
+        { key: 'llmMaxOutputTokens', scope: 'desktop', label: 'Output token limit', desc: 'Blank preserves the provider/default limit. Never increased automatically.', type: 'number' },
+        { key: 'llmTemperature', scope: 'desktop', label: 'Temperature', desc: 'Leave blank for GPT-6, recent Claude and Kimi fixed-sampling models.', type: 'number' },
       ],
+    },
+    {
+      id: 'usage', group: 'Configuration', title: 'Usage', note: 'Local API usage, separate from account balances.', rows: [],
     },
     {
       id: 'runtime',
@@ -4000,6 +4060,7 @@
     menuPosition: null,
     textScale: TEXT_SCALE_DEFAULT,
     sidebarCollapsed: false,
+    mobileSidebarOpen: false,
     sidebarWidth: SIDEBAR_WIDTH_DEFAULT,
     expanded: { projects: true, chat: true, skills: false, checkpoints: false },
     expandedProjectChats: {},
@@ -4285,6 +4346,7 @@
   }
 
   const UI_ZH = {
+    'Usage': '使用量',
     'Day': '日间',
     'Night': '夜间',
     'Ready': '就绪',
@@ -4387,7 +4449,7 @@
     'Save settings': '保存设置',
     'Restart now': '立即重启',
     'Reset application': '重置应用',
-    'Clear desktop configuration, chats, project history, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.': '清除桌面配置、对话、项目历史、Expert Study 进度、本地记忆、日志和缓存，然后重启。不会删除项目文件夹和研究数据。',
+    'Clear desktop configuration, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.': '清除桌面配置、对话、项目历史、用量记录、恢复副本、Expert Study 进度、本地记忆、日志和缓存，然后重启。不会删除项目文件夹和研究数据。',
     'Reset and restart': '重置并重启',
     'Restart is only available in the desktop app.': '重启功能仅在桌面应用中可用。',
     'Restarting NeuroDiscovery...': '正在重启 NeuroDiscovery...',
@@ -4481,13 +4543,31 @@
     'Qwen / DashScope': 'Qwen / DashScope',
     'Anthropic': 'Anthropic',
     'Ollama': 'Ollama',
+    'Ollama Cloud': 'Ollama 云端',
+    'Ollama (local)': 'Ollama（本地）',
+    'Ollama key file': 'Ollama 密钥文件',
+    'Absolute path. The last two lines are primary and reserve keys; leave the pasted API key blank. Keys are read at runtime and never copied into settings.': '填写绝对路径。最后两行分别为主用和备用密钥；上方 API Key 留空。密钥仅在运行时读取，不复制到设置中。',
+    'Active Ollama key': '当前 Ollama 密钥',
+    'Manual selection only; no automatic key rotation.': '仅手动选择，不会自动轮换密钥。',
+    'Primary (second-last line)': '主用（倒数第二行）',
+    'Reserve (last line)': '备用（最后一行）',
     'llama.cpp': 'llama.cpp',
     'LLM model': 'LLM 模型',
     'Model name sent to the provider endpoint.': '发送给提供方接口的模型名称。',
     'LLM base URL': 'LLM 接口地址',
     'OpenAI-compatible API address, for example https://api.openai.com/v1 or a local proxy.': 'OpenAI 兼容 API 地址，例如 https://api.openai.com/v1 或本地代理。',
     'LLM API key': 'LLM API Key',
-    'Stored locally in the desktop config and passed only to the local backend process.': '保存在本地桌面配置中，仅传给本地后端进程。',
+    'Saved on this device. Used to authenticate model discovery and requests at your configured endpoint.': '保存在此设备，用于向你配置的接入点认证、拉取列表和发送模型请求。',
+    'API protocol': '接口协议',
+    'Auto selects Responses for official GPT-6 and Messages for Claude. Proxies may require an explicit protocol.': '自动识别官方 GPT-6 Responses 和 Claude Messages 接口；代理可手动选择协议。',
+    'Reasoning effort': '思考档位',
+    'Provider default keeps existing behavior. Unsupported values are rejected before saving.': '默认保留原有行为；不支持的档位会在保存前提示。',
+    'Thinking mode': '思考模式',
+    'Claude uses adaptive; DeepSeek, Kimi, GLM and Qwen use enabled/disabled. Gemini uses reasoning effort.': 'Claude 使用 adaptive；DeepSeek、Kimi、GLM、Qwen 使用 enabled/disabled；Gemini 使用思考档位。',
+    'Output token limit': '单次输出上限',
+    'Blank preserves the provider/default limit. Never increased automatically.': '留空保留默认值；不会自动提高。',
+    'Temperature': '温度',
+    'Leave blank for GPT-6, recent Claude and Kimi fixed-sampling models.': 'GPT-6、较新的 Claude 和 Kimi 固定采样模型请留空，使用提供商默认采样。',
     'API key env var': 'API Key 环境变量',
     'Optional environment variable name used by the backend when API key is blank.': 'API Key 留空时，后端读取的可选环境变量名。',
     'Toolchains': '工具链',
@@ -4527,7 +4607,6 @@
     'Log folder': '日志文件夹',
     'Desktop launcher logs.': '桌面启动器日志。',
     'No settings match this search.': '没有匹配的设置。',
-    'Saved. Interface changes apply now; backend runtime and LLM settings apply next launch.': '已保存。界面设置立即生效；后端运行和 LLM 设置下次启动生效。',
     'Saved local settings, but desktop config failed:': '本地设置已保存，但桌面配置保存失败：',
     'Saved locally. Desktop launcher config is available inside the Electron app.': '已保存到本地。桌面启动配置需要在 Electron 应用中使用。',
     'Chat request failed': '对话请求失败',
@@ -4624,6 +4703,7 @@
   function applyLanguage(persist = false, { refreshStudyWorkspace = true } = {}) {
     const lang = currentUiLanguage();
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    syncHypothesisControls();
     if (persist) {
       localStorage.setItem(UI_LANGUAGE_KEY, lang === 'zh' ? 'Simplified Chinese' : 'English');
       if (window.neuroclawDesktop && typeof window.neuroclawDesktop.setLanguage === 'function') {
@@ -4642,10 +4722,17 @@
     ].forEach(([id, label]) => {
       const labelEl = document.querySelector(`#${id} span:last-child`);
       if (labelEl) labelEl.textContent = tr(label);
+      document.getElementById(id)?.setAttribute('aria-label', tr(label));
     });
 
     setText('.theme-btn[data-theme="light"]', 'Day');
     setText('.theme-btn[data-theme="dark"]', 'Night');
+    const desktopMenu = document.getElementById('desktop-menu-btn');
+    if (desktopMenu) {
+      desktopMenu.title = uiText('Application menu', '应用菜单');
+      desktopMenu.setAttribute('aria-label', desktopMenu.title);
+    }
+    updateHeaderContext();
     const themeSwitch = document.querySelector('.theme-switch');
     if (themeSwitch) themeSwitch.setAttribute('aria-label', tr('Theme switcher'));
     const primaryNav = document.querySelector('.primary-nav');
@@ -4668,6 +4755,7 @@
       sidebarToggleBtn.title = collapsed ? tr('Expand sidebar') : tr('Collapse sidebar');
     }
     if (sidebarResizerEl) sidebarResizerEl.setAttribute('aria-label', tr('Resize sidebar'));
+    document.getElementById('sidebar-backdrop').setAttribute('aria-label', tr('Collapse sidebar'));
     const statusRaw = statusText ? statusText.textContent.trim() : '';
     if (statusRaw === 'Ready' || statusRaw === '就绪') statusText.textContent = tr('Ready');
     if (statusRaw === 'Thinking' || statusRaw === '思考中') statusText.textContent = tr('Thinking');
@@ -4715,7 +4803,7 @@
     setText('#settings-save-btn', 'Save settings');
     setText('#settings-restart-btn', 'Restart now');
     setText('#settings-reset-title', 'Reset application');
-    setText('#settings-reset-desc', 'Clear desktop configuration, chats, project history, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.');
+    setText('#settings-reset-desc', 'Clear desktop configuration, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.');
     setText('#settings-reset-btn', 'Reset and restart');
     const settingsSidebar = document.querySelector('.settings-sidebar');
     if (settingsSidebar) settingsSidebar.setAttribute('aria-label', tr('Settings navigation'));
@@ -4855,10 +4943,10 @@
   function autoResearchDescription(mode = state.autoResearchMode) {
     const descriptions = {
       [AUTO_RESEARCH_MODE_OFF]: uiText('Standard chat without component constraints', '普通对话，不限制组件'),
-      [AUTO_RESEARCH_MODE_DATA]: uiText('Stop at model-ready data and QC', '只处理数据，止于建模就绪产物和质控'),
-      [AUTO_RESEARCH_MODE_MODEL]: uiText('Use prepared data to write and run models', '使用已准备数据编写并运行模型'),
-      [AUTO_RESEARCH_MODE_IDEA]: uiText('Search and refine an idea into IDEA.md', '检索并完善 idea，输出 IDEA.md'),
-      [AUTO_RESEARCH_MODE_END_TO_END]: uiText('Idea, data, model, experiment, and validation', '覆盖 idea、数据、模型、实验和验证'),
+      [AUTO_RESEARCH_MODE_DATA]: uiText('Run through model-ready data and QC; pause only for blockers', '持续完成建模就绪数据与质控，仅硬阻塞时暂停'),
+      [AUTO_RESEARCH_MODE_MODEL]: uiText('Run through model training and checked results', '持续完成模型训练与结果检查'),
+      [AUTO_RESEARCH_MODE_IDEA]: uiText('Run through literature review and a checked IDEA.md', '持续完成文献检索与 IDEA.md 检查'),
+      [AUTO_RESEARCH_MODE_END_TO_END]: uiText('Continue through all requested outputs within scope and budget', '在范围和预算内持续执行，直到交付全部所需产物'),
     };
     return descriptions[mode] || descriptions[AUTO_RESEARCH_MODE_OFF];
   }
@@ -4870,7 +4958,7 @@
     if (modelTriggerMainEl) modelTriggerMainEl.textContent = compactModelName(model);
     if (modelTriggerMetaEl) modelTriggerMetaEl.textContent = autoResearchLabel();
     if (modelMenuBtn) {
-      modelMenuBtn.disabled = !model || modelSelect.disabled;
+      modelMenuBtn.disabled = false;
       modelMenuBtn.classList.toggle('autoresearch-active', isAutoResearchActive());
       modelMenuBtn.title = model
         ? `${provider ? provider + ' / ' : ''}${model} · ${tr('AutoResearch')}: ${autoResearchLabel()}`
@@ -4879,7 +4967,7 @@
   }
 
   function setModelMenuOpen(open) {
-    state.modelMenuOpen = Boolean(open) && !modelSelect.disabled;
+    state.modelMenuOpen = Boolean(open);
     if (state.modelMenuOpen && !['root', 'models', 'autoresearch'].includes(state.modelMenuPanel)) {
       state.modelMenuPanel = 'root';
     }
@@ -4916,33 +5004,6 @@
       return `<div class="model-probe-status">${escapeHtml(host ? `${countText} · ${host}` : countText)}</div>`;
     }
     return '';
-  }
-
-  async function refreshAvailableModels() {
-    const requestId = ++state.modelProbeRequestId;
-    state.modelProbe = { status: 'loading', count: 0, endpoint: '', error: '' };
-    renderModelMenu();
-    try {
-      const resp = await fetch('/api/env/models', { cache: 'no-store' });
-      const data = await resp.json();
-      if (requestId !== state.modelProbeRequestId) return;
-      if (!resp.ok) throw new Error(data.message || uiText('Unable to check models', '无法检测模型'));
-      state.availableModels = Array.isArray(data.available_models) ? data.available_models : state.availableModels;
-      const probe = data.model_probe || {};
-      state.modelProbe = probe.ok
-        ? { status: 'success', count: state.availableModels.length, endpoint: probe.endpoint || '', error: '' }
-        : { status: 'error', count: state.availableModels.length, endpoint: probe.endpoint || '', error: probe.error || uiText('Unable to reach endpoint', '无法连接接入点') };
-      renderModelOptions(data.provider || state.activeModelProvider, data.model || state.activeModel);
-    } catch (err) {
-      if (requestId !== state.modelProbeRequestId) return;
-      state.modelProbe = {
-        status: 'error',
-        count: state.availableModels.length,
-        endpoint: '',
-        error: err && err.message ? err.message : uiText('Unable to reach endpoint', '无法连接接入点'),
-      };
-      renderModelMenu();
-    }
   }
 
   function renderModelMenu() {
@@ -5007,15 +5068,15 @@
       modelMenuEl.innerHTML = `
         <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
         <div class="model-menu-title">${escapeHtml(tr('Models'))}</div>
-        ${modelProbeStatusHtml()}
-        <div class="skill-empty-state">${escapeHtml(tr('No models available.'))}</div>
+        <div class="skill-empty-state">${escapeHtml(uiText('No models added yet.', '尚未添加模型。'))}</div>
+        <button class="model-menu-route" type="button" data-manage-models>${escapeHtml(uiText('Manage models in Settings', '前往设置管理模型'))}<span>↗</span></button>
       `;
       return;
     }
     modelMenuEl.innerHTML = `
       <button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
       <div class="model-menu-title">${escapeHtml(tr('Models'))}</div>
-      ${modelProbeStatusHtml()}
+      <div class="model-library-menu-note">${escapeHtml(uiText('Your added models', '已添加的模型'))}</div>
       <div class="model-menu-list">
         ${items.map(item => {
           const provider = String(item.provider || '').trim();
@@ -5032,6 +5093,7 @@
           `;
         }).join('')}
       </div>
+      <button class="model-menu-route model-manage-link" type="button" data-manage-models>${escapeHtml(uiText('Manage models in Settings', '前往设置管理模型'))}<span>↗</span></button>
     `;
   }
 
@@ -5146,8 +5208,11 @@
     state.execution.poller = setInterval(refreshShellStatus, SHELL_STATUS_POLL_MS);
   }
 
+  let workbenchHistory = null;
   function saveSessions() {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ sessions: state.sessions, activeSessionId: state.activeSessionId }));
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ sessions: state.sessions, activeSessionId: state.activeSessionId })); }
+    catch (_error) { /* The durable workbench store remains authoritative beyond browser quota. */ }
+    workbenchHistory?.schedule();
   }
 
   function normalizeSessionState(session) {
@@ -5159,12 +5224,33 @@
       }
     });
     if (typeof session.draft !== 'string') session.draft = '';
+    session.noveltyMode = window.HypothesisControls.normalize(session.noveltyMode);
     if (!Array.isArray(session.selectedSkills)) session.selectedSkills = [];
     if (typeof session.autoTitlePending !== 'boolean') {
       const userCount = session.messages.filter(message => message.role === 'user').length;
       session.autoTitlePending = isNewChatTitle(session.title) && userCount <= 1;
     }
     return session;
+  }
+
+  let hypothesisControls = null;
+  function getHypothesisMode(session = getActiveSession()) {
+    return window.HypothesisControls.normalize(session?.noveltyMode);
+  }
+  function syncHypothesisControls() {
+    if (!hypothesisControls) {
+      hypothesisControls = window.HypothesisControls.mount({
+        button: document.getElementById('generation-parameters-btn'),
+        dialog: document.getElementById('generation-parameters-dialog'),
+        getMode: getHypothesisMode, language: currentUiLanguage, isBusy: isSessionWaiting,
+        onChange(mode) {
+          const session = getActiveSession();
+          if (!session || isSessionWaiting(session.id)) return;
+          session.noveltyMode = mode;
+          saveSessions();
+        },
+      });
+    } else hypothesisControls.sync();
   }
 
   function normalizeAllSessions() {
@@ -5220,6 +5306,7 @@
       projects: state.projects,
       activeProjectId: state.activeProjectId,
     }));
+    workbenchHistory?.schedule();
   }
 
   function savePrefs() {
@@ -5355,23 +5442,29 @@
     state.llmConnectionStatus = { ...fallbackLlmConnectionStatus(), ...reported };
   }
 
+  function applySettingsRestartStatus(result) {
+    const restartRequired = Boolean(result && result.restartRequired);
+    if (settingsRestartBtn) settingsRestartBtn.hidden = !restartRequired;
+    return restartRequired;
+  }
+
   function llmSettingsPromptText() {
     const attention = state.settingsAttention || {};
     if (attention.missingApiKey && attention.missingEndpoint) {
       return uiText(
-        'Enter an API key and API endpoint below. Save the settings, then restart NeuroDiscovery before sending your message again.',
-        '请在下方填写 API key 和 API 接入点。保存设置并重启 NeuroDiscovery 后，再次发送消息。',
+        'Enter an API key and API endpoint below, then save the settings.',
+        '请在下方填写 API key 和 API 接入点，然后保存设置。',
       );
     }
     if (attention.missingApiKey) {
       return uiText(
-        'Enter an API key and confirm the API endpoint below. Save the settings, then restart NeuroDiscovery before sending your message again.',
-        '请在下方填写 API key，并确认 API 接入点。保存设置并重启 NeuroDiscovery 后，再次发送消息。',
+        'Enter an API key and confirm the API endpoint below, then save the settings.',
+        '请在下方填写 API key 并确认 API 接入点，然后保存设置。',
       );
     }
     return uiText(
-      'Enter an API endpoint below. Save the settings, then restart NeuroDiscovery before sending your message again.',
-      '请在下方填写 API 接入点。保存设置并重启 NeuroDiscovery 后，再次发送消息。',
+      'Enter an API endpoint below, then save the settings.',
+      '请在下方填写 API 接入点，然后保存设置。',
     );
   }
 
@@ -5393,6 +5486,7 @@
       state.desktopIsPackaged = Boolean(result && result.isPackaged);
       state.desktopPlatform = result && result.platform ? String(result.platform) : state.desktopPlatform;
       applyLlmConnectionStatus(result);
+      applySettingsRestartStatus(result);
     } catch (err) {
       setSettingsStatus(`Could not read desktop config: ${err && err.message ? err.message : err}`, true);
     } finally {
@@ -5437,12 +5531,16 @@
   }
 
   function shouldRenderSettingsRow(row) {
+    if (row.whenProvider && state.desktopConfig.llmProvider !== row.whenProvider) return false;
     if (row.hideWhenPackaged && isDesktopPackaged()) return false;
     if (row.whenRuntime && selectedRuntimeMode() !== row.whenRuntime) return false;
     return true;
   }
 
   function settingOptionLabel(row, option) {
+    if (row.key === 'llmApiKeySlot') {
+      return option === 'reserve' ? 'Reserve (last line)' : 'Primary (second-last line)';
+    }
     if (row.key === 'runtimeMode') {
       const labels = {
         bundled: 'Built-in Python',
@@ -5458,7 +5556,12 @@
         qwen: 'Qwen / DashScope',
         openrouter: 'OpenRouter',
         anthropic: 'Anthropic',
-        ollama: 'Ollama',
+        gemini: 'Google / Gemini',
+        grok: 'xAI / Grok',
+        kimi: 'Kimi / Moonshot',
+        glm: 'GLM / Zhipu',
+        ollama: 'Ollama (local)',
+        ollama_cloud: 'Ollama Cloud',
         llamacpp: 'llama.cpp',
       };
       return labels[String(option)] || String(option);
@@ -5561,7 +5664,7 @@
 
   function renderSettingsControl(row) {
     const value = getSettingValue(row);
-    const common = `data-setting-scope="${escapeAttr(row.scope)}" data-setting-key="${escapeAttr(row.key)}"`;
+    const common = `aria-label="${escapeAttr(tr(row.label))}" data-setting-scope="${escapeAttr(row.scope)}" data-setting-key="${escapeAttr(row.key)}"`;
     if (row.type === 'proxy') {
       const proxy = parseProxySetting(value);
       const active = proxy.enabled ? ' active' : '';
@@ -5679,6 +5782,89 @@
     advanced: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="13" cy="18" r="2"></circle></svg>',
   };
 
+  let modelAdvancedOpen = false;
+  const modelLibrary = window.NDModelLibrary.create({
+    getConfig: () => state.desktopConfig,
+    discover: config => window.neuroclawDesktop.discoverModels(config),
+    changed: () => {
+      if (state.activeView === 'settings') {
+        const focused = document.activeElement;
+        const focusAttribute = ['data-discovered-model', 'data-default-model', 'data-remove-model', 'data-model-action']
+          .find(attribute => focused && focused.hasAttribute(attribute));
+        const focusValue = focusAttribute ? focused.getAttribute(focusAttribute) : '';
+        const positions = ['.model-discovery-list', '.model-added-list'].map(selector =>
+          [selector, settingsContentEl.querySelector(selector)?.scrollTop || 0]);
+        renderSettings();
+        if (focusAttribute) {
+          const replacement = settingsContentEl.querySelector(`[${focusAttribute}="${CSS.escape(focusValue)}"]`);
+          if (replacement && !replacement.disabled) replacement.focus({preventScroll: true});
+        }
+        for (const [selector, top] of positions) {
+          const list = settingsContentEl.querySelector(selector);
+          if (list) list.scrollTop = top;
+        }
+      }
+      setSettingsStatus(uiText('Model choices are a draft. Save to apply your changes.', '模型选择尚未保存，请保存更改。'));
+    },
+  });
+
+  function openModelSettings() {
+    setModelMenuOpen(false);
+    state.settingsSection = 'llm'; state.settingsSearch = '';
+    if (settingsSearchEl) settingsSearchEl.value = '';
+    setActiveView('settings'); renderSettings();
+  }
+
+  function renderModelSettings(rows) {
+    const cfg = state.desktopConfig, library = modelLibrary.state;
+    const added = window.NDModelLibrary.ids(cfg);
+    const copy = (en, zh) => escapeHtml(uiText(en, zh));
+    const connectionKeys = ['llmProvider', 'llmBaseUrl', 'llmApiKey'];
+    const field = row => `<div class="model-connection-field" data-setting-row="${escapeAttr(row.key)}">
+      <div class="settings-row-label">${escapeHtml(tr(row.label))}</div>
+      ${renderSettingsControl(row)}
+      <div class="settings-row-desc">${escapeHtml(tr(row.desc || ''))}</div></div>`;
+    const visible = library.models.filter(item => item.model.toLowerCase().includes(library.search.toLowerCase()));
+    const canDiscover = Boolean(window.neuroclawDesktop && window.neuroclawDesktop.discoverModels);
+    const status = library.status === 'loading' ? copy('Fetching available models…', '正在拉取可用模型…')
+      : library.status === 'error' ? `${copy('Could not fetch models:', '拉取失败：')} ${escapeHtml(library.error)}`
+      : library.status === 'ready' ? `${library.models.length} ${copy('models found. Nothing is added automatically.', '个模型。不会自动添加任何模型。')}`
+      : copy('Fetch the model catalog, then choose what to add.', '拉取模型列表后，勾选希望添加的模型。');
+    const rowsHtml = visible.map(item => {
+      const exists = added.includes(item.model), selected = library.selected.includes(item.model);
+      return `<label class="model-discovery-item${exists ? ' already-added' : ''}">
+        <input type="checkbox" data-discovered-model="${escapeAttr(item.model)}" ${selected ? 'checked' : ''} ${exists ? 'disabled' : ''}>
+        <span class="model-id" title="${escapeAttr(item.model)}">${escapeHtml(item.model)}</span>
+        ${exists ? `<span class="model-state-label">${copy('Added', '已添加')}</span>` : ''}</label>`;
+    }).join('');
+    return `<div class="model-settings-workflow">
+      <section class="model-setup-card">
+        <div class="model-card-heading"><span class="model-step">01</span><h3>${copy('Connect an endpoint', '连接 API 接入点')}</h3><span class="model-card-caption">${copy('Connection', '连接')}</span></div>
+        <div class="model-connection-grid">${rows.filter(row => connectionKeys.includes(row.key)).map(field).join('')}</div>
+        ${cfg.llmApiKeyFile ? `<p class="model-credential-note">${copy('Using key file', '使用密钥文件')} · ${copy(cfg.llmApiKeySlot === 'reserve' ? 'Reserve' : 'Primary', cfg.llmApiKeySlot === 'reserve' ? '备用' : '主用')} — ${copy('Paste a key above to use it instead.', '在上方粘贴密钥可替换此方式。')}</p>` : ''}
+        <details class="model-advanced" ${modelAdvancedOpen ? 'open' : ''} data-model-advanced><summary>${copy('Advanced connection & generation controls', '高级连接与生成参数')}</summary>
+          <div class="model-connection-grid">${rows.filter(row => !connectionKeys.includes(row.key)).map(field).join('')}</div></details>
+        <div class="model-connect-footer"><p>${canDiscover ? copy('Only /models is requested. No model generation or automatic selection.', '只请求模型列表，不调用模型生成，也不自动选择。') : copy('Open the desktop app to manage connections.', '请在桌面客户端中管理连接。')}</p>
+          <button class="model-action primary" type="button" data-model-action="fetch" ${!canDiscover || library.status === 'loading' ? 'disabled' : ''}>${library.status === 'loading' ? copy('Fetching…', '正在拉取…') : copy('Fetch models', '拉取可用模型')}</button></div>
+      </section>
+      <section class="model-setup-card">
+        <div class="model-card-heading"><span class="model-step">02</span><h3>${copy('Choose models', '选择模型')}</h3><span class="model-card-caption">${copy('Available', '可用列表')}</span></div>
+        <p class="model-discovery-status${library.status === 'error' ? ' error' : ''}" role="${library.status === 'error' ? 'alert' : 'status'}">${status}</p>
+        ${library.status === 'ready' && library.models.length ? `<input class="settings-control model-search" type="search" id="model-discovery-search" aria-label="${copy('Search available models', '搜索可用模型')}" placeholder="${copy('Search by model name…', '搜索模型名称…')}" value="${escapeAttr(library.search)}">
+          <div class="model-discovery-list" aria-label="${copy('Available models', '可用模型')}">${rowsHtml || `<p class="model-empty">${copy('No models match your search.', '没有匹配的模型。')}</p>`}</div>` : ''}
+        ${library.status === 'ready' && !library.models.length ? `<p class="model-empty">${copy('This endpoint returned an empty model list. Try another endpoint or add an exact ID below.', '接入点返回了空列表。可检查地址，或在下方手动添加确切的模型 ID。')}</p>` : ''}
+        ${library.truncated ? `<p class="model-discovery-status">${copy('More pages exist. This list is limited to ten pages.', '还有更多分页；当前最多展示十页。')}</p>` : ''}
+        <div class="model-selection-footer"><span>${library.selected.length} ${copy('selected', '个已勾选')}</span><button class="model-action" type="button" data-model-action="add" ${!library.selected.length ? 'disabled' : ''}>${copy('Add selected', '添加所选模型')}</button></div>
+      </section>
+      <section class="model-setup-card">
+        <div class="model-card-heading"><span class="model-step">03</span><h3>${copy('Your models', '已添加的模型')}</h3><span class="model-count">${added.length}</span></div>
+        <p class="model-discovery-status">${copy('Only added models appear in the chat picker. Choose a default, then save your changes.', '聊天区只显示已添加的模型。请选择默认模型，然后保存更改。')}</p>
+        <div class="model-added-list">${added.map(id => `<div class="model-added-row"><label><input type="radio" name="default-library-model" data-default-model="${escapeAttr(id)}" ${cfg.llmModel === id ? 'checked' : ''}><span class="model-id" title="${escapeAttr(id)}">${escapeHtml(id)}</span></label>
+          ${cfg.llmModel === id ? `<span class="model-state-label">${copy('Default', '默认')}</span>` : ''}<button class="model-remove" type="button" data-remove-model="${escapeAttr(id)}" aria-label="${copy('Remove', '移除')} ${escapeAttr(id)}">×</button></div>`).join('') || `<p class="model-empty">${copy('No models added. Your chat list will stay empty until you add one.', '尚未添加模型。添加之前，聊天模型列表保持为空。')}</p>`}</div>
+        <details class="model-manual"><summary>${copy('Endpoint does not support model discovery?', '接入点不支持拉取模型列表？')}</summary><div class="model-manual-row"><input id="model-manual-id" class="settings-control" aria-label="${copy('Exact model ID', '确切的模型 ID')}" placeholder="${copy('Enter an exact model ID', '填写确切的模型 ID')}"><button class="model-action" type="button" data-model-action="manual">${copy('Add ID', '添加 ID')}</button></div></details>
+      </section></div>`;
+  }
+
   function renderSettingsNav() {
     if (!settingsNavEl) return;
     let lastGroup = '';
@@ -5694,7 +5880,13 @@
 
   function renderSettings() {
     if (!settingsContentEl) return;
+    if (settingsSaveBtn) settingsSaveBtn.hidden = state.settingsSection === 'usage' && !state.settingsSearch.trim();
     renderSettingsNav();
+    if (state.settingsSection === 'usage' && !state.settingsSearch.trim()) {
+      if (settingsResetZone) settingsResetZone.hidden = true;
+      void window.ClientWorkbench.usagePanel(settingsContentEl, {zh:isChineseUi(), projects:state.projects});
+      return;
+    }
     const active = SETTINGS_SECTIONS.find(section => section.id === state.settingsSection) || SETTINGS_SECTIONS[0];
     const sectionsToRender = state.settingsSearch.trim()
       ? SETTINGS_SECTIONS
@@ -5702,6 +5894,9 @@
     const html = sectionsToRender.map(section => {
       const rows = section.rows.filter(row => shouldRenderSettingsRow(row) && rowMatchesSettingsSearch(row, section));
       if (!rows.length) return '';
+      if (section.id === 'llm' && !state.settingsSearch.trim()) {
+        return `<section class="settings-section" data-settings-panel="llm"><div class="settings-section-title">${escapeHtml(uiText('Models', '模型'))}</div><div class="settings-section-note">${escapeHtml(uiText('Connect an endpoint, discover models, and add only the models you want to use.', '连接接入点、拉取模型列表，只添加你需要使用的模型。'))}</div>${renderModelSettings(rows)}</section>`;
+      }
       const body = rows.map(row => {
         const needsAttention = Boolean(
           state.settingsAttention
@@ -5788,6 +5983,33 @@
 
   async function saveSettings() {
     collectSettingsFromForm();
+    try {
+      const cfg = state.desktopConfig;
+      const chosen = window.NDModelLibrary.ids(cfg);
+      cfg.llmAddedModels = chosen;
+      if (!chosen.includes(cfg.llmModel)) cfg.llmModel = chosen[0] || '';
+      if (chosen.length) {
+      const resp = await fetch('/api/llm/validate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: cfg.llmProvider, model: cfg.llmModel, base_url: cfg.llmBaseUrl,
+          api_mode: cfg.llmApiMode, reasoning_effort: cfg.llmReasoningEffort, thinking_mode: cfg.llmThinkingMode,
+          max_output_tokens: cfg.llmMaxOutputTokens, temperature: cfg.llmTemperature }),
+      });
+      const result = await resp.json();
+      if (!resp.ok) {
+        const validationError = new Error(result.message || 'Invalid model settings');
+        validationError.invalidModelConfig = resp.status === 400;
+        throw validationError;
+      }
+      }
+    } catch (err) {
+      if (err.invalidModelConfig) {
+        setSettingsStatus(`${uiText('Model settings not saved:', '模型设置未保存：')} ${err.message}`, true);
+        return;
+      }
+      // The backend can be offline during initial desktop setup. Runtime validation
+      // still runs before dispatch; do not prevent users from fixing startup config.
+    }
     state.localSettings.textScale = clampTextScale(state.localSettings.textScale || state.textScale);
     applyTextScale(state.localSettings.textScale, true);
     applyLanguage(true);
@@ -5800,9 +6022,7 @@
         }
         applyLlmConnectionStatus(result);
         state.desktopConfigPath = result && result.configPath ? String(result.configPath) : state.desktopConfigPath;
-        if (settingsRestartBtn && result && result.restartRequired) {
-          settingsRestartBtn.hidden = false;
-        }
+        const restartRequired = applySettingsRestartStatus(result);
         const missingApiKey = state.llmConnectionStatus.apiKeyRequired !== false && !state.llmConnectionStatus.apiKeyConfigured;
         const missingEndpoint = !state.llmConnectionStatus.endpointConfigured;
         if (state.settingsAttention && (missingApiKey || missingEndpoint)) {
@@ -5814,12 +6034,15 @@
           setSettingsStatus(llmSettingsPromptText(), true);
         } else {
           state.settingsAttention = null;
-          setSettingsStatus(uiText('Saved. Interface changes apply now; backend runtime and LLM settings apply next launch.', '已保存。界面设置立即生效；后端运行和 LLM 设置下次启动生效。'));
+          setSettingsStatus(restartRequired
+            ? uiText('Saved. Restart to apply pending model or runtime changes.', '已保存。待生效的模型或运行环境更改需要重启。')
+            : uiText('Saved.', '已保存。'));
         }
       } catch (err) {
         setSettingsStatus(`${uiText('Saved local settings, but desktop config failed:', '本地设置已保存，但桌面配置保存失败：')} ${err && err.message ? err.message : err}`, true);
       }
     } else {
+      applySettingsRestartStatus(null);
       setSettingsStatus(uiText('Saved locally. Desktop launcher config is available inside the Electron app.', '已保存到本地。桌面启动配置需要在 Electron 应用中使用。'));
     }
     renderSettings();
@@ -5870,6 +6093,7 @@
   }
 
   function syncStudyTextScaleFrames() {
+    syncStudyTextScale(neurooracleFrameEl);
     syncStudyTextScale(expertStudyFrameEl);
     syncStudyTextScale(studyResultsFrameEl);
   }
@@ -5878,6 +6102,10 @@
     if (!frame || !frame.contentWindow) return;
     frame.contentWindow.postMessage(
       { type: 'neurodiscovery:theme', theme: state.theme },
+      window.location.origin,
+    );
+    if (frame === neurooracleFrameEl) frame.contentWindow.postMessage(
+      { type: 'neurodiscovery:appearance', theme: state.theme, language: currentUiLanguage(), scale: state.textScale },
       window.location.origin,
     );
   }
@@ -5911,6 +6139,10 @@
   }
 
   function sidebarWidthBounds() {
+    // The narrow drawer has its own CSS width; do not overwrite the desktop width.
+    if (window.matchMedia('(max-width: 780px)').matches) {
+      return { minimum: SIDEBAR_WIDTH_MIN, maximum: SIDEBAR_WIDTH_MAX };
+    }
     const available = mainEl?.clientWidth || window.innerWidth;
     const maximum = Math.max(
       SIDEBAR_WIDTH_MIN,
@@ -5994,11 +6226,13 @@
       if (!window.matchMedia('(max-width: 780px)').matches) {
         applySidebarWidth(state.sidebarWidth, false);
       }
+      applySidebarCollapsed(false);
     });
   }
 
   function applySidebarCollapsed(persist = true) {
-    const collapsed = Boolean(state.sidebarCollapsed);
+    const collapsed = window.matchMedia('(max-width: 780px)').matches
+      ? !state.mobileSidebarOpen : Boolean(state.sidebarCollapsed);
     if (mainEl) mainEl.classList.toggle('sidebar-collapsed', collapsed);
     document.body.classList.toggle('sidebar-collapsed', collapsed);
     if (sidebarToggleBtn) {
@@ -6058,9 +6292,10 @@
   }
 
   function workspacePathForSession(session = getActiveSession()) {
-    if (!session || !session.projectId) return '';
+    if (!session) return '';
+    if (!session.projectId) return session.workspacePath || '';
     const project = state.projects.find(item => item.id === session.projectId);
-    return project ? String(project.workspacePath || '').trim() : '';
+    return project ? String(project.workspacePath || '').trim() : session.workspacePath || '';
   }
 
   function isKnownProjectId(projectId) {
@@ -6069,11 +6304,11 @@
 
   function getProjectSessions(projectId) {
     if (!projectId) return [];
-    return state.sessions.filter(s => s.projectId === projectId);
+    return state.sessions.filter(s => s.projectId === projectId && !s.archived).sort((a,b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.updatedAt).localeCompare(String(a.updatedAt)));
   }
 
   function getUnassignedSessions() {
-    return state.sessions.filter(s => !isKnownProjectId(s.projectId));
+    return state.sessions.filter(s => !isKnownProjectId(s.projectId) && !s.archived);
   }
 
   function normalizeProjectPathForCompare(value) {
@@ -6082,8 +6317,12 @@
     return normalized;
   }
 
-  function addProjectWorkspace(folder) {
-    const workspacePath = String(folder && folder.path || '').trim();
+  async function addProjectWorkspace(folder) {
+    if (!String(folder?.path || '').trim()) throw new Error(uiText('Select a workspace folder.','请选择工作区目录。'));
+    const response = await fetch('/api/workbench/validate-workspace', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:folder?.path})});
+    const validated = await response.json();
+    if (!response.ok) throw new Error(validated.message);
+    const workspacePath = String(validated.path || '').trim();
     if (!workspacePath) throw new Error(uiText('No project folder was selected.', '未选择项目文件夹。'));
     const existing = state.projects.find(project => (
       normalizeProjectPathForCompare(project.workspacePath) === normalizeProjectPathForCompare(workspacePath)
@@ -6129,53 +6368,41 @@
     if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.createProjectFolder !== 'function') {
       throw new Error(uiText('Project folders are available in the desktop app.', '项目文件夹功能仅在桌面客户端中可用。'));
     }
-    const raw = prompt(uiText('Project name', '项目名称'), uiText('New Project', '新项目'));
-    if (raw === null) return;
-    const name = raw.trim();
-    if (!name) return;
-    const result = await window.neuroclawDesktop.createProjectFolder(name);
-    if (!result || result.canceled) return;
-    if (result.error) throw new Error(result.error);
-    addProjectWorkspace(result);
+    await workbenchDialog({title:uiText('New workspace', '新建工作区'), fields:[{name:'name', label:uiText('Name', '名称'), value:uiText('New Project','新项目'), maxLength:64}], submit:async ({name}) => {
+      const result = await window.neuroclawDesktop.createProjectFolder(name);
+      if (!result || result.canceled) return null;
+      if (result.error) throw new Error(result.error);
+      await addProjectWorkspace(result);
+    }});
   }
 
   async function useExistingProjectFolder() {
     if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.selectProjectFolder !== 'function') {
-      throw new Error(uiText('Project folders are available in the desktop app.', '项目文件夹功能仅在桌面客户端中可用。'));
+      await workbenchDialog({title:uiText('Add existing workspace','添加现有工作区'),
+        message:uiText('Enter an existing absolute path on the machine running NeuroRuntime.','请输入运行 NeuroRuntime 的计算机上已存在的绝对路径。'),
+        fields:[{name:'path',label:uiText('Folder path','文件夹路径')},{name:'name',label:uiText('Display name (optional)','显示名称（可选）'),required:false,maxLength:64}],
+        submit:values=>addProjectWorkspace(values)});
+      return;
     }
     const result = await window.neuroclawDesktop.selectProjectFolder();
     if (!result || result.canceled) return;
     if (result.error) throw new Error(result.error);
-    addProjectWorkspace(result);
+    await addProjectWorkspace(result);
   }
 
-  function deleteProject(projectId) {
+  async function deleteProject(projectId) {
     const idx = state.projects.findIndex(p => p.id === projectId);
     if (idx < 0) return;
     const project = state.projects[idx];
-    const projectSessions = getProjectSessions(projectId);
-    const chatNote = projectSessions.length
-      ? uiText(
-          `${projectSessions.length} chat${projectSessions.length === 1 ? '' : 's'} will be deleted too.`,
-          `${projectSessions.length} 个对话也将被删除。`,
-        )
-      : uiText('No chats are inside this project.', '此项目中没有对话。');
-    const folderNote = project.workspacePath
-      ? uiText('The folder and its files will stay on disk.', '磁盘上的文件夹和文件会保留。')
-      : '';
-    const ok = confirm(uiText(
-      `Delete project "${project.name}"? ${chatNote} ${folderNote} This cannot be undone.`,
-      `删除项目“${project.name}”？${chatNote}${folderNote} 此操作无法撤销。`,
-    ));
+    const ok = await workbenchConfirm(uiText('Remove workspace', '移除工作区'), uiText(
+      `Remove "${project.name}" from the sidebar? All conversations and disk files are preserved. Conversations keep their original execution directory.`,
+      `从侧栏移除“${project.name}”？所有聊天和磁盘文件都会保留，聊天仍使用原来的执行目录。`));
     if (!ok) return;
-
-    const deletedSessionIds = new Set(projectSessions.map(s => s.id));
-    projectSessions.forEach(session => cancelSessionRequest(session.id, { render: false }));
-    state.projects.splice(idx, 1);
-    state.sessions = state.sessions.filter(session => !deletedSessionIds.has(session.id));
+    try { window.ClientWorkbench.removeWorkspace(state, projectId, isSessionWaiting); }
+    catch (_error) { showError(uiText('Finish or stop active conversations first.', '请先完成或停止正在运行的会话。')); return; }
     delete state.expandedProjectChats[projectId];
     if (state.activeProjectId === projectId) state.activeProjectId = null;
-    if (deletedSessionIds.has(state.activeSessionId) || !state.sessions.some(s => s.id === state.activeSessionId)) {
+    if (!state.sessions.some(s => s.id === state.activeSessionId)) {
       const fallback = getUnassignedSessions()[0] || state.sessions[0] || null;
       state.activeSessionId = fallback ? fallback.id : null;
       state.activeProjectId = fallback && isKnownProjectId(fallback.projectId) ? fallback.projectId : null;
@@ -6230,14 +6457,18 @@
         <div class="chat-item ${extraClass} ${s.id === state.activeSessionId ? 'active' : ''} ${menuOpen ? 'menu-open' : ''} ${running ? 'running' : ''}" data-session-id="${escapeHtml(s.id)}" role="button" tabindex="0">
           <div class="chat-row">
             <div class="chat-title" title="${escapeHtml(displayTitle)}">${escapeHtml(displayTitle)}</div>
+            ${s.pinned ? '<span aria-label="Pinned">⌖</span>' : ''}
             ${running ? `<span class="chat-running-indicator" title="${escapeAttr(uiText('Running', '运行中'))}" aria-label="${escapeAttr(uiText('Running', '运行中'))}"></span>` : ''}
             <span class="chat-menu-wrap">
-              <button class="chat-menu-btn" data-menu-toggle-id="${escapeHtml(s.id)}" type="button" title="${escapeAttr(tr('Session menu'))}" aria-label="${escapeAttr(tr('Session menu'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+              <button class="chat-menu-btn" data-menu-toggle-id="${escapeHtml(s.id)}" type="button" title="${escapeAttr(tr('Session menu'))}" aria-label="${escapeAttr(tr('Session menu'))}" aria-expanded="${menuOpen}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
               <span class="chat-menu ${menuOpen ? 'open' : ''}" ${menuOpen && state.menuPosition ? `style="top:${state.menuPosition.top}px;left:${state.menuPosition.left}px;"` : ''}>
                 <button class="chat-menu-item" data-menu-action="export-json" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export JSON'))}</button>
                 <button class="chat-menu-item" data-menu-action="export-markdown" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export Markdown'))}</button>
                 <button class="chat-menu-item" data-menu-action="rename" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Rename'))}</button>
-                <button class="chat-menu-item" data-menu-action="delete" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Delete'))}</button>
+                <button class="chat-menu-item" data-menu-action="pin" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(s.pinned ? uiText('Unpin','取消置顶') : uiText('Pin','置顶'))}</button>
+                <button class="chat-menu-item" data-menu-action="move" data-menu-id="${escapeHtml(s.id)}" type="button" ${running?'disabled':''}>${escapeHtml(uiText('Move to workspace','移动到工作区'))}</button>
+                <button class="chat-menu-item" data-menu-action="archive" data-menu-id="${escapeHtml(s.id)}" type="button" ${running?'disabled':''}>${escapeHtml(s.archived ? uiText('Unarchive','取消归档') : uiText('Archive','归档'))}</button>
+                <button class="chat-menu-item wb-danger" data-menu-action="delete" data-menu-id="${escapeHtml(s.id)}" type="button" ${running?'disabled':''}>${escapeHtml(tr('Delete'))}</button>
               </span>
             </span>
           </div>
@@ -6248,8 +6479,17 @@
   }
 
   function renderSidebarLists() {
+    const focused = document.activeElement;
+    const menuId = focused?.dataset.menuToggleId || focused?.dataset.menuId;
+    const action = focused?.dataset.menuAction;
     renderProjectList();
     renderChatList();
+    if (menuId) {
+      const selector = state.openSessionMenuId === menuId
+        ? `[data-menu-id="${CSS.escape(menuId)}"]${action ? `[data-menu-action="${CSS.escape(action)}"]` : ''}`
+        : `[data-menu-toggle-id="${CSS.escape(menuId)}"]`;
+      document.querySelector(selector)?.focus({preventScroll:true});
+    }
   }
 
   function projectSessionCountLabel(count) {
@@ -6358,7 +6598,7 @@
               <span class="project-dot"></span>
               <div class="project-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
               <button class="project-add-chat" data-project-new-chat-id="${escapeHtml(p.id)}" type="button" title="${escapeAttr(tr('New chat in this project'))}">+</button>
-              <button class="project-delete-project" data-project-delete-id="${escapeHtml(p.id)}" type="button" title="${escapeAttr(tr('Delete project'))}" aria-label="${escapeAttr(tr('Delete project'))}">
+              <button class="project-delete-project" data-project-delete-id="${escapeHtml(p.id)}" type="button" title="${escapeAttr(uiText('Remove workspace (keep conversations)','移除工作区（保留会话）'))}" aria-label="${escapeAttr(uiText('Remove workspace (keep conversations)','移除工作区（保留会话）'))}" ${state.sessions.some(s=>s.projectId===p.id && isSessionWaiting(s.id))?'disabled':''}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>
               </button>
             </div>
@@ -6404,6 +6644,7 @@
       draft: '',
       selectedSkills: [],
       autoTitlePending: true,
+      noveltyMode: 'strict',
     };
     state.sessions.unshift(s);
     state.activeSessionId = id;
@@ -6501,7 +6742,11 @@
   }
 
   function setActiveSession(sessionId) {
-    if (sessionId === state.activeSessionId) return;
+    if (!state.sessions.some(session => session.id === sessionId)) return;
+    if (sessionId === state.activeSessionId) {
+      if (state.activeView !== 'chat') setActiveView('chat');
+      return;
+    }
     saveActiveDraft();
     state.activeSessionId = sessionId;
     const session = getActiveSession();
@@ -6511,16 +6756,53 @@
     saveProjects();
     saveSessions();
     renderSidebarLists();
-    renderActiveSession();
+    setActiveView('chat');
     loadCheckpoints();
   }
 
-  function renameSession(sessionId) {
+  function workbenchDialog(options) {
+    return window.ClientWorkbench.dialog({confirm:tr('Save'), cancel:tr('Cancel'),
+      returnFocus:()=>document.querySelector(`[data-menu-toggle-id="${CSS.escape(state.activeSessionId || '')}"]`) || inputEl, ...options});
+  }
+
+  async function workbenchConfirm(title, message, danger = false) {
+    return Boolean(await workbenchDialog({title, message, danger, confirm:uiText('Confirm','确认')}));
+  }
+
+  async function workbenchSessionAction(action, sessionId) {
+    const session = state.sessions.find(s => s.id === sessionId);
+    if (!session) return;
+    if (action === 'pin') session.pinned = !session.pinned;
+    if (action === 'archive') {
+      if (isSessionWaiting(sessionId)) return;
+      session.archived = session.archived ? null : nowISO();
+    }
+    if (action === 'move') {
+      if (isSessionWaiting(sessionId)) return;
+      const moved = await workbenchDialog({title:uiText('Move conversation','移动会话'),
+        message:uiText('History and checkpoints are preserved. Future actions use the selected workspace. Independent chats keep their last directory.', '历史和检查点保留，后续操作使用所选工作区。独立会话保留上次使用的目录。'),
+        fields:[{name:'project', label:uiText('Workspace','工作区'), value:session.projectId || '', required:false,
+          options:[{value:'',label:uiText('Independent conversation','独立会话')}, ...state.projects.map(p=>({value:p.id,label:p.name}))]}],
+        submit:async ({project}) => {
+          const target = state.projects.find(p=>p.id===project);
+          if (target) {
+            const response = await fetch('/api/workbench/validate-workspace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:target.workspacePath})});
+            const data = await response.json(); if (!response.ok) throw new Error(data.message);
+          }
+          window.ClientWorkbench.moveSession(state, sessionId, project, isSessionWaiting);
+        }});
+      if (!moved) return;
+    }
+    saveProjects(); saveSessions(); renderSidebarLists(); syncWorkbenchContext();
+    if (state.activeSessionId === sessionId) loadCheckpoints();
+  }
+
+  async function renameSession(sessionId) {
     const s = state.sessions.find(x => x.id === sessionId);
     if (!s) return;
-    const next = prompt(tr('Rename chat title'), s.title || tr('New Chat'));
-    if (next === null) return;
-    const val = next.trim();
+    const answer = await workbenchDialog({title:tr('Rename chat title'), fields:[{name:'title', label:uiText('Title','标题'),value:s.title || tr('New Chat'),maxLength:64}]});
+    if (!answer) return;
+    const val = answer.title;
     if (!val) return;
     s.title = val.slice(0, 64);
     s.autoTitlePending = false;
@@ -6530,15 +6812,15 @@
     renderSidebarLists();
   }
 
-  function deleteSession(sessionId) {
+  async function deleteSession(sessionId) {
     const idx = state.sessions.findIndex(s => s.id === sessionId);
     if (idx < 0) return;
     const session = state.sessions[idx];
-    const ok = confirm(`${tr('Delete chat')} "${session.title}"? ${tr('This cannot be undone.')}`);
+    if (isSessionWaiting(sessionId)) return;
+    const ok = await workbenchConfirm(tr('Delete chat'), uiText(`Delete "${session.title}" and its conversation history? Disk files, checkpoints and usage records are preserved.`, `删除“${session.title}”及其聊天历史？磁盘文件、检查点和用量记录保留。`), true);
     if (!ok) return;
-
-    cancelSessionRequest(sessionId, { render: false });
-    state.sessions.splice(idx, 1);
+    if (isSessionWaiting(sessionId)) return;
+    state.sessions = state.sessions.filter(s => s.id !== sessionId);
     if (state.activeSessionId === sessionId) {
       const fallback = state.sessions.find(s => s.projectId === session.projectId) || getUnassignedSessions()[0] || state.sessions[0] || null;
       state.activeSessionId = fallback ? fallback.id : null;
@@ -6556,14 +6838,15 @@
     }
   }
 
-  function clearAllSessions() {
+  async function clearAllSessions() {
     const unassignedSessions = getUnassignedSessions();
     if (!unassignedSessions.length) return;
-    const ok = confirm(tr('Clear unassigned chats? This cannot be undone.'));
+    if (unassignedSessions.some(s => isSessionWaiting(s.id))) { showError(uiText('Stop active conversations first.','请先停止运行中的会话。')); return; }
+    const ok = await workbenchConfirm(tr('Clear unassigned chats? This cannot be undone.'), uiText('Disk files, archived chats and usage records will be preserved.','磁盘文件、已归档会话和用量记录保留。'), true);
     if (!ok) return;
+    if (unassignedSessions.some(s => isSessionWaiting(s.id))) return;
 
     const unassignedIds = new Set(unassignedSessions.map(s => s.id));
-    unassignedSessions.forEach(session => cancelSessionRequest(session.id, { render: false }));
     state.sessions = state.sessions.filter(s => !unassignedIds.has(s.id));
     state.activeSessionId = null;
     state.activeProjectId = null;
@@ -6645,6 +6928,9 @@
         content: message.content,
         time: message.time || null,
         model: message.role === 'assistant' ? (message.modelUsed || null) : null,
+        request_id: message.requestId || null,
+        execution: message.execution || null,
+        usage: message.usage || null,
       })),
     };
   }
@@ -6656,6 +6942,7 @@
     const stderr = String(hasFullStderr ? (event.stderr || '') : (event.stderr_preview || ''));
     return {
       index: Number(event && event.id) || index + 1,
+      autoresearch_evidence_id: event?.autoresearch_evidence_id || null,
       tool: String(event && event.tool || 'tool'),
       command: String(event && event.command || ''),
       executed: Boolean(event && event.executed),
@@ -6709,6 +6996,11 @@
         requested_at: pendingUserMessage && pendingUserMessage.time || null,
         completed_at: message.time || null,
         model: message.modelUsed || null,
+        novelty_mode: pendingUserMessage?.noveltyMode || null,
+        autoresearch: message.autoresearch || null,
+        request_id: message.requestId || null,
+        execution: message.execution || null,
+        usage: message.usage || null,
         tool_events: toolEvents,
         workspace_changes: workspaceChanges,
       });
@@ -6752,6 +7044,7 @@
       if (turn.requested_at) lines.push(`- Requested: ${turn.requested_at}`);
       if (turn.completed_at) lines.push(`- Completed: ${turn.completed_at}`);
       if (turn.model) lines.push(`- Model: ${turn.model}`);
+      if (turn.novelty_mode) lines.push(`- Novelty mode: ${turn.novelty_mode}`);
       lines.push('');
       if (!turn.tool_events.length) {
         lines.push('_No tool was run during this turn._', '');
@@ -6824,11 +7117,13 @@
 
   function renderChatList() {
     const sessions = getUnassignedSessions();
-    if (!sessions.length) {
-      chatListEl.innerHTML = '';
-      return;
-    }
-    chatListEl.innerHTML = sessions.map(s => renderSessionListItem(s)).join('');
+    const pinned = sessions.filter(s=>s.pinned), recent = sessions.filter(s=>!s.pinned);
+    const archived = state.sessions.filter(s=>s.archived);
+    const heading = title => `<li class="wb-sidebar-heading">${escapeHtml(title)}</li>`;
+    chatListEl.innerHTML = (pinned.length ? heading(uiText('Pinned','置顶')) + pinned.map(s=>renderSessionListItem(s)).join('') : '')
+      + (recent.length ? heading(uiText('Recent','最近')) + recent.slice(0,state.workbenchChatLimit || 60).map(s=>renderSessionListItem(s)).join('') : '')
+      + (recent.length > (state.workbenchChatLimit || 60) ? `<li><button class="project-show-more" data-wb-more type="button">${escapeHtml(tr('Show more'))}</button></li>` : '')
+      + (archived.length ? `<li><details class="wb-archive"><summary class="wb-sidebar-heading">${escapeHtml(uiText('Archived','已归档'))} · ${archived.length}</summary><ul>${archived.map(s=>renderSessionListItem(s)).join('')}</ul></details></li>` : '');
   }
 
   function formatSkillName(name) {
@@ -7214,12 +7509,12 @@
     return userCount === 1 && assistantCount === 1;
   }
 
-  async function requestAutoTitle(userText, assistantText) {
+  async function requestAutoTitle(userText, assistantText, session) {
     try {
       const resp = await fetch('/api/chat/title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: userText, assistant: assistantText, language: currentUiLanguage() }),
+        body: JSON.stringify({ user: userText, assistant: assistantText, language: currentUiLanguage(), chat_id:session?.id || '', project_id:session?.projectId || '' }),
       });
       const data = await resp.json();
       if (!resp.ok || data.type === 'error') return '';
@@ -7235,7 +7530,7 @@
     const firstAssistant = session.messages.find(message => message.role === 'assistant');
     const userText = String(firstUser && firstUser.content || '').trim();
     const assistantText = String(firstAssistant && firstAssistant.content || '').trim();
-    const modelTitle = await requestAutoTitle(userText, assistantText);
+    const modelTitle = await requestAutoTitle(userText, assistantText, session);
     if (
       session.autoTitlePending !== true
       || !state.sessions.some(candidate => candidate.id === session.id)
@@ -7252,6 +7547,7 @@
 
   function clearMessages() {
     messagesEl.querySelectorAll('.msg').forEach(el => el.remove());
+    document.getElementById('wb-live-execution')?.remove();
   }
 
   function ensureMessageIds(session) {
@@ -7432,8 +7728,18 @@
     const main = document.createElement('div');
     main.className = 'msg-main';
     main.appendChild(bubble);
-    const timeline = renderToolTimeline(message.toolEvents, message.workspaceChanges);
+    if (message.execution) {
+      const execution = document.createElement('div');
+      main.appendChild(execution);
+      window.ClientWorkbench.executionView(execution, message.execution, {zh:isChineseUi()});
+    }
+    const timeline = renderToolTimeline(message.execution?.tools?.length ? [] : message.toolEvents, message.workspaceChanges);
     if (timeline) main.insertAdjacentHTML('beforeend', timeline);
+    if (message.usage) {
+      const details = document.createElement('details'); details.className = 'wb-usage-inline';
+      details.innerHTML = `<summary>${escapeHtml(uiText('This turn','本轮'))} · ${escapeHtml(window.ClientWorkbench.countLabel(message.usage,'input_tokens',isChineseUi()))} ↑ / ${escapeHtml(window.ClientWorkbench.countLabel(message.usage,'output_tokens',isChineseUi()))} ↓</summary>${window.ClientWorkbench.usageDetails(message.usage,isChineseUi())}`;
+      main.appendChild(details);
+    }
     main.insertAdjacentHTML('beforeend', actions);
     wrapper.appendChild(main);
     messagesEl.appendChild(wrapper);
@@ -7447,12 +7753,13 @@
     clearMessages();
     messagesEl.classList.toggle('static-message-render', preserveScroll);
     const session = getActiveSession();
+    syncWorkbenchContext();
     syncSelectedSkillsFromSession(session);
     restoreActiveDraft();
     renderPendingFiles();
     if (!session || !session.messages.length) {
       chatPanelEl.classList.add('is-empty');
-      welcomeEl.style.display = 'block';
+      welcomeEl.style.display = '';
       syncExecutionIndicatorVisibility();
       syncTypingIndicatorVisibility();
       syncActiveRequestUi();
@@ -7472,6 +7779,12 @@
     syncActiveRequestUi();
     if (preserveScroll) messagesEl.scrollTop = previousScrollTop;
     else scrollToBottom();
+  }
+
+  function renderSessionProgress(sessionId) {
+    if (state.activeSessionId !== sessionId) return;
+    const readingHistory = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight >= 110;
+    renderActiveSession({ preserveScroll: readingHistory });
   }
 
   function beginEditingUserMessage(messageId) {
@@ -7512,7 +7825,10 @@
 
   function syncTypingIndicatorVisibility() {
     const shouldShow = isSessionWaiting(state.activeSessionId);
-    if (shouldShow) {
+    if (shouldShow && sessionRequestFor()?.execution) {
+      removeTypingIndicator();
+      renderLiveExecution();
+    } else if (shouldShow) {
       addTypingIndicator();
     } else {
       removeTypingIndicator();
@@ -7529,7 +7845,10 @@
 
   function beginSessionRequest(sessionId, controller) {
     if (!sessionId || !controller || isSessionWaiting(sessionId)) return false;
-    state.sessionRequests[sessionId] = { controller };
+    const requestId = globalThis.crypto?.randomUUID?.() || `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    state.sessionRequests[sessionId] = { controller, requestId, researchMode: state.autoResearchMode };
+    const session = state.sessions.find(s=>s.id===sessionId);
+    if (session) { session.pendingRequest = {requestId, researchMode:state.autoResearchMode}; session.archived = null; saveSessions(); }
     if (sessionId === state.activeSessionId) state.editingMessageId = null;
     return true;
   }
@@ -7538,19 +7857,32 @@
     const request = sessionRequestFor(sessionId);
     if (!request || (controller && request.controller !== controller)) return;
     delete state.sessionRequests[sessionId];
+    const session = state.sessions.find(s=>s.id===sessionId);
+    if (session?.pendingRequest?.requestId === request.requestId) delete session.pendingRequest;
+    saveSessions();
     renderSidebarLists();
-    if (sessionId === state.activeSessionId) renderActiveSession();
+    if (sessionId === state.activeSessionId) renderSessionProgress(sessionId);
     else syncActiveRequestUi();
   }
 
   function cancelSessionRequest(sessionId, options = {}) {
     const request = sessionRequestFor(sessionId);
     if (!request) return false;
-    delete state.sessionRequests[sessionId];
-    try { request.controller.abort(); } catch (_error) {}
+    if (request.stopping) return false;
+    request.stopping = true;
+    void fetch('/api/chat/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: request.requestId }),
+      keepalive: true,
+    }).then(response => { if (!response.ok) throw new Error('Stop request failed'); }).catch(() => {
+      request.stopping = false;
+      showError(uiText('Unable to send Stop. The task may still be running; try again.', '停止请求未送达，任务可能仍在运行，请重试。'));
+      syncActiveRequestUi();
+    });
     if (options.render !== false) {
       renderSidebarLists();
-      if (sessionId === state.activeSessionId) renderActiveSession();
+      if (sessionId === state.activeSessionId) renderSessionProgress(sessionId);
       else syncActiveRequestUi();
     }
     return true;
@@ -7558,13 +7890,21 @@
 
   function syncActiveRequestUi() {
     const busy = isSessionWaiting();
+    syncHypothesisControls();
     const runningCount = Object.keys(state.sessionRequests).length;
     inputEl.disabled = busy;
     setMessageActionsDisabled(busy);
     setSendButtonMode(busy ? 'stop' : 'send');
+    sendBtn.disabled = Boolean(sessionRequestFor()?.stopping);
+    if (sessionRequestFor()?.stopping) {
+      sendBtn.title = uiText('Stopping…','停止中…');
+      sendBtn.setAttribute('aria-label', sendBtn.title);
+    }
     if (busy) {
       closeSlashMenu();
-      setStatus('connected', tr('Thinking'));
+      setStatus('connected', sessionRequestFor()?.researchMode !== AUTO_RESEARCH_MODE_OFF
+        ? uiText('AutoResearch · running through delivery', 'AutoResearch · 持续执行至交付')
+        : tr('Thinking'));
     } else if (runningCount > 0) {
       setStatus('connected', uiText(
         `Ready · ${runningCount} running`,
@@ -7804,6 +8144,95 @@
     return false;
   }
 
+  function renderLiveExecution() {
+    const request = sessionRequestFor();
+    if (!request?.execution) return;
+    let host = document.getElementById('wb-live-execution');
+    if (!host) { host = document.createElement('div'); host.id='wb-live-execution'; messagesEl.appendChild(host); }
+    window.ClientWorkbench.executionView(host, request.execution, {zh:isChineseUi(),live:true});
+  }
+
+  function syncWorkbenchContext() {
+    let row = document.getElementById('wb-context-row');
+    if (!row) {
+      row=document.createElement('div'); row.id='wb-context-row'; row.className='wb-context-row';
+      inputEl.closest('.input-row').insertAdjacentElement('afterend',row);
+      row.innerHTML='<button class="wb-chip" id="wb-workspace-chip" type="button"></button><button class="wb-chip" id="wb-usage-chip" type="button"></button>';
+      row.querySelector('#wb-workspace-chip').onclick=()=>void workbenchSessionAction('move',state.activeSessionId);
+      row.querySelector('#wb-usage-chip').onclick=async()=>{
+        const sessionId=state.activeSessionId;
+        try {
+          const response=await fetch('/api/workbench/usage?chat_id='+encodeURIComponent(sessionId)); const data=await response.json();
+          if (!response.ok) throw new Error(data.message || 'Unable to read usage');
+          if (sessionId !== state.activeSessionId) return;
+          await workbenchDialog({title:uiText('Conversation usage','会话累计用量'), message:uiText(
+            `Input: ${window.ClientWorkbench.countLabel(data,'input_tokens')} · Output: ${window.ClientWorkbench.countLabel(data,'output_tokens')} · API calls: ${data.totals.requests}. Includes retries and delegated calls; not context occupancy. Full details are in Settings → Usage.`,
+            `输入：${window.ClientWorkbench.countLabel(data,'input_tokens',true)} · 输出：${window.ClientWorkbench.countLabel(data,'output_tokens',true)} · API 调用：${data.totals.requests} 次。包含重试和子任务，不代表上下文占用。完整明细见 设置 → 使用量。`), confirm:uiText('Open usage','查看使用量'),submit:()=>{state.settingsSection='usage';setActiveView('settings',{focus:false});}});
+        } catch(error) { showError(error.message); }
+      };
+    }
+    const session=getActiveSession(), project=state.projects.find(p=>p.id===session?.projectId);
+    const workspace=row.querySelector('#wb-workspace-chip');
+    const path=workspacePathForSession(session) || state.defaultWorkbenchPath || '';
+    workspace.textContent='⌂ '+(project?.name || uiText('Independent conversation','独立会话'));
+    workspace.title=path || uiText('Default runtime workspace','运行时默认工作区');
+    workspace.setAttribute('aria-label',workspace.textContent+' · '+workspace.title);
+    workspace.disabled=isSessionWaiting(session?.id);
+    const latest=sessionRequestFor()?.execution ? window.ClientWorkbench.executionUsage(sessionRequestFor().execution) : session?.messages.findLast(m=>m.role==='assistant' && m.usage)?.usage;
+    const usage=row.querySelector('#wb-usage-chip');
+    usage.textContent=latest ? `${window.ClientWorkbench.countLabel(latest,'input_tokens',isChineseUi())} ↑ / ${window.ClientWorkbench.countLabel(latest,'output_tokens',isChineseUi())} ↓` : uiText('Usage','使用量');
+    usage.title=uiText('Latest turn · click for conversation totals','最近一轮 · 点击查看会话累计');
+  }
+
+  async function followWorkbenchRequest(session, controller) {
+    const request=sessionRequestFor(session.id);
+    if (!request || request.controller !== controller) throw new Error('Request identity changed');
+    return window.ClientWorkbench.followRun(request.requestId,session.id,{
+      onUpdate(execution) {
+        if (sessionRequestFor(session.id) !== request) return;
+        request.execution=execution;
+        if (state.activeSessionId===session.id) {
+          removeTypingIndicator(); renderLiveExecution(); syncWorkbenchContext();
+          const pendingTool=execution.tools?.findLast(tool=>tool.status==='running');
+          setStatus('connected', request.stopping ? uiText('Stopping…','停止中…') : pendingTool ? `${uiText('Running tool','工具执行中')}: ${pendingTool.tool}` : uiText('Receiving model output','接收模型输出中'));
+        }
+      },
+      onConnection(connected) {
+        if (state.activeSessionId===session.id && !connected) setStatus('disconnected',uiText('Reconnecting · task preserved','重连中 · 任务保留'));
+      },
+    });
+  }
+
+  async function performWorkbenchChat(payload, session, controller) {
+    await workbenchHistory?.flush();
+    try {
+      const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
+        body:JSON.stringify({...payload,stream_events:true,project_id:session.projectId || ''})});
+      const data=await response.json();
+      if (!response.ok || data.type !== 'accepted') return data;
+    } catch (_error) {
+      // POST delivery may be unknown. Query the request ID; never resend it automatically.
+    }
+    return followWorkbenchRequest(session,controller);
+  }
+
+  async function resumeWorkbenchRequest(session) {
+    const pending=session.pendingRequest;
+    if (!pending?.requestId || isSessionWaiting(session.id)) return;
+    const controller=new AbortController();
+    state.sessionRequests[session.id]={controller, requestId:pending.requestId, researchMode:pending.researchMode};
+    renderSidebarLists(); syncActiveRequestUi();
+    try {
+      const data=await followWorkbenchRequest(session,controller);
+      if (!session.messages.some(m=>m.requestId===pending.requestId)) {
+        session.messages.push({id:newMessageId(),role:'assistant',content:data.content || data.message || '',modelUsed:data.model_used || '',
+          requestId:pending.requestId, execution:data.execution,usage:data.usage,autoresearch:data.autoresearch || null,
+          toolEvents:data.tool_events || [],workspaceChanges:data.workspace_changes || [],workspaceChangeScope:data.workspace_change_scope,time:nowISO()});
+      }
+      saveSessions();
+    } finally { finishSessionRequest(session.id,controller); }
+  }
+
   async function sendMessage() {
     const text = inputEl.value.trim();
     const session = getActiveSession();
@@ -7812,6 +8241,7 @@
     const hasSkills = selectedSkills.length > 0;
     if ((!text && !hasFiles && !hasSkills) || !session || isSessionWaiting(session.id)) return;
     if (!(await ensureChatLlmConfigured())) return;
+    const noveltyMode = getHypothesisMode(session);
 
     const skillText = buildSkillInstruction(selectedSkills);
     const attachmentText = buildAttachmentText(state.pendingFiles);
@@ -7821,7 +8251,7 @@
 
     chatPanelEl.classList.remove('is-empty');
     welcomeEl.style.display = 'none';
-    session.messages.push({ id: newMessageId(), role: 'user', content: displayText, promptContent: finalText, time: userMsgTime });
+    session.messages.push({ id: newMessageId(), role: 'user', content: displayText, promptContent: finalText, noveltyMode, time: userMsgTime });
     beginAutoTitleForFirstUserTurn(session, displayText);
     session.draft = '';
     session.selectedSkills = [];
@@ -7847,24 +8277,22 @@
       .map(m => ({ role: m.role, content: m.promptContent || m.content }));
 
     try {
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
+      const data = await performWorkbenchChat({
           message: finalText,
+          novelty_mode: noveltyMode,
+          request_id: sessionRequestFor(session.id).requestId,
           history: priorHistory,
           selected_skills: selectedSkills,
-          autoresearch_mode: state.autoResearchMode,
+          autoresearch_mode: sessionRequestFor(session.id).researchMode,
           language: currentUiLanguage(),
           client_surface: state.desktopPlatform ? 'desktop' : 'web',
           workspace_path: workspacePathForSession(session),
           chat_id: session.id,
-        }),
-      });
-      const data = await resp.json();
+        }, session, controller);
 
-      if (!resp.ok || data.type === 'error') {
+      if (data.type === 'error') {
+        if (data.execution || data.usage) session.messages.push({id:newMessageId(), role:'assistant',content:data.message || '', requestId:sessionRequestFor(session.id).requestId, execution:data.execution, usage:data.usage,time:nowISO()});
+        saveSessions();
         showError(data.message || tr('Chat request failed'));
       } else {
         const reply = String(data.content || '');
@@ -7880,6 +8308,10 @@
           role: 'assistant',
           content: reply,
           modelUsed,
+          requestId: sessionRequestFor(session.id).requestId,
+          execution: data.execution || null,
+          usage: data.usage || null,
+          autoresearch: data.autoresearch || null,
           toolEvents: Array.isArray(data.tool_events) ? data.tool_events : [],
           workspaceChanges: Array.isArray(data.workspace_changes) ? data.workspace_changes : [],
           workspaceChangeScope: data.workspace_change_scope === 'turn' ? 'turn' : '',
@@ -7890,7 +8322,7 @@
         state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
         saveSessions();
         renderSidebarLists();
-        renderActiveSession();
+        renderSessionProgress(session.id);
         renderSkills(state.skills);
         renderPendingFiles();
         loadCheckpoints();
@@ -7902,10 +8334,6 @@
       }
     } finally {
       finishSessionRequest(session.id, controller);
-      if (state.activeSessionId === session.id) {
-        inputEl.focus();
-        scrollToBottom();
-      }
     }
   }
 
@@ -7935,13 +8363,14 @@
   async function resendAsNewTurn(displayText, promptText, options = {}) {
     const session = options.session || getActiveSession();
     if (!session || isSessionWaiting(session.id)) return false;
+    const noveltyMode = getHypothesisMode(session);
     const rollbackSnapshot = options.rollbackSnapshot || null;
     const controller = new AbortController();
     if (!beginSessionRequest(session.id, controller)) return false;
 
     const userMsgTime = nowISO();
     welcomeEl.style.display = 'none';
-    session.messages.push({ id: newMessageId(), role: 'user', content: displayText, promptContent: promptText, time: userMsgTime });
+    session.messages.push({ id: newMessageId(), role: 'user', content: displayText, promptContent: promptText, noveltyMode, time: userMsgTime });
     session.updatedAt = nowISO();
     state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     saveSessions();
@@ -7953,24 +8382,24 @@
       .map(m => ({ role: m.role, content: m.promptContent || m.content }));
 
     try {
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
+      const data = await performWorkbenchChat({
           message: promptText,
+          novelty_mode: noveltyMode,
+          request_id: sessionRequestFor(session.id).requestId,
           history: priorHistory,
           selected_skills: [],
-          autoresearch_mode: state.autoResearchMode,
+          autoresearch_mode: sessionRequestFor(session.id).researchMode,
           language: currentUiLanguage(),
           client_surface: state.desktopPlatform ? 'desktop' : 'web',
           workspace_path: workspacePathForSession(session),
           chat_id: session.id,
-        }),
-      });
-      const data = await resp.json();
-      if (!resp.ok || data.type === 'error') {
-        restoreResendSnapshot(session, rollbackSnapshot);
+        }, session, controller);
+      if (data.type === 'error') {
+        if (data.execution || data.usage) {
+          session.messages.push({id:newMessageId(),role:'assistant',content:data.message || '',
+            requestId:sessionRequestFor(session.id).requestId,execution:data.execution,usage:data.usage,time:nowISO()});
+          saveSessions();
+        } else restoreResendSnapshot(session, rollbackSnapshot);
         showError(data.message || tr('Chat request failed'));
         return false;
       } else {
@@ -7981,6 +8410,10 @@
           role: 'assistant',
           content: reply,
           modelUsed,
+          requestId: sessionRequestFor(session.id).requestId,
+          execution: data.execution || null,
+          usage: data.usage || null,
+          autoresearch: data.autoresearch || null,
           toolEvents: Array.isArray(data.tool_events) ? data.tool_events : [],
           workspaceChanges: Array.isArray(data.workspace_changes) ? data.workspace_changes : [],
           workspaceChangeScope: data.workspace_change_scope === 'turn' ? 'turn' : '',
@@ -7990,7 +8423,7 @@
         state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
         saveSessions();
         renderSidebarLists();
-        renderActiveSession();
+        renderSessionProgress(session.id);
         return true;
       }
     } catch (err) {
@@ -8001,17 +8434,13 @@
       return false;
     } finally {
       finishSessionRequest(session.id, controller);
-      if (state.activeSessionId === session.id) {
-        inputEl.focus();
-        scrollToBottom();
-      }
     }
   }
 
   function stopCurrentRequest() {
     const request = sessionRequestFor(state.activeSessionId);
     if (!request) return;
-    try { request.controller.abort(); } catch (_error) {}
+    cancelSessionRequest(state.activeSessionId);
     inputEl.focus();
   }
 
@@ -8058,7 +8487,15 @@
     savePrefs();
   }
 
+  function updateHeaderContext() {
+    const label = document.getElementById('header-view-name');
+    if (!label) return;
+    const names = {neurooracle:'NeuroOracle', skills:tr('Skills'), search:tr('Search'), settings:tr('Settings'), 'expert-study':tr('Expert Study'), 'study-results':tr('Study Results')};
+    label.textContent = names[state.activeView] || 'NeuroRuntime';
+  }
+
   function updatePrimaryNav() {
+    updateHeaderContext();
     document.querySelectorAll('[data-view-button]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.viewButton === state.activeView);
     });
@@ -8087,6 +8524,11 @@
       resetStudyWorkspace(previousView);
     }
     state.activeView = nextView;
+    if (opts.focus !== false && window.matchMedia('(max-width: 780px)').matches) {
+      state.mobileSidebarOpen = false;
+      applySidebarCollapsed(false);
+      if (sidebarEl.contains(document.activeElement)) chatPanelEl.focus({ preventScroll: true });
+    }
     applyStudyWorkspaceMode(enteringStudyView);
     const isChat = state.activeView === 'chat';
     if (isChat && !getActiveSession()) {
@@ -8313,7 +8755,7 @@
       return true;
     }
     if (opts.askDownload) {
-      const ok = confirm(tr('Download the latest NeuroOracle graph from HuggingFace now?'));
+      const ok = await workbenchConfirm(uiText('Download graph','下载图谱'), tr('Download the latest NeuroOracle graph from HuggingFace now?'));
       if (ok) startNeuroOracleDownload();
     }
     return false;
@@ -8324,13 +8766,14 @@
     neurooraclePageEl.classList.add('ready');
     renderNeuroOracleUpdateStatus(state.neurooracleUpdateStatus);
     const language = currentUiLanguage();
-    const frameKey = `explorer:${language}:${state.theme}`;
+    const frameKey = 'explorer:workspace-v1';
     if (!state.neurooracleFrameLoaded || state.neurooracleFrameKey !== frameKey) {
       neurooracleFrameEl.addEventListener('load', () => syncEmbeddedTheme(neurooracleFrameEl), { once: true });
-      neurooracleFrameEl.src = `/explore?lang=${language}&theme=${state.theme}&v=${Date.now()}`;
+      neurooracleFrameEl.src = `/explore?embedded=1&lang=${language}&theme=${state.theme}&scale=${state.textScale}&v=${Date.now()}`;
       state.neurooracleFrameLoaded = true;
       state.neurooracleFrameKey = frameKey;
     }
+    syncEmbeddedTheme(neurooracleFrameEl);
   }
 
   function openStudyWorkspace(view) {
@@ -8393,8 +8836,24 @@
     }
 
     sidebarToggleBtn.addEventListener('click', () => {
-      state.sidebarCollapsed = !state.sidebarCollapsed;
+      if (window.matchMedia('(max-width: 780px)').matches) {
+        state.mobileSidebarOpen = !state.mobileSidebarOpen;
+      } else {
+        state.sidebarCollapsed = !state.sidebarCollapsed;
+      }
       applySidebarCollapsed();
+    });
+    const closeMobileSidebar = () => {
+      state.mobileSidebarOpen = false;
+      applySidebarCollapsed(false);
+      sidebarToggleBtn.focus();
+    };
+    document.getElementById('sidebar-backdrop').addEventListener('click', closeMobileSidebar);
+    sidebarEl.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && window.matchMedia('(max-width: 780px)').matches) {
+        event.preventDefault();
+        closeMobileSidebar();
+      }
     });
 
     function handleDesktopMenuAction(action) {
@@ -8439,6 +8898,11 @@
 
     if (window.neuroclawDesktop && typeof window.neuroclawDesktop.onMenuAction === 'function') {
       window.neuroclawDesktop.onMenuAction(handleDesktopMenuAction);
+    }
+    const desktopMenu = document.getElementById('desktop-menu-btn');
+    if (desktopMenu && window.neuroclawDesktop?.showApplicationMenu && window.neuroclawDesktop.platform !== 'darwin') {
+      desktopMenu.hidden = false;
+      desktopMenu.addEventListener('click', () => window.neuroclawDesktop.showApplicationMenu().catch(() => {}));
     }
     window.addEventListener('neuroclaw:menu-action', (event) => handleDesktopMenuAction(event.detail));
     window.addEventListener('message', (event) => {
@@ -8488,7 +8952,7 @@
           openNeuroOracleViewer();
           return;
         }
-        const ok = confirm(tr('Download the latest NeuroOracle graph from HuggingFace now?'));
+        const ok = await workbenchConfirm(uiText('Download graph','下载图谱'), tr('Download the latest NeuroOracle graph from HuggingFace now?'));
         if (ok) startNeuroOracleDownload();
       });
     }
@@ -8505,6 +8969,7 @@
       settingsNavEl.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-settings-section]');
         if (!btn) return;
+        collectSettingsFromForm();
         state.settingsSection = btn.dataset.settingsSection;
         state.settingsSearch = '';
         if (settingsSearchEl) settingsSearchEl.value = '';
@@ -8513,14 +8978,85 @@
       });
     }
     if (settingsContentEl) {
+      settingsContentEl.addEventListener('toggle', e => {
+        if (e.target.matches('[data-model-advanced]')) modelAdvancedOpen = e.target.open;
+      }, true);
+      settingsContentEl.addEventListener('click', async e => {
+        const action = e.target.closest('[data-model-action]');
+        const remove = e.target.closest('[data-remove-model]');
+        if (!action && !remove) return;
+        collectSettingsFromForm();
+        if (remove) { modelLibrary.remove(remove.dataset.removeModel); return; }
+        if (action.dataset.modelAction === 'fetch') await modelLibrary.fetch();
+        if (action.dataset.modelAction === 'add') modelLibrary.addSelected();
+        if (action.dataset.modelAction === 'manual') {
+          const input = document.getElementById('model-manual-id');
+          if (!modelLibrary.addManual(input && input.value)) setSettingsStatus(uiText('Enter a valid model ID.', '请填写有效的模型 ID。'), true);
+        }
+      });
       settingsContentEl.addEventListener('input', (e) => {
+        if (e.target.id === 'model-discovery-search') {
+          const cursor = e.target.selectionStart;
+          modelLibrary.state.search = e.target.value;
+          collectSettingsFromForm(); renderSettings();
+          const input = document.getElementById('model-discovery-search');
+          if (input) { input.focus(); try { input.setSelectionRange(cursor, cursor); } catch (_) {} }
+          return;
+        }
+        const field = e.target.dataset.settingKey;
+        if (['llmBaseUrl', 'llmApiKey', 'llmApiKeyEnv', 'llmApiKeyFile'].includes(field)) {
+          collectSettingsFromForm(); modelLibrary.invalidate();
+          if (field === 'llmBaseUrl') {
+            state.desktopConfig.llmAddedModels = []; state.desktopConfig.llmModel = '';
+            // A changed destination never inherits the previous endpoint's credentials.
+            for (const key of ['llmApiKey', 'llmApiKeyFile', 'llmApiKeyEnv']) {
+              state.desktopConfig[key] = '';
+              const input = settingsContentEl.querySelector(`[data-setting-key="${key}"]`);
+              if (input) input.value = '';
+            }
+          }
+          if (field === 'llmApiKey' && e.target.value) {
+            state.desktopConfig.llmApiKeyFile = '';
+            const fileInput = settingsContentEl.querySelector('[data-setting-key="llmApiKeyFile"]');
+            if (fileInput) fileInput.value = '';
+          }
+        }
         const proxyControl = e.target.closest('[data-proxy-control]');
         if (proxyControl) updateProxyControl(proxyControl);
       });
 
-      settingsContentEl.addEventListener('change', (e) => {
+      settingsContentEl.addEventListener('change', async (e) => {
+        if (e.target.matches('[data-discovered-model]')) { collectSettingsFromForm(); modelLibrary.toggle(e.target.dataset.discoveredModel, e.target.checked); return; }
+        if (e.target.matches('[data-default-model]')) { collectSettingsFromForm(); modelLibrary.makeDefault(e.target.dataset.defaultModel); return; }
         const control = e.target.closest('[data-setting-key]');
         if (!control) return;
+        if (['llmBaseUrl', 'llmApiKey', 'llmApiKeyEnv', 'llmApiKeyFile', 'llmApiKeySlot', 'llmApiMode'].includes(control.dataset.settingKey)) {
+          collectSettingsFromForm(); modelLibrary.invalidate(); renderSettings(); return;
+        }
+        if (control.dataset.settingKey === 'llmProvider') {
+          collectSettingsFromForm();
+          const selectedProvider = control.value;
+          modelLibrary.invalidate();
+          state.desktopConfig.llmAddedModels = [];
+          // Changing provider never carries a previous provider's credentials or controls.
+          state.desktopConfig.llmApiKey = '';
+          state.desktopConfig.llmApiKeyFile = '';
+          state.desktopConfig.llmApiKeySlot = 'primary';
+          state.desktopConfig.llmApiKeyEnv = '';
+          state.desktopConfig.llmBaseUrl = '';
+          state.desktopConfig.llmModel = '';
+          Object.assign(state.desktopConfig, { llmApiMode: 'auto', llmReasoningEffort: 'default', llmThinkingMode: 'default', llmMaxOutputTokens: '', llmTemperature: '' });
+          try {
+            const resp = await fetch('/api/llm/providers');
+            const catalog = await resp.json();
+            if (state.desktopConfig.llmProvider !== selectedProvider) return;
+            const preset = catalog.providers.find(item => item.provider === selectedProvider);
+            if (preset) Object.assign(state.desktopConfig, { llmBaseUrl: preset.base_url, llmApiKeyEnv: preset.api_key_env });
+          } catch (_err) { /* custom IDs/endpoints can still be entered manually */ }
+          renderSettings();
+          setSettingsStatus(uiText('Provider changed. Check the model, regional endpoint and key before saving.', '已切换提供商。保存前请核对模型、区域地址和密钥。'));
+          return;
+        }
         if (control.dataset.settingKey === 'language') {
           state.desktopConfig.language = control.value;
           applyLanguage(true);
@@ -8795,9 +9331,9 @@
           state.menuPosition = null;
         } else {
           const rect = menuToggleBtn.getBoundingClientRect();
-          const menuWidth = 172;
+          const menuWidth = 210;
           const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
-          const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 172));
+          const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 320));
           state.openSessionMenuId = sessionId;
           state.menuPosition = { top, left };
         }
@@ -8818,6 +9354,7 @@
         if (action === 'export-markdown') void exportSession(sessionId, 'md');
         if (action === 'rename') renameSession(sessionId);
         if (action === 'delete') deleteSession(sessionId);
+        if (['pin','move','archive'].includes(action)) void workbenchSessionAction(action, sessionId);
         return;
       }
 
@@ -8833,6 +9370,7 @@
     });
 
     projectListEl.addEventListener('keydown', (e) => {
+      if (e.target.closest('button')) return;
       const showToggleBtn = e.target.closest('[data-project-show-more-id], [data-project-show-less-id]');
       if (showToggleBtn && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
@@ -9045,9 +9583,9 @@
           state.menuPosition = null;
         } else {
           const rect = menuToggleBtn.getBoundingClientRect();
-          const menuWidth = 172;
+          const menuWidth = 210;
           const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
-          const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 172));
+          const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 320));
           state.openSessionMenuId = sessionId;
           state.menuPosition = { top, left };
         }
@@ -9068,6 +9606,7 @@
         if (action === 'export-markdown') void exportSession(sessionId, 'md');
         if (action === 'rename') renameSession(sessionId);
         if (action === 'delete') deleteSession(sessionId);
+        if (['pin','move','archive'].includes(action)) void workbenchSessionAction(action, sessionId);
         return;
       }
 
@@ -9091,6 +9630,7 @@
     });
 
     chatListEl.addEventListener('keydown', (e) => {
+      if (e.target.closest('button, summary')) return;
       const item = e.target.closest('[data-session-id]');
       if (!item) return;
       if (e.key === 'Enter' || e.key === ' ') {
@@ -9190,6 +9730,7 @@
       }
 
       if (action === 'delete') {
+        if (isSessionWaiting(session.id)) return;
         session.messages.splice(idx, 1);
         state.editingMessageId = null;
         session.updatedAt = nowISO();
@@ -9335,12 +9876,14 @@
     modelMenuBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!state.availableModels.length) { openModelSettings(); return; }
       if (!state.modelMenuOpen) state.modelMenuPanel = 'root';
       renderModelMenu();
       setModelMenuOpen(!state.modelMenuOpen);
     });
 
     modelMenuEl.addEventListener('click', async (e) => {
+      if (e.target.closest('[data-manage-models]')) { openModelSettings(); return; }
       const panelBtn = e.target.closest('[data-model-panel]');
       if (panelBtn) {
         e.preventDefault();
@@ -9349,7 +9892,6 @@
         if (['root', 'models', 'autoresearch'].includes(panel)) {
           state.modelMenuPanel = panel;
           renderModelMenu();
-          if (panel === 'models') await refreshAvailableModels();
         }
         return;
       }
@@ -9480,9 +10022,8 @@
       renderModelOptions(data.provider, data.model);
       if (data.api_key_present === false) {
         setStatus('error', tr('Setup required'));
-        showError(tr('LLM API key missing. Please update neuroclaw_environment.json or set env key.'));
       } else {
-        setStatus('connected', tr('Ready'));
+        syncActiveRequestUi();
       }
     } catch (_e) {
       modelLabel.textContent = tr('Model');
@@ -9601,7 +10142,9 @@
       const idx = parseInt(deleteBtn.dataset.cpDelete, 10);
       const hash = _checkpointsCache[idx] && _checkpointsCache[idx].hash;
       if (!hash) return;
-      if (!confirm(tr('Delete this checkpoint? This cannot be undone.'))) return;
+      if (isSessionWaiting()) { showError(uiText('Stop the active request first.','请先停止当前请求。')); return; }
+      if (!await workbenchConfirm(uiText('Delete checkpoint','删除检查点'), tr('Delete this checkpoint? This cannot be undone.'), true)) return;
+      if (isSessionWaiting()) return;
       try {
         const resp = await fetch(checkpointApiUrl(`/${encodeURIComponent(hash)}`), {
           method: 'DELETE',
@@ -9625,7 +10168,9 @@
       const idx = parseInt(restoreBtn.dataset.cpRestore, 10);
       const hash = _checkpointsCache[idx] && _checkpointsCache[idx].hash;
       if (!hash) return;
-      if (!confirm(tr('Restore workspace to this checkpoint? Current files will be overwritten.'))) return;
+      if (isSessionWaiting()) { showError(uiText('Stop the active request first.','请先停止当前请求。')); return; }
+      if (!await workbenchConfirm(uiText('Restore checkpoint','恢复检查点'), tr('Restore workspace to this checkpoint? Current files will be overwritten.'), true)) return;
+      if (isSessionWaiting()) return;
       try {
         const resp = await fetch(checkpointApiUrl(`/${encodeURIComponent(hash)}/restore`), {
           method: 'POST',
@@ -9680,8 +10225,25 @@
 
   // ── Boot ──────────────────────────────────────────────────────────────────
 
-  function boot() {
+  async function boot() {
+    inputEl.disabled = true;
     loadState();
+    workbenchHistory = window.ClientWorkbench.createHistory({
+      snapshot:()=>({sessions:state.sessions,projects:state.projects,activeSessionId:state.activeSessionId,activeProjectId:state.activeProjectId}),
+      restore:saved=>{ state.sessions=Array.isArray(saved.sessions)?saved.sessions:[];state.projects=Array.isArray(saved.projects)?saved.projects:[];state.activeSessionId=saved.activeSessionId;state.activeProjectId=saved.activeProjectId;normalizeAllSessions(); },
+      onError:error=>{
+        showError(uiText('History sync: ','历史同步：')+error.message);
+        if (error.recoveryId) {
+          let notice=document.getElementById('wb-history-warning');
+          if (!notice) {notice=document.createElement('div');notice.id='wb-history-warning';notice.className='wb-inline-error';notice.setAttribute('role','alert');inputEl.closest('.input-area')?.prepend(notice);}
+          notice.textContent=uiText('Another window changed the history. Saving is paused; export this window’s recovery copy before reloading.','另一窗口修改了历史。已暂停保存，请导出本窗口的恢复副本后重新加载。');
+          const link=document.createElement('a'); link.href='/api/workbench/recovery/'+encodeURIComponent(error.recoveryId);
+          link.textContent=uiText(' Export recovery copy',' 导出恢复副本'); link.download='neurodiscovery-history-recovery.json';
+          notice.append(link);
+        }
+      },
+    });
+    await workbenchHistory.load();
     bindEvents();
     applyTheme(state.theme);
     applyTextScale(state.textScale, false);
@@ -9691,7 +10253,7 @@
     initializeAppSidebarResizer();
     applySectionState();
     setSendButtonMode('send');
-    startShellStatusPolling();
+    // Workbench events are request-scoped; global shell status could belong to another task.
     ensureSession();
     renderProjectList();
     renderChatList();
@@ -9702,6 +10264,16 @@
     loadEnv();
     loadDesktopSettings().finally(showCaseStudyWelcomeIfNeeded);
     loadCheckpoints();
+    state.sessions.filter(s=>s.pendingRequest).forEach(s=>void resumeWorkbenchRequest(s));
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)void workbenchHistory.flush();});
+    window.addEventListener('online',()=>void workbenchHistory.flush());
+    chatListEl.addEventListener('click',event=>{if(event.target.closest('[data-wb-more]')){state.workbenchChatLimit=(state.workbenchChatLimit || 60)+60;renderChatList();}});
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape' && state.openSessionMenuId && !document.querySelector('dialog[open]')) {state.openSessionMenuId=null;state.menuPosition=null;renderSidebarLists();}
+    });
+    fetch('/api/workbench/validate-workspace',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(response=>response.json()).then(data=>{state.defaultWorkbenchPath=data.path || '';syncWorkbenchContext();}).catch(()=>{});
+    syncActiveRequestUi();
     inputEl.focus();
   }
 

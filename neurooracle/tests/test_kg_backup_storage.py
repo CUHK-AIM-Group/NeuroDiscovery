@@ -58,8 +58,8 @@ def test_nested_frozen_binding_extraction():
     assert list(storage.fingerprints({"list": [fp], "other": {"bytes": 11}})) == [fp]
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Requires Windows NTFS compression via compact.exe")
 def test_ntfs_transparent_compression_preserves_identity_and_hash(tmp_path):
-    assert os.name == "nt"
     path = tmp_path / "synthetic_cold_graph.json"
     path.write_bytes(b'{"kind":"synthetic fixture","metadata":{"note":"repeated text"}}\n' * 32768)
     before = storage.native_info(path)

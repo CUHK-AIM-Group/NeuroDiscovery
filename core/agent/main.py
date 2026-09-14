@@ -42,7 +42,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
-ENV_FILE = REPO_ROOT / "neuroclaw_environment.json"
+ENV_FILE = Path(os.environ.get("NEUROCLAW_ENV_FILE") or REPO_ROOT / "neuroclaw_environment.json").resolve()
 FEATURES_FILE = REPO_ROOT / "core" / "config" / "features.json"
 AGENT_SHELL_STATUS_FILE = Path("/tmp/neuroclaw_agent_shell_status.json")
 BENCHMARK_ENV_FLAG = "NEUROCLAW_BENCHMARK"
@@ -67,9 +67,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from core.llm.provider_profiles import (
     apply_openai_compatible_profile_defaults,
+    canonical_provider,
     get_openai_compatible_profile,
     is_openai_compatible_provider,
 )
+from core.llm.adapters import ProviderClient, IncompleteModelResponse, assistant_message, auxiliary_model
+from core.llm.model_capabilities import api_mode
+from core.autoresearch import normalize_autoresearch_mode
+from core.autoresearch_runtime import AutoResearchRun, FINISH_TOOL, FINISH_TOOL_NAME
 
 
 # ── Environment bootstrap ──────────────────────────────────────────────────────
@@ -113,6 +118,19 @@ def _normalize_llm_backend(env: dict) -> None:
         env["llm_backend"] = llm_cfg
 
     apply_openai_compatible_profile_defaults(llm_cfg)
+
+    if llm_cfg.get("model_selection_managed"):
+        # Desktop Settings owns this catalog, including an intentionally empty list.
+        # Legacy top-level profiles must not repopulate it or supply another key.
+        llm_cfg["provider"] = llm_cfg.get("provider") or "openai"
+        llm_cfg["base_url"] = llm_cfg.get("base_url") or llm_cfg.get("baseUrl")
+        configured = llm_cfg.get("available_models")
+        catalog = _coerce_model_catalog(configured if isinstance(configured, list) else [],
+                                        default_provider=llm_cfg["provider"])
+        llm_cfg["available_models"] = catalog
+        if llm_cfg.get("model") not in {entry["model"] for entry in catalog}:
+            llm_cfg["model"] = catalog[0]["model"] if catalog else ""
+        return
 
     profile_name = llm_cfg.get("profile")
     profile: dict | None = None
@@ -246,6 +264,10 @@ def save_environment(env: dict) -> None:
 def _resolve_openai_api_key(cfg: dict) -> tuple[str, str | None]:
     """Resolve OpenAI-compatible API key from config/env and return (key, source_env)."""
     direct = cfg.get("api_key") or cfg.get("apiKey")
+    if canonical_provider(cfg.get("provider", "")) == "ollama_cloud":
+        # The cloud account is endpoint-bound; never fall back to another provider's key.
+        apply_openai_compatible_profile_defaults(cfg)
+        return (str(direct or os.environ.get("OLLAMA_API_KEY", "")).strip(), "OLLAMA_API_KEY")
     if isinstance(direct, str) and direct.strip():
         return direct.strip(), None
 
@@ -372,18 +394,21 @@ def build_llm_client(env: dict) -> Any:
     Raises RuntimeError if the required library is not installed or
     the provider is not enabled in features.json.
     """
-    llm_cfg = env.get("llm_backend", {})
-    provider = llm_cfg.get("provider", "openai")
+    llm_cfg = dict(env.get("llm_backend", {}))
+    if llm_cfg.get("model_selection_managed") and not llm_cfg.get("model"):
+        raise RuntimeError('Add a model in Settings > Models before starting a request.')
+    apply_openai_compatible_profile_defaults(llm_cfg)
+    provider = canonical_provider(llm_cfg.get("provider", "openai"))
 
     if not is_feature_enabled("llm_backends", provider):
         raise RuntimeError(
             f"LLM provider '{provider}' is disabled in features.json."
         )
 
+    if api_mode(llm_cfg) == "anthropic":
+        return ProviderClient(_build_anthropic_client(llm_cfg), llm_cfg)
     if is_openai_compatible_provider(provider):
-        return _build_openai_client(llm_cfg)
-    if provider == "anthropic":
-        return _build_anthropic_client(llm_cfg)
+        return ProviderClient(_build_openai_client(llm_cfg), llm_cfg)
     if provider == "local":
         return _build_local_client(llm_cfg)
 
@@ -490,11 +515,16 @@ def _run_openai_tool_probe(env: dict, model: str, workspace: Path) -> int:
             print(f"[probe] tool_call_{idx}.arguments={tc.function.arguments}")
         return 0
 
+    preview = content if len(content) <= 800 else content[:800] + "..."
+    print("[probe] no tool call returned")
+    print(f"[probe] assistant_content={preview}")
+    return 2
+
 
 def _run_openai_tool_loop_probe(env: dict, model: str, workspace: Path) -> int:
     session = AgentSession(workspace=workspace, benchmark_mode=False)
     session.env = env
-    session._llm = _build_openai_client(env.get("llm_backend") or {})  # type: ignore[attr-defined]
+    session._llm = build_llm_client(env)
 
     # Keep this probe minimal: only the read_workspace_file tool.
     tools = [
@@ -549,25 +579,7 @@ def _run_openai_tool_loop_probe(env: dict, model: str, workspace: Path) -> int:
         return 2
 
     # Mirror the exact codepath used in the main tool loop to build assistant tool message.
-    assistant_tool_msg = {
-        "role": "assistant",
-        "content": msg1.content or "",
-        "tool_calls": [
-            (
-                (tc.model_dump() if hasattr(tc, "model_dump") else tc.to_dict() if hasattr(tc, "to_dict") else dict(getattr(tc, "__dict__", {}) or {}))
-                if _model_uses_gemini_compat(model)
-                else {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    },
-                }
-            )
-            for tc in tool_calls
-        ],
-    }
+    assistant_tool_msg = assistant_message(msg1)
     if _model_uses_gemini_compat(model) and os.environ.get("NEUROCLAW_DEBUG_GEMINI_TOOLCALLS") == "1":
         try:
             debug_path = (REPO_ROOT / "output" / "debug_gemini_toolcalls.jsonl")
@@ -620,12 +632,6 @@ def _run_openai_tool_loop_probe(env: dict, model: str, workspace: Path) -> int:
     print(f"[probe-loop] turn2.text={str(msg2.content or '')[:120]}")
     return 0
 
-    preview = content if len(content) <= 800 else content[:800] + "..."
-    print("[probe] no tool call returned")
-    print(f"[probe] assistant_content={preview}")
-    return 2
-
-
 def _build_anthropic_client(cfg: dict):
     try:
         import anthropic  # type: ignore
@@ -634,8 +640,15 @@ def _build_anthropic_client(cfg: dict):
             "anthropic package not installed. Run: pip install anthropic"
         ) from exc
     key_env = cfg.get("api_key_env", "ANTHROPIC_API_KEY")
-    api_key = os.environ.get(key_env, "")
-    return anthropic.Anthropic(api_key=api_key)
+    api_key = cfg.get("api_key") or cfg.get("apiKey") or os.environ.get(key_env, "")
+    if not api_key:
+        raise RuntimeError(f"Anthropic API key is missing; configure {key_env}")
+    kwargs = {"api_key": api_key}
+    if cfg.get("base_url") or cfg.get("baseUrl"):
+        kwargs["base_url"] = cfg.get("base_url") or cfg.get("baseUrl")
+    if cfg.get("default_headers") or cfg.get("headers"):
+        kwargs["default_headers"] = cfg.get("default_headers") or cfg.get("headers")
+    return anthropic.Anthropic(**kwargs)
 
 
 def _build_local_client(cfg: dict):
@@ -695,7 +708,7 @@ def _get_openai_chat_create_kwargs(
         if isinstance(thinking, dict):
             thinking_type = str(thinking.get("type") or "").strip()
             if thinking_type:
-                kwargs["thinking"] = {"type": thinking_type}
+                kwargs.setdefault("extra_body", {})["thinking"] = dict(thinking)
 
     return kwargs
 
@@ -744,6 +757,7 @@ def _run_shell_command(
     command: str,
     cwd: Path,
     timeout_sec: int = 180,
+    cancel_event: threading.Event | None = None,
 ) -> dict[str, Any]:
     """
     Run command in user's default shell while inheriting process environment.
@@ -752,6 +766,8 @@ def _run_shell_command(
     including FSLDIR/FREESURFER_HOME/CUDA_VISIBLE_DEVICES.
     """
     cmd = str(command or "").strip()
+    if cancel_event is not None and cancel_event.is_set():
+        return {"success": False, "executed": False, "error_type": "cancelled", "error": "User cancelled before command execution."}
     if not cmd:
         return {
             "success": False,
@@ -809,9 +825,26 @@ def _run_shell_command(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            start_new_session=os.name != "nt",
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
         _write_agent_shell_status(cmd, cwd, proc.pid)
-        stdout, stderr = proc.communicate(timeout=max(1, int(timeout_sec)))
+        deadline = time.monotonic() + max(1, int(timeout_sec))
+        while True:
+            if cancel_event is not None and cancel_event.is_set():
+                _terminate_owned_shell(proc)
+                stdout, stderr = proc.communicate(timeout=5)
+                return {"success": False, "executed": True, "error_type": "cancelled", "error": "User cancelled command execution.",
+                        "stdout": stdout, "stderr": stderr, "returncode": proc.returncode}
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(argv, timeout_sec)
+            try:
+                stdout, stderr = proc.communicate(timeout=min(1.0, remaining) if cancel_event is not None else remaining)
+                break
+            except subprocess.TimeoutExpired:
+                if time.monotonic() >= deadline:
+                    raise
         result = {
             "success": proc.returncode == 0,
             "returncode": proc.returncode,
@@ -838,7 +871,7 @@ def _run_shell_command(
     except subprocess.TimeoutExpired as exc:
         if proc is not None:
             try:
-                proc.kill()
+                _terminate_owned_shell(proc)
             except Exception:
                 pass
             try:
@@ -897,6 +930,20 @@ def _run_shell_command(
         }
     finally:
         _clear_agent_shell_status()
+
+
+def _terminate_owned_shell(proc: subprocess.Popen) -> None:
+    """Terminate only this tool's process tree, never an unrelated workspace job."""
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                       capture_output=True, timeout=5, creationflags=subprocess.CREATE_NO_WINDOW)
+    else:
+        import signal
+        os.killpg(proc.pid, signal.SIGKILL)
+    if proc.poll() is None:
+        proc.kill()
 
 
 def _format_file_size(size_bytes: int) -> str:
@@ -1496,9 +1543,11 @@ def _is_retryable_api_exception(exc: Exception) -> bool:
     return any(token in text for token in retryable_tokens)
 
 
-def _retry_api_call(operation_name: str, action, retries: int = 10):
+def _retry_api_call(operation_name: str, action, retries: int = 10, cancel_event: threading.Event | None = None):
     last_exc: Exception | None = None
     for attempt in range(1, max(1, int(retries or 1)) + 1):
+        if cancel_event is not None and cancel_event.is_set():
+            raise RuntimeError("Request cancelled before dispatch")
         try:
             return action()
         except Exception as exc:
@@ -1507,10 +1556,14 @@ def _retry_api_call(operation_name: str, action, retries: int = 10):
                 raise
             wait_seconds = min(8.0, 1.0 * (2 ** (attempt - 1)))
             print(
-                f"{operation_name} failed ({attempt}/{retries}): {exc}. Retrying in {wait_seconds:.1f}s...",
+                f"{operation_name} failed ({attempt}/{retries}): {type(exc).__name__}. Retrying in {wait_seconds:.1f}s...",
                 flush=True,
             )
-            time.sleep(wait_seconds)
+            if cancel_event is not None:
+                if cancel_event.wait(wait_seconds):
+                    raise RuntimeError("Request cancelled during retry backoff") from exc
+            else:
+                time.sleep(wait_seconds)
 
     if last_exc is not None:
         raise last_exc
@@ -3562,11 +3615,15 @@ class AgentSession:
         benchmark_mode: bool | None = None,
         no_skill_mode: bool = False,
         checkpoint_scope: str | None = None,
+        autoresearch_mode: str = "off",
     ) -> None:
         self.workspace = workspace or REPO_ROOT
         self.env = load_environment()
         self.history: list[dict] = []
         self._llm: Any = None
+        self.autoresearch_mode = normalize_autoresearch_mode(autoresearch_mode)
+        self._autoresearch_run: AutoResearchRun | None = None
+        self._cancel_event = threading.Event()
         self.benchmark_mode = (
             _is_benchmark_enabled_from_env()
             if benchmark_mode is None
@@ -3605,6 +3662,28 @@ class AgentSession:
 
     # ── Public API for external callers (e.g. the web server) ──────────────────
 
+    def request_cancel(self) -> None:
+        """Stop this turn before any further dispatch; do not affect other sessions."""
+        self._cancel_event.set()
+        manager = getattr(self, "_subagent_manager", None)
+        if manager is not None:
+            manager.shutdown_all()
+
+    def _emit_execution_event(self, event: dict[str, Any]) -> None:
+        """Optional client observer; never changes scientific acceptance or prompts."""
+        observer = getattr(self, "_execution_observer", None)
+        if observer is not None:
+            observer(event)
+
+    def configure_autoresearch(self, mode: object) -> None:
+        """Called between WebSocket turns, never while the current turn is running."""
+        self.autoresearch_mode = normalize_autoresearch_mode(mode)
+        self._cancel_event.clear()
+
+    @property
+    def autoresearch_state(self) -> dict[str, Any] | None:
+        return dict(self._autoresearch_run.state) if self._autoresearch_run else None
+
     def set_llm_client(self, client: Any) -> None:
         """
         Attach an already-constructed LLM client to this session.
@@ -3623,6 +3702,7 @@ class AgentSession:
                 self._memory_extractor = MemoryExtractor(
                     llm_client=client,
                     store=self._memory_store,
+                    model=auxiliary_model(client),
                 )
             except Exception:
                 self._memory_extractor = None
@@ -3981,7 +4061,37 @@ class AgentSession:
         return f"Unknown memory subcommand: {subcmd}"
 
     def _chat(self) -> str:
+        """Run one ordinary turn or one persistent, evidence-bounded AutoResearch turn."""
+        self._autoresearch_run = None
+        if self.autoresearch_mode == "off" or self.benchmark_mode:
+            return self._chat_once()
+        try:
+            self._autoresearch_run = AutoResearchRun(self.workspace, self.autoresearch_mode)
+        except (ValueError, OSError) as exc:
+            return f"[AutoResearch: blocked] Cannot initialize the run record/budget: {exc}"
+        run = self._autoresearch_run
+        provider = self.env.get("llm_backend", {}).get("provider", "openai")
+        run.state.update(provider=provider, model=self.env.get("llm_backend", {}).get("model", "gpt-4o"))
+        run.save()
+        if self._cancel_event.is_set():
+            return run.halt("cancelled", "Execution cancelled; no further work was dispatched.")
+        if self.no_skill_mode or not (is_openai_compatible_provider(provider) or canonical_provider(provider) == "anthropic") or self._llm is None:
+            return run.halt("blocked", "AutoResearch requires a configured tool-capable backend. No experiment was started.")
+        try:
+            return self._chat_once()
+        except Exception as exc:
+            # No automatic replay of a whole research turn after unknown delivery or a runtime error.
+            # Avoid writing provider exception strings (which may contain credentials) into the receipt.
+            if isinstance(exc, IncompleteModelResponse):
+                self._last_token_usage = {key: int(self._last_token_usage.get(key, 0)) + int(exc.usage.get(key, 0))
+                                          for key in ("prompt_tokens", "completion_tokens", "total_tokens")}
+            status = "cancelled" if self._cancel_event.is_set() else "interrupted"
+            return run.halt(status, f"Execution is incomplete ({type(exc).__name__}); inspect the preserved run and tool outputs before resuming.")
+
+    def _chat_once(self) -> str:
         """Send history to LLM and return response text (simplified, no streaming)."""
+        if self._cancel_event.is_set():
+            return "[Agent: cancelled]"
         provider = self.env.get("llm_backend", {}).get("provider", "openai")
         model = self.env.get("llm_backend", {}).get("model", "gpt-4o")
         self._tool_events = []
@@ -3996,24 +4106,8 @@ class AgentSession:
             return "[Agent: LLM backend not configured]"
 
         response = "[Agent: LLM backend not configured]"
-        if is_openai_compatible_provider(provider):
+        if is_openai_compatible_provider(provider) or canonical_provider(provider) == "anthropic":
             response = self._chat_openai_with_tools(model)
-        elif provider == "anthropic":
-            system_msg = next(
-                (m["content"] for m in self.history if m["role"] == "system"), ""
-            )
-            user_msgs = [m for m in self.history if m["role"] != "system"]
-            resp = _retry_api_call(
-                "Anthropic chat request",
-                lambda: self._llm.messages.create(
-                    model=model,
-                    max_tokens=4096,
-                    system=system_msg,
-                    messages=user_msgs,
-                ),
-                retries=10,
-            )
-            response = resp.content[0].text if resp.content else ""
         elif provider == "local":
             import urllib.request  # stdlib only
 
@@ -4026,8 +4120,12 @@ class AgentSession:
                 data=payload,
                 headers={"Content-Type": "application/json"},
             )
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                data = json.loads(resp.read())
+            def local_request():
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    return json.loads(resp.read())
+
+            observer = getattr(self, "_local_chat_observer", None)
+            data = observer(local_request) if callable(observer) else local_request()
             response = data.get("message", {}).get("content", "")
 
         self._last_chat_elapsed_sec = round(max(0.0, time.perf_counter() - chat_started), 3)
@@ -4056,6 +4154,7 @@ class AgentSession:
                         )
                     ),
                     retries=10,
+                    cancel_event=self._cancel_event,
                 )
                 usage = _extract_token_usage_from_response(resp)
                 try:
@@ -4203,14 +4302,27 @@ class AgentSession:
         ]
 
         messages: list[dict[str, Any]] = list(self.history)
+        autoresearch = self._autoresearch_run
+        if autoresearch:
+            tools.append(FINISH_TOOL)
+            if messages and messages[0].get("role") == "system":
+                messages[0] = {**messages[0], "content": messages[0].get("content", "") + "\n\n" + autoresearch.prompt()}
+            else:
+                messages.insert(0, {"role": "system", "content": autoresearch.prompt()})
         token_usage_totals = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
             "total_tokens": 0,
         }
-        max_tool_iterations = _max_tool_iterations_from_env()
+        max_tool_iterations = autoresearch.limit if autoresearch else _max_tool_iterations_from_env()
         tool_iteration_summaries: list[str] = []
-        for iteration_idx in range(max_tool_iterations):
+        iteration_idx = 0
+        while max_tool_iterations is None or iteration_idx < max_tool_iterations:
+            if self._cancel_event.is_set():
+                return autoresearch.halt("cancelled", "Execution cancelled; partial outputs are preserved.") if autoresearch else "[Agent: cancelled]"
+            if autoresearch:
+                autoresearch.begin_iteration()
+            iteration_idx += 1
             resp = _retry_api_call(
                 "OpenAI tool-call request",
                 lambda: self._llm.chat.completions.create(
@@ -4223,6 +4335,7 @@ class AgentSession:
                     )
                 ),
                 retries=10,
+                cancel_event=self._cancel_event,
             )
             usage = _extract_token_usage_from_response(resp)
             token_usage_totals["prompt_tokens"] += usage["prompt_tokens"]
@@ -4233,7 +4346,25 @@ class AgentSession:
             tool_calls = list(getattr(message, "tool_calls", []) or [])
 
             if not tool_calls:
-                return message.content or ""
+                if self._cancel_event.is_set():
+                    return autoresearch.halt("cancelled", "Execution cancelled; partial outputs are preserved.") if autoresearch else "[Agent: cancelled]"
+                if not autoresearch:
+                    return message.content or ""
+                if self._cancel_event.is_set():
+                    return autoresearch.halt("cancelled", "Execution cancelled; partial outputs are preserved.")
+                if not autoresearch.needs_continuation():
+                    return autoresearch.halt("stalled", "The model repeatedly ended without executing or submitting a valid delivery/blocker report. The task is incomplete; no scientific result is claimed.")
+                messages.extend([
+                    assistant_message(message),
+                    {"role": "user", "content": (
+                        "[AutoResearch continuation] This is progress, not completion. Continue the next authorized "
+                        "tool action now; do not ask for routine confirmation. If all deliverables are checked, "
+                        "call finish_autoresearch with artifact paths and actual evidence IDs. If execution really "
+                        "cannot proceed, use that tool to report the precise blocker and checks already made. "
+                        "Do not repeat work, invent evidence, change scientific criteria, or exceed existing authority/budgets."
+                    )},
+                ])
+                continue
 
             tool_names = []
             for tc in tool_calls:
@@ -4242,55 +4373,10 @@ class AgentSession:
                 except Exception:
                     tool_names.append("unknown")
             tool_iteration_summaries.append(
-                f"{iteration_idx + 1}: " + ", ".join(tool_names)
+                f"{iteration_idx}: " + ", ".join(tool_names)
             )
 
-            def _tool_call_to_message_dict(tc: Any) -> dict[str, Any]:
-                """Best-effort tool_call serialization.
-
-                Some OpenAI-compatible proxy routes (notably Gemini) attach extra
-                metadata to tool calls (e.g., thought signatures). Rebuilding
-                tool_calls from only id/name/arguments can drop required fields.
-                """
-                # Prefer model-provided serialization if available.
-                for attr in ("model_dump", "to_dict", "dict"):
-                    fn = getattr(tc, attr, None)
-                    if callable(fn):
-                        try:
-                            data = fn()
-                            if isinstance(data, dict):
-                                return data
-                        except Exception:
-                            pass
-
-                # Fallback to the minimal OpenAI-compatible structure.
-                return {
-                    "id": getattr(tc, "id", None),
-                    "type": getattr(tc, "type", "function") or "function",
-                    "function": {
-                        "name": getattr(getattr(tc, "function", None), "name", ""),
-                        "arguments": getattr(getattr(tc, "function", None), "arguments", ""),
-                    },
-                }
-
-            assistant_tool_msg = {
-                "role": "assistant",
-                "content": message.content or "",
-                # Preserve extra provider metadata for Gemini routes.
-                "tool_calls": [
-                    _tool_call_to_message_dict(tc)
-                    if _model_uses_gemini_compat(model)
-                    else {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
-                    }
-                    for tc in tool_calls
-                ],
-            }
+            assistant_tool_msg = assistant_message(message)
 
             if _model_uses_gemini_compat(model) and os.environ.get("NEUROCLAW_DEBUG_GEMINI_TOOLCALLS") == "1":
                 try:
@@ -4306,13 +4392,38 @@ class AgentSession:
             messages.append(assistant_tool_msg)
 
             for tc in tool_calls:
+                if self._cancel_event.is_set():
+                    return autoresearch.halt("cancelled", "Execution cancelled; partial outputs are preserved.") if autoresearch else "[Agent: cancelled]"
                 name = tc.function.name
+                argument_error = ""
                 try:
                     args = json.loads(tc.function.arguments or "{}")
                 except Exception:
                     args = {}
+                    argument_error = "Tool arguments must be a JSON object."
+                if not isinstance(args, dict):
+                    args = {}
+                    argument_error = "Tool arguments must be a JSON object."
+                for field in ("timeout_sec", "max_chars"):
+                    if field in args and (type(args[field]) is not int or args[field] < 1):
+                        argument_error = f"{field} must be a positive integer."
 
-                if name == "run_shell_command":
+                event_id = f"{iteration_idx}:{tc.id}"
+                self._emit_execution_event({"type": "tool_start", "tool_id": event_id,
+                                            "tool": name, "status": "running",
+                                            "command": str(args.get("command") or args.get("path") or args.get("task") or "")[:12000]})
+
+                if argument_error:
+                    result = {"success": False, "executed": False, "error_type": "invalid_tool_input", "error": argument_error}
+                elif autoresearch and name == FINISH_TOOL_NAME:
+                    result = autoresearch.finish(args) if len(tool_calls) == 1 else {
+                        "success": False, "executed": False, "error": "Call finish_autoresearch alone after all execution/validation results return."
+                    }
+                    if result.get("success"):
+                        self._emit_execution_event({"type": "tool_end", "tool_id": event_id,
+                                                    "tool": name, "status": "completed", "success": True})
+                        return autoresearch.response()
+                elif name == "run_shell_command":
                     shell_cmd = str(args.get("command", ""))
                     timeout_sec = int(args.get("timeout_sec", 180))
 
@@ -4341,6 +4452,7 @@ class AgentSession:
                             command=shell_cmd,
                             cwd=self.workspace,
                             timeout_sec=timeout_sec,
+                            cancel_event=self._cancel_event,
                         )
                         if self.benchmark_mode:
                             result["benchmark_mode"] = True
@@ -4402,6 +4514,8 @@ class AgentSession:
                     skills_filter = args.get("skills_filter")
                     mode = str(args.get("mode", "run_and_return"))
                     try:
+                        if autoresearch and mode == "fire_and_forget":
+                            raise ValueError("AutoResearch must wait for delegated deliverables; use run_and_return or execute the work directly.")
                         manager = self._get_or_create_subagent_manager()
                         session_id = manager.spawn(
                             task,
@@ -4447,6 +4561,14 @@ class AgentSession:
                         }
                     )
 
+                self._emit_execution_event({"type": "tool_end", "tool_id": event_id, "tool": name,
+                                            "status": "completed" if result.get("success") else "failed",
+                                            "success": bool(result.get("success")),
+                                            "output": str(result.get("stdout") or result.get("output") or result.get("response") or result.get("message") or "")[:12000],
+                                            "error": str(result.get("stderr") or result.get("error") or "")[:12000]})
+                if autoresearch:
+                    if autoresearch.observe(name, args, result):
+                        return autoresearch.halt("stalled", "Repeated identical failing tool attempts made no progress. Partial work is preserved; execution is incomplete, not a completed research result.")
                 messages.append(
                     {
                         "role": "tool",
@@ -4454,6 +4576,11 @@ class AgentSession:
                         "content": json.dumps(result, ensure_ascii=False),
                     }
                 )
+
+        if autoresearch:
+            if self._cancel_event.is_set():
+                return autoresearch.halt("cancelled", "Execution cancelled; partial outputs are preserved.")
+            return autoresearch.halt("budget_exhausted", "The explicitly configured iteration budget was reached. Partial outputs are preserved; requested delivery remains incomplete.")
 
         force_benchmark_finalization = (
             self.benchmark_mode
@@ -4739,7 +4866,8 @@ class AgentSession:
         if not hasattr(self, "_subagent_manager") or self._subagent_manager is None:
             from core.subagent.manager import SubagentManager
             self._subagent_manager = SubagentManager(
-                env=self.env, workspace=self.workspace
+                env=self.env, workspace=self.workspace,
+                configure_session=getattr(self, "_configure_child_observer", None),
             )
         return self._subagent_manager
 

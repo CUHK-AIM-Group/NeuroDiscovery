@@ -63,6 +63,7 @@ class SubagentManager:
         env: dict,
         workspace: Path,
         max_concurrent: int = 4,
+        configure_session=None,
     ) -> None:
         self._env = env
         self._workspace = workspace
@@ -70,6 +71,7 @@ class SubagentManager:
         self._semaphore = threading.Semaphore(max_concurrent)
         self._agents: dict[str, SubagentHandle] = {}
         self._lock = threading.Lock()
+        self._configure_session = configure_session
 
     def spawn(
         self,
@@ -157,6 +159,8 @@ class SubagentManager:
             handle = self._agents.get(session_id)
         if handle is not None:
             handle.status = "cancelled"
+            if handle.session is not None:
+                handle.session.request_cancel()
             # Put a sentinel in the result queue only if no result yet
             if handle.result_queue.empty():
                 handle.result_queue.put(SubagentResult(
@@ -250,6 +254,8 @@ class SubagentManager:
 
         # Build LLM client
         session.set_llm_client(build_llm_client(session.env))
+        if self._configure_session is not None:
+            self._configure_session(session, handle.session_id)
 
         # Load skills
         SkillLoader = _load_skill_loader_class()

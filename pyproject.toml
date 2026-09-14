@@ -53,6 +53,11 @@ testpaths = [
     "core/skill_loader",
     "core/session",
     "core/subagent",
+    "core/llm/tests",
+    "core/web/test_workspace_theme.py",
+    "core/web/test_oracle_workspace.py",
+    "core/web/test_workbench.py",
+    "desktop/tests/test_window_chrome.py",
     "skills/method-design/scripts",
 ]
 python_files = ["test_*.py"]

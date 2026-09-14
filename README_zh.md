@@ -56,6 +56,7 @@ NeuroRuntime 保留项目在 **神经影像数据集与模型适配**、**数据
 
 ## 🚀 更新日志
 
+- **[2026.09.15]**：**NeuroDiscovery v1.0.0** 带来焕新的桌面界面、包含 Ollama Cloud 在内的更多模型提供方支持、改进的 AutoResearch 持续执行，以及三档可调的假设新颖性策略（`strict`、`novelty_first`、`weighted`）。
 - **[2026.06.20]**：NeuroClaw 现已提供 Windows 和 macOS 桌面客户端；Linux 仍可通过仓库源码、命令行和 Web 工作流使用。
 - **[2026.05.23]**：NeuroBench 现已覆盖数据处理与模型运行。
 - **[2026.05.20]**：`neurooracle.atoms` 形式化 7 原子 × 15 标准任务 + 4 条中介链

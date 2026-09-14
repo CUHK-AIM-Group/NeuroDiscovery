@@ -6,9 +6,11 @@
 <title>NeuroOracle · Knowledge Graph Explorer</title>
 <link rel="stylesheet" href="/static/claim-evidence.css">
 <script src="/static/claim-evidence.js"></script>
+<script src="/static/client-workbench.js"></script>
+<script src="/static/oracle-workspace.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sigma@3.0.0/dist/sigma.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/graphology-layout-forceatlas2@0.10.1/worker.min.js"></script>
+<script src="/static/vendor/oracle-layout.js"></script>
 <style>
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -876,34 +878,47 @@ body {
   margin: 0 2px;
 }
 </style>
+<link rel="stylesheet" href="/static/workspace-tokens.css">
+<link rel="stylesheet" href="/static/client-workbench.css">
+<link rel="stylesheet" href="/static/oracle-workspace.css">
 </head>
 <body>
 
 <header class="header">
-  <div class="header-sub" data-i18n="header_sub">NeuroOracle Graph</div>
-  <div class="stats-line" id="statsLine">
-    <span class="spinner" style="display:inline-block;width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></span>
-    <span data-i18n="loading">Loading…</span>
-  </div>
-  <div class="header-actions">
-    <span class="update-status" id="graphUpdateStatus" data-i18n="update_idle">Graph updates</span>
-    <button class="icon-btn primary" id="graphCheckUpdateBtn" type="button" data-i18n="check_updates">Check graph updates</button>
-    <button class="icon-btn primary" id="graphUpdateBtn" type="button" data-i18n="update_graph" style="display:none;">Update graph</button>
-    <button class="icon-btn" id="themeBtn" title="Toggle theme" data-i18n-title="toggle_theme">☾</button>
+  <div class="oracle-heading">
+    <p class="oracle-eyebrow" data-i18n="knowledge_workspace">Knowledge workspace</p>
+    <h1 class="header-sub">NeuroOracle</h1>
+    <p class="oracle-subtitle" data-i18n="workspace_subtitle">Explore connections. Follow the evidence.</p>
   </div>
 </header>
-
-<div id="coldStartBanner" class="cold-start-banner" style="display:none;" data-i18n="cold_start">
-  First load reads the 180MB knowledge graph (takes ~30–60s)…
+<div class="oracle-navigation">
+  <nav class="oracle-view-tabs" id="oracleViewTabs" role="tablist" aria-label="NeuroOracle views"></nav>
+  <button class="icon-btn" id="oracleBrowseToggle" type="button" aria-expanded="true"><span aria-hidden="true">☷</span><span id="oracleBrowseLabel">Browse</span></button>
+  <details class="oracle-workspace-options" id="oracleWorkspaceOptions">
+    <summary class="icon-btn" aria-label="Graph actions" title="Graph actions" data-i18n-label="graph_actions" data-i18n-title="graph_actions"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary>
+    <div class="oracle-workspace-menu">
+      <span class="update-status" id="graphUpdateStatus" role="status" data-i18n="update_idle">Graph updates</span>
+      <button class="icon-btn" id="graphCheckUpdateBtn" type="button" data-i18n="check_updates">Check graph updates</button>
+      <button class="icon-btn primary" id="graphUpdateBtn" type="button" data-i18n="update_graph" style="display:none;">Update graph</button>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" data-i18n-title="toggle_theme">☾</button>
+    </div>
+  </details>
 </div>
 
-<div class="layout">
+<div id="coldStartBanner" class="cold-start-banner" style="display:none;" data-i18n="cold_start">
+  Loading the local concept graph. This may take a moment…
+</div>
+
+<div class="layout" id="conceptGraphView" role="tabpanel" aria-labelledby="conceptGraphToggle">
   <aside class="sidebar">
     <div class="search-box">
+      <h2 class="oracle-panel-title" data-i18n="concepts_heading">Concepts</h2>
       <input type="text" class="search-input" id="searchInput"
+             aria-label="Search concepts" data-i18n-label="search_placeholder"
              data-i18n-ph="search_placeholder"
              placeholder="Search biomarker / outcome / concept (≥2 chars)" autocomplete="off">
-      <select class="domain-select" id="atomSelect" style="width:100%;margin-top:6px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
+      <details class="oracle-search-filters"><summary data-i18n="search_filters">Search filters</summary>
+      <select class="domain-select" id="atomSelect" aria-label="Concept type" data-i18n-label="concept_type" style="width:100%;margin-top:6px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
         <option value=""                data-i18n="atom_all">All</option>
         <option value="disease" data-i18n="atom_disease">Disease</option>
         <option value="drug" data-i18n="atom_drug">Drug</option>
@@ -914,7 +929,7 @@ body {
         <option value="individual_data" data-i18n="atom_individual_data">Individual data</option>
       </select>
       <div class="task-row" style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-        <select id="taskSelect" style="flex:1;min-width:160px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
+        <select id="taskSelect" aria-label="Task / Chain" data-i18n-label="task_chain" style="flex:1;min-width:160px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
           <option value="" data-i18n="task_chain">— Task / Chain —</option>
         </select>
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);">
@@ -924,6 +939,7 @@ body {
       <div class="scope-note" id="scopeNote" data-i18n="scope_note">
         Formal Case Studies 1–17; hindcasting is a validation component, not a Case Study.
       </div>
+      </details>
     </div>
     <div class="results" id="results">
       <div class="results-hint" data-i18n="search_hint">Enter a keyword to search concepts</div>
@@ -936,6 +952,9 @@ body {
         <span style="font-size:15px;line-height:1;">‹</span>
         <span data-i18n="back">Back</span>
       </button>
+      <details class="oracle-graph-options" id="oracleGraphOptions">
+      <summary class="icon-btn" data-i18n="graph_options">Graph options</summary>
+      <div class="oracle-options-grid">
       <label><span data-i18n="depth">Depth</span>
         <select id="depthSelect">
           <option value="1" selected>1</option>
@@ -959,13 +978,15 @@ body {
           <option value="reduces,increases">reduces / increases</option>
         </select>
       </label>
-      <label><span data-i18n="font">Font</span>
+      <label><span data-i18n="font">Graph labels</span>
         <select id="fontSelect">
-          <option value="22">S</option>
-          <option value="26">M</option>
-          <option value="32" selected>L</option>
-          <option value="38">XL</option>
-          <option value="44">XXL</option>
+          <option value="14">XS</option>
+          <option value="18" selected>S</option>
+          <option value="22">M</option>
+          <option value="26">L</option>
+          <option value="32">XL</option>
+          <option value="38">XXL</option>
+          <option value="44">XXXL</option>
         </select>
       </label>
       <label><span data-i18n="layout">Layout</span>
@@ -974,14 +995,17 @@ body {
           <option value="force" selected data-i18n="layout_force">Force</option>
         </select>
       </label>
+      </div>
+      </details>
+      <button class="icon-btn" id="oracleInspectorToggle" type="button" aria-controls="oracleInspector" aria-expanded="false">Details</button>
       <span class="graph-info" id="graphInfo" data-i18n="hint_select">Select a node to start exploring</span>
     </div>
     <div class="graph-canvas">
       <div id="sigma-container"></div>
       <div class="graph-empty" id="graphEmpty">
         <div>
-          <div style="font-size:34px;margin-bottom:11px;opacity:0.3;">◯</div>
-          <div data-i18n="empty_main">Search a concept in the left panel and click it</div>
+          <div class="oracle-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="m7 7 3 3m4-1 3-2M10 14l-3 3"/></svg></div>
+          <div data-i18n="empty_main">Search and select a concept to explore</div>
           <div style="font-size:12px;margin-top:7px;opacity:0.7;" data-i18n="empty_sub">
             Hover to reveal edges · double-click to change query · wheel to zoom
           </div>
@@ -993,14 +1017,18 @@ body {
     </div>
   </main>
 
-  <aside class="detail-pane" id="detailPane">
+  <aside class="oracle-inspector" id="oracleInspector" aria-labelledby="oracleInspectorLabel" inert>
+    <div class="oracle-inspector-head"><span id="oracleInspectorLabel">Evidence & details</span><button type="button" class="icon-btn" id="oracleInspectorClose" aria-label="Close details">×</button></div>
+    <div class="detail-pane" id="detailPane">
     <div class="detail-empty">
       <div style="font-size:30px;margin-bottom:11px;opacity:0.3;">◇</div>
       <div data-i18n="detail_empty_title">No node selected</div>
       <span style="font-size:12.5px;" data-i18n="detail_empty_sub">Click a result or a node to view details</span>
     </div>
+    </div>
   </aside>
 </div>
+<footer class="oracle-statusbar"><div class="stats-line" id="statsLine" role="status"><span data-i18n="loading">Loading…</span></div></footer>
 
 <script>
 // ── State ─────────────────────────────────────────────────────────────
@@ -1026,7 +1054,7 @@ const state = {
   pinnedNode: null,    // persistent single-click selection (non-query)
   showAllInitial: false,  // 2s preview: all colors+labels before dimming
   lang: "en",
-  fontSize: 32,
+  fontSize: 18,
   layoutMode: "force",  // "ring" = concentric rings, "force" = FA2 random
   cachedNeighborhood: null,
   history: [],          // stack of previous node IDs for Back navigation
@@ -1072,7 +1100,7 @@ const I18N = {
   en: {
     header_sub: "NeuroOracle Graph",
     loading: "Loading…",
-    cold_start: "First load reads the 180MB knowledge graph (takes ~30–60s)…",
+    cold_start: "Loading the local concept graph. This may take a moment…",
     search_placeholder: "Search biomarker / outcome / concept (≥2 chars)",
     search_hint: "Enter a keyword to search concepts",
     atom_all: "All",
@@ -1083,6 +1111,8 @@ const I18N = {
     atom_cognitive_task: "Cognitive task",
     atom_outcome: "Outcome",
     atom_individual_data: "Individual data",
+    knowledge_workspace: "Knowledge workspace", workspace_subtitle: "Explore connections. Follow the evidence.",
+    concepts_heading: "Concepts", search_filters: "Search filters", concept_type: "Concept type", graph_options: "Graph options",
     toggle_theme: "Toggle theme",
     task_chain: "— Task / Chain —",
     strict_chain: "strict chain",
@@ -1097,10 +1127,10 @@ const I18N = {
     depth: "Depth",
     neighbors: "Neighbors",
     edge_type: "Edge type",
-    font: "Font",
+    font: "Graph labels",
     all: "All",
     hint_select: "Select a node to start exploring",
-    empty_main: "Search a concept in the left panel and click it",
+    empty_main: "Search and select a concept to explore",
     empty_sub: "Hover to reveal edges · double-click to change query · wheel to zoom",
     detail_empty_title: "No node selected",
     detail_empty_sub: "Click a result or a node to view details",
@@ -1159,6 +1189,7 @@ const I18N = {
     paths_reason_timeout: "timed out",
     paths_reason_max_paths: "display limit",
     load_failed: "load failed",
+    graph_actions: "Graph actions",
     update_idle: "Graph updates",
     check_updates: "Check graph updates",
     update_graph: "Update graph",
@@ -1174,7 +1205,7 @@ const I18N = {
   zh: {
     header_sub: "NeuroOracle 图谱",
     loading: "载入中…",
-    cold_start: "首次打开需要加载 180MB 知识图谱（约 30–60 秒）…",
+    cold_start: "正在加载本地概念图谱，可能需要一些时间…",
     search_placeholder: "搜索 biomarker / outcome / 概念（≥2 字符）",
     search_hint: "输入关键词，快速检索概念",
     atom_all: "全部",
@@ -1185,6 +1216,8 @@ const I18N = {
     atom_cognitive_task: "认知任务",
     atom_outcome: "结局",
     atom_individual_data: "个体数据",
+    knowledge_workspace: "知识工作台", workspace_subtitle: "探索关联，追溯证据。",
+    concepts_heading: "概念检索", search_filters: "检索筛选", concept_type: "概念类型", graph_options: "图谱选项",
     toggle_theme: "切换主题",
     task_chain: "— 任务 / 链 —",
     strict_chain: "严格链",
@@ -1199,10 +1232,10 @@ const I18N = {
     depth: "深度",
     neighbors: "邻域",
     edge_type: "边类型",
-    font: "字号",
+    font: "图中标签",
     all: "全部",
     hint_select: "选中节点开始探索",
-    empty_main: "在左侧搜索并点击一个概念",
+    empty_main: "检索并选择一个概念，开始探索",
     empty_sub: "悬浮显示边 · 双击切换 query · 滚轮缩放",
     detail_empty_title: "未选中节点",
     detail_empty_sub: "点击搜索结果或图中节点查看详情",
@@ -1261,6 +1294,7 @@ const I18N = {
     paths_reason_timeout: "搜索超时",
     paths_reason_max_paths: "达到显示上限",
     load_failed: "加载失败",
+    graph_actions: "图谱操作",
     update_idle: "图谱更新",
     check_updates: "检查图谱更新",
     update_graph: "更新图谱",
@@ -1423,6 +1457,14 @@ function centerCameraOn(nodeId, ratio) {
   document.documentElement.dataset.theme = theme;
   $("themeBtn").textContent = theme === "dark" ? "☀" : "☾";
 })();
+function refreshGraphAppearance() {
+  $("themeBtn").textContent = document.documentElement.dataset.theme === "dark" ? "☀" : "☾";
+  if (!state.sigma) return;
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--text").trim();
+  state.sigma.setSetting("labelColor", { color });
+  state.sigma.setSetting("edgeLabelColor", { color });
+  state.sigma.refresh();
+}
 window.addEventListener("message", event => {
   const payload = event.data && typeof event.data === "object" ? event.data : null;
   if (event.origin !== window.location.origin || event.source !== window.parent || payload?.type !== "neurodiscovery:theme") return;
@@ -1430,7 +1472,7 @@ window.addEventListener("message", event => {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("neuroclaw-theme", theme);
   $("themeBtn").textContent = theme === "dark" ? "☀" : "☾";
-  if (state.sigma) state.sigma.refresh();
+  refreshGraphAppearance();
 });
 $("themeBtn").addEventListener("click", () => {
   const cur = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
@@ -1438,12 +1480,13 @@ $("themeBtn").addEventListener("click", () => {
   localStorage.setItem("neuroclaw-theme", cur);
   $("themeBtn").textContent = cur === "dark" ? "☀" : "☾";
   // re-render graph label colors for theme change
-  if (state.sigma) state.sigma.refresh();
+  refreshGraphAppearance();
 });
 
 // ── Language ─────────────────────────────────────────────────────────
 (function initLang() {
-  state.lang = appLanguage();
+  const requested = new URLSearchParams(location.search).get('lang');
+  state.lang = ['zh', 'en'].includes(requested) ? requested : appLanguage();
   document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
   applyI18n();
 })();
@@ -1463,10 +1506,11 @@ function applyI18n() {
     const v = t(key);
     if (typeof v === "string") n.setAttribute("title", v);
   });
+  document.querySelectorAll('[data-i18n-label]').forEach(n => n.setAttribute('aria-label', t(n.dataset.i18nLabel)));
   renderGraphUpdateStatus(state.graphUpdate);
 }
-function syncLanguageFromApp() {
-  const next = appLanguage();
+function syncLanguageFromApp(requested) {
+  const next = ['zh', 'en'].includes(requested) ? requested : appLanguage();
   if (next === state.lang) return;
   state.lang = next;
   document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
@@ -1474,8 +1518,8 @@ function syncLanguageFromApp() {
   renderTaskOptions();
   pollStatsRender();
   if (state.currentNode) {
-    if (state.focusEdge) loadEdgeSources(state.focusEdge.source, state.focusEdge.target);
-    else loadDetail(state.currentNode);
+    if (state.focusEdge) loadEdgeSources(state.focusEdge.source, state.focusEdge.target, { reveal: false });
+    else loadDetail(state.currentNode, { reveal: false });
   }
 }
 window.addEventListener("storage", (event) => {
@@ -1581,7 +1625,9 @@ async function pollGraphDownload() {
 }
 
 async function updateGraphFromHuggingFace() {
-  if (!confirm(t("download_confirm"))) return;
+  const answer = await window.ClientWorkbench.dialog({title:t('update_graph'), message:t('download_confirm'),
+    confirm:state.lang === 'zh' ? '更新图谱' : 'Update graph', cancel:state.lang === 'zh' ? '取消' : 'Cancel', danger:true});
+  if (!answer) return;
   renderGraphUpdateStatus({ type: "downloading", percent: 0 });
   try {
     const resp = await fetch("/api/neurooracle/graph/download", {
@@ -1603,16 +1649,14 @@ $("graphUpdateBtn").addEventListener("click", () => updateGraphFromHuggingFace()
 
 // ── Font-size control ────────────────────────────────────────────────
 (function initFont() {
-  const saved = parseInt(localStorage.getItem("neuroclaw-font") || "18", 10);
-  if (!isNaN(saved)) {
-    state.fontSize = saved;
-    $("fontSelect").value = String(saved);
-    applyFontSize(saved);
-  }
+  const stored = parseInt(localStorage.getItem("neuroclaw-font") || "18", 10);
+  const saved = [14, 18, 22, 26, 32, 38, 44].includes(stored) ? stored : 18;
+  $("fontSelect").value = String(saved);
+  applyFontSize(saved);
 })();
 function applyFontSize(px) {
+  if (![14, 18, 22, 26, 32, 38, 44].includes(px)) return;
   state.fontSize = px;
-  document.documentElement.style.setProperty("--ui-font-size", px + "px");
   document.documentElement.style.setProperty("--graph-label-size", (px + 0) + "px");
   localStorage.setItem("neuroclaw-font", String(px));
   if (state.sigma) {
@@ -1732,7 +1776,8 @@ function renderResults(items) {
   }
   items.forEach((it) => {
     const noiseMark = it.is_noise ? '<span class="noise-mini" title="possible noise"></span>' : "";
-    const node = el("div", {
+    const node = el("button", {
+      type: "button",
       className: "result-item" + (it.is_noise ? " is-noise" : ""),
       "data-id": it.id,
     }, [
@@ -2037,8 +2082,11 @@ function renderTaskGraph(data) {
 
   state.sigma = new Sigma(graph, container, {
     ...edgeSettings,
+    // Workbench navigation can temporarily hide this retained graph instance.
+    allowInvalidContainer: true,
     padding: 100, renderEdgeLabels: false,
     labelSize: state.fontSize, labelWeight: "600",
+    labelColor: { color: getComputedStyle(document.documentElement).getPropertyValue("--text").trim() },
     labelRenderedSizeThreshold: 4,
     nodeReducer(nid, d) {
       const res = { ...d };
@@ -2085,9 +2133,10 @@ function renderTaskGraph(data) {
   });
   try {
     const settings = graphologyLibrary.layoutForceAtlas2.inferSettings(graph);
-    state.layoutWorker = new graphologyLibrary.FA2Layout(graph, { settings });
-    state.layoutWorker.start();
-    setTimeout(() => { try { state.layoutWorker && state.layoutWorker.stop(); } catch (e) {} }, 2500);
+    const worker = new graphologyLibrary.FA2Layout(graph, { settings });
+    state.layoutWorker = worker;
+    worker.start();
+    setTimeout(() => { try { worker.stop(); } catch (e) {} }, 2500);
   } catch (e) {}
   state.sigma.on("enterNode", ({ node }) => { state.hoveredNode = node; state.sigma.refresh(); });
   state.sigma.on("leaveNode", () => { state.hoveredNode = null; state.sigma.refresh(); });
@@ -2136,6 +2185,7 @@ function lockPathsThroughNode(node) {
 }
 
 async function loadPathClaims(paths, focusNode) {
+  window.NeuroOracleWorkspace.revealInspector();
   const pane = $("detailPane");
   pane.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
   try {
@@ -2371,6 +2421,7 @@ function renderGraph(data) {
     : { defaultEdgeType: "arrow" };
   state.sigma = new Sigma(graph, container, {
     ...edgeSettings,
+    allowInvalidContainer: true,
     padding: 100,
     renderEdgeLabels: false,
     labelSize: state.fontSize,
@@ -2474,12 +2525,13 @@ function renderGraph(data) {
       settings.scalingRatio = 3;
       settings.strongGravityMode = true;
     }
-    state.layoutWorker = new graphologyLibrary.FA2Layout(graph, { settings });
-    state.layoutWorker.start();
+    const worker = new graphologyLibrary.FA2Layout(graph, { settings });
+    state.layoutWorker = worker;
+    worker.start();
     const centerId = state.currentNode;
 
     const pinInterval = setInterval(() => {
-      if (!state.graph || !centerId) return;
+      if (state.graph !== graph || !centerId) { clearInterval(pinInterval); return; }
       if (state.graph.hasNode(centerId)) {
         state.graph.setNodeAttribute(centerId, "x", 0);
         state.graph.setNodeAttribute(centerId, "y", 0);
@@ -2490,8 +2542,9 @@ function renderGraph(data) {
     }, 60);
     const layoutDuration = state.layoutMode === "ring" ? 1200 : 2500;
     setTimeout(() => {
-      try { state.layoutWorker && state.layoutWorker.stop(); } catch (e) {}
+      try { worker.stop(); } catch (e) {}
       clearInterval(pinInterval);
+      if (state.graph !== graph) return;
       if (state.graph && centerId && state.graph.hasNode(centerId)) {
         state.graph.setNodeAttribute(centerId, "x", 0);
         state.graph.setNodeAttribute(centerId, "y", 0);
@@ -2614,7 +2667,8 @@ function renderLegend() {
 }
 
 // ── Detail pane: node ────────────────────────────────────────────────
-async function loadDetail(nodeId) {
+async function loadDetail(nodeId, { reveal = true } = {}) {
+  if (reveal) window.NeuroOracleWorkspace.revealInspector();
   const pane = $("detailPane");
   pane.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
   try {
@@ -2940,7 +2994,8 @@ function renderMetaPanel(concept) {
 }
 
 // ── Edge sources (single-click target) ───────────────────────────────
-async function loadEdgeSources(source, target) {
+async function loadEdgeSources(source, target, { reveal = true } = {}) {
+  if (reveal) window.NeuroOracleWorkspace.revealInspector();
   state.focusEdge = { source, target };
   const pane = $("detailPane");
   pane.innerHTML = `<div class="loading"><span class="spinner"></span>${t("loading")}</div>`;
@@ -3066,6 +3121,10 @@ $("legendToggle").addEventListener("click", () => {
   $("legend").classList.remove("collapsed");
   $("legendToggle").classList.remove("visible");
 });
+window.NeuroOracleWorkspace.mount({language: () => state.lang, onAppearance: appearance => {
+  if (appearance.language) syncLanguageFromApp(appearance.language);
+  refreshGraphAppearance();
+}});
 window.ClaimEvidenceExplorer.mount({ legacyStart: pollStats, language: () => state.lang });
 </script>
 

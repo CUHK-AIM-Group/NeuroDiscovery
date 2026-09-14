@@ -257,8 +257,9 @@ class ReflexionAgent:
         prompt = self._build_failure_prompt(tool_name, args, error, recent_events)
 
         try:
+            from core.llm.adapters import auxiliary_model
             response = self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",  # Use lightweight model for immediate reflection
+                model=auxiliary_model(self.llm_client),  # Explicitly scoped lightweight model
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
                 max_tokens=300,
@@ -306,8 +307,9 @@ class ReflexionAgent:
         prompt = self._build_summary_prompt(task_desc, tool_events, outcome)
 
         try:
+            from core.llm.adapters import auxiliary_model
             response = self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=auxiliary_model(self.llm_client),
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
                 max_tokens=800,

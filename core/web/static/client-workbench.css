@@ -1,0 +1,40 @@
+/* Scoped primitives, inheriting NeuroDiscovery's light/dark theme tokens. */
+:root { --panel: var(--surface-elev); --muted: var(--text-muted); }
+.wb-dialog { margin: auto; width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 26px; border: 1px solid var(--border, #dce4df); border-radius: 18px; color: var(--text, #22372e); background: var(--panel, #fff); box-shadow: 0 24px 90px #0004; }
+.wb-dialog::backdrop { background: #091e1980; backdrop-filter: blur(3px); }
+.wb-dialog h2 { font-size: 19px; font-weight: 600; }
+.wb-dialog-description, .wb-note { margin: 12px 0; color: var(--muted, #6b7972); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.wb-dialog-fields { display: grid; gap: 16px; margin: 20px 0; }
+.wb-dialog label, .wb-usage-filters label { display: grid; gap: 7px; font-size: 12px; }
+.wb-dialog input, .wb-dialog select, .wb-usage-filters select { min-width: 0; width: 100%; padding: 9px 11px; color: inherit; border: 1px solid var(--border, #dce4df); background: var(--bg, #f7faf8); border-radius: 9px; }
+.wb-dialog footer, .wb-usage-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
+.wb-dialog footer { justify-content: flex-end; margin-top: 22px; }
+.wb-dialog button, .wb-usage-filters button, .wb-chip { min-height: 34px; padding: 7px 13px; border: 1px solid var(--border, #dce4df); border-radius: 9px; color: inherit; background: var(--panel, #fff); cursor: pointer; }
+.wb-dialog .wb-primary { background: #326951; border-color: #326951; color: white; }
+.wb-dialog .wb-danger { color: white; background: #a13e3e; border-color: #a13e3e; }
+.wb-inline-error { padding: 10px; border-radius: 8px; background: #a13e3e15; color: #bc5252; font-size: 12px; }
+button:focus-visible, summary:focus-visible, .wb-dialog input:focus-visible, .wb-dialog select:focus-visible { outline: 2px solid var(--accent, #4a896a); outline-offset: 3px; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+.wb-chip { display: inline-flex; align-items: center; gap: 7px; max-width: 270px; font-size: 11px; min-height: 30px; padding: 5px 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-context-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px 2px; }
+.wb-execution { margin: 12px 0; padding: 12px 16px; border: 1px solid var(--border, #dce4df); border-radius: 12px; background: var(--panel, #fff); min-width: 0; }
+.wb-execution-status { font-size: 11px; font-weight: 600; color: var(--muted, #6b7972); margin-bottom: 6px; }
+.wb-execution details { padding: 7px 0; }
+.wb-execution summary { cursor: pointer; font-size: 12px; overflow-wrap: anywhere; }
+.wb-execution .wb-running summary::after { content: ' ···'; color: #448965; }
+.wb-execution pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.7 ui-monospace, monospace; max-height: 380px; overflow-y: auto; margin: 12px 0 0; }
+.wb-usage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px; margin: 20px 0 10px; }
+.wb-usage-grid > div { padding: 14px; border: 1px solid var(--border, #dce4df); border-radius: 12px; display: grid; gap: 8px; }
+.wb-usage-grid span { font-size: 11px; color: var(--muted, #6b7972); }
+.wb-usage-grid strong { font-size: 18px; font-weight: 550; font-variant-numeric: tabular-nums; }
+.wb-table-scroll { overflow: auto; margin-top: 16px; }
+.wb-table-scroll table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.wb-table-scroll th, .wb-table-scroll td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border, #dce4df); overflow-wrap: anywhere; }
+.wb-table-scroll small { display: block; color: var(--muted, #6b7972); }
+.wb-usage-inline { margin-top: 8px; font-size: 11px; color: var(--muted, #6b7972); cursor: pointer; }
+.wb-sidebar-heading { margin: 14px 8px 6px; font-size: 10px; font-weight: 600; color: var(--muted, #6b7972); text-transform: uppercase; letter-spacing: .08em; }
+.chat-menu { min-width: 210px; max-height: min(370px, calc(100dvh - 32px)); overflow-y: auto; }
+.chat-menu-item.wb-danger { color: #bb5050; }
+[data-theme="dark"] .wb-dialog, [data-theme="dark"] .wb-execution, [data-theme="dark"] .wb-chip, [data-theme="dark"] .wb-usage-filters button { background: var(--panel, #18271f); color: var(--text, #e1eee5); }
+@media (prefers-reduced-motion: reduce) { .wb-dialog::backdrop { backdrop-filter: none; } }
+@media (min-width: 1100px) { .wb-usage-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

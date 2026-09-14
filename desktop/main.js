@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell, clipboard, session, nativeTheme } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell, clipboard, session, nativeTheme, net } = require('electron');
 const { spawn, spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -10,7 +10,7 @@ const APP_NAME = 'NeuroDiscovery';
 const LEGACY_USER_DATA_NAME = 'NeuroClaw';
 const APP_OPENED_AT_MS = Date.now();
 const STARTUP_TIMEOUT_MS = 90_000;
-const BUNDLED_RUNTIME_VERSION = '0.2.2';
+const BUNDLED_RUNTIME_VERSION = '1.0.0';
 const WINDOWS_RESERVED_FOLDER_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
 
 // Keep existing desktop settings, logs, and bundled runtime after the product
@@ -36,16 +36,34 @@ let backendStartedByDesktop = false;
 let backendUrl = '';
 let logStream = null;
 let isBooting = false;
+let settingsRestartTracker = null;
 
 function normalizeTheme(value) {
   return String(value || '').toLowerCase() === 'dark' ? 'dark' : 'light';
+}
+
+function windowChromeOptions(platform = process.platform, dark = nativeTheme.shouldUseDarkColors) {
+  // Keep native caption buttons, but let the workbench header be the title bar.
+  if (platform !== 'win32') return { autoHideMenuBar: platform !== 'darwin' };
+  return {
+    autoHideMenuBar: true,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: dark ? '#171c1b' : '#fcfcfb',
+      symbolColor: dark ? '#e5ede8' : '#243531',
+      height: 48,
+    },
+  };
 }
 
 function applyNativeTheme(value) {
   const theme = normalizeTheme(value);
   nativeTheme.themeSource = theme;
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setBackgroundColor(theme === 'dark' ? '#0e141c' : '#eef4f6');
+    mainWindow.setBackgroundColor(theme === 'dark' ? '#171c1b' : '#fcfcfb');
+    if (process.platform === 'win32') {
+      mainWindow.setTitleBarOverlay(windowChromeOptions('win32', theme === 'dark').titleBarOverlay);
+    }
   }
   return theme;
 }
@@ -131,6 +149,7 @@ function startupPageHtml(status, detail = '') {
         radial-gradient(760px 360px at 50% 42%, rgba(91, 184, 198, .16), transparent 70%),
         linear-gradient(180deg, ${dark ? '#161d27, #0e141c' : '#f8fcfc, #eef4f6'});
     }
+    body::before { content: ''; position: fixed; inset: 0 150px auto 0; height: 48px; -webkit-app-region: drag; }
     .startup {
       width: min(520px, calc(100vw - 64px));
       text-align: center;
@@ -234,6 +253,7 @@ async function loadErrorPage(err) {
       padding: 24px;
       box-shadow: 0 16px 40px rgba(25, 42, 62, .08);
     }
+    body::before { content: ''; position: fixed; inset: 0 150px auto 0; height: 48px; -webkit-app-region: drag; }
     h1 { margin: 0 0 12px; font-size: 24px; }
     p { color: ${dark ? '#8da0b4' : '#637484'}; }
     pre {
@@ -615,6 +635,10 @@ function defaultConfig() {
     llmBaseUrl: defaultLlmBaseUrl(),
     llmApiKey: process.env.NEUROCLAW_LLM_API_KEY || '',
     llmApiKeyEnv: process.env.NEUROCLAW_LLM_API_KEY_ENV || 'OPENAI_API_KEY',
+    llmApiKeyFile: '',
+    llmApiKeySlot: 'primary',
+    llmAddedModels: null,
+    environmentFile: '',
     repoRoot: app.isPackaged ? bundledBackendRoot() : (process.env.NEUROCLAW_REPO_ROOT || repoRoot()),
   };
 }
@@ -664,12 +688,25 @@ function saveConfig(nextConfig) {
     'llmBaseUrl',
     'llmApiKey',
     'llmApiKeyEnv',
+    'llmApiKeyFile',
+    'llmApiKeySlot',
+    'environmentFile',
+    'llmApiMode',
+    'llmReasoningEffort',
+    'llmThinkingMode',
+    'llmMaxOutputTokens',
+    'llmTemperature',
   ];
   const clean = { ...current };
   for (const key of allowed) {
     if (Object.prototype.hasOwnProperty.call(nextConfig || {}, key)) {
-      clean[key] = key === 'port' ? Number(nextConfig[key]) || defaults.port : String(nextConfig[key] || '').trim();
+      clean[key] = key === 'port' ? Number(nextConfig[key]) || defaults.port : String(nextConfig[key] ?? '').trim();
     }
+  }
+  require('./llm-credentials').validateKeyFileConfig(clean);
+  if (Object.prototype.hasOwnProperty.call(nextConfig || {}, 'llmAddedModels')) {
+    clean.llmAddedModels = require('./model-library').selectedModelIds(nextConfig);
+    if (!clean.llmAddedModels.includes(clean.llmModel)) clean.llmModel = clean.llmAddedModels[0] || '';
   }
   fs.mkdirSync(path.dirname(userConfigPath()), { recursive: true });
   fs.writeFileSync(userConfigPath(), JSON.stringify(normalizePackagedRuntimeConfig({ ...defaults, ...clean }), null, 2), 'utf8');
@@ -680,6 +717,11 @@ function defaultApiKeyEnvForProvider(provider) {
   const key = String(provider || '').trim().toLowerCase();
   const envByProvider = {
     anthropic: 'ANTHROPIC_API_KEY',
+    gemini: 'GEMINI_API_KEY',
+    grok: 'XAI_API_KEY',
+    xai: 'XAI_API_KEY',
+    glm: 'ZHIPUAI_API_KEY',
+    zhipu: 'ZHIPUAI_API_KEY',
     deepseek: 'DEEPSEEK_API_KEY',
     qwen: 'DASHSCOPE_API_KEY',
     dashscope: 'DASHSCOPE_API_KEY',
@@ -690,6 +732,7 @@ function defaultApiKeyEnvForProvider(provider) {
     groq: 'GROQ_API_KEY',
     fireworks: 'FIREWORKS_API_KEY',
     ollama: '',
+    ollama_cloud: 'OLLAMA_API_KEY',
     llamacpp: '',
   };
   return Object.prototype.hasOwnProperty.call(envByProvider, key) ? envByProvider[key] : 'OPENAI_API_KEY';
@@ -718,6 +761,7 @@ function describeLlmConnectionStatus(config) {
     apiKeyConfigured: !apiKeyRequired || Boolean(apiKey || environmentKey),
     apiKeySource,
     endpointConfigured: Boolean(String(config && config.llmBaseUrl || '').trim()),
+    ...require('./llm-credentials').keyFileStatus(config),
   };
 }
 
@@ -748,12 +792,14 @@ function prependSelectedModel(models, selectedModel) {
 }
 
 function applyDesktopLlmConfig(config) {
+  require('./llm-credentials').validateKeyFileConfig(config);
   const provider = String(config.llmProvider || '').trim() || 'openai';
-  const model = String(config.llmModel || '').trim() || 'gpt-5.5';
+  const addedModels = require('./model-library').selectedModelIds(config);
+  const model = addedModels.includes(config.llmModel) ? config.llmModel : addedModels[0] || '';
   const baseUrl = String(config.llmBaseUrl || '').trim();
   const apiKey = String(config.llmApiKey || '').trim();
   const apiKeyEnv = String(config.llmApiKeyEnv || '').trim() || defaultApiKeyEnvForProvider(provider);
-  const envPath = path.join(config.repoRoot, 'neuroclaw_environment.json');
+  const envPath = config.environmentFile || path.join(config.repoRoot, 'neuroclaw_environment.json');
   const envConfig = readJsonObject(envPath);
 
   if (config.runtimeMode === 'bundled') {
@@ -773,6 +819,10 @@ function applyDesktopLlmConfig(config) {
     ? envConfig.llm_backend
     : {};
 
+  if (llm.provider && llm.provider !== provider) {
+    for (const field of ['default_headers', 'headers', 'extra_body', 'thinking', 'thinking_mode', 'reasoning_effort', 'temperature', 'top_p', 'api_mode', 'max_output_tokens']) delete llm[field];
+  }
+  require('./llm-settings').applyModelControls(config, llm);
   llm.provider = provider;
   llm.model = model;
   if (provider === 'local') {
@@ -821,7 +871,8 @@ function applyDesktopLlmConfig(config) {
   if (apiKeyEnv) selectedModel.api_key_env = apiKeyEnv;
   if (llm.openai_compatible) selectedModel.openai_compatible = true;
   if (providerNeedsNoApiKey(provider)) selectedModel.no_api_key_required = true;
-  llm.available_models = prependSelectedModel(llm.available_models, selectedModel);
+  llm.model_selection_managed = true;
+  llm.available_models = addedModels.map(id => ({...selectedModel, model:id, label:id}));
 
   envConfig.llm_backend = llm;
   fs.writeFileSync(envPath, JSON.stringify(envConfig, null, 2), 'utf8');
@@ -829,7 +880,8 @@ function applyDesktopLlmConfig(config) {
 }
 
 function applyLlmProcessEnv(env, config) {
-  const apiKey = String(config.llmApiKey || '').trim();
+  if (config.environmentFile) env.NEUROCLAW_ENV_FILE = config.environmentFile;
+  const apiKey = require('./llm-credentials').resolveDesktopApiKey(config);
   if (!apiKey) return;
   const provider = String(config.llmProvider || '').trim() || 'openai';
   const apiKeyEnv = String(config.llmApiKeyEnv || '').trim() || defaultApiKeyEnvForProvider(provider);
@@ -971,7 +1023,8 @@ function resolveRuntimeConfig(config) {
 }
 
 async function ensureBackend() {
-  const config = resolveRuntimeConfig(loadConfig());
+  const launchConfig = loadConfig();
+  const config = resolveRuntimeConfig(launchConfig);
   validateConfig(config);
   applyDesktopLlmConfig(config);
   backendUrl = `http://${config.host}:${config.port}`;
@@ -980,6 +1033,7 @@ async function ensureBackend() {
     const isDesktopManagedBackend = Boolean(backendProcess && !backendProcess.killed);
     log(`Reusing ${isDesktopManagedBackend ? 'desktop-managed' : 'existing'} NeuroRuntime backend at ${backendUrl}`);
     backendStartedByDesktop = isDesktopManagedBackend;
+    settingsRestartTracker = require('./settings-restart').createRestartTracker(launchConfig);
     return { url: backendUrl, reused: true };
   }
   if (await requestHealth(backendUrl)) {
@@ -1048,6 +1102,7 @@ async function ensureBackend() {
   if (!ready) {
     throw new Error(`NeuroRuntime backend did not become ready at ${backendUrl} within ${STARTUP_TIMEOUT_MS / 1000}s`);
   }
+  settingsRestartTracker = require('./settings-restart').createRestartTracker(launchConfig);
   return { url: backendUrl, reused: false };
 }
 
@@ -1059,13 +1114,15 @@ function createWindow() {
     minWidth: 960,
     minHeight: 680,
     title: APP_NAME,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0e141c' : '#eef4f6',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#171c1b' : '#fcfcfb',
+    ...windowChromeOptions(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+  if (process.platform !== 'darwin') mainWindow.setMenuBarVisibility(false);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -1358,7 +1415,17 @@ function setApplicationMenu() {
     },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  if (mainWindow && process.platform !== 'darwin') mainWindow.setMenuBarVisibility(false);
 }
+
+ipcMain.handle('neuroclaw:show-application-menu', (event) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents ||
+      event.senderFrame !== mainWindow.webContents.mainFrame) return false;
+  const menu = Menu.getApplicationMenu();
+  if (!menu) return false;
+  menu.popup({ window: mainWindow });
+  return true;
+});
 
 ipcMain.handle('neuroclaw:get-config', () => {
   const config = loadConfig();
@@ -1369,18 +1436,28 @@ ipcMain.handle('neuroclaw:get-config', () => {
     logsPath: path.join(app.getPath('userData'), 'logs'),
     isPackaged: app.isPackaged,
     platform: process.platform,
+    restartRequired: settingsRestartTracker ? settingsRestartTracker.requiresRestart(config) : false,
   };
 });
 
+ipcMain.handle('neuroclaw:discover-models', async (_event, config) => {
+  // Unsaved connection fields are intentional; discovery never saves or adds models.
+  try {
+    return {ok: true, ...await require('./model-library').discoverModels(config, net.fetch.bind(net))};
+  } catch (error) {
+    return {ok: false, message: error.message};
+  }
+});
+
 ipcMain.handle('neuroclaw:save-config', (_event, config) => {
-  const previousLanguage = loadConfig().language;
+  const previousConfig = loadConfig();
   const savedConfig = saveConfig(config);
-  if (savedConfig.language !== previousLanguage) setApplicationMenu();
+  if (savedConfig.language !== previousConfig.language) setApplicationMenu();
   return {
     config: savedConfig,
     llmConnectionStatus: describeLlmConnectionStatus(savedConfig),
     configPath: userConfigPath(),
-    restartRequired: true,
+    restartRequired: (settingsRestartTracker || require('./settings-restart').createRestartTracker(previousConfig)).requiresRestart(savedConfig),
   };
 });
 
@@ -1411,8 +1488,8 @@ ipcMain.handle('neuroclaw:reset-application', async () => {
       '清除 NeuroDiscovery 的全部设置和本地应用数据？',
     ),
     detail: desktopText(
-      'This removes API settings, chats, project history, Expert Study progress, local memory, logs, caches, and the extracted bundled runtime. Your project folders, datasets, generated outputs, and exported result files are not deleted. NeuroDiscovery will restart.',
-      '这会删除 API 设置、对话、项目历史、Expert Study 进度、本地记忆、日志、缓存和已解压的 bundled runtime。不会删除项目文件夹、数据集、生成的输出或已导出的结果文件。NeuroDiscovery 随后会重启。',
+      'This removes API settings, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, caches, and the extracted bundled runtime. Your project folders, datasets, generated outputs, and exported result files are not deleted. NeuroDiscovery will restart.',
+      '这会删除 API 设置、对话、项目历史、用量记录、恢复副本、Expert Study 进度、本地记忆、日志、缓存和已解压的 bundled runtime。不会删除项目文件夹、数据集、生成的输出或已导出的结果文件。NeuroDiscovery 随后会重启。',
     ),
     buttons: [
       desktopText('Cancel', '取消'),
@@ -1443,7 +1520,7 @@ ipcMain.handle('neuroclaw:reset-application', async () => {
     path.join(os.homedir(), '.neuroclaw', 'memory'),
   ].filter(Boolean);
   if (String(currentConfig.repoRoot || '').trim()) {
-    resetTargets.push(path.join(String(currentConfig.repoRoot).trim(), 'neuroclaw_environment.json'));
+    resetTargets.push(currentConfig.environmentFile || path.join(String(currentConfig.repoRoot).trim(), 'neuroclaw_environment.json'));
   }
   for (const target of [...new Set(resetTargets.map(item => path.resolve(item)))]) {
     fs.rmSync(target, {

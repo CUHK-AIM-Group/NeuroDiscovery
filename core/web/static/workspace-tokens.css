@@ -1,0 +1,17 @@
+/* Shared application palette: the workbench and NeuroOracle use one source. */
+html[data-theme="light"] {
+  --bg: #fcfcfb; --surface: #f3f4f2; --surface-elev: #fff; --surface-soft: #e9edea;
+  --border: #dfe4e1; --text: #243531; --text-muted: #606f68; --text-soft: #606f68;
+  --accent: #28766b; --accent-strong: #205f57; --accent-wash: #e8f1ed;
+  --user-bg: #edf2ef; --user-text: #243531; --user-border: #e0e8e3;
+  --shadow-card: 0 2px 5px rgb(26 45 38 / 3%);
+  --shadow-soft: 0 12px 40px rgb(26 45 38 / 9%);
+}
+html[data-theme="dark"] {
+  --bg: #171c1b; --surface: #1e2523; --surface-elev: #242c29; --surface-soft: #2d3833;
+  --border: #37443d; --text: #e5ede8; --text-muted: #a3b3a9; --text-soft: #a3b3a9;
+  --accent: #8acdb4; --accent-strong: #addcc9; --accent-wash: #273e34;
+  --user-bg: #2c3832; --user-text: #e5ede8; --user-border: #3a4940;
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 10%);
+  --shadow-soft: 0 12px 36px rgb(0 0 0 / 24%);
+}
