@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NeuroClaw</title>
+  <title>NeuroDiscovery</title>
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -25,6 +25,7 @@
     }
 
     html[data-theme="light"] {
+      color-scheme: light;
       --bg: #eef4f6;
       --bg-grad-a: #fbfdfc;
       --bg-grad-b: #dceced;
@@ -38,11 +39,13 @@
       --text-muted: #637484;
       --danger: #d92d20;
       --ok: #23a55a;
-      --user-bg: #1677ff;
-      --user-text: #ffffff;
+      --user-bg: #eef0f3;
+      --user-text: #202733;
+      --user-border: #e3e6ea;
     }
 
     html[data-theme="dark"] {
+      color-scheme: dark;
       --bg: #0e141c;
       --bg-grad-a: #161d27;
       --bg-grad-b: #0d1218;
@@ -56,10 +59,27 @@
       --text-muted: #8da0b4;
       --danger: #f85149;
       --ok: #3fb950;
-      --user-bg: #2f81f7;
-      --user-text: #ffffff;
+      --user-bg: #252c35;
+      --user-text: #edf1f5;
+      --user-border: #323b46;
       --shadow-soft: 0 10px 34px rgba(0, 0, 0, 0.45);
       --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+    html[data-theme="dark"] .hljs {
+      color: #c9d1d9;
+      background: #161d27;
+    }
+    html[data-theme="dark"] ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    html[data-theme="dark"] ::-webkit-scrollbar-track {
+      background: #121922;
+    }
+    html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+      border: 3px solid #121922;
+      border-radius: 999px;
+      background: #415267;
     }
 
     html, body {
@@ -420,7 +440,10 @@
     .main { flex: 1; min-height: 0; display: flex; gap: 10px; padding: 10px; }
 
     .sidebar {
+      position: relative;
+      z-index: 3;
       width: var(--sidebar-w);
+      flex: 0 0 var(--sidebar-w);
       background:
         linear-gradient(180deg,
           color-mix(in oklab, var(--surface-elev), transparent 16%),
@@ -436,11 +459,45 @@
       padding: 8px;
       transition: width var(--ease), padding var(--ease);
     }
+    .sidebar.resizing { transition: none; }
+    .app-sidebar-resizer {
+      position: absolute;
+      z-index: 8;
+      top: 0;
+      right: -8px;
+      bottom: 0;
+      width: 16px;
+      cursor: col-resize !important;
+      touch-action: none;
+      pointer-events: auto;
+    }
+    .app-sidebar-resizer::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 6px;
+      width: 3px;
+      height: 54px;
+      border-radius: 999px;
+      background: var(--accent);
+      opacity: 0;
+      cursor: col-resize;
+      transform: translateY(-50%);
+      transition: opacity var(--ease);
+    }
+    .sidebar:hover .app-sidebar-resizer::after,
+    .sidebar.resizing .app-sidebar-resizer::after,
+    .app-sidebar-resizer:focus-visible::after { opacity: 1; }
+    .app-sidebar-resizer:focus-visible { outline: none; }
+    body.app-sidebar-resizing,
+    body.app-sidebar-resizing * { cursor: col-resize !important; user-select: none; }
 
     .main.sidebar-collapsed .sidebar {
       width: 64px;
+      flex-basis: 64px;
       padding: 8px 7px;
     }
+    .main.sidebar-collapsed .app-sidebar-resizer { display: none; }
     .main.sidebar-collapsed .nav-section {
       display: none;
     }
@@ -464,6 +521,22 @@
     }
     body.sidebar-collapsed .sidebar-toggle svg {
       transform: rotate(180deg);
+    }
+    body.study-workspace-mode .sidebar,
+    body.study-workspace-mode .sidebar-toggle {
+      display: none;
+    }
+    body.study-workspace-mode .main {
+      gap: 0;
+      padding: 0;
+    }
+    body.study-workspace-mode .chat-panel {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    body.study-workspace-mode .starter-grid {
+      display: none !important;
     }
 
     .primary-nav {
@@ -842,7 +915,7 @@
       max-height: 200px; overflow-y: auto; white-space: pre-wrap; display: none;
     }
     .cp-diff-preview.open { display: block; }
-    .cp-actions { margin-top: 6px; display: flex; gap: 6px; }
+    .cp-actions { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
     .cp-action-btn {
       border: 1px solid var(--border); background: var(--surface-elev);
       border-radius: 8px; padding: 5px 10px; font-size: 12px;
@@ -1055,7 +1128,7 @@
     .chat-menu {
       position: fixed;
       z-index: 9999;
-      min-width: 128px;
+      min-width: 168px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: var(--surface-elev);
@@ -1090,6 +1163,292 @@
       padding: 16px;
     }
     .skill-info-overlay.open { display: flex; }
+
+    .case-study-welcome {
+      position: fixed;
+      inset: 0;
+      z-index: 12000;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 18%, color-mix(in oklab, var(--accent), transparent 82%), transparent 36%),
+        rgba(6, 12, 20, 0.48);
+      backdrop-filter: blur(10px);
+    }
+    .case-study-welcome[hidden] { display: none; }
+    .case-study-welcome-card {
+      width: min(860px, 94vw);
+      max-height: min(820px, 92vh);
+      overflow: auto;
+      border: 1px solid color-mix(in oklab, var(--accent), var(--border) 72%);
+      border-radius: 22px;
+      background: var(--surface-elev);
+      box-shadow: 0 30px 90px rgba(8, 20, 32, 0.28);
+    }
+    .case-study-welcome-head {
+      position: relative;
+      display: block;
+      height: auto;
+      min-height: 0;
+      padding: 30px 224px 22px 32px;
+      align-items: initial;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      background:
+        linear-gradient(135deg, color-mix(in oklab, var(--accent), transparent 92%), transparent 60%),
+        var(--surface-elev);
+      backdrop-filter: none;
+      flex-shrink: initial;
+      z-index: auto;
+    }
+    .case-study-language-switch {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      display: inline-flex;
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in oklab, var(--surface-soft), transparent 8%);
+    }
+    .case-study-language-option {
+      min-width: 76px;
+      min-height: 34px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--text-muted);
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .case-study-language-option:hover {
+      color: var(--text);
+      background: color-mix(in oklab, var(--surface-elev), transparent 20%);
+    }
+    .case-study-language-option.active {
+      color: var(--text);
+      background: var(--surface-elev);
+      box-shadow: 0 1px 4px rgba(8, 20, 32, 0.12);
+    }
+    .case-study-language-option:focus-visible {
+      outline: 3px solid color-mix(in oklab, var(--accent), transparent 68%);
+      outline-offset: 1px;
+    }
+    .case-study-welcome-kicker {
+      margin: 0 0 8px;
+      color: var(--accent-strong);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .case-study-welcome-title {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(25px, 3vw, 36px);
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+    .case-study-welcome-lead {
+      max-width: 720px;
+      margin: 12px 0 0;
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    .case-study-steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0;
+      padding: 26px 32px 24px;
+      list-style: none;
+      counter-reset: study-step;
+    }
+    .case-study-step {
+      position: relative;
+      min-width: 0;
+      padding: 42px 18px 0 0;
+      counter-increment: study-step;
+    }
+    .case-study-step::before {
+      content: counter(study-step, decimal-leading-zero);
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 1px solid color-mix(in oklab, var(--accent), var(--border) 50%);
+      border-radius: 999px;
+      color: var(--accent-strong);
+      background: var(--surface-elev);
+      font: 750 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .case-study-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      left: 32px;
+      right: 0;
+      height: 1px;
+      background: color-mix(in oklab, var(--accent), var(--border) 66%);
+    }
+    .case-study-step-title {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .case-study-step-copy {
+      display: block;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .case-study-tools {
+      margin: 0 32px 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 19px;
+    }
+    .case-study-tools-title {
+      margin: 0 0 11px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+    .case-study-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .case-study-feature {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: color-mix(in oklab, var(--surface-soft), transparent 30%);
+      padding: 11px 13px;
+    }
+    .case-study-feature strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text);
+      font-size: 11.5px;
+    }
+    .case-study-feature span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      line-height: 1.48;
+    }
+    .case-study-pause-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin: 0 32px;
+      padding: 15px 17px;
+      border: 1px solid color-mix(in oklab, #b7791f, var(--border) 62%);
+      border-radius: 14px;
+      background: color-mix(in oklab, #f6ad55, transparent 88%);
+    }
+    .case-study-pause-mark {
+      display: grid;
+      flex: 0 0 auto;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border-radius: 9px;
+      color: #8a4b08;
+      background: color-mix(in oklab, #f6ad55, transparent 68%);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: -.08em;
+    }
+    .case-study-pause-copy {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .case-study-pause-copy strong {
+      display: block;
+      margin-bottom: 2px;
+      color: color-mix(in oklab, #9a5b12, var(--text) 26%);
+      font-size: 14px;
+    }
+    .case-study-welcome-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 24px 32px 30px;
+    }
+    .case-study-welcome-action {
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 0 18px;
+      color: var(--text);
+      background: var(--surface-elev);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .case-study-welcome-action:hover {
+      border-color: color-mix(in oklab, var(--accent), var(--border) 48%);
+      background: var(--surface-soft);
+    }
+    .case-study-welcome-action.primary {
+      border-color: var(--accent-strong);
+      color: white;
+      background: var(--accent-strong);
+    }
+    .case-study-welcome-action.primary:hover {
+      background: color-mix(in oklab, var(--accent-strong), black 10%);
+    }
+    .case-study-welcome-action:focus-visible {
+      outline: 3px solid color-mix(in oklab, var(--accent), transparent 68%);
+      outline-offset: 2px;
+    }
+    @media (max-width: 760px) {
+      .case-study-welcome { padding: 12px; }
+      .case-study-welcome-head { padding: 22px; }
+      .case-study-language-switch {
+        position: static;
+        margin: 0 0 18px;
+      }
+      .case-study-steps {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 22px;
+      }
+      .case-study-step { min-height: 36px; padding: 0 0 0 48px; }
+      .case-study-step::before { top: 0; }
+      .case-study-step:not(:last-child)::after {
+        top: 32px;
+        bottom: -15px;
+        left: 16px;
+        right: auto;
+        width: 1px;
+        height: auto;
+      }
+      .case-study-pause-note { margin: 0 22px; }
+      .case-study-tools { margin: 0 22px 18px; }
+      .case-study-feature-grid { grid-template-columns: 1fr; }
+      .case-study-welcome-actions {
+        flex-direction: column-reverse;
+        padding: 20px 22px 24px;
+      }
+      .case-study-welcome-action { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .case-study-welcome { backdrop-filter: none; }
+    }
 
     .skill-info-card {
       width: min(420px, 92vw);
@@ -1547,24 +1906,26 @@
     .settings-back:hover { color: var(--text); }
     .settings-nav-group {
       display: grid;
-      gap: 4px;
+      gap: 3px;
     }
     .settings-nav-label {
-      margin: 8px 8px 4px;
+      margin: 14px 10px 5px;
       color: var(--text-soft);
-      font-size: 12px;
-      font-weight: 650;
+      font-size: 11px;
+      font-weight: 760;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
     .settings-nav-item {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 10px;
       width: 100%;
       border: 0;
       border-radius: 10px;
       background: transparent;
       color: var(--text-muted);
-      padding: 9px 10px;
+      padding: 10px 11px;
       font-size: 14px;
       text-align: left;
       cursor: pointer;
@@ -1577,6 +1938,23 @@
       background: color-mix(in oklab, var(--accent), transparent 88%);
       color: var(--text);
       font-weight: 720;
+    }
+    .settings-nav-icon {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      color: currentColor;
+    }
+    .settings-nav-icon svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .settings-panel {
       max-width: 860px;
@@ -1602,7 +1980,7 @@
       border: 1px solid color-mix(in oklab, var(--border), transparent 12%);
       border-radius: 14px;
       background: color-mix(in oklab, var(--surface-elev), transparent 8%);
-      overflow: hidden;
+      overflow: visible;
       box-shadow: 0 12px 26px rgba(23, 64, 78, 0.04);
     }
     .settings-row {
@@ -1613,7 +1991,16 @@
       padding: 14px 16px;
       border-top: 1px solid color-mix(in oklab, var(--border), transparent 35%);
     }
-    .settings-row:first-child { border-top: 0; }
+    .settings-row:first-child {
+      border-top: 0;
+      border-radius: 13px 13px 0 0;
+    }
+    .settings-row:last-child { border-radius: 0 0 13px 13px; }
+    .settings-row:only-child { border-radius: 13px; }
+    .settings-row:focus-within {
+      position: relative;
+      z-index: 4;
+    }
     .settings-row-label {
       color: var(--text);
       font-size: 14px;
@@ -1638,6 +2025,96 @@
     .settings-control:focus {
       border-color: color-mix(in oklab, var(--accent), var(--border) 45%);
       box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 88%);
+    }
+    .settings-select {
+      position: relative;
+      width: 100%;
+    }
+    .settings-select-trigger {
+      width: 100%;
+      min-height: 41px;
+      border: 1px solid color-mix(in oklab, var(--border), transparent 15%);
+      border-radius: 10px;
+      background: color-mix(in oklab, var(--surface), transparent 8%);
+      color: var(--text);
+      padding: 9px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      outline: none;
+    }
+    .settings-select-trigger:focus-visible,
+    .settings-select.open .settings-select-trigger {
+      border-color: color-mix(in oklab, var(--accent), var(--border) 45%);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 88%);
+    }
+    .settings-select-caret {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 150ms ease;
+    }
+    .settings-select.open .settings-select-caret { transform: rotate(180deg); }
+    .settings-select-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 40;
+      display: grid;
+      gap: 2px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 5px;
+      border: 1px solid color-mix(in oklab, var(--border), var(--text) 18%);
+      border-radius: 10px;
+      background: var(--surface-elev);
+      box-shadow: 0 16px 34px rgba(20, 45, 58, 0.18);
+    }
+    .settings-select-menu[hidden] { display: none; }
+    .settings-select.drop-up .settings-select-menu {
+      top: auto;
+      bottom: calc(100% + 6px);
+    }
+    .settings-select-option {
+      width: 100%;
+      min-height: 38px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text);
+      padding: 8px 9px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      outline: none;
+    }
+    .settings-select-option:hover,
+    .settings-select-option:focus-visible {
+      background: color-mix(in oklab, var(--surface-soft), transparent 10%);
+    }
+    .settings-select-option.active {
+      background: color-mix(in oklab, var(--accent), transparent 84%);
+      color: var(--accent-strong);
+    }
+    .settings-select-check {
+      min-width: 16px;
+      color: var(--accent-strong);
+      font-weight: 750;
+      text-align: center;
     }
     .settings-combo {
       display: grid;
@@ -1803,6 +2280,63 @@
       font-size: 12px;
       line-height: 1.35;
       overflow-wrap: anywhere;
+    }
+    .settings-reset-zone {
+      margin-top: 32px;
+      padding: 18px;
+      border: 1px solid color-mix(in oklab, #b42318, var(--border) 72%);
+      border-radius: 14px;
+      background: color-mix(in oklab, #b42318, transparent 96%);
+    }
+    .settings-reset-zone h2 {
+      margin: 0;
+      color: #9f1f18;
+      font-size: 16px;
+      font-weight: 760;
+    }
+    .settings-reset-zone p {
+      max-width: 680px;
+      margin: 7px 0 14px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .settings-reset-button {
+      min-height: 40px;
+      border: 1px solid color-mix(in oklab, #b42318, var(--border) 38%);
+      border-radius: 10px;
+      background: transparent;
+      color: #a3261f;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    .settings-reset-button:hover { background: color-mix(in oklab, #b42318, transparent 91%); }
+    .settings-reset-button:disabled { cursor: wait; opacity: .58; }
+    .settings-required-notice {
+      margin-bottom: 14px;
+      border: 1px solid color-mix(in oklab, #d97706, var(--border) 62%);
+      border-left: 4px solid #d97706;
+      border-radius: 12px;
+      background: color-mix(in oklab, #fff7e6, var(--surface) 34%);
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .settings-required-notice strong {
+      display: block;
+      margin-bottom: 3px;
+      color: color-mix(in oklab, #b45309, var(--text) 22%);
+      font-size: 13px;
+    }
+    .settings-row.settings-row-attention {
+      background: color-mix(in oklab, #fff7e6, var(--surface-elev) 55%);
+    }
+    .settings-row.settings-row-attention .settings-control {
+      border-color: color-mix(in oklab, #d97706, var(--border) 48%);
+      box-shadow: 0 0 0 3px color-mix(in oklab, #d97706, transparent 88%);
     }
     .settings-readonly {
       color: var(--text-muted);
@@ -1982,8 +2516,39 @@
       word-break: break-word;
       position: relative;
     }
-    .msg.user .bubble { background: var(--user-bg); color: var(--user-text); border-color: transparent; border-bottom-right-radius: 6px; }
+    .msg.user .bubble {
+      background: var(--user-bg);
+      color: var(--user-text);
+      border-color: var(--user-border);
+      border-radius: 22px;
+    }
     .msg.assistant .bubble { border-bottom-left-radius: 6px; }
+    #messages.static-message-render .msg { animation: none; }
+
+    .msg.user.editing {
+      width: 100%;
+      align-items: stretch;
+    }
+    .msg.user.editing .msg-main {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      align-items: stretch;
+    }
+    .msg.user.editing .bubble {
+      width: 100%;
+      max-width: 100%;
+      min-height: 150px;
+      padding: 16px 16px 58px;
+      overflow: visible;
+    }
+    .msg.user.editing .msg-actions {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      z-index: 1;
+      margin: 0;
+    }
 
     .msg-actions {
       position: static;
@@ -2051,9 +2616,9 @@
     .msg-action-btn:hover::after { opacity: 1; }
 
     .msg.user .msg-action-btn {
-      background: color-mix(in oklab, #ffffff, transparent 12%);
-      color: #1f3b62;
-      border-color: color-mix(in oklab, #ffffff, transparent 35%);
+      background: color-mix(in oklab, var(--surface-elev), transparent 4%);
+      color: var(--text);
+      border-color: var(--border);
     }
 
     .edit-textarea {
@@ -2071,9 +2636,12 @@
     }
 
     .msg.user .edit-textarea {
-      background: #ffffff;
-      color: #18253a;
-      border-color: color-mix(in oklab, #ffffff, transparent 40%);
+      min-height: 96px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--user-text);
+      padding: 0;
     }
 
     .bubble p { margin: 6px 0; }
@@ -2795,9 +3363,11 @@
 
     @media (max-width: 780px) {
       .main { flex-direction: column; }
-      .sidebar { width: 100%; max-height: 42vh; }
+      .sidebar { width: 100%; flex-basis: auto; max-height: 42vh; }
+      .app-sidebar-resizer { display: none; }
       .main.sidebar-collapsed .sidebar {
         width: 100%;
+        flex-basis: auto;
         max-height: 64px;
       }
       .main.sidebar-collapsed .primary-nav {
@@ -2823,8 +3393,8 @@
 <div id="app">
   <header>
     <div class="brand">
-      <img class="brand-logo" src="/static/logo.png" alt="NeuroClaw logo">
-      <div class="brand-name">NeuroClaw</div>
+      <img class="brand-logo" src="/static/logo.png" alt="NeuroDiscovery logo">
+      <div class="brand-name">NeuroDiscovery</div>
     </div>
     <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M10 5v14"/><path d="m16 9-3 3 3 3"/></svg>
@@ -2856,7 +3426,8 @@
   <div class="project-hover-card" id="project-hover-card" role="tooltip" aria-hidden="true"></div>
 
   <div class="main">
-    <aside class="sidebar">
+    <aside class="sidebar" id="app-sidebar">
+      <div class="app-sidebar-resizer" id="app-sidebar-resizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize sidebar"></div>
       <nav class="primary-nav" aria-label="Primary navigation">
         <button class="primary-nav-btn active" id="nav-new-chat" data-view-button="chat" type="button">
           <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span>
@@ -2872,7 +3443,7 @@
         </button>
         <button class="primary-nav-btn" id="nav-neurooracle" data-view-button="neurooracle" type="button">
           <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 8.2 10 10"/><path d="m14 10 3-1.8"/><path d="m10.2 14-2.7 2.7"/><path d="m13.8 14 2.7 2.7"/></svg></span>
-          <span>NeuroOracle</span>
+          <span>NeuroOracle Graph</span>
         </button>
         <button class="primary-nav-btn" id="nav-settings" data-view-button="settings" type="button">
           <span class="primary-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.05a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 0 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.05A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 0 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.05a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 0 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.05A1.7 1.7 0 0 0 19.4 15z"/></svg></span>
@@ -2923,7 +3494,7 @@
           <span>Checkpoints</span><span class="caret">▾</span>
         </button>
         <div class="section-body">
-          <ul class="checkpoint-list" id="checkpoint-list"><li class="empty-hint">No checkpoints yet</li></ul>
+          <ul class="checkpoint-list" id="checkpoint-list"><li class="empty-hint">No checkpoints for this chat yet</li></ul>
           <button class="clear-chat-btn" id="refresh-checkpoints-btn" type="button"
                   style="margin:4px 12px 10px;font-size:11px;">Refresh</button>
         </div>
@@ -2957,7 +3528,7 @@
             <div class="neurooracle-mark" aria-hidden="true">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 8.2 10 10"/><path d="m14 10 3-1.8"/><path d="m10.2 14-2.7 2.7"/><path d="m13.8 14 2.7 2.7"/></svg>
             </div>
-            <div class="page-eyebrow">NeuroOracle</div>
+            <div class="page-eyebrow">NeuroOracle Graph</div>
             <h1 class="page-title">Knowledge Graph Explorer</h1>
             <p class="page-subtitle" id="neurooracle-subtitle">Browse concepts, claims, hypotheses, and graph paths from the local NeuroOracle knowledge graph.</p>
             <div class="neurooracle-actions">
@@ -2991,22 +3562,27 @@
           <div class="settings-panel">
             <div class="page-eyebrow">Desktop Settings</div>
             <h1 class="page-title">Settings</h1>
-            <p class="page-subtitle">Configure the Windows desktop runtime, local dependency paths, and common software preferences.</p>
+            <p class="page-subtitle">Manage appearance, model access, the local runtime, and application data.</p>
             <div id="settings-content"></div>
             <div class="settings-actions">
               <button class="settings-save" id="settings-save-btn" type="button">Save settings</button>
               <button class="settings-restart" id="settings-restart-btn" type="button" hidden>Restart now</button>
               <span class="settings-status" id="settings-status"></span>
             </div>
+            <section class="settings-reset-zone" id="settings-reset-zone" aria-labelledby="settings-reset-title" hidden>
+              <h2 id="settings-reset-title">Reset application</h2>
+              <p id="settings-reset-desc">Clear desktop configuration, chats, project history, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.</p>
+              <button class="settings-reset-button" id="settings-reset-btn" type="button">Reset and restart</button>
+            </section>
           </div>
         </div>
       </section>
 
       <div id="messages">
         <div id="welcome">
-          <img class="welcome-logo" src="/static/logo.png" alt="NeuroClaw logo">
+          <img class="welcome-logo" src="/static/logo.png" alt="NeuroDiscovery logo">
           <div class="start-kicker">Research desk ready</div>
-          <h2>What should NeuroClaw inspect?</h2>
+          <h2>What should NeuroDiscovery inspect?</h2>
           <p>Start with a dataset, a pipeline question, or a research idea.</p>
         </div>
       </div>
@@ -3022,7 +3598,7 @@
           <button id="upload-btn" class="upload-btn" title="Attach local files" aria-label="Attach local files" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           </button>
-          <textarea id="msg-input" rows="1" placeholder="Ask NeuroClaw... (Enter to send, Shift+Enter for newline)" aria-controls="slash-menu" aria-expanded="false"></textarea>
+          <textarea id="msg-input" rows="1" placeholder="Ask NeuroDiscovery... (Enter to send, Shift+Enter for newline)" aria-controls="slash-menu" aria-expanded="false"></textarea>
           <div class="model-badge">
             <span id="model-label">Model</span>
             <button id="model-menu-btn" class="model-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" title="Select model">
@@ -3052,13 +3628,69 @@
             <span class="starter-title">FreeSurfer QC</span>
             <span class="starter-desc">Surface checks, outputs, and repair notes.</span>
           </button>
-          <button class="starter-btn" type="button" data-starter-prompt="Set up a NeuroOracle autoresearch run for a neuroscience hypothesis.">
-            <span class="starter-title">NeuroOracle</span>
-            <span class="starter-desc">Turn a hypothesis into runnable rounds.</span>
+          <button class="starter-btn" type="button" data-starter-prompt="Use the NeuroOracle Graph to generate and evaluate a neuroscience hypothesis.">
+            <span class="starter-title">NeuroOracle Graph</span>
+            <span class="starter-desc">Generate hypotheses from graph evidence.</span>
           </button>
         </div>
     </div>
   </div>
+</div>
+
+<div class="case-study-welcome" id="case-study-welcome" hidden aria-hidden="true">
+  <section class="case-study-welcome-card" role="dialog" aria-modal="true" aria-labelledby="case-study-welcome-title" aria-describedby="case-study-welcome-lead">
+    <header class="case-study-welcome-head">
+      <div class="case-study-language-switch" id="case-study-language-switch" role="group" aria-label="Display language">
+        <button class="case-study-language-option" type="button" data-case-study-language="English" aria-pressed="true">English</button>
+        <button class="case-study-language-option" type="button" data-case-study-language="Simplified Chinese" aria-pressed="false">Chinese</button>
+      </div>
+      <p class="case-study-welcome-kicker" id="case-study-welcome-kicker">Case study edition</p>
+      <h2 class="case-study-welcome-title" id="case-study-welcome-title">Welcome to the Expert Study</h2>
+      <p class="case-study-welcome-lead" id="case-study-welcome-lead">Complete six ten-minute sessions. Each session prepares 20 blinded comparisons across three difficulty levels; answer as many as you can. External validation outcomes remain hidden.</p>
+    </header>
+    <ol class="case-study-steps" aria-label="Expert Study workflow" id="case-study-steps">
+      <li class="case-study-step">
+        <span class="case-study-step-title" id="case-study-step-open-title">Open the study</span>
+        <span class="case-study-step-copy" id="case-study-step-open-copy">From the NeuroDiscovery menu, choose Expert Study and enter the study password supplied by the organizer.</span>
+      </li>
+      <li class="case-study-step">
+        <span class="case-study-step-title" id="case-study-step-name-title">Identify yourself</span>
+        <span class="case-study-step-copy" id="case-study-step-name-copy">Check the suggested name or ID, choose whether generator scores are shown, and start the next available session.</span>
+      </li>
+      <li class="case-study-step">
+        <span class="case-study-step-title" id="case-study-step-answer-title">Answer questions</span>
+        <span class="case-study-step-copy" id="case-study-step-answer-copy">Compare the highlighted difference, plain-language terms, and five literature cards, then choose left, right, or Cannot judge.</span>
+      </li>
+      <li class="case-study-step">
+        <span class="case-study-step-title" id="case-study-step-save-title">Save progress</span>
+        <span class="case-study-step-copy" id="case-study-step-save-copy">Answers save automatically. Open the question directory to jump, revisit, or change an answer at any time.</span>
+      </li>
+      <li class="case-study-step">
+        <span class="case-study-step-title" id="case-study-step-export-title">Finish and export</span>
+        <span class="case-study-step-copy" id="case-study-step-export-copy">After ten active minutes, export the session JSON and send it to the organizer; repeat until all six sessions are complete.</span>
+      </li>
+    </ol>
+    <section class="case-study-tools" aria-labelledby="case-study-tools-title">
+      <h3 class="case-study-tools-title" id="case-study-tools-title">Controls available during every session</h3>
+      <div class="case-study-feature-grid">
+        <div class="case-study-feature"><strong id="case-study-feature-evidence-title">Read evidence efficiently</strong><span id="case-study-feature-evidence-copy">Use the 1–5 tabs or View all. The 1–10 value rates evidence support, not replication probability; expand source text or study details, or open the paper when needed.</span></div>
+        <div class="case-study-feature"><strong id="case-study-feature-navigation-title">Navigate and revise</strong><span id="case-study-feature-navigation-copy">Press D for the question directory. It shows answered questions and difficulty; jump back to revise, and drag its edge to resize it.</span></div>
+        <div class="case-study-feature"><strong id="case-study-feature-continuity-title">Continue safely</strong><span id="case-study-feature-continuity-copy">Close returns to NeuroDiscovery and preserves unfinished work; closing the app or computer does too. Next time, continue or delete the record and restart. The password is requested once per app launch.</span></div>
+        <div class="case-study-feature"><strong id="case-study-feature-controls-title">Language and shortcuts</strong><span id="case-study-feature-controls-copy">Switch English or Chinese at any time. Use 1 / 2 / 3 to answer, D for the directory, and Left / Right Arrow while a literature number is focused.</span></div>
+      </div>
+    </section>
+    <aside class="case-study-pause-note" role="note">
+      <span class="case-study-pause-mark" aria-hidden="true">Ⅱ</span>
+      <div class="case-study-pause-copy">
+        <strong id="case-study-pause-title">Pause before stepping away</strong>
+        <span id="case-study-pause-copy">If you need to leave midway, click Pause first. Paused time is excluded from active answering time.</span>
+      </div>
+    </aside>
+    <footer class="case-study-welcome-actions">
+      <button class="case-study-welcome-action" id="case-study-welcome-later" type="button">I’ll do this later</button>
+      <button class="case-study-welcome-action primary" id="case-study-welcome-open" type="button">Open Expert Study</button>
+    </footer>
+  </section>
 </div>
 
 <div class="skill-info-overlay" id="skill-info-overlay" aria-hidden="true">
@@ -3124,6 +3756,8 @@
   }
 
   const mainEl = document.querySelector('.main');
+  const sidebarEl = document.getElementById('app-sidebar');
+  const sidebarResizerEl = document.getElementById('app-sidebar-resizer');
   const sidebarToggleBtn = document.getElementById('sidebar-toggle');
   const chatPanelEl = document.getElementById('chat-panel');
   const messagesEl = document.getElementById('messages');
@@ -3169,6 +3803,8 @@
   const settingsContentEl = document.getElementById('settings-content');
   const settingsSaveBtn = document.getElementById('settings-save-btn');
   const settingsRestartBtn = document.getElementById('settings-restart-btn');
+  const settingsResetZone = document.getElementById('settings-reset-zone');
+  const settingsResetBtn = document.getElementById('settings-reset-btn');
   const settingsStatusEl = document.getElementById('settings-status');
   const chatEmptyHintEl = document.getElementById('chat-empty-hint');
   const newProjectBtn = document.getElementById('new-project-btn');
@@ -3183,6 +3819,10 @@
   const skillInfoTitleEl = document.getElementById('skill-info-title');
   const skillInfoBodyEl = document.getElementById('skill-info-body');
   const skillInfoCloseEl = document.getElementById('skill-info-close');
+  const caseStudyWelcomeEl = document.getElementById('case-study-welcome');
+  const caseStudyWelcomeLaterEl = document.getElementById('case-study-welcome-later');
+  const caseStudyWelcomeOpenEl = document.getElementById('case-study-welcome-open');
+  const caseStudyLanguageSwitchEl = document.getElementById('case-study-language-switch');
   const textScaleDownBtn = document.getElementById('text-scale-down');
   const textScaleUpBtn = document.getElementById('text-scale-up');
   const textScaleValueEl = document.getElementById('text-scale-value');
@@ -3193,11 +3833,15 @@
   const SETTINGS_KEY = 'neuroclaw.desktop.preferences.v1';
   const UI_LANGUAGE_KEY = 'neuroclaw.web.language.v1';
   const TEXT_SCALE_DEFAULT_MIGRATION_KEY = 'neuroclaw.web.text_scale_default_1_1_applied';
+  const CASE_STUDY_WELCOME_KEY = 'neurooracle.case_study_welcome.v1.seen';
   const PREF_LAYOUT_VERSION = 2;
   const TEXT_SCALE_MIN = 0.8;
   const TEXT_SCALE_MAX = 1.5;
   const TEXT_SCALE_STEP = 0.1;
   const TEXT_SCALE_DEFAULT = 1.1;
+  const SIDEBAR_WIDTH_DEFAULT = 292;
+  const SIDEBAR_WIDTH_MIN = 200;
+  const SIDEBAR_WIDTH_MAX = 520;
   const AUTO_RESEARCH_MODE_OFF = 'off';
   const AUTO_RESEARCH_MODE_DATA = 'data';
   const AUTO_RESEARCH_MODE_MODEL = 'model';
@@ -3245,6 +3889,7 @@
     localPythonExe: '',
     fslDir: '',
     language: 'English',
+    theme: 'light',
     proxyUrl: '',
     llmProvider: 'openai',
     llmModel: 'gpt-5.5',
@@ -3277,7 +3922,7 @@
       id: 'general',
       group: 'Personal',
       title: 'General',
-      note: 'Default desktop behavior for daily NeuroClaw work.',
+      note: 'Language, text, and everyday desktop behavior.',
       rows: [
         { key: 'language', scope: 'desktop', label: 'Language', desc: 'Interface and backend language preference.', type: 'select', options: ['System default', 'English', 'Simplified Chinese'] },
         { key: 'textScale', scope: 'local', label: 'Text size', desc: 'Scale interface text without using browser zoom.', type: 'textScale' },
@@ -3286,26 +3931,10 @@
       ],
     },
     {
-      id: 'runtime',
-      group: 'Runtime',
-      title: 'Desktop Runtime',
-      note: 'These values are used by the Electron desktop launcher when it starts the local backend.',
-      rows: [
-        { key: 'runtimeMode', scope: 'desktop', label: 'Python runtime', desc: 'Packaged Windows and macOS apps start with Built-in Python by default.', type: 'select', options: ['bundled', 'conda', 'python'] },
-        { key: 'repoRoot', scope: 'desktop', label: 'NeuroClaw repo root', desc: 'Local source checkout used by the desktop app.', type: 'text', path: true, hideWhenPackaged: true },
-        { key: 'localPythonExe', scope: 'desktop', label: 'Custom Python executable', desc: 'Used only when Python runtime is Custom Python.', type: 'pythonSelect', path: true, whenRuntime: 'python' },
-        { key: 'condaExe', scope: 'desktop', label: 'Conda executable', desc: 'Absolute path to conda.exe.', type: 'text', path: true, whenRuntime: 'conda' },
-        { key: 'condaEnv', scope: 'desktop', label: 'Conda environment', desc: 'Environment name used to launch NeuroClaw.', type: 'text', whenRuntime: 'conda' },
-        { key: 'host', scope: 'desktop', label: 'Backend host', desc: 'Local host address used by the embedded client.', type: 'text' },
-        { key: 'port', scope: 'desktop', label: 'Backend port', desc: 'Local backend port. Current ROG setup uses 7080.', type: 'number' },
-        { key: 'proxyUrl', scope: 'desktop', label: 'VPN download proxy', desc: 'Route graph and dataset downloads through a local HTTP or mixed proxy port.', type: 'proxy' },
-      ],
-    },
-    {
       id: 'llm',
-      group: 'Runtime',
-      title: 'LLM Backend',
-      note: 'These values configure the model endpoint used by the local NeuroClaw backend.',
+      group: 'Configuration',
+      title: 'Model & API',
+      note: 'Configure the model endpoint used by NeuroRuntime.',
       rows: [
         { key: 'llmProvider', scope: 'desktop', label: 'LLM provider', desc: 'Provider adapter used by the backend.', type: 'select', options: ['openai', 'deepseek', 'qwen', 'openrouter', 'anthropic', 'ollama', 'llamacpp'] },
         { key: 'llmModel', scope: 'desktop', label: 'LLM model', desc: 'Model name sent to the provider endpoint.', type: 'text' },
@@ -3315,11 +3944,19 @@
       ],
     },
     {
-      id: 'toolchains',
-      group: 'Integrations',
-      title: 'Toolchains',
-      note: 'Optional paths for neuroimaging and analysis tools. Leave blank until a workflow needs them.',
+      id: 'runtime',
+      group: 'Configuration',
+      title: 'NeuroRuntime',
+      note: 'Local runtime, download connection, and optional research tool paths.',
       rows: [
+        { key: 'runtimeMode', scope: 'desktop', label: 'Python runtime', desc: 'Packaged Windows and macOS apps start with Built-in Python by default.', type: 'select', options: ['bundled', 'conda', 'python'] },
+        { key: 'repoRoot', scope: 'desktop', label: 'NeuroDiscovery repo root', desc: 'Local source checkout used by the desktop app.', type: 'text', path: true, hideWhenPackaged: true },
+        { key: 'localPythonExe', scope: 'desktop', label: 'Custom Python executable', desc: 'Used only when Python runtime is Custom Python.', type: 'pythonSelect', path: true, whenRuntime: 'python' },
+        { key: 'condaExe', scope: 'desktop', label: 'Conda executable', desc: 'Absolute path to conda.exe.', type: 'text', path: true, whenRuntime: 'conda' },
+        { key: 'condaEnv', scope: 'desktop', label: 'Conda environment', desc: 'Environment name used to launch NeuroRuntime.', type: 'text', whenRuntime: 'conda' },
+        { key: 'host', scope: 'desktop', label: 'NeuroRuntime host', desc: 'Local host address used by the embedded client.', type: 'text' },
+        { key: 'port', scope: 'desktop', label: 'NeuroRuntime port', desc: 'Local NeuroRuntime port. Current ROG setup uses 7080.', type: 'number' },
+        { key: 'proxyUrl', scope: 'desktop', label: 'VPN download proxy', desc: 'Route graph and dataset downloads through a local HTTP or mixed proxy port.', type: 'proxy' },
         { key: 'fslDir', scope: 'desktop', label: 'FSLDIR', desc: 'FSL installation root passed to the backend process.', type: 'text', path: true },
         { key: 'freesurferHome', scope: 'local', label: 'FREESURFER_HOME', desc: 'FreeSurfer installation root.', type: 'text', path: true },
         { key: 'dcm2niixPath', scope: 'local', label: 'dcm2niix executable', desc: 'DICOM conversion executable path.', type: 'text', path: true },
@@ -3329,29 +3966,22 @@
       ],
     },
     {
-      id: 'data',
-      group: 'Data',
-      title: 'Data & Memory',
-      note: 'Common workspace paths used by local research runs.',
+      id: 'advanced',
+      group: 'System',
+      title: 'Advanced',
+      note: 'Workspace defaults, startup behavior, diagnostics, and application reset.',
       rows: [
         { key: 'bidsRoot', scope: 'local', label: 'Default BIDS root', desc: 'Primary dataset root for new analysis sessions.', type: 'text', path: true },
         { key: 'outputRoot', scope: 'local', label: 'Output root', desc: 'Default folder for reports, benchmark outputs, and generated artifacts.', type: 'text', path: true },
-        { key: 'memoryRoot', scope: 'local', label: 'Memory root', desc: 'Shared local memory directory for NeuroClaw notes.', type: 'text', path: true },
-      ],
-    },
-    {
-      id: 'advanced',
-      group: 'Advanced',
-      title: 'Advanced',
-      note: 'Startup and diagnostics preferences for the desktop client.',
-      rows: [
-        { key: 'autoStartBackend', scope: 'local', label: 'Auto-start backend', desc: 'Start the local backend when the desktop app opens.', type: 'toggle' },
-        { key: 'reuseExistingBackend', scope: 'local', label: 'Reuse existing backend', desc: 'Connect to an already-running local backend when possible.', type: 'toggle' },
+        { key: 'memoryRoot', scope: 'local', label: 'Memory root', desc: 'Shared local memory directory for NeuroDiscovery notes.', type: 'text', path: true },
+        { key: 'autoStartBackend', scope: 'local', label: 'Auto-start NeuroRuntime', desc: 'Start NeuroRuntime when the desktop app opens.', type: 'toggle' },
+        { key: 'reuseExistingBackend', scope: 'local', label: 'Reuse existing NeuroRuntime', desc: 'Connect to an already-running NeuroRuntime when possible.', type: 'toggle' },
         { key: 'showAdvancedLogs', scope: 'local', label: 'Verbose diagnostics', desc: 'Show more runtime details in future diagnostics panels.', type: 'toggle' },
       ],
     },
   ];
 
+  const STUDY_VIEW_NAMES = ['expert-study', 'study-results'];
   const state = {
     sessions: [],
     projects: [],
@@ -3370,6 +4000,7 @@
     menuPosition: null,
     textScale: TEXT_SCALE_DEFAULT,
     sidebarCollapsed: false,
+    sidebarWidth: SIDEBAR_WIDTH_DEFAULT,
     expanded: { projects: true, chat: true, skills: false, checkpoints: false },
     expandedProjectChats: {},
     theme: 'light',
@@ -3394,6 +4025,14 @@
     settingsSection: 'general',
     settingsSearch: '',
     desktopConfig: { ...DEFAULT_DESKTOP_CONFIG },
+    llmConnectionStatus: {
+      provider: DEFAULT_DESKTOP_CONFIG.llmProvider,
+      apiKeyRequired: true,
+      apiKeyConfigured: false,
+      apiKeySource: 'missing',
+      endpointConfigured: Boolean(DEFAULT_DESKTOP_CONFIG.llmBaseUrl),
+    },
+    settingsAttention: null,
     desktopConfigPath: '',
     desktopLogsPath: '',
     desktopIsPackaged: false,
@@ -3409,6 +4048,7 @@
     neurooracleFrameKey: '',
     expertStudyFrameKey: '',
     studyResultsFrameKey: '',
+    studyReturnView: 'chat',
     lastDesktopMenuAction: { action: '', at: 0 },
   };
 
@@ -3474,6 +4114,176 @@
     return isChineseUi() && zh ? zh : en;
   }
 
+  const CASE_STUDY_WELCOME_COPY = {
+    kicker: ['Case study edition', 'Case Study 专用版'],
+    title: ['Welcome to the Expert Study', '欢迎参加专家研究'],
+    lead: [
+      'Complete six ten-minute sessions. Each session prepares 20 blinded comparisons across three difficulty levels; answer as many as you can. External validation outcomes remain hidden, while your choices and active decision time are recorded.',
+      '请完成 6 次、每次 10 分钟的会话。每次会话准备 20 道覆盖三个难度等级的盲法比较题，请尽可能多地作答；外部验证结果保持隐藏，并记录您的选择和有效判断时间。',
+    ],
+    workflow: ['Expert Study workflow', '专家研究操作流程'],
+    languageLabel: ['Display language', '界面语言'],
+    english: ['English', '英文'],
+    chinese: ['Chinese', '中文'],
+    openTitle: ['Open the study', '打开研究'],
+    openCopy: [
+      'From the NeuroDiscovery menu, choose Expert Study and enter the study password supplied by the organizer.',
+      '在顶部 NeuroDiscovery 菜单中选择“专家研究”，然后输入研究组织者提供的密码。',
+    ],
+    nameTitle: ['Identify yourself', '填写姓名或 ID'],
+    nameCopy: [
+      'Check the suggested name or ID, choose whether generator scores are shown, and start the next available session.',
+      '确认系统建议的姓名或 ID，选择是否显示生成器评分，然后开始下一次可用会话。',
+    ],
+    answerTitle: ['Answer questions', '完成判断题'],
+    answerCopy: [
+      'Compare the highlighted difference, plain-language terms, and five literature cards, then choose left, right, or Cannot judge.',
+      '比较高亮显示的假设差异、通俗术语说明和五篇参考文献，然后选择左侧、右侧或无法判断。',
+    ],
+    saveTitle: ['Save progress', '保存进度'],
+    saveCopy: [
+      'Answers save automatically. Open the question directory to jump, revisit, or change an answer at any time.',
+      '答案会自动保存。您可以随时打开题目目录，跳转、返回查看或修改答案。',
+    ],
+    exportTitle: ['Finish and export', '结束并导出'],
+    exportCopy: [
+      'After ten active minutes, export the session JSON and send it to the organizer; repeat until all six sessions are complete.',
+      '累计 10 分钟有效作答后，导出本次会话的 JSON 并发送给组织者；重复操作，直至完成全部 6 次会话。',
+    ],
+    toolsTitle: ['Controls available during every session', '每次会话中可使用的功能'],
+    evidenceTitle: ['Read evidence efficiently', '高效阅读证据'],
+    evidenceCopy: [
+      'Use the 1–5 tabs or View all. The 1–10 value rates evidence support, not replication probability; expand source text or study details, or open the paper when needed.',
+      '使用 1–5 文献标签逐篇阅读，或选择“查看全部”。1–10 分表示文献对假设的证据支持度，不是复现概率；需要时可展开相关原文、研究详情或打开论文。',
+    ],
+    navigationTitle: ['Navigate and revise', '跳转并修改答案'],
+    navigationCopy: [
+      'Press D for the question directory. It shows answered questions and difficulty; jump back to revise, and drag its edge to resize it.',
+      '按 D 打开题目目录，查看题目难度和作答状态；可跳回修改答案，也可拖动目录边缘调整宽度。',
+    ],
+    continuityTitle: ['Continue safely', '安全续做'],
+    continuityCopy: [
+      'Close returns to NeuroDiscovery and preserves unfinished work; closing the app or computer does too. Next time, continue or delete the record and restart. The password is requested once per app launch.',
+      '点击“关闭”会返回 NeuroDiscovery 并保留未完成进度；关闭应用或电脑也会保存。下次可继续，或删除记录后重做；每次启动应用只需输入一次研究密码。',
+    ],
+    controlsTitle: ['Language and shortcuts', '语言与快捷键'],
+    controlsCopy: [
+      'Switch English or Chinese at any time. Use 1 / 2 / 3 to answer, D for the directory, and Left / Right Arrow while a literature number is focused.',
+      '可随时切换中英文。按 1 / 2 / 3 作答，按 D 打开题目目录；焦点位于文献编号时，用左右方向键切换文献。',
+    ],
+    pauseTitle: ['Pause before stepping away', '中途离开前请先暂停'],
+    pauseCopy: [
+      'If you need to leave midway, click Pause first. Paused time is excluded from active answering time.',
+      '如果中途有事需要离开，请先点击“暂停”。暂停期间不会计入有效答题时间。',
+    ],
+    later: ['I’ll do this later', '稍后再做'],
+    open: ['Open Expert Study', '打开专家研究'],
+  };
+
+  function syncCaseStudyWelcomeLanguage() {
+    if (!caseStudyWelcomeEl) return;
+    const copy = key => CASE_STUDY_WELCOME_COPY[key][isChineseUi() ? 1 : 0];
+    const values = {
+      'case-study-welcome-kicker': copy('kicker'),
+      'case-study-welcome-title': copy('title'),
+      'case-study-welcome-lead': copy('lead'),
+      'case-study-step-open-title': copy('openTitle'),
+      'case-study-step-open-copy': copy('openCopy'),
+      'case-study-step-name-title': copy('nameTitle'),
+      'case-study-step-name-copy': copy('nameCopy'),
+      'case-study-step-answer-title': copy('answerTitle'),
+      'case-study-step-answer-copy': copy('answerCopy'),
+      'case-study-step-save-title': copy('saveTitle'),
+      'case-study-step-save-copy': copy('saveCopy'),
+      'case-study-step-export-title': copy('exportTitle'),
+      'case-study-step-export-copy': copy('exportCopy'),
+      'case-study-tools-title': copy('toolsTitle'),
+      'case-study-feature-evidence-title': copy('evidenceTitle'),
+      'case-study-feature-evidence-copy': copy('evidenceCopy'),
+      'case-study-feature-navigation-title': copy('navigationTitle'),
+      'case-study-feature-navigation-copy': copy('navigationCopy'),
+      'case-study-feature-continuity-title': copy('continuityTitle'),
+      'case-study-feature-continuity-copy': copy('continuityCopy'),
+      'case-study-feature-controls-title': copy('controlsTitle'),
+      'case-study-feature-controls-copy': copy('controlsCopy'),
+      'case-study-pause-title': copy('pauseTitle'),
+      'case-study-pause-copy': copy('pauseCopy'),
+      'case-study-welcome-later': copy('later'),
+      'case-study-welcome-open': copy('open'),
+    };
+    Object.entries(values).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    });
+    const steps = document.getElementById('case-study-steps');
+    if (steps) steps.setAttribute('aria-label', copy('workflow'));
+    if (caseStudyLanguageSwitchEl) {
+      caseStudyLanguageSwitchEl.setAttribute('aria-label', copy('languageLabel'));
+      const currentLanguage = isChineseUi() ? 'Simplified Chinese' : 'English';
+      caseStudyLanguageSwitchEl.querySelectorAll('[data-case-study-language]').forEach(button => {
+        const language = button.dataset.caseStudyLanguage;
+        const active = language === currentLanguage;
+        button.textContent = language === 'Simplified Chinese' ? copy('chinese') : copy('english');
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    }
+  }
+
+  async function setCaseStudyWelcomeLanguage(language, { refreshStudyWorkspace = true } = {}) {
+    const nextLanguage = language === 'Simplified Chinese' ? 'Simplified Chinese' : 'English';
+    state.desktopConfig.language = nextLanguage;
+    applyLanguage(true, { refreshStudyWorkspace });
+    if (window.neuroclawDesktop && typeof window.neuroclawDesktop.saveConfig === 'function') {
+      try {
+        const result = await window.neuroclawDesktop.saveConfig({
+          ...state.desktopConfig,
+          language: nextLanguage,
+        });
+        if (result && result.config) {
+          state.desktopConfig = { ...DEFAULT_DESKTOP_CONFIG, ...result.config, language: nextLanguage };
+        }
+      } catch (_err) {
+        // The local UI preference is already persisted; desktop config can be saved later.
+      }
+    }
+    applyLanguage(false, { refreshStudyWorkspace });
+  }
+
+  function caseStudyWelcomeWasSeen() {
+    try {
+      return localStorage.getItem(CASE_STUDY_WELCOME_KEY) === '1';
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function setCaseStudyWelcomeSeen() {
+    try {
+      localStorage.setItem(CASE_STUDY_WELCOME_KEY, '1');
+    } catch (_e) {}
+  }
+
+  function showCaseStudyWelcomeIfNeeded() {
+    if (!caseStudyWelcomeEl || caseStudyWelcomeWasSeen()) return;
+    syncCaseStudyWelcomeLanguage();
+    caseStudyWelcomeEl.hidden = false;
+    caseStudyWelcomeEl.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => caseStudyWelcomeOpenEl?.focus());
+  }
+
+  function dismissCaseStudyWelcome(openStudy = false) {
+    if (!caseStudyWelcomeEl) return;
+    setCaseStudyWelcomeSeen();
+    caseStudyWelcomeEl.hidden = true;
+    caseStudyWelcomeEl.setAttribute('aria-hidden', 'true');
+    if (openStudy) {
+      setActiveView('expert-study', { focus: false });
+    } else {
+      inputEl?.focus();
+    }
+  }
+
   const UI_ZH = {
     'Day': '日间',
     'Night': '夜间',
@@ -3483,6 +4293,7 @@
     'New Chat': '新对话',
     'Collapse sidebar': '折叠侧栏',
     'Expand sidebar': '展开侧栏',
+    'Resize sidebar': '调整侧栏宽度',
     'Theme switcher': '主题切换',
     'Primary navigation': '主导航',
     'Project actions': '项目操作',
@@ -3493,12 +4304,14 @@
     'AutoResearch help commands': 'AutoResearch 帮助命令',
     'Attach local files': '添加本地文件',
     'Drop files to attach': '拖放文件以添加',
-    'Ask NeuroClaw... (Enter to send, Shift+Enter for newline)': '向 NeuroClaw 提问…（Enter 发送，Shift+Enter 换行）',
+    'Ask NeuroDiscovery... (Enter to send, Shift+Enter for newline)': '向 NeuroDiscovery 提问…（Enter 发送，Shift+Enter 换行）',
     'Select model': '选择模型',
     'Starter prompts': '快捷提示',
     'Search': '搜索',
     'Skills': '技能',
-    'NeuroOracle': 'NeuroOracle',
+    'NeuroDiscovery': 'NeuroDiscovery',
+    'NeuroOracle Graph': 'NeuroOracle 图谱',
+    'Generate hypotheses from graph evidence.': '从图谱证据生成假设。',
     'Knowledge Graph Explorer': '知识图谱查看器',
     'Browse concepts, claims, hypotheses, and graph paths from the local NeuroOracle knowledge graph.': '浏览本地 NeuroOracle 知识图谱中的概念、文献声明、假设和图谱路径。',
     'Open graph viewer': '打开图谱查看器',
@@ -3530,11 +4343,18 @@
     'No projects': '暂无项目',
     'No chats in this project': '此项目暂无对话',
     'No checkpoints yet': '暂无检查点',
+    'No checkpoints for this chat yet': '当前对话暂无检查点',
     'No sessions yet, creating one automatically...': '暂无对话，正在自动创建...',
     'Created:': '创建于：',
     'Unknown': '未知',
     'Session menu': '对话菜单',
     'Export': '导出',
+    'Export JSON': '导出 JSON',
+    'Export Markdown': '导出 Markdown',
+    'Chat exported to:': '对话已导出到：',
+    'Conversation and agent work log exported to:': '会话内容和 agent 工作记录已导出到：',
+    'Chat export started.': '对话导出已开始。',
+    'Chat export failed.': '对话导出失败。',
     'Rename': '重命名',
     'Delete': '删除',
     'Show more': '显示更多',
@@ -3563,14 +4383,17 @@
     'Search settings': '搜索设置',
     'Desktop Settings': '桌面设置',
     'Settings': '设置',
-    'Configure the desktop runtime, local dependency paths, LLM backend, and common software preferences.': '配置桌面运行时、本地依赖路径、LLM 后端和常用软件偏好。',
+    'Manage appearance, model access, the local runtime, and application data.': '管理界面、模型接入、本地运行环境和应用数据。',
     'Save settings': '保存设置',
     'Restart now': '立即重启',
+    'Reset application': '重置应用',
+    'Clear desktop configuration, chats, project history, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.': '清除桌面配置、对话、项目历史、Expert Study 进度、本地记忆、日志和缓存，然后重启。不会删除项目文件夹和研究数据。',
+    'Reset and restart': '重置并重启',
     'Restart is only available in the desktop app.': '重启功能仅在桌面应用中可用。',
-    'Restarting NeuroClaw...': '正在重启 NeuroClaw...',
+    'Restarting NeuroDiscovery...': '正在重启 NeuroDiscovery...',
     'Restart failed:': '重启失败：',
     'Research desk ready': '研究工作台就绪',
-    'What should NeuroClaw inspect?': 'NeuroClaw 要检查什么？',
+    'What should NeuroDiscovery inspect?': 'NeuroDiscovery 要检查什么？',
     'Start with a dataset, a pipeline question, or a research idea.': '可以从数据集、流程问题或研究想法开始。',
     'Validate layout, metadata, and next checks.': '验证布局、元数据和后续检查。',
     'Preprocess, model, and inspect results.': '预处理、建模并检查结果。',
@@ -3579,11 +4402,14 @@
     'Choose User Avatar': '选择用户头像',
     'Change avatar': '更换头像',
     'General': '通用',
+    'Configuration': '配置',
+    'System': '系统',
+    'Model & API': '模型与 API',
     'Runtime': '运行环境',
     'Personal': '个人',
     'Integrations': '集成',
     'Data': '数据',
-    'Default desktop behavior for daily NeuroClaw work.': 'NeuroClaw 日常使用的默认桌面行为。',
+    'Language, text, and everyday desktop behavior.': '设置语言、字号和常用桌面行为。',
     'Language': '语言',
     'Interface and backend language preference.': '界面和后端语言偏好。',
     'System default': '跟随系统',
@@ -3620,9 +4446,10 @@
     'Default file opener': '默认文件打开方式',
     'Where folders, logs, and generated files should open by default.': '文件夹、日志和生成文件默认打开的位置。',
     'Explorer': '文件资源管理器',
-    'Desktop Runtime': '桌面运行时',
-    'These values are used by the Electron desktop launcher when it starts the local backend.': '这些值用于 Electron 桌面端启动本地后端。',
-    'NeuroClaw repo root': 'NeuroClaw 仓库根目录',
+    'NeuroRuntime': 'NeuroRuntime',
+    'Local runtime, download connection, and optional research tool paths.': '配置本地运行环境、下载连接和可选研究工具路径。',
+    'These values are used by the Electron desktop launcher when it starts NeuroRuntime.': '这些值用于 Electron 桌面端启动 NeuroRuntime。',
+    'NeuroDiscovery repo root': 'NeuroDiscovery 仓库根目录',
     'Local source checkout used by the desktop app.': '桌面应用使用的本地源码目录。',
     'Python runtime mode': 'Python 运行模式',
     'Use the bundled runtime, start through conda, or call a specific python.exe directly.': '使用内置运行环境、通过 conda 启动，或直接调用指定的 python.exe。',
@@ -3631,11 +4458,11 @@
     'Conda executable': 'Conda 可执行文件',
     'Absolute path to conda.exe.': 'conda.exe 的绝对路径。',
     'Conda environment': 'Conda 环境',
-    'Environment name used to launch NeuroClaw.': '启动 NeuroClaw 使用的环境名。',
-    'Backend host': '后端主机',
+    'Environment name used to launch NeuroRuntime.': '启动 NeuroRuntime 使用的环境名。',
+    'NeuroRuntime host': 'NeuroRuntime 主机',
     'Local host address used by the embedded client.': '嵌入式客户端使用的本地主机地址。',
-    'Backend port': '后端端口',
-    'Local backend port. Current ROG setup uses 7080.': '本地后端端口。当前 ROG 配置使用 7080。',
+    'NeuroRuntime port': 'NeuroRuntime 端口',
+    'Local NeuroRuntime port. Current ROG setup uses 7080.': '本地 NeuroRuntime 端口。当前 ROG 配置使用 7080。',
     'VPN download proxy': 'VPN 下载代理',
     'Route graph and dataset downloads through a local HTTP or mixed proxy port.': '通过本地 HTTP 或混合代理端口下载图谱和数据集。',
     'Use VPN proxy': '使用 VPN 代理',
@@ -3646,7 +4473,8 @@
     'Direct connection': '直接连接',
     'Proxy protocol mismatch. Use an HTTP or mixed proxy port in Settings > Desktop Runtime, then restart the app.': '代理协议不匹配。请在“设置 > 桌面运行时”中选择 HTTP 或混合代理端口，然后重启应用。',
     'LLM Backend': 'LLM 后端',
-    'These values configure the model endpoint used by the local NeuroClaw backend.': '这些值用于配置本地 NeuroClaw 后端调用的模型接口。',
+    'Configure the model endpoint used by NeuroRuntime.': '配置 NeuroRuntime 使用的模型接口。',
+    'These values configure the model endpoint used by NeuroRuntime.': '这些值用于配置 NeuroRuntime 调用的模型接口。',
     'LLM provider': 'LLM 提供方',
     'Provider adapter used by the backend.': '后端使用的提供方适配器。',
     'OpenAI-compatible': 'OpenAI 兼容',
@@ -3681,14 +4509,15 @@
     'Output root': '输出根目录',
     'Default folder for reports, benchmark outputs, and generated artifacts.': '报告、基准输出和生成文件的默认目录。',
     'Memory root': '记忆根目录',
-    'Shared ROG memory directory for Codex and NeuroClaw notes.': 'Codex 和 NeuroClaw 共享的 ROG 记忆目录。',
-    'Shared local memory directory for NeuroClaw notes.': 'NeuroClaw 笔记使用的共享本地记忆目录。',
+    'Shared ROG memory directory for Codex and NeuroDiscovery notes.': 'Codex 和 NeuroDiscovery 共享的 ROG 记忆目录。',
+    'Shared local memory directory for NeuroDiscovery notes.': 'NeuroDiscovery 笔记使用的共享本地记忆目录。',
     'Advanced': '高级',
+    'Workspace defaults, startup behavior, diagnostics, and application reset.': '管理工作区默认值、启动行为、诊断和应用重置。',
     'Startup and diagnostics preferences for the desktop client.': '桌面客户端的启动和诊断偏好。',
-    'Auto-start backend': '自动启动后端',
-    'Start the local backend when the desktop app opens.': '打开桌面应用时启动本地后端。',
-    'Reuse existing backend': '复用已有后端',
-    'Connect to an already-running local backend when possible.': '尽可能连接已经运行的本地后端。',
+    'Auto-start NeuroRuntime': '自动启动 NeuroRuntime',
+    'Start NeuroRuntime when the desktop app opens.': '打开桌面应用时启动 NeuroRuntime。',
+    'Reuse existing NeuroRuntime': '复用已有 NeuroRuntime',
+    'Connect to an already-running NeuroRuntime when possible.': '尽可能连接已经运行的 NeuroRuntime。',
     'Verbose diagnostics': '详细诊断',
     'Show more runtime details in future diagnostics panels.': '在后续诊断面板中显示更多运行细节。',
     'Desktop files': '桌面文件',
@@ -3760,6 +4589,9 @@
     'Restore workspace to this checkpoint? Current files will be overwritten.': '将工作区恢复到此检查点吗？当前文件会被覆盖。',
     'Workspace restored.': '工作区已恢复。',
     'Restore failed.': '恢复失败。',
+    'Delete this checkpoint? This cannot be undone.': '删除这个检查点吗？此操作无法撤销。',
+    'Checkpoint deleted.': '检查点已删除。',
+    'Delete checkpoint failed.': '删除检查点失败。',
     'Attachment parser failed.': '附件解析失败。',
     'Attachment parser is unavailable.': '附件解析器不可用。',
     'No readable attachment content.': '没有可读取的附件内容。',
@@ -3772,7 +4604,6 @@
     'Developer Tools': '开发工具',
     'Search & Web': '搜索与网络',
     'Agents & Runtime': 'Agent 与运行环境',
-    'Export format: json or md': '导出格式：json 或 md',
   };
 
   function tr(text) {
@@ -3790,18 +4621,23 @@
     if (el) el.setAttribute('placeholder', tr(text));
   }
 
-  function applyLanguage(persist = false) {
+  function applyLanguage(persist = false, { refreshStudyWorkspace = true } = {}) {
     const lang = currentUiLanguage();
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     if (persist) {
       localStorage.setItem(UI_LANGUAGE_KEY, lang === 'zh' ? 'Simplified Chinese' : 'English');
+      if (window.neuroclawDesktop && typeof window.neuroclawDesktop.setLanguage === 'function') {
+        window.neuroclawDesktop
+          .setLanguage(state.desktopConfig.language || (lang === 'zh' ? 'Simplified Chinese' : 'English'))
+          .catch(() => {});
+      }
     }
 
     [
       ['nav-new-chat', 'New chat'],
       ['nav-search', 'Search'],
       ['nav-skills', 'Skills'],
-      ['nav-neurooracle', 'NeuroOracle'],
+      ['nav-neurooracle', 'NeuroOracle Graph'],
       ['nav-settings', 'Settings'],
     ].forEach(([id, label]) => {
       const labelEl = document.querySelector(`#${id} span:last-child`);
@@ -3831,6 +4667,7 @@
       sidebarToggleBtn.setAttribute('aria-label', collapsed ? tr('Expand sidebar') : tr('Collapse sidebar'));
       sidebarToggleBtn.title = collapsed ? tr('Expand sidebar') : tr('Collapse sidebar');
     }
+    if (sidebarResizerEl) sidebarResizerEl.setAttribute('aria-label', tr('Resize sidebar'));
     const statusRaw = statusText ? statusText.textContent.trim() : '';
     if (statusRaw === 'Ready' || statusRaw === '就绪') statusText.textContent = tr('Ready');
     if (statusRaw === 'Thinking' || statusRaw === '思考中') statusText.textContent = tr('Thinking');
@@ -3852,7 +4689,7 @@
     setText('#skills-page .page-title', 'Skills');
     setText('#skills-page .page-subtitle', 'Choose task-specific abilities for the current chat. Summaries are loaded from the local offline catalog.');
     setPlaceholder('#skill-page-search', 'Search skills');
-    setText('#neurooracle-page .page-eyebrow', 'NeuroOracle');
+    setText('#neurooracle-page .page-eyebrow', 'NeuroOracle Graph');
     setText('#neurooracle-page .page-title', 'Knowledge Graph Explorer');
     setText('#neurooracle-subtitle', 'Browse concepts, claims, hypotheses, and graph paths from the local NeuroOracle knowledge graph.');
     setText('#neurooracle-open-btn', 'Open graph viewer');
@@ -3862,7 +4699,7 @@
     if (graphFrame) graphFrame.title = tr('NeuroOracle graph viewer');
     if (expertStudyFrameEl) expertStudyFrameEl.title = tr('Expert Study');
     if (studyResultsFrameEl) studyResultsFrameEl.title = tr('Study Results');
-    if (state.activeView === 'expert-study' || state.activeView === 'study-results') {
+    if (refreshStudyWorkspace && (state.activeView === 'expert-study' || state.activeView === 'study-results')) {
       openStudyWorkspace(state.activeView);
     }
     setText('#search-page .page-eyebrow', 'Workspace Search');
@@ -3874,16 +4711,19 @@
     setPlaceholder('#settings-search', 'Search settings');
     setText('#settings-page .page-eyebrow', 'Desktop Settings');
     setText('#settings-page .page-title', 'Settings');
-    setText('#settings-page .page-subtitle', 'Configure the desktop runtime, local dependency paths, LLM backend, and common software preferences.');
+    setText('#settings-page .page-subtitle', 'Manage appearance, model access, the local runtime, and application data.');
     setText('#settings-save-btn', 'Save settings');
     setText('#settings-restart-btn', 'Restart now');
+    setText('#settings-reset-title', 'Reset application');
+    setText('#settings-reset-desc', 'Clear desktop configuration, chats, project history, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.');
+    setText('#settings-reset-btn', 'Reset and restart');
     const settingsSidebar = document.querySelector('.settings-sidebar');
     if (settingsSidebar) settingsSidebar.setAttribute('aria-label', tr('Settings navigation'));
 
     setText('#welcome .start-kicker', 'Research desk ready');
-    setText('#welcome h2', 'What should NeuroClaw inspect?');
+    setText('#welcome h2', 'What should NeuroDiscovery inspect?');
     setText('#welcome p', 'Start with a dataset, a pipeline question, or a research idea.');
-    const starterTitles = ['BIDS QC', 'fMRI workflow', 'FreeSurfer QC', 'NeuroOracle'];
+    const starterTitles = ['BIDS QC', 'fMRI workflow', 'FreeSurfer QC', 'NeuroOracle Graph'];
     const starterPrompts = [
       uiText(
         'Plan a BIDS validation and quality-control pass for my neuroimaging dataset.',
@@ -3898,8 +4738,8 @@
         '请起草一份包含命令的 FreeSurfer 皮层重建质量控制清单。',
       ),
       uiText(
-        'Turn a neuroscience hypothesis into runnable NeuroOracle research rounds.',
-        '请把一个神经科学假设转化为可运行的 NeuroOracle 研究轮次。',
+        'Use the NeuroOracle Graph to generate and evaluate a neuroscience hypothesis.',
+        '使用 NeuroOracle 图谱生成并评估神经科学假设。',
       ),
     ];
     document.querySelectorAll('.starter-title').forEach((el, idx) => {
@@ -3934,7 +4774,7 @@
       uploadBtnEl.setAttribute('aria-label', tr('Attach local files'));
     }
     if (fileDropHintTextEl) fileDropHintTextEl.textContent = tr('Drop files to attach');
-    setPlaceholder('#msg-input', 'Ask NeuroClaw... (Enter to send, Shift+Enter for newline)');
+    setPlaceholder('#msg-input', 'Ask NeuroDiscovery... (Enter to send, Shift+Enter for newline)');
     if (modelMenuEl) modelMenuEl.setAttribute('aria-label', tr('Select model'));
     if (modelSelect) modelSelect.setAttribute('aria-label', tr('Select model'));
     if (modelSelect && modelSelect.options.length === 1) {
@@ -3952,12 +4792,17 @@
       neurooracleStatusEl.textContent = tr('Checking local graph...');
     }
     renderSidebarLists();
-    renderActiveSession();
+    if (state.activeView === 'chat') {
+      renderActiveSession();
+    } else {
+      chatPanelEl.classList.remove('is-empty');
+    }
     renderSkills(state.skills);
     renderPendingFiles();
     if (state.activeView === 'search') renderWorkspaceSearch();
     if (state.projectCreateMenuOpen) setProjectCreateMenuOpen(true);
     if (state.slashMenuOpen) renderSlashMenu();
+    syncCaseStudyWelcomeLanguage();
   }
 
   function compactModelName(model) {
@@ -4315,6 +5160,10 @@
     });
     if (typeof session.draft !== 'string') session.draft = '';
     if (!Array.isArray(session.selectedSkills)) session.selectedSkills = [];
+    if (typeof session.autoTitlePending !== 'boolean') {
+      const userCount = session.messages.filter(message => message.role === 'user').length;
+      session.autoTitlePending = isNewChatTitle(session.title) && userCount <= 1;
+    }
     return session;
   }
 
@@ -4380,6 +5229,7 @@
       theme: state.theme,
       textScale: state.textScale,
       sidebarCollapsed: state.sidebarCollapsed,
+      sidebarWidth: state.sidebarWidth,
     }));
   }
 
@@ -4432,6 +5282,9 @@
         if (parsed && typeof parsed.sidebarCollapsed === 'boolean') {
           state.sidebarCollapsed = parsed.sidebarCollapsed;
         }
+        if (parsed && Number.isFinite(Number(parsed.sidebarWidth))) {
+          state.sidebarWidth = Number(parsed.sidebarWidth);
+        }
       }
     } catch (_e) {}
 
@@ -4479,6 +5332,49 @@
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.localSettings, null, 2));
   }
 
+  function rendererProviderNeedsNoApiKey(provider) {
+    return ['ollama', 'llamacpp', 'local'].includes(String(provider || '').trim().toLowerCase());
+  }
+
+  function fallbackLlmConnectionStatus(config = state.desktopConfig) {
+    const provider = String(config && config.llmProvider || '').trim().toLowerCase() || 'openai';
+    const apiKeyRequired = !rendererProviderNeedsNoApiKey(provider);
+    return {
+      provider,
+      apiKeyRequired,
+      apiKeyConfigured: !apiKeyRequired || Boolean(String(config && config.llmApiKey || '').trim()),
+      apiKeySource: !apiKeyRequired ? 'not-required' : String(config && config.llmApiKey || '').trim() ? 'desktop-config' : 'missing',
+      endpointConfigured: Boolean(String(config && config.llmBaseUrl || '').trim()),
+    };
+  }
+
+  function applyLlmConnectionStatus(result) {
+    const reported = result && result.llmConnectionStatus && typeof result.llmConnectionStatus === 'object'
+      ? result.llmConnectionStatus
+      : fallbackLlmConnectionStatus();
+    state.llmConnectionStatus = { ...fallbackLlmConnectionStatus(), ...reported };
+  }
+
+  function llmSettingsPromptText() {
+    const attention = state.settingsAttention || {};
+    if (attention.missingApiKey && attention.missingEndpoint) {
+      return uiText(
+        'Enter an API key and API endpoint below. Save the settings, then restart NeuroDiscovery before sending your message again.',
+        '请在下方填写 API key 和 API 接入点。保存设置并重启 NeuroDiscovery 后，再次发送消息。',
+      );
+    }
+    if (attention.missingApiKey) {
+      return uiText(
+        'Enter an API key and confirm the API endpoint below. Save the settings, then restart NeuroDiscovery before sending your message again.',
+        '请在下方填写 API key，并确认 API 接入点。保存设置并重启 NeuroDiscovery 后，再次发送消息。',
+      );
+    }
+    return uiText(
+      'Enter an API endpoint below. Save the settings, then restart NeuroDiscovery before sending your message again.',
+      '请在下方填写 API 接入点。保存设置并重启 NeuroDiscovery 后，再次发送消息。',
+    );
+  }
+
   async function loadDesktopSettings() {
     if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.getConfig !== 'function') {
       state.settingsLoaded = true;
@@ -4496,6 +5392,7 @@
       state.desktopLogsPath = result && result.logsPath ? String(result.logsPath) : '';
       state.desktopIsPackaged = Boolean(result && result.isPackaged);
       state.desktopPlatform = result && result.platform ? String(result.platform) : state.desktopPlatform;
+      applyLlmConnectionStatus(result);
     } catch (err) {
       setSettingsStatus(`Could not read desktop config: ${err && err.message ? err.message : err}`, true);
     } finally {
@@ -4616,6 +5513,52 @@
     }
   }
 
+  function closeSettingsSelect(wrapper, focusTrigger = false) {
+    if (!wrapper) return;
+    wrapper.classList.remove('open', 'drop-up');
+    const trigger = wrapper.querySelector('[data-settings-select-trigger]');
+    const menu = wrapper.querySelector('[data-settings-select-menu]');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    if (menu) menu.hidden = true;
+    if (focusTrigger && trigger) trigger.focus({ preventScroll: true });
+  }
+
+  function closeAllSettingsSelects(except = null) {
+    document.querySelectorAll('[data-settings-select].open').forEach(wrapper => {
+      if (wrapper !== except) closeSettingsSelect(wrapper);
+    });
+  }
+
+  function openSettingsSelect(wrapper, focusSelected = false) {
+    if (!wrapper) return;
+    closeAllSettingsSelects(wrapper);
+    const trigger = wrapper.querySelector('[data-settings-select-trigger]');
+    const menu = wrapper.querySelector('[data-settings-select-menu]');
+    if (!trigger || !menu) return;
+    wrapper.classList.remove('drop-up');
+    wrapper.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    menu.hidden = false;
+    const triggerRect = trigger.getBoundingClientRect();
+    const pageRect = settingsPageEl?.getBoundingClientRect();
+    const viewportTop = pageRect ? pageRect.top : 0;
+    const viewportBottom = pageRect ? pageRect.bottom : window.innerHeight;
+    const roomBelow = viewportBottom - triggerRect.bottom;
+    const roomAbove = triggerRect.top - viewportTop;
+    if (roomBelow < menu.offsetHeight + 12 && roomAbove > roomBelow) {
+      wrapper.classList.add('drop-up');
+    }
+    if (focusSelected) {
+      const selected = menu.querySelector('[aria-selected="true"]');
+      const first = menu.querySelector('[data-settings-select-option]');
+      (selected || first)?.focus({ preventScroll: true });
+    }
+  }
+
+  function settingsSelectOptionButtons(wrapper) {
+    return Array.from(wrapper?.querySelectorAll('[data-settings-select-option]') || []);
+  }
+
   function renderSettingsControl(row) {
     const value = getSettingValue(row);
     const common = `data-setting-scope="${escapeAttr(row.scope)}" data-setting-key="${escapeAttr(row.key)}"`;
@@ -4654,11 +5597,33 @@
       `;
     }
     if (row.type === 'select') {
-      const options = settingOptions(row).map(option => {
-        const selected = String(option) === String(value) ? ' selected' : '';
-        return `<option value="${escapeAttr(option)}"${selected}>${escapeHtml(tr(settingOptionLabel(row, option)))}</option>`;
+      const options = settingOptions(row);
+      const selectedOption = options.find(option => String(option) === String(value));
+      const selectedValue = selectedOption === undefined ? String(value || '') : String(selectedOption);
+      const selectedLabel = tr(settingOptionLabel(row, selectedValue));
+      const menuId = `settings-select-${String(row.scope)}-${String(row.key)}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+      const optionButtons = options.map(option => {
+        const optionValue = String(option);
+        const selected = optionValue === selectedValue;
+        return `
+          <button class="settings-select-option${selected ? ' active' : ''}" type="button" role="option" aria-selected="${selected ? 'true' : 'false'}" data-settings-select-option="${escapeAttr(optionValue)}">
+            <span>${escapeHtml(tr(settingOptionLabel(row, option)))}</span>
+            <span class="settings-select-check" aria-hidden="true">${selected ? '✓' : ''}</span>
+          </button>
+        `;
       }).join('');
-      return `<select class="settings-control" ${common}>${options}</select>`;
+      return `
+        <div class="settings-select" data-settings-select>
+          <input type="hidden" value="${escapeAttr(selectedValue)}" ${common}>
+          <button class="settings-select-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeAttr(menuId)}" aria-label="${escapeAttr(tr(row.label))}" data-settings-select-trigger>
+            <span data-settings-select-label>${escapeHtml(selectedLabel)}</span>
+            <svg class="settings-select-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="settings-select-menu" id="${escapeAttr(menuId)}" role="listbox" data-settings-select-menu hidden>
+            ${optionButtons}
+          </div>
+        </div>
+      `;
     }
     if (row.type === 'pythonSelect') {
       const currentValue = String(value || '').trim();
@@ -4707,19 +5672,23 @@
     return haystack.includes(q);
   }
 
+  const SETTINGS_SECTION_ICONS = {
+    general: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.1h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1z"></path></svg>',
+    llm: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="M12 8v8"></path><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M20 9h3M1 15h3M20 15h3"></path></svg>',
+    runtime: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="m7 9 3 3-3 3M13 15h4"></path></svg>',
+    advanced: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="13" cy="18" r="2"></circle></svg>',
+  };
+
   function renderSettingsNav() {
     if (!settingsNavEl) return;
-    const groupCounts = SETTINGS_SECTIONS.reduce((acc, section) => {
-      acc[section.group] = (acc[section.group] || 0) + 1;
-      return acc;
-    }, {});
     let lastGroup = '';
     settingsNavEl.innerHTML = SETTINGS_SECTIONS.map(section => {
-      const label = groupCounts[section.group] > 1 && section.group !== lastGroup
+      const label = section.group !== lastGroup
         ? `<div class="settings-nav-label">${escapeHtml(tr(section.group))}</div>`
         : '';
       lastGroup = section.group;
-      return `${label}<button class="settings-nav-item${state.settingsSection === section.id ? ' active' : ''}" data-settings-section="${escapeAttr(section.id)}" type="button">${escapeHtml(tr(section.title))}</button>`;
+      const icon = SETTINGS_SECTION_ICONS[section.id] || '';
+      return `${label}<button class="settings-nav-item${state.settingsSection === section.id ? ' active' : ''}" data-settings-section="${escapeAttr(section.id)}" type="button"><span class="settings-nav-icon">${icon}</span><span>${escapeHtml(tr(section.title))}</span></button>`;
     }).join('');
   }
 
@@ -4733,19 +5702,30 @@
     const html = sectionsToRender.map(section => {
       const rows = section.rows.filter(row => shouldRenderSettingsRow(row) && rowMatchesSettingsSearch(row, section));
       if (!rows.length) return '';
-      const body = rows.map(row => `
-        <div class="settings-row">
+      const body = rows.map(row => {
+        const needsAttention = Boolean(
+          state.settingsAttention
+          && section.id === 'llm'
+          && ['llmApiKey', 'llmBaseUrl'].includes(row.key)
+        );
+        return `
+        <div class="settings-row${needsAttention ? ' settings-row-attention' : ''}" data-setting-row="${escapeAttr(row.key)}">
           <div>
             <div class="settings-row-label">${escapeHtml(tr(row.label))}</div>
             <div class="settings-row-desc">${escapeHtml(tr(row.desc || ''))}</div>
           </div>
           <div>${renderSettingsControl(row)}</div>
         </div>
-      `).join('');
+      `;
+      }).join('');
+      const requiredNotice = section.id === 'llm' && state.settingsAttention
+        ? `<div class="settings-required-notice" role="alert"><strong>${escapeHtml(uiText('Chat setup required', '聊天前需要完成配置'))}</strong>${escapeHtml(llmSettingsPromptText())}</div>`
+        : '';
       return `
         <section class="settings-section" data-settings-panel="${escapeAttr(section.id)}">
           <div class="settings-section-title">${escapeHtml(tr(section.title))}</div>
           <div class="settings-section-note">${escapeHtml(tr(section.note || ''))}</div>
+          ${requiredNotice}
           <div class="settings-card">${body}</div>
         </section>
       `;
@@ -4777,6 +5757,9 @@
 
     settingsContentEl.innerHTML = html || `<div class="skill-empty-state">${escapeHtml(tr('No settings match this search.'))}</div>`;
     settingsContentEl.insertAdjacentHTML('beforeend', desktopInfo);
+    if (settingsResetZone) {
+      settingsResetZone.hidden = active.id !== 'advanced' || Boolean(state.settingsSearch.trim());
+    }
   }
 
   function collectSettingsFromForm() {
@@ -4815,11 +5798,24 @@
         if (result && result.config) {
           state.desktopConfig = { ...DEFAULT_DESKTOP_CONFIG, ...result.config };
         }
+        applyLlmConnectionStatus(result);
         state.desktopConfigPath = result && result.configPath ? String(result.configPath) : state.desktopConfigPath;
         if (settingsRestartBtn && result && result.restartRequired) {
           settingsRestartBtn.hidden = false;
         }
-        setSettingsStatus(uiText('Saved. Interface changes apply now; backend runtime and LLM settings apply next launch.', '已保存。界面设置立即生效；后端运行和 LLM 设置下次启动生效。'));
+        const missingApiKey = state.llmConnectionStatus.apiKeyRequired !== false && !state.llmConnectionStatus.apiKeyConfigured;
+        const missingEndpoint = !state.llmConnectionStatus.endpointConfigured;
+        if (state.settingsAttention && (missingApiKey || missingEndpoint)) {
+          state.settingsAttention = {
+            reason: 'chat-configuration-required',
+            missingApiKey,
+            missingEndpoint,
+          };
+          setSettingsStatus(llmSettingsPromptText(), true);
+        } else {
+          state.settingsAttention = null;
+          setSettingsStatus(uiText('Saved. Interface changes apply now; backend runtime and LLM settings apply next launch.', '已保存。界面设置立即生效；后端运行和 LLM 设置下次启动生效。'));
+        }
       } catch (err) {
         setSettingsStatus(`${uiText('Saved local settings, but desktop config failed:', '本地设置已保存，但桌面配置保存失败：')} ${err && err.message ? err.message : err}`, true);
       }
@@ -4865,6 +5861,33 @@
     return Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, Number(rounded.toFixed(2))));
   }
 
+  function syncStudyTextScale(frame) {
+    if (!frame || !frame.contentWindow) return;
+    frame.contentWindow.postMessage(
+      { type: 'neuroclaw:text-scale', scale: state.textScale },
+      window.location.origin,
+    );
+  }
+
+  function syncStudyTextScaleFrames() {
+    syncStudyTextScale(expertStudyFrameEl);
+    syncStudyTextScale(studyResultsFrameEl);
+  }
+
+  function syncEmbeddedTheme(frame) {
+    if (!frame || !frame.contentWindow) return;
+    frame.contentWindow.postMessage(
+      { type: 'neurodiscovery:theme', theme: state.theme },
+      window.location.origin,
+    );
+  }
+
+  function syncEmbeddedThemeFrames() {
+    syncEmbeddedTheme(neurooracleFrameEl);
+    syncEmbeddedTheme(expertStudyFrameEl);
+    syncEmbeddedTheme(studyResultsFrameEl);
+  }
+
   function applyTextScale(value, persist = true) {
     state.textScale = clampTextScale(value);
     state.localSettings.textScale = state.textScale;
@@ -4883,7 +5906,95 @@
       if (down) down.disabled = state.textScale <= TEXT_SCALE_MIN;
       if (up) up.disabled = state.textScale >= TEXT_SCALE_MAX;
     });
+    syncStudyTextScaleFrames();
     if (persist) savePrefs();
+  }
+
+  function sidebarWidthBounds() {
+    const available = mainEl?.clientWidth || window.innerWidth;
+    const maximum = Math.max(
+      SIDEBAR_WIDTH_MIN,
+      Math.min(SIDEBAR_WIDTH_MAX, Math.floor(available - 420)),
+    );
+    return { minimum: Math.min(SIDEBAR_WIDTH_MIN, maximum), maximum };
+  }
+
+  function applySidebarWidth(value = state.sidebarWidth, persist = true) {
+    const bounds = sidebarWidthBounds();
+    const width = Math.round(Math.max(
+      bounds.minimum,
+      Math.min(bounds.maximum, Number(value) || SIDEBAR_WIDTH_DEFAULT),
+    ));
+    state.sidebarWidth = width;
+    document.documentElement.style.setProperty('--sidebar-w', `${width}px`);
+    if (sidebarResizerEl) {
+      sidebarResizerEl.setAttribute('aria-valuemin', String(bounds.minimum));
+      sidebarResizerEl.setAttribute('aria-valuemax', String(bounds.maximum));
+      sidebarResizerEl.setAttribute('aria-valuenow', String(width));
+    }
+    if (persist) savePrefs();
+    return width;
+  }
+
+  function initializeAppSidebarResizer() {
+    if (!sidebarEl || !sidebarResizerEl) return;
+    let pointerId = null;
+    let startX = 0;
+    let startWidth = SIDEBAR_WIDTH_DEFAULT;
+    let visualScale = 1;
+    const finish = event => {
+      if (pointerId === null || event.pointerId !== pointerId) return;
+      if (sidebarResizerEl.hasPointerCapture(pointerId)) {
+        sidebarResizerEl.releasePointerCapture(pointerId);
+      }
+      pointerId = null;
+      sidebarEl.classList.remove('resizing');
+      document.body.classList.remove('app-sidebar-resizing');
+      applySidebarWidth(sidebarEl.offsetWidth, true);
+    };
+    sidebarResizerEl.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || state.sidebarCollapsed || window.matchMedia('(max-width: 780px)').matches) return;
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startWidth = sidebarEl.offsetWidth;
+      visualScale = sidebarEl.offsetWidth
+        ? sidebarEl.getBoundingClientRect().width / sidebarEl.offsetWidth
+        : 1;
+      sidebarResizerEl.setPointerCapture(pointerId);
+      sidebarEl.classList.add('resizing');
+      document.body.classList.add('app-sidebar-resizing');
+      event.preventDefault();
+    });
+    sidebarResizerEl.addEventListener('pointermove', event => {
+      if (pointerId !== event.pointerId) return;
+      applySidebarWidth(
+        startWidth + (event.clientX - startX) / Math.max(0.1, visualScale),
+        false,
+      );
+    });
+    sidebarResizerEl.addEventListener('pointerup', finish);
+    sidebarResizerEl.addEventListener('pointercancel', finish);
+    sidebarResizerEl.addEventListener('keydown', event => {
+      if (state.sidebarCollapsed || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      const bounds = sidebarWidthBounds();
+      applySidebarWidth(
+        event.key === 'Home'
+          ? bounds.minimum
+          : event.key === 'End'
+            ? bounds.maximum
+            : state.sidebarWidth + (event.key === 'ArrowRight' ? 16 : -16),
+        true,
+      );
+      event.preventDefault();
+    });
+    sidebarResizerEl.addEventListener('dblclick', () => {
+      if (!state.sidebarCollapsed) applySidebarWidth(SIDEBAR_WIDTH_DEFAULT, true);
+    });
+    window.addEventListener('resize', () => {
+      if (!window.matchMedia('(max-width: 780px)').matches) {
+        applySidebarWidth(state.sidebarWidth, false);
+      }
+    });
   }
 
   function applySidebarCollapsed(persist = true) {
@@ -4895,7 +6006,35 @@
       sidebarToggleBtn.setAttribute('aria-label', collapsed ? tr('Expand sidebar') : tr('Collapse sidebar'));
       sidebarToggleBtn.title = collapsed ? tr('Expand sidebar') : tr('Collapse sidebar');
     }
+    if (sidebarResizerEl) sidebarResizerEl.setAttribute('aria-disabled', String(collapsed));
     if (persist) savePrefs();
+  }
+
+  function applyStudyWorkspaceMode(active) {
+    const studyMode = Boolean(active);
+    document.body.classList.toggle('study-workspace-mode', studyMode);
+    if (studyMode) {
+      setProjectCreateMenuOpen(false);
+      hideProjectHoverCard(true);
+    }
+    if (sidebarEl) {
+      sidebarEl.toggleAttribute('inert', studyMode);
+      if (studyMode) sidebarEl.setAttribute('aria-hidden', 'true');
+      else sidebarEl.removeAttribute('aria-hidden');
+    }
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.toggleAttribute('inert', studyMode);
+      if (studyMode) sidebarToggleBtn.setAttribute('aria-hidden', 'true');
+      else sidebarToggleBtn.removeAttribute('aria-hidden');
+    }
+    const focused = document.activeElement;
+    if (
+      studyMode &&
+      focused &&
+      ((sidebarEl && sidebarEl.contains(focused)) || focused === sidebarToggleBtn)
+    ) {
+      focused.blur();
+    }
   }
 
   function ensureProjectState() {
@@ -5047,7 +6186,10 @@
     saveSessions();
     renderSidebarLists();
     if (!state.activeSessionId) createSession('New Chat', null);
-    else renderActiveSession();
+    else {
+      renderActiveSession();
+      loadCheckpoints();
+    }
     setActiveView('chat', { focus: false });
   }
 
@@ -5066,6 +6208,7 @@
     saveSessions();
     renderSidebarLists();
     renderActiveSession();
+    loadCheckpoints();
     setActiveView('chat', { focus: false });
   }
 
@@ -5091,7 +6234,8 @@
             <span class="chat-menu-wrap">
               <button class="chat-menu-btn" data-menu-toggle-id="${escapeHtml(s.id)}" type="button" title="${escapeAttr(tr('Session menu'))}" aria-label="${escapeAttr(tr('Session menu'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
               <span class="chat-menu ${menuOpen ? 'open' : ''}" ${menuOpen && state.menuPosition ? `style="top:${state.menuPosition.top}px;left:${state.menuPosition.left}px;"` : ''}>
-                <button class="chat-menu-item" data-menu-action="export" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export'))}</button>
+                <button class="chat-menu-item" data-menu-action="export-json" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export JSON'))}</button>
+                <button class="chat-menu-item" data-menu-action="export-markdown" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export Markdown'))}</button>
                 <button class="chat-menu-item" data-menu-action="rename" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Rename'))}</button>
                 <button class="chat-menu-item" data-menu-action="delete" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Delete'))}</button>
               </span>
@@ -5259,6 +6403,7 @@
       messages: [],
       draft: '',
       selectedSkills: [],
+      autoTitlePending: true,
     };
     state.sessions.unshift(s);
     state.activeSessionId = id;
@@ -5268,6 +6413,7 @@
     renderSidebarLists();
     renderActiveSession();
     syncModelTrigger();
+    loadCheckpoints();
     return s;
   }
 
@@ -5292,44 +6438,31 @@
     return !value || value === 'New Chat' || value === '新对话';
   }
 
-  function isCompletelyEmptyHomeSession(session) {
+  function isCompletelyEmptySessionForProject(session, projectId = null) {
     const normalized = normalizeSessionState(session);
     if (!normalized) return false;
-    return !isKnownProjectId(normalized.projectId)
+    const targetProjectId = isKnownProjectId(projectId) ? projectId : null;
+    const sessionProjectId = isKnownProjectId(normalized.projectId) ? normalized.projectId : null;
+    return sessionProjectId === targetProjectId
       && isNewChatTitle(normalized.title)
       && normalized.messages.length === 0
       && !String(normalized.draft || '').trim()
       && normalized.selectedSkills.length === 0;
   }
 
-  function findReusableEmptyHomeSession() {
-    return state.sessions.find(session => isCompletelyEmptyHomeSession(session)) || null;
+  function isCompletelyEmptyHomeSession(session) {
+    return isCompletelyEmptySessionForProject(session, null);
   }
 
-  function cleanupEmptyActiveHomeSession() {
-    saveActiveDraft();
-    const session = getActiveSession();
-    if (!session || !isCompletelyEmptyHomeSession(session)) return false;
-    if (isSessionWaiting(session.id) || state.pendingFiles.length) return false;
-
-    state.sessions = state.sessions.filter(s => s.id !== session.id);
-    const fallback = getUnassignedSessions()[0] || state.sessions[0] || null;
-    state.activeSessionId = fallback ? fallback.id : null;
-    state.activeProjectId = fallback && isKnownProjectId(fallback.projectId) ? fallback.projectId : null;
-    state.selectedSkills = [];
-    state.editingMessageId = null;
-    state.openSessionMenuId = null;
-    state.menuPosition = null;
-    saveProjects();
-    saveSessions();
-    renderSidebarLists();
-    return true;
+  function findReusableEmptySession(projectId = null) {
+    return state.sessions.find(session => isCompletelyEmptySessionForProject(session, projectId)) || null;
   }
 
-  function startFreshHomeSession(options = {}) {
+  function startFreshSession(projectId = null, options = {}) {
     if (options.saveDraft !== false) saveActiveDraft();
+    const targetProjectId = isKnownProjectId(projectId) ? projectId : null;
     state.autoResearchMode = AUTO_RESEARCH_MODE_OFF;
-    state.activeProjectId = null;
+    state.activeProjectId = targetProjectId;
     state.selectedSkills = [];
     state.editingMessageId = null;
     state.openSessionMenuId = null;
@@ -5337,17 +6470,30 @@
     clearPendingFiles();
     removeTypingIndicator();
     removeExecutionIndicator();
-    const reusable = findReusableEmptyHomeSession();
+    const reusable = findReusableEmptySession(targetProjectId);
     if (reusable) {
+      state.sessions = state.sessions.filter(session => (
+        session.id === reusable.id
+        || !isCompletelyEmptySessionForProject(session, targetProjectId)
+      ));
       state.activeSessionId = reusable.id;
       saveProjects();
       saveSessions();
       renderSidebarLists();
       renderActiveSession();
       syncModelTrigger();
+      loadCheckpoints();
       return reusable;
     }
-    return createSession('New Chat', null, { saveDraft: false });
+    return createSession('New Chat', targetProjectId, { saveDraft: false });
+  }
+
+  function startFreshHomeSession(options = {}) {
+    return startFreshSession(null, options);
+  }
+
+  function startFreshProjectSession(projectId, options = {}) {
+    return startFreshSession(projectId, options);
   }
 
   function getActiveSession() {
@@ -5366,6 +6512,7 @@
     saveSessions();
     renderSidebarLists();
     renderActiveSession();
+    loadCheckpoints();
   }
 
   function renameSession(sessionId) {
@@ -5376,6 +6523,7 @@
     const val = next.trim();
     if (!val) return;
     s.title = val.slice(0, 64);
+    s.autoTitlePending = false;
     s.updatedAt = nowISO();
     state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     saveSessions();
@@ -5402,7 +6550,10 @@
     saveSessions();
     renderSidebarLists();
     if (!state.activeSessionId) createSession('New Chat', null);
-    else renderActiveSession();
+    else {
+      renderActiveSession();
+      loadCheckpoints();
+    }
   }
 
   function clearAllSessions() {
@@ -5439,11 +6590,19 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function safeFilename(name) {
     return String(name || 'chat').replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 60) || 'chat';
+  }
+
+  function markdownCodeBlock(value, language = 'text') {
+    const content = String(value || '');
+    const runs = content.match(/`+/g) || [];
+    const fenceLength = Math.max(3, ...runs.map(run => run.length + 1));
+    const fence = '`'.repeat(fenceLength);
+    return `${fence}${language}\n${content}\n${fence}`;
   }
 
   function sessionToMarkdown(session) {
@@ -5462,34 +6621,205 @@
       const role = msg.role === 'assistant' ? 'Assistant' : 'User';
       lines.push(`## ${role}`);
       lines.push('');
+      if (msg.time) lines.push(`- Time: ${msg.time}`);
+      if (msg.role === 'assistant' && msg.modelUsed) lines.push(`- Model: ${msg.modelUsed}`);
+      if (msg.time || (msg.role === 'assistant' && msg.modelUsed)) lines.push('');
       lines.push(String(msg.content || ''));
       lines.push('');
     }
     return lines.join('\n');
   }
 
-  function exportSession(sessionId) {
+  function conversationExportPayload(session) {
+    return {
+      schema_version: 2,
+      artifact_type: 'conversation',
+      id: session.id,
+      title: session.title,
+      created_at: session.createdAt,
+      updated_at: session.updatedAt,
+      exported_at: new Date().toISOString(),
+      messages: session.messages.map(message => ({
+        id: message.id || '',
+        role: message.role,
+        content: message.content,
+        time: message.time || null,
+        model: message.role === 'assistant' ? (message.modelUsed || null) : null,
+      })),
+    };
+  }
+
+  function normalizedToolEventForExport(event, index) {
+    const hasFullStdout = Object.prototype.hasOwnProperty.call(event || {}, 'stdout');
+    const hasFullStderr = Object.prototype.hasOwnProperty.call(event || {}, 'stderr');
+    const stdout = String(hasFullStdout ? (event.stdout || '') : (event.stdout_preview || ''));
+    const stderr = String(hasFullStderr ? (event.stderr || '') : (event.stderr_preview || ''));
+    return {
+      index: Number(event && event.id) || index + 1,
+      tool: String(event && event.tool || 'tool'),
+      command: String(event && event.command || ''),
+      executed: Boolean(event && event.executed),
+      success: Boolean(event && event.success),
+      stdout,
+      stderr,
+      stdout_capture: hasFullStdout
+        ? (event.stdout_truncated ? 'truncated' : 'complete')
+        : (stdout ? 'legacy_preview' : 'none'),
+      stderr_capture: hasFullStderr
+        ? (event.stderr_truncated ? 'truncated' : 'complete')
+        : (stderr ? 'legacy_preview' : 'none'),
+      stdout_characters: Number.isFinite(Number(event && event.stdout_chars)) ? Number(event.stdout_chars) : stdout.length,
+      stderr_characters: Number.isFinite(Number(event && event.stderr_chars)) ? Number(event.stderr_chars) : stderr.length,
+      return_code: event && event.returncode !== undefined ? event.returncode : null,
+      working_directory: String(event && event.cwd || ''),
+      shell: String(event && event.shell || ''),
+      platform: String(event && event.platform || ''),
+      error_type: String(event && event.error_type || ''),
+      failure_stage: String(event && event.failure_stage || ''),
+      retryable: event && event.retryable !== undefined ? event.retryable : null,
+      recovery_hint: String(event && event.recovery_hint || ''),
+      skills_used: Array.isArray(event && event.skills_used) ? event.skills_used.slice() : [],
+    };
+  }
+
+  function agentWorklogExportPayload(session) {
+    const turns = [];
+    let pendingUserMessage = null;
+    let turnNumber = 0;
+    for (const message of session.messages) {
+      if (message.role === 'user') {
+        pendingUserMessage = message;
+        continue;
+      }
+      if (message.role !== 'assistant') continue;
+      turnNumber += 1;
+      const toolEvents = Array.isArray(message.toolEvents)
+        ? message.toolEvents.map(normalizedToolEventForExport)
+        : [];
+      const workspaceChanges = Array.isArray(message.workspaceChanges)
+        ? message.workspaceChanges.map(change => ({
+            status: String(change && change.status || ''),
+            path: String(change && change.path || ''),
+          }))
+        : [];
+      turns.push({
+        turn: turnNumber,
+        user_message_id: pendingUserMessage && pendingUserMessage.id || null,
+        agent_message_id: message.id || null,
+        requested_at: pendingUserMessage && pendingUserMessage.time || null,
+        completed_at: message.time || null,
+        model: message.modelUsed || null,
+        tool_events: toolEvents,
+        workspace_changes: workspaceChanges,
+      });
+      pendingUserMessage = null;
+    }
+    const allEvents = turns.flatMap(turn => turn.tool_events);
+    return {
+      schema_version: 2,
+      artifact_type: 'agent_worklog',
+      chat_id: session.id,
+      chat_title: session.title,
+      created_at: session.createdAt,
+      updated_at: session.updatedAt,
+      exported_at: new Date().toISOString(),
+      summary: {
+        agent_turns: turns.length,
+        tool_events: allEvents.length,
+        shell_commands: allEvents.filter(event => event.tool === 'run_shell_command').length,
+        failed_tool_events: allEvents.filter(event => !event.success).length,
+        changed_files: turns.reduce((total, turn) => total + turn.workspace_changes.length, 0),
+      },
+      turns,
+    };
+  }
+
+  function agentWorklogToMarkdown(session, worklog) {
+    const lines = [
+      `# ${session.title} — Agent work log`,
+      '',
+      `- Chat ID: ${session.id}`,
+      `- Exported: ${worklog.exported_at}`,
+      `- Agent turns: ${worklog.summary.agent_turns}`,
+      `- Tool events: ${worklog.summary.tool_events}`,
+      `- Shell commands: ${worklog.summary.shell_commands}`,
+      '',
+      '---',
+      '',
+    ];
+    for (const turn of worklog.turns) {
+      lines.push(`## Turn ${turn.turn}`, '');
+      if (turn.requested_at) lines.push(`- Requested: ${turn.requested_at}`);
+      if (turn.completed_at) lines.push(`- Completed: ${turn.completed_at}`);
+      if (turn.model) lines.push(`- Model: ${turn.model}`);
+      lines.push('');
+      if (!turn.tool_events.length) {
+        lines.push('_No tool was run during this turn._', '');
+      }
+      for (const event of turn.tool_events) {
+        lines.push(`### ${event.index}. ${event.tool}`, '');
+        lines.push(`- Status: ${event.success ? 'done' : 'failed'}`);
+        lines.push(`- Executed: ${event.executed ? 'yes' : 'no'}`);
+        if (event.working_directory) lines.push(`- Working directory: ${event.working_directory}`);
+        if (event.return_code !== null) lines.push(`- Return code: ${event.return_code}`);
+        if (event.command) lines.push('', '**Command**', '', markdownCodeBlock(event.command, event.tool === 'run_shell_command' ? 'shell' : 'text'));
+        if (event.stdout) lines.push('', `**Terminal output (${event.stdout_capture})**`, '', markdownCodeBlock(event.stdout));
+        if (event.stderr) lines.push('', `**Terminal error output (${event.stderr_capture})**`, '', markdownCodeBlock(event.stderr));
+        if (event.recovery_hint) lines.push('', `**Recovery hint:** ${event.recovery_hint}`);
+        lines.push('');
+      }
+      if (turn.workspace_changes.length) {
+        lines.push('### Workspace changes', '');
+        turn.workspace_changes.forEach(change => lines.push(`- ${change.status || 'M'} ${change.path}`));
+        lines.push('');
+      }
+    }
+    return lines.join('\n');
+  }
+
+  async function exportSession(sessionId, format = 'json') {
     const session = state.sessions.find(s => s.id === sessionId);
     if (!session) return;
 
-    const fmt = prompt(tr('Export format: json or md'), 'json');
-    if (fmt === null) return;
-    const format = fmt.trim().toLowerCase();
+    const normalizedFormat = format === 'md' || format === 'markdown' ? 'md' : 'json';
     const base = `${safeFilename(session.title)}_${session.id}`;
+    const conversationPayload = conversationExportPayload(session);
+    const worklogPayload = agentWorklogExportPayload(session);
+    const conversationFilename = normalizedFormat === 'md' ? `${base}_conversation.md` : `${base}_conversation.json`;
+    const worklogFilename = normalizedFormat === 'md' ? `${base}_agent-worklog.md` : `${base}_agent-worklog.json`;
+    const conversationContent = normalizedFormat === 'md'
+      ? sessionToMarkdown(session)
+      : JSON.stringify(conversationPayload, null, 2);
+    const worklogContent = normalizedFormat === 'md'
+      ? agentWorklogToMarkdown(session, worklogPayload)
+      : JSON.stringify(worklogPayload, null, 2);
+    const mimeType = normalizedFormat === 'md'
+      ? 'text/markdown;charset=utf-8'
+      : 'application/json;charset=utf-8';
 
-    if (format === 'md' || format === 'markdown') {
-      downloadTextFile(`${base}.md`, sessionToMarkdown(session), 'text/markdown;charset=utf-8');
-      return;
+    try {
+      if (window.neuroclawDesktop && typeof window.neuroclawDesktop.exportChatSession === 'function') {
+        const result = await window.neuroclawDesktop.exportChatSession({
+          defaultFileName: conversationFilename,
+          format: normalizedFormat,
+          conversationContent,
+          worklogContent,
+        });
+        if (result && result.canceled) return;
+        if (!result || result.error || !result.path) {
+          throw new Error((result && result.error) || tr('Chat export failed.'));
+        }
+        const exportedDirectory = result.directory || result.path;
+        showSuccess(`${tr('Conversation and agent work log exported to:')} ${exportedDirectory}`);
+        return;
+      }
+
+      downloadTextFile(conversationFilename, conversationContent, mimeType);
+      setTimeout(() => downloadTextFile(worklogFilename, worklogContent, mimeType), 150);
+      showSuccess(tr('Chat export started.'));
+    } catch (error) {
+      showError(error && error.message ? error.message : tr('Chat export failed.'));
     }
-
-    const payload = {
-      id: session.id,
-      title: session.title,
-      createdAt: session.createdAt,
-      updatedAt: session.updatedAt,
-      messages: session.messages.map(m => ({ role: m.role, content: m.content })),
-    };
-    downloadTextFile(`${base}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
   }
 
   function renderChatList() {
@@ -5860,10 +7190,25 @@
     ].join('\n');
   }
 
+  function fallbackSessionTitle(text) {
+    const cleaned = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!cleaned) return tr('New Chat');
+    const title = /[\u3400-\u9fff]/.test(cleaned)
+      ? cleaned.slice(0, 28)
+      : cleaned.split(/\s+/).slice(0, 8).join(' ').slice(0, 64);
+    return title.replace(/[.,!?;:，。！？；：]+$/u, '').trim() || tr('New Chat');
+  }
+
+  function beginAutoTitleForFirstUserTurn(session, userText) {
+    if (!session || session.autoTitlePending === false || !isNewChatTitle(session.title)) return;
+    const userCount = session.messages.filter(message => message.role === 'user').length;
+    if (userCount !== 1) return;
+    session.title = fallbackSessionTitle(userText);
+    session.autoTitlePending = true;
+  }
+
   function shouldAutoGenerateTitle(session) {
-    if (!session) return false;
-    const title = String(session.title || '').trim().toLowerCase();
-    if (title && title !== 'new chat') return false;
+    if (!session || session.autoTitlePending !== true) return false;
     const userCount = session.messages.filter(m => m.role === 'user').length;
     const assistantCount = session.messages.filter(m => m.role === 'assistant').length;
     return userCount === 1 && assistantCount === 1;
@@ -5882,6 +7227,27 @@
     } catch (_e) {
       return '';
     }
+  }
+
+  async function updateSessionTitleFromFirstTurn(session) {
+    if (!shouldAutoGenerateTitle(session)) return;
+    const firstUser = session.messages.find(message => message.role === 'user');
+    const firstAssistant = session.messages.find(message => message.role === 'assistant');
+    const userText = String(firstUser && firstUser.content || '').trim();
+    const assistantText = String(firstAssistant && firstAssistant.content || '').trim();
+    const modelTitle = await requestAutoTitle(userText, assistantText);
+    if (
+      session.autoTitlePending !== true
+      || !state.sessions.some(candidate => candidate.id === session.id)
+    ) return;
+    session.title = (
+      modelTitle && !isNewChatTitle(modelTitle)
+        ? modelTitle
+        : fallbackSessionTitle(userText)
+    ).slice(0, 64);
+    session.autoTitlePending = false;
+    saveSessions();
+    renderSidebarLists();
   }
 
   function clearMessages() {
@@ -5938,13 +7304,15 @@
   function addUserBubble(message, index) {
     const div = document.createElement('div');
     div.className = 'msg user';
-    if (state.editingMessageId === message.id) div.classList.add('editing');
+    const editAllowed = !isSessionWaiting();
+    const isEditing = editAllowed && state.editingMessageId === message.id;
+    if (isEditing) div.classList.add('editing');
     const content = String(message.content || '');
-    const bubbleContent = state.editingMessageId === message.id
+    const bubbleContent = isEditing
       ? `<textarea class="edit-textarea" data-edit-id="${escapeHtml(message.id)}">${escapeHtml(content)}</textarea>`
       : `${escapeHtml(content).replace(/\n/g, '<br>')}`;
 
-    const actions = state.editingMessageId === message.id
+    const actions = isEditing
       ? `
         <div class="msg-actions">
           ${actionButton('cancel-edit', message.id, 'Cancel', 'cancel')}
@@ -5955,7 +7323,7 @@
       : `
         <div class="msg-actions">
           ${actionButton('regenerate-user', message.id, 'Regen', 'regen')}
-          ${actionButton('edit-user', message.id, 'Edit', 'edit')}
+          ${editAllowed ? actionButton('edit-user', message.id, 'Edit', 'edit') : ''}
           ${actionButton('copy', message.id, 'Copy', 'copy')}
           ${actionButton('delete', message.id, 'Delete', 'delete')}
         </div>
@@ -6073,8 +7441,11 @@
     try { window.hljs.highlightAll(); } catch (_e) {}
   }
 
-  function renderActiveSession() {
+  function renderActiveSession(options = {}) {
+    const preserveScroll = options.preserveScroll === true;
+    const previousScrollTop = preserveScroll ? messagesEl.scrollTop : 0;
     clearMessages();
+    messagesEl.classList.toggle('static-message-render', preserveScroll);
     const session = getActiveSession();
     syncSelectedSkillsFromSession(session);
     restoreActiveDraft();
@@ -6085,6 +7456,7 @@
       syncExecutionIndicatorVisibility();
       syncTypingIndicatorVisibility();
       syncActiveRequestUi();
+      if (preserveScroll) messagesEl.scrollTop = previousScrollTop;
       return;
     }
     ensureMessageIds(session);
@@ -6098,7 +7470,20 @@
     syncExecutionIndicatorVisibility();
     syncTypingIndicatorVisibility();
     syncActiveRequestUi();
-    scrollToBottom();
+    if (preserveScroll) messagesEl.scrollTop = previousScrollTop;
+    else scrollToBottom();
+  }
+
+  function beginEditingUserMessage(messageId) {
+    const previousScrollTop = messagesEl.scrollTop;
+    state.editingMessageId = messageId;
+    renderActiveSession({ preserveScroll: true });
+    const editor = messagesEl.querySelector('.edit-textarea');
+    if (editor) {
+      editor.focus({ preventScroll: true });
+      editor.setSelectionRange(editor.value.length, editor.value.length);
+    }
+    messagesEl.scrollTop = previousScrollTop;
   }
 
   function addTypingIndicator() {
@@ -6145,6 +7530,7 @@
   function beginSessionRequest(sessionId, controller) {
     if (!sessionId || !controller || isSessionWaiting(sessionId)) return false;
     state.sessionRequests[sessionId] = { controller };
+    if (sessionId === state.activeSessionId) state.editingMessageId = null;
     return true;
   }
 
@@ -6343,8 +7729,8 @@
           '用法：<code>/help &lt;范围&gt; + 任务描述</code>',
         )}</div>
         <div class="slash-menu-help">${escapeHtml(uiText(
-          'Choose a scope, then describe your goal. NeuroClaw will list the materials you need to provide.',
-          '选择范围后继续描述目标，NeuroClaw 会列出你需要提供的资料。',
+          'Choose a scope, then describe your goal. NeuroDiscovery will list the materials you need to provide.',
+          '选择范围后继续描述目标，NeuroDiscovery 会列出你需要提供的资料。',
         ))}</div>
       </div>
       <div class="slash-menu-list">
@@ -6390,6 +7776,34 @@
     inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
   }
 
+  async function ensureChatLlmConfigured() {
+    if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.getConfig !== 'function') return true;
+    if (!state.settingsLoaded) await loadDesktopSettings();
+    const status = state.llmConnectionStatus || fallbackLlmConnectionStatus();
+    const missingApiKey = status.apiKeyRequired !== false && !status.apiKeyConfigured;
+    const missingEndpoint = !status.endpointConfigured;
+    if (!missingApiKey && !missingEndpoint) return true;
+
+    state.settingsSection = 'llm';
+    state.settingsSearch = '';
+    state.settingsAttention = {
+      reason: 'chat-configuration-required',
+      missingApiKey,
+      missingEndpoint,
+    };
+    if (settingsSearchEl) settingsSearchEl.value = '';
+    setActiveView('settings', { focus: false });
+    setSettingsStatus(llmSettingsPromptText(), true);
+    requestAnimationFrame(() => {
+      const focusKey = missingApiKey ? 'llmApiKey' : 'llmBaseUrl';
+      const control = settingsContentEl && settingsContentEl.querySelector(`[data-setting-key="${focusKey}"]`);
+      if (!control) return;
+      control.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      control.focus({ preventScroll: true });
+    });
+    return false;
+  }
+
   async function sendMessage() {
     const text = inputEl.value.trim();
     const session = getActiveSession();
@@ -6397,6 +7811,7 @@
     const selectedSkills = [...getSessionSelectedSkills(session)];
     const hasSkills = selectedSkills.length > 0;
     if ((!text && !hasFiles && !hasSkills) || !session || isSessionWaiting(session.id)) return;
+    if (!(await ensureChatLlmConfigured())) return;
 
     const skillText = buildSkillInstruction(selectedSkills);
     const attachmentText = buildAttachmentText(state.pendingFiles);
@@ -6407,6 +7822,7 @@
     chatPanelEl.classList.remove('is-empty');
     welcomeEl.style.display = 'none';
     session.messages.push({ id: newMessageId(), role: 'user', content: displayText, promptContent: finalText, time: userMsgTime });
+    beginAutoTitleForFirstUserTurn(session, displayText);
     session.draft = '';
     session.selectedSkills = [];
     state.selectedSkills = [];
@@ -6419,6 +7835,7 @@
     if (!beginSessionRequest(session.id, controller)) return;
     renderSidebarLists();
     renderActiveSession();
+    loadCheckpoints();
     scrollToBottom();
 
     inputEl.value = '';
@@ -6442,6 +7859,7 @@
           language: currentUiLanguage(),
           client_surface: state.desktopPlatform ? 'desktop' : 'web',
           workspace_path: workspacePathForSession(session),
+          chat_id: session.id,
         }),
       });
       const data = await resp.json();
@@ -6468,13 +7886,6 @@
           time: nowISO(),
         });
 
-        if (shouldAutoGenerateTitle(session)) {
-          const modelTitle = await requestAutoTitle(displayText, reply);
-          if (modelTitle) {
-            session.title = modelTitle.slice(0, 64);
-          }
-        }
-
         session.updatedAt = nowISO();
         state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
         saveSessions();
@@ -6483,6 +7894,7 @@
         renderSkills(state.skills);
         renderPendingFiles();
         loadCheckpoints();
+        void updateSessionTitleFromFirstTurn(session);
       }
     } catch (err) {
       if (!(err && err.name === 'AbortError')) {
@@ -6499,8 +7911,13 @@
 
   function applyTheme(theme) {
     state.theme = theme === 'dark' ? 'dark' : 'light';
+    state.desktopConfig.theme = state.theme;
     document.documentElement.setAttribute('data-theme', state.theme);
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === state.theme));
+    syncEmbeddedThemeFrames();
+    if (window.neuroclawDesktop && typeof window.neuroclawDesktop.setTheme === 'function') {
+      window.neuroclawDesktop.setTheme(state.theme).catch(() => {});
+    }
     savePrefs();
   }
 
@@ -6512,6 +7929,7 @@
     saveSessions();
     renderSidebarLists();
     renderActiveSession();
+    loadCheckpoints();
   }
 
   async function resendAsNewTurn(displayText, promptText, options = {}) {
@@ -6547,6 +7965,7 @@
           language: currentUiLanguage(),
           client_surface: state.desktopPlatform ? 'desktop' : 'web',
           workspace_path: workspacePathForSession(session),
+          chat_id: session.id,
         }),
       });
       const data = await resp.json();
@@ -6646,7 +8065,7 @@
   }
 
   function startNewChat() {
-    createSession('New Chat');
+    startFreshHomeSession();
     inputEl.value = '';
     inputEl.style.height = 'auto';
     clearPendingFiles();
@@ -6658,10 +8077,17 @@
 
   function setActiveView(view, opts = {}) {
     const nextView = ['skills', 'search', 'settings', 'neurooracle', 'expert-study', 'study-results'].includes(view) ? view : 'chat';
-    if (state.activeView === 'chat' && nextView !== 'chat') {
-      cleanupEmptyActiveHomeSession();
+    const previousView = state.activeView;
+    const wasStudyView = STUDY_VIEW_NAMES.includes(previousView);
+    const enteringStudyView = STUDY_VIEW_NAMES.includes(nextView);
+    if (enteringStudyView && !wasStudyView) {
+      state.studyReturnView = previousView;
+    }
+    if (wasStudyView && previousView !== nextView) {
+      resetStudyWorkspace(previousView);
     }
     state.activeView = nextView;
+    applyStudyWorkspaceMode(enteringStudyView);
     const isChat = state.activeView === 'chat';
     if (isChat && !getActiveSession()) {
       startFreshHomeSession({ saveDraft: false });
@@ -6898,9 +8324,10 @@
     neurooraclePageEl.classList.add('ready');
     renderNeuroOracleUpdateStatus(state.neurooracleUpdateStatus);
     const language = currentUiLanguage();
-    const frameKey = `explorer:${language}`;
+    const frameKey = `explorer:${language}:${state.theme}`;
     if (!state.neurooracleFrameLoaded || state.neurooracleFrameKey !== frameKey) {
-      neurooracleFrameEl.src = `/explore?lang=${language}&v=${Date.now()}`;
+      neurooracleFrameEl.addEventListener('load', () => syncEmbeddedTheme(neurooracleFrameEl), { once: true });
+      neurooracleFrameEl.src = `/explore?lang=${language}&theme=${state.theme}&v=${Date.now()}`;
       state.neurooracleFrameLoaded = true;
       state.neurooracleFrameKey = frameKey;
     }
@@ -6912,15 +8339,59 @@
     const frame = isResults ? studyResultsFrameEl : expertStudyFrameEl;
     if (!frame) return;
     const keyName = isResults ? 'studyResultsFrameKey' : 'expertStudyFrameKey';
-    const frameKey = `${view}:${language}`;
-    if (state[keyName] === frameKey) return;
+    const frameKey = `${view}:${language}:${state.theme}`;
+    if (state[keyName] === frameKey) {
+      syncStudyTextScale(frame);
+      syncEmbeddedTheme(frame);
+      return;
+    }
     const route = isResults ? '/study?view=results&embedded=1' : '/study?embedded=1';
     const separator = route.includes('?') ? '&' : '?';
-    frame.src = `${route}${separator}lang=${language}&v=${Date.now()}`;
+    frame.addEventListener('load', () => {
+      syncStudyTextScale(frame);
+      syncEmbeddedTheme(frame);
+    }, { once: true });
+    frame.src = `${route}${separator}lang=${language}&theme=${state.theme}&textScale=${encodeURIComponent(state.textScale)}&v=${Date.now()}`;
     state[keyName] = frameKey;
   }
 
+  function resetStudyWorkspace(view) {
+    const isResults = view === 'study-results';
+    const frame = isResults ? studyResultsFrameEl : expertStudyFrameEl;
+    const keyName = isResults ? 'studyResultsFrameKey' : 'expertStudyFrameKey';
+    if (frame) frame.src = 'about:blank';
+    state[keyName] = '';
+  }
+
+  function closeStudyWorkspace() {
+    if (!STUDY_VIEW_NAMES.includes(state.activeView)) return;
+    const returnView = STUDY_VIEW_NAMES.includes(state.studyReturnView) ? 'chat' : state.studyReturnView;
+    setActiveView(returnView || 'chat', { focus: false });
+  }
+
   function bindEvents() {
+    if (caseStudyLanguageSwitchEl) {
+      caseStudyLanguageSwitchEl.addEventListener('click', event => {
+        const button = event.target.closest('[data-case-study-language]');
+        if (!button) return;
+        setCaseStudyWelcomeLanguage(button.dataset.caseStudyLanguage);
+      });
+    }
+    if (caseStudyWelcomeLaterEl) {
+      caseStudyWelcomeLaterEl.addEventListener('click', () => dismissCaseStudyWelcome(false));
+    }
+    if (caseStudyWelcomeOpenEl) {
+      caseStudyWelcomeOpenEl.addEventListener('click', () => dismissCaseStudyWelcome(true));
+    }
+    if (caseStudyWelcomeEl) {
+      caseStudyWelcomeEl.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          dismissCaseStudyWelcome(false);
+        }
+      });
+    }
+
     sidebarToggleBtn.addEventListener('click', () => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
       applySidebarCollapsed();
@@ -6937,6 +8408,18 @@
       }
       state.lastDesktopMenuAction = { action: normalized, at: now };
 
+      if (normalized === 'text-scale-increase') {
+        applyTextScale(state.textScale + TEXT_SCALE_STEP, true);
+        return;
+      }
+      if (normalized === 'text-scale-decrease') {
+        applyTextScale(state.textScale - TEXT_SCALE_STEP, true);
+        return;
+      }
+      if (normalized === 'text-scale-reset') {
+        applyTextScale(TEXT_SCALE_DEFAULT, true);
+        return;
+      }
       if (normalized === 'open-settings') {
         setActiveView('settings');
         return;
@@ -6958,6 +8441,28 @@
       window.neuroclawDesktop.onMenuAction(handleDesktopMenuAction);
     }
     window.addEventListener('neuroclaw:menu-action', (event) => handleDesktopMenuAction(event.detail));
+    window.addEventListener('message', (event) => {
+      const payload = event.data && typeof event.data === 'object' ? event.data : null;
+      if (event.origin !== window.location.origin || payload?.type !== 'neurodiscovery:close-study-workspace') return;
+      const trustedSource = (
+        event.source === expertStudyFrameEl?.contentWindow ||
+        event.source === studyResultsFrameEl?.contentWindow
+      );
+      if (trustedSource) closeStudyWorkspace();
+    });
+    window.addEventListener('message', (event) => {
+      const payload = event.data && typeof event.data === 'object' ? event.data : null;
+      if (event.origin !== window.location.origin || payload?.type !== 'neurodiscovery:set-study-language') return;
+      const trustedSource = (
+        event.source === expertStudyFrameEl?.contentWindow ||
+        event.source === studyResultsFrameEl?.contentWindow
+      );
+      if (!trustedSource) return;
+      void setCaseStudyWelcomeLanguage(
+        payload.language === 'zh' ? 'Simplified Chinese' : 'English',
+        { refreshStudyWorkspace: false },
+      );
+    });
 
     document.querySelectorAll('[data-view-button]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -7036,7 +8541,85 @@
         }
       });
 
+      settingsContentEl.addEventListener('keydown', (e) => {
+        const trigger = e.target.closest('[data-settings-select-trigger]');
+        if (trigger) {
+          const wrapper = trigger.closest('[data-settings-select]');
+          if (['ArrowDown', 'ArrowUp'].includes(e.key)) {
+            e.preventDefault();
+            openSettingsSelect(wrapper, true);
+            const options = settingsSelectOptionButtons(wrapper);
+            if (e.key === 'ArrowUp' && options.length) {
+              options[options.length - 1].focus({ preventScroll: true });
+            }
+            return;
+          }
+          if (e.key === 'Escape' && wrapper?.classList.contains('open')) {
+            e.preventDefault();
+            closeSettingsSelect(wrapper, true);
+          }
+          return;
+        }
+
+        const option = e.target.closest('[data-settings-select-option]');
+        if (!option) return;
+        const wrapper = option.closest('[data-settings-select]');
+        const options = settingsSelectOptionButtons(wrapper);
+        const currentIndex = options.indexOf(option);
+        if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+          e.preventDefault();
+          let nextIndex = currentIndex;
+          if (e.key === 'ArrowDown') nextIndex = (currentIndex + 1) % options.length;
+          if (e.key === 'ArrowUp') nextIndex = (currentIndex - 1 + options.length) % options.length;
+          if (e.key === 'Home') nextIndex = 0;
+          if (e.key === 'End') nextIndex = options.length - 1;
+          options[nextIndex]?.focus({ preventScroll: true });
+          return;
+        }
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          option.click();
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeSettingsSelect(wrapper, true);
+        }
+      });
+
       settingsContentEl.addEventListener('click', (e) => {
+        const selectOption = e.target.closest('[data-settings-select-option]');
+        if (selectOption) {
+          e.preventDefault();
+          const wrapper = selectOption.closest('[data-settings-select]');
+          const control = wrapper?.querySelector('[data-setting-key]');
+          const trigger = wrapper?.querySelector('[data-settings-select-trigger]');
+          const label = wrapper?.querySelector('[data-settings-select-label]');
+          const value = selectOption.dataset.settingsSelectOption || '';
+          if (!control || !trigger || !label) return;
+          control.value = value;
+          label.textContent = selectOption.querySelector('span')?.textContent || value;
+          wrapper.querySelectorAll('[data-settings-select-option]').forEach(option => {
+            const selected = option === selectOption;
+            option.classList.toggle('active', selected);
+            option.setAttribute('aria-selected', selected ? 'true' : 'false');
+            const check = option.querySelector('.settings-select-check');
+            if (check) check.textContent = selected ? '✓' : '';
+          });
+          closeSettingsSelect(wrapper);
+          control.dispatchEvent(new Event('change', { bubbles: true }));
+          return;
+        }
+
+        const selectTrigger = e.target.closest('[data-settings-select-trigger]');
+        if (selectTrigger) {
+          e.preventDefault();
+          const wrapper = selectTrigger.closest('[data-settings-select]');
+          if (wrapper?.classList.contains('open')) closeSettingsSelect(wrapper);
+          else openSettingsSelect(wrapper);
+          return;
+        }
+
         const proxyToggle = e.target.closest('[data-proxy-toggle]');
         if (proxyToggle) {
           e.preventDefault();
@@ -7088,12 +8671,34 @@
           return;
         }
         settingsRestartBtn.disabled = true;
-        setSettingsStatus(tr('Restarting NeuroClaw...'));
+        setSettingsStatus(tr('Restarting NeuroDiscovery...'));
         try {
           await window.neuroclawDesktop.restart();
         } catch (err) {
           settingsRestartBtn.disabled = false;
           setSettingsStatus(`${tr('Restart failed:')} ${err && err.message ? err.message : err}`, true);
+        }
+      });
+    }
+    if (settingsResetBtn) {
+      settingsResetBtn.addEventListener('click', async () => {
+        if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.resetApplication !== 'function') {
+          setSettingsStatus(uiText('Reset is only available in the desktop app.', '重置功能仅可在桌面客户端中使用。'), true);
+          return;
+        }
+        settingsResetBtn.disabled = true;
+        setSettingsStatus(uiText('Waiting for confirmation...', '正在等待确认……'));
+        try {
+          const result = await window.neuroclawDesktop.resetApplication();
+          if (result && result.canceled) {
+            settingsResetBtn.disabled = false;
+            setSettingsStatus(uiText('Reset canceled.', '已取消重置。'));
+            return;
+          }
+          setSettingsStatus(uiText('Resetting data and restarting NeuroDiscovery...', '正在清除数据并重启 NeuroDiscovery……'));
+        } catch (err) {
+          settingsResetBtn.disabled = false;
+          setSettingsStatus(`${uiText('Reset failed:', '重置失败：')} ${err && err.message ? err.message : err}`, true);
         }
       });
     }
@@ -7166,7 +8771,7 @@
       if (addProjectChatBtn) {
         e.preventDefault();
         e.stopPropagation();
-        createSession('New Chat', addProjectChatBtn.dataset.projectNewChatId);
+        startFreshProjectSession(addProjectChatBtn.dataset.projectNewChatId);
         setActiveView('chat');
         inputEl.focus();
         return;
@@ -7190,9 +8795,9 @@
           state.menuPosition = null;
         } else {
           const rect = menuToggleBtn.getBoundingClientRect();
-          const menuWidth = 132;
+          const menuWidth = 172;
           const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
-          const top = Math.min(rect.bottom + 6, window.innerHeight - 132);
+          const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 172));
           state.openSessionMenuId = sessionId;
           state.menuPosition = { top, left };
         }
@@ -7208,7 +8813,9 @@
         const sessionId = menuActionBtn.dataset.menuId;
         state.openSessionMenuId = null;
         state.menuPosition = null;
-        if (action === 'export') exportSession(sessionId);
+        renderSidebarLists();
+        if (action === 'export' || action === 'export-json') void exportSession(sessionId, 'json');
+        if (action === 'export-markdown') void exportSession(sessionId, 'md');
         if (action === 'rename') renameSession(sessionId);
         if (action === 'delete') deleteSession(sessionId);
         return;
@@ -7243,7 +8850,7 @@
       const addProjectChatBtn = e.target.closest('[data-project-new-chat-id]');
       if (addProjectChatBtn && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
-        createSession('New Chat', addProjectChatBtn.dataset.projectNewChatId);
+        startFreshProjectSession(addProjectChatBtn.dataset.projectNewChatId);
         setActiveView('chat');
         inputEl.focus();
         return;
@@ -7335,8 +8942,8 @@
       const picker = window.neuroclawDesktop && window.neuroclawDesktop.selectAttachmentFiles;
       if (typeof picker !== 'function') {
         showError(uiText(
-          'Local path attachments are available in the NeuroClaw desktop client.',
-          '本地路径附件仅在 NeuroClaw 桌面客户端中可用。',
+          'Local path attachments are available in the NeuroDiscovery desktop client.',
+          '本地路径附件仅在 NeuroDiscovery 桌面客户端中可用。',
         ));
         return;
       }
@@ -7438,9 +9045,9 @@
           state.menuPosition = null;
         } else {
           const rect = menuToggleBtn.getBoundingClientRect();
-          const menuWidth = 132;
+          const menuWidth = 172;
           const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
-          const top = Math.min(rect.bottom + 6, window.innerHeight - 132);
+          const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 172));
           state.openSessionMenuId = sessionId;
           state.menuPosition = { top, left };
         }
@@ -7456,7 +9063,9 @@
         const sessionId = menuActionBtn.dataset.menuId;
         state.openSessionMenuId = null;
         state.menuPosition = null;
-        if (action === 'export') exportSession(sessionId);
+        renderSidebarLists();
+        if (action === 'export' || action === 'export-json') void exportSession(sessionId, 'json');
+        if (action === 'export-markdown') void exportSession(sessionId, 'md');
         if (action === 'rename') renameSession(sessionId);
         if (action === 'delete') deleteSession(sessionId);
         return;
@@ -7592,21 +9201,30 @@
 
       if (action === 'edit-user') {
         if (msg.role !== 'user') return;
-        state.editingMessageId = msg.id;
-        renderActiveSession();
+        if (isSessionWaiting(session.id)) {
+          state.editingMessageId = null;
+          renderActiveSession({ preserveScroll: true });
+          return;
+        }
+        beginEditingUserMessage(msg.id);
         return;
       }
 
       if (action === 'cancel-edit') {
         state.editingMessageId = null;
-        renderActiveSession();
+        renderActiveSession({ preserveScroll: true });
         return;
       }
 
       if (action === 'save-edit' || action === 'send-edit') {
         if (msg.role !== 'user') return;
-        const bubble = actionBtn.closest('.bubble');
-        const textarea = bubble ? bubble.querySelector('.edit-textarea') : null;
+        if (isSessionWaiting(session.id)) {
+          state.editingMessageId = null;
+          renderActiveSession({ preserveScroll: true });
+          return;
+        }
+        const messageMain = actionBtn.closest('.msg-main');
+        const textarea = messageMain ? messageMain.querySelector('.edit-textarea') : null;
         if (!textarea) return;
         const edited = normalizeEditText(textarea.value);
         if (!edited) return;
@@ -7619,7 +9237,7 @@
         if (action === 'save-edit') {
           saveSessions();
           renderSidebarLists();
-          renderActiveSession();
+          renderActiveSession({ preserveScroll: true });
           return;
         }
 
@@ -7776,6 +9394,9 @@
     });
 
     document.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-settings-select]')) {
+        closeAllSettingsSelects();
+      }
       if (state.projectCreateMenuOpen && !e.target.closest('#project-create-menu') && !e.target.closest('#new-project-btn')) {
         setProjectCreateMenuOpen(false);
       }
@@ -7788,6 +9409,14 @@
     });
 
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const openSettingsSelectEl = document.querySelector('[data-settings-select].open');
+        if (openSettingsSelectEl) {
+          e.preventDefault();
+          closeSettingsSelect(openSettingsSelectEl, true);
+          return;
+        }
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
         setActiveView('settings');
@@ -7871,22 +9500,45 @@
   const refreshCheckpointsBtn = document.getElementById('refresh-checkpoints-btn');
 
   let _checkpointsCache = [];
+  let _checkpointsCacheSessionId = null;
+
+  function checkpointApiUrl(suffix = '', session = getActiveSession()) {
+    if (!session) return '';
+    const params = new URLSearchParams({
+      chat_id: session.id,
+      workspace_path: workspacePathForSession(session),
+    });
+    return `/api/checkpoints${suffix}?${params.toString()}`;
+  }
 
   async function loadCheckpoints() {
+    const session = getActiveSession();
+    if (!session) {
+      _checkpointsCache = [];
+      _checkpointsCacheSessionId = null;
+      renderCheckpoints([]);
+      return;
+    }
+    const requestedSessionId = session.id;
     try {
-      const resp = await fetch('/api/checkpoints');
+      const resp = await fetch(checkpointApiUrl('', session));
       const data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || `checkpoint request failed (${resp.status})`);
+      if (state.activeSessionId !== requestedSessionId) return;
       _checkpointsCache = data.checkpoints || [];
+      _checkpointsCacheSessionId = requestedSessionId;
       renderCheckpoints(_checkpointsCache);
     } catch (_e) {
+      if (state.activeSessionId !== requestedSessionId) return;
       _checkpointsCache = [];
+      _checkpointsCacheSessionId = requestedSessionId;
       renderCheckpoints([]);
     }
   }
 
   function renderCheckpoints(checkpoints) {
     if (!checkpoints.length) {
-      checkpointListEl.innerHTML = `<li class="empty-hint">${escapeHtml(tr('No checkpoints yet'))}</li>`;
+      checkpointListEl.innerHTML = `<li class="empty-hint">${escapeHtml(tr('No checkpoints for this chat yet'))}</li>`;
       return;
     }
     checkpointListEl.innerHTML = checkpoints.map((cp, i) => {
@@ -7910,6 +9562,7 @@
             <div class="cp-actions" style="display:none;" id="cp-actions-${i}">
               <button class="cp-action-btn" data-cp-diff="${i}" type="button">${escapeHtml(tr('View Diff'))}</button>
               <button class="cp-action-btn danger" data-cp-restore="${i}" type="button">${escapeHtml(tr('Restore'))}</button>
+              <button class="cp-action-btn danger" data-cp-delete="${i}" type="button">${escapeHtml(tr('Delete'))}</button>
             </div>
           </div>
         </li>`;
@@ -7917,6 +9570,8 @@
   }
 
   checkpointListEl.addEventListener('click', async (e) => {
+    if (_checkpointsCacheSessionId !== state.activeSessionId) return;
+
     // View Diff button
     const diffBtn = e.target.closest('[data-cp-diff]');
     if (diffBtn) {
@@ -7931,11 +9586,35 @@
       preview.textContent = tr('Loading diff...');
       preview.classList.add('open');
       try {
-        const resp = await fetch(`/api/checkpoints/${hash}/diff`);
+        const resp = await fetch(checkpointApiUrl(`/${encodeURIComponent(hash)}/diff`));
         const data = await resp.json();
         preview.textContent = data.diff_text || tr('No changes.');
       } catch (_e) {
         preview.textContent = tr('Failed to load diff.');
+      }
+      return;
+    }
+
+    // Delete button
+    const deleteBtn = e.target.closest('[data-cp-delete]');
+    if (deleteBtn) {
+      const idx = parseInt(deleteBtn.dataset.cpDelete, 10);
+      const hash = _checkpointsCache[idx] && _checkpointsCache[idx].hash;
+      if (!hash) return;
+      if (!confirm(tr('Delete this checkpoint? This cannot be undone.'))) return;
+      try {
+        const resp = await fetch(checkpointApiUrl(`/${encodeURIComponent(hash)}`), {
+          method: 'DELETE',
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.error) {
+          showError(data.error || tr('Delete checkpoint failed.'));
+        } else {
+          showSuccess(tr('Checkpoint deleted.'));
+          loadCheckpoints();
+        }
+      } catch (_e) {
+        showError(tr('Delete checkpoint failed.'));
       }
       return;
     }
@@ -7948,7 +9627,7 @@
       if (!hash) return;
       if (!confirm(tr('Restore workspace to this checkpoint? Current files will be overwritten.'))) return;
       try {
-        const resp = await fetch(`/api/checkpoints/${hash}/restore`, {
+        const resp = await fetch(checkpointApiUrl(`/${encodeURIComponent(hash)}/restore`), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: '{}',
@@ -8007,7 +9686,9 @@
     applyTheme(state.theme);
     applyTextScale(state.textScale, false);
     applyLanguage(false);
+    applySidebarWidth(state.sidebarWidth, false);
     applySidebarCollapsed(false);
+    initializeAppSidebarResizer();
     applySectionState();
     setSendButtonMode('send');
     startShellStatusPolling();
@@ -8019,6 +9700,7 @@
     renderPendingFiles();
     loadSkills();
     loadEnv();
+    loadDesktopSettings().finally(showCaseStudyWelcomeIfNeeded);
     loadCheckpoints();
     inputEl.focus();
   }

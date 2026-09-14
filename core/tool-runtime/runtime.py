@@ -1,5 +1,5 @@
 """
-NeuroClaw Tool Runtime
+NeuroRuntime Tool Runtime
 
 Executes skill handlers:
   - handler.js  → via Node.js subprocess
@@ -77,9 +77,10 @@ class ToolRuntime:
 
     def _run_node(self, handler: Path, input_data: dict) -> dict:
         node = _get_node_path()
+        handler_literal = json.dumps(str(handler))
         # Pass input as JSON via stdin; handler reads process.stdin
         wrapper = (
-            f"const h = require('{handler}');\n"
+            f"const h = require({handler_literal});\n"
             f"let buf = '';\n"
             f"process.stdin.on('data', d => buf += d);\n"
             f"process.stdin.on('end', async () => {{\n"
@@ -111,15 +112,21 @@ class ToolRuntime:
 
     def _run_python(self, handler: Path, input_data: dict) -> dict:
         python = _get_python_path()
+        parent_literal = repr(str(handler.parent))
+        handler_literal = repr(str(handler))
         wrapper = (
             "import sys, json\n"
-            f"sys.path.insert(0, '{handler.parent}')\n"
+            f"sys.path.insert(0, {parent_literal})\n"
             "import importlib.util\n"
-            f"spec = importlib.util.spec_from_file_location('handler', '{handler}')\n"
+            f"spec = importlib.util.spec_from_file_location('handler', {handler_literal})\n"
             "mod = importlib.util.module_from_spec(spec)\n"
             "spec.loader.exec_module(mod)\n"
             "input_data = json.loads(sys.stdin.read())\n"
-            "fn = [v for v in vars(mod).values() if callable(v) and not v.__name__.startswith('_')][0]\n"
+            "fn = getattr(mod, 'handler', None) or getattr(mod, 'run', None)\n"
+            "if not callable(fn):\n"
+            "    fn = [v for v in vars(mod).values() if callable(v) and "
+            "getattr(v, '__module__', None) == mod.__name__ and "
+            "not v.__name__.startswith('_')][0]\n"
             "result = fn(input_data)\n"
             "import asyncio\n"
             # Handler runs in a fresh subprocess, so there is never an

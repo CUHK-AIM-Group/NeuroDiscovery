@@ -216,6 +216,35 @@ class TestGetFilesAtCheckpoint:
         assert "sub/b.txt" in files
 
 
+class TestScopedCheckpoints:
+    def test_chat_scopes_are_isolated_and_deletable(
+        self, tmp_path: Path, workspace: Path
+    ) -> None:
+        repo_root = tmp_path / "repo_root"
+        repo_root.mkdir()
+        chat_a = ShadowCheckpointManager(repo_root, scope_id="chat-a")
+        chat_b = ShadowCheckpointManager(repo_root, scope_id="chat-b")
+
+        _write_file(workspace / "result.txt", "chat-a")
+        checkpoint_a = chat_a.checkpoint(workspace, label="chat-a checkpoint")
+        _write_file(workspace / "result.txt", "chat-b")
+        checkpoint_b = chat_b.checkpoint(workspace, label="chat-b checkpoint")
+
+        assert [item["hash"] for item in chat_a.list_checkpoints(workspace)] == [
+            checkpoint_a["commit"]
+        ]
+        assert [item["hash"] for item in chat_b.list_checkpoints(workspace)] == [
+            checkpoint_b["commit"]
+        ]
+
+        deleted = chat_a.delete_checkpoint(workspace, checkpoint_a["commit"])
+        assert deleted["deleted"] is True
+        assert chat_a.list_checkpoints(workspace) == []
+        assert len(chat_b.list_checkpoints(workspace)) == 1
+        with pytest.raises(ValueError, match="Checkpoint not found"):
+            chat_a.diff_checkpoint(workspace, checkpoint_a["commit"])
+
+
 # ── _prune() ─────────────────────────────────────────────────────────────────
 
 

@@ -1,5 +1,5 @@
 """
-NeuroClaw Core Agent — LLM conversation loop and tool-call dispatcher.
+NeuroRuntime Core Agent — LLM conversation loop and tool-call dispatcher.
 
 ------------
   AgentSession
@@ -1315,7 +1315,7 @@ def _build_skill_hint_summary(skills: list[dict[str, Any]], max_skills: int = 24
         if len(summary) > 120:
             summary = summary[:117].rstrip() + "..."
         if not summary:
-            summary = f"{name} handles a specialized NeuroClaw workflow."
+            summary = f"{name} handles a specialized NeuroRuntime workflow."
         lines.append(f"- {name}: {summary}")
 
     return "\n".join(lines)
@@ -2142,7 +2142,7 @@ def _build_skill_catalog_summary(skills: list[dict[str, Any]], max_skills: int =
 
     lines = [
         "[Available Skill Library]",
-        "The following NeuroClaw skills are available in this benchmark run.",
+        "The following NeuroRuntime skills are available in this benchmark run.",
         "Treat these skills as valid in-repo capabilities when judging feasibility or completeness.",
     ]
     for skill in skills[:max_skills]:
@@ -3546,7 +3546,7 @@ def _run_benchmark_suite(
 
 class AgentSession:
     """
-    Minimal NeuroClaw agent session.
+    Minimal NeuroRuntime execution-agent session.
 
     Responsibilities:
     - Bootstrap environment (load_environment)
@@ -3561,6 +3561,7 @@ class AgentSession:
         workspace: Path | None = None,
         benchmark_mode: bool | None = None,
         no_skill_mode: bool = False,
+        checkpoint_scope: str | None = None,
     ) -> None:
         self.workspace = workspace or REPO_ROOT
         self.env = load_environment()
@@ -3584,7 +3585,10 @@ class AgentSession:
         # Checkpoint manager (shadow git file-system snapshots)
         try:
             from core.checkpoint.manager import ShadowCheckpointManager
-            self._checkpoint_mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+            self._checkpoint_mgr = ShadowCheckpointManager(
+                repo_root=REPO_ROOT,
+                scope_id=checkpoint_scope,
+            )
         except Exception:
             self._checkpoint_mgr = None  # type: ignore[assignment]
 
@@ -3665,7 +3669,7 @@ class AgentSession:
         system_prompt = self._build_system_prompt(skills)
         self.history = [{"role": "system", "content": system_prompt}]
 
-        print("NeuroClaw ready. Type your message (Ctrl-C to exit).\n")
+        print("NeuroOracle ready (NeuroRuntime active). Type your message (Ctrl-C to exit).\n")
         if self.benchmark_mode:
             print("Benchmark mode is ON: file input/output tasks are simulated; fast no-file tasks can run.\n")
         while True:
@@ -3687,7 +3691,7 @@ class AgentSession:
 
             self.history.append({"role": "user", "content": user_input})
             response = self._chat()
-            print(f"\nNeuroClaw: {response}\n")
+            print(f"\nNeuroOracle: {response}\n")
             self.history.append({"role": "assistant", "content": response})
             manager.maybe_compress(self.history)
             if self._memory_extractor is not None:
@@ -4346,7 +4350,11 @@ class AgentSession:
                         {
                             "tool": "run_shell_command",
                             "command": shell_cmd,
-                            "executed": bool(result.get("executed", result.get("success", False))),
+                            "executed": bool(
+                                result.get("executed")
+                                if "executed" in result
+                                else result.get("failure_stage") not in {"validation", "process_start"}
+                            ),
                             "success": bool(result.get("success", False)),
                             "skills_used": _extract_skills_from_result_payload(result),
                             "result": result,
@@ -4757,7 +4765,7 @@ class AgentSession:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="NeuroClaw — neuroscience AI assistant",
+        description="NeuroOracle — neuroscience research platform powered by NeuroRuntime",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
