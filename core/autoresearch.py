@@ -1,4 +1,4 @@
-"""AutoResearch component scopes and ``/help`` guidance for NeuroClaw clients."""
+"""AutoResearch component scopes and ``/help`` guidance for NeuroOracle clients."""
 
 from __future__ import annotations
 
@@ -151,7 +151,7 @@ _MODE_CONTENT = {
             "已准备数据的路径、文件格式、张量/表格形状和一个最小样例",
             "预测或建模任务、标签列、类别/回归目标和主要评价指标",
             "训练/验证/测试划分或受试者列表，以及防止数据泄漏的分组规则",
-            "指定模型/基线，或允许 NeuroClaw 选择的模型范围",
+            "指定模型/基线，或允许 NeuroRuntime 选择的模型范围",
             "现有代码、METHOD.md、配置、预训练权重和需要复现的仓库（如有）",
             "输出目录、随机种子、运行轮数/预算、CPU/GPU/内存与最长运行时间",
         ),
@@ -159,7 +159,7 @@ _MODE_CONTENT = {
             "Model-ready data path, file format, tensor/table shape, and one minimal sample",
             "Prediction task, label column, class/regression target, and primary metrics",
             "Train/validation/test split or subject lists, including leakage-prevention grouping",
-            "Required model/baselines or the model family NeuroClaw may choose from",
+            "Required model/baselines or the model family NeuroRuntime may choose from",
             "Existing code, METHOD.md, configs, pretrained weights, or repository to reproduce",
             "Output directory, random seeds, run budget, CPU/GPU/memory, and maximum runtime",
         ),
@@ -244,9 +244,9 @@ def render_help_response(request: AutoResearchHelpRequest) -> str:
     scope_heading = "范围：" if zh else "Scope:"
     heading = "请提供以下资料" if zh else "Please provide"
     next_step = (
-        "资料不完整也可以先发；NeuroClaw 会标出缺失项，并在你确认范围后再执行。"
+        "资料不完整也可以先发；NeuroRuntime 会标出缺失项，并在你确认范围后再执行。"
         if zh else
-        "You can start with incomplete information; NeuroClaw will identify gaps and wait for scope confirmation before execution."
+        "You can start with incomplete information; NeuroRuntime will identify gaps and wait for scope confirmation before execution."
     )
     checklist = "\n".join(f"- [ ] {item}" for item in items)
     return f"## {title}\n\n**{scope_heading}** {scope}\n\n### {heading}\n\n{checklist}\n\n{next_step}"
@@ -261,7 +261,7 @@ def build_autoresearch_scope_prompt(mode: object) -> str:
     content = _MODE_CONTENT[normalized]
     required = "\n".join(f"- {item}" for item in content["en_items"])
     return (
-        f"[NeuroClaw AutoResearch component scope: {normalized}]\n"
+        f"[NeuroRuntime AutoResearch component scope: {normalized}]\n"
         f"Scope boundary: {content['en_scope']}\n"
         "Before substantive work, check whether the following inputs are available:\n"
         f"{required}\n"

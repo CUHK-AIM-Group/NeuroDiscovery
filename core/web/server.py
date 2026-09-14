@@ -1,5 +1,5 @@
 """
-NeuroClaw Web UI Server
+NeuroDiscovery Web UI Server
 
 Serves a browser-based chat interface at http://localhost:7080 by default.
 
@@ -51,7 +51,7 @@ def _client_surface_prompt(raw_surface: Any) -> str:
     if surface != "desktop":
         return ""
     return (
-        "[NeuroClaw Desktop runtime policy — this overrides conflicting environment "
+        "[NeuroDiscovery Desktop / NeuroRuntime policy — this overrides conflicting environment "
         "setup instructions in SOUL.md]\n"
         "The desktop launcher has already configured and started the active runtime. "
         "Never inspect, create, or require neuroclaw_environment.json in the user's "
@@ -105,15 +105,32 @@ def _sanitize_title(raw: str, user_text: str) -> str:
     return t[:64]
 
 
+WEB_TOOL_OUTPUT_EXPORT_LIMIT = 100_000
+
+
+def _bounded_web_tool_output(value: Any) -> tuple[str, bool, int]:
+    """Keep useful export output without allowing one command to exhaust browser storage."""
+    text = str(value or "")
+    return text[:WEB_TOOL_OUTPUT_EXPORT_LIMIT], len(text) > WEB_TOOL_OUTPUT_EXPORT_LIMIT, len(text)
+
+
 def _summarize_web_tool_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Return compact tool events that are safe to show in the web timeline."""
+    """Return UI previews plus an export-ready, bounded execution record."""
     compact: list[dict[str, Any]] = []
     for idx, event in enumerate(events, start=1):
         if not isinstance(event, dict):
             continue
         result = event.get("result") if isinstance(event.get("result"), dict) else {}
-        stdout = str(result.get("stdout", "") or result.get("output", "") or "")
-        stderr = str(result.get("stderr", "") or result.get("error", "") or "")
+        stdout_source = (
+            result.get("stdout", "")
+            or result.get("output", "")
+            or result.get("response", "")
+            or result.get("message", "")
+            or ""
+        )
+        stderr_source = result.get("stderr", "") or result.get("error", "") or ""
+        stdout, stdout_truncated, stdout_chars = _bounded_web_tool_output(stdout_source)
+        stderr, stderr_truncated, stderr_chars = _bounded_web_tool_output(stderr_source)
         compact.append(
             {
                 "id": idx,
@@ -121,8 +138,22 @@ def _summarize_web_tool_events(events: list[dict[str, Any]]) -> list[dict[str, A
                 "command": str(event.get("command", "")),
                 "executed": bool(event.get("executed", False)),
                 "success": bool(event.get("success", False)),
+                "stdout": stdout,
+                "stderr": stderr,
                 "stdout_preview": stdout[:1200],
                 "stderr_preview": stderr[:1200],
+                "stdout_chars": stdout_chars,
+                "stderr_chars": stderr_chars,
+                "stdout_truncated": stdout_truncated,
+                "stderr_truncated": stderr_truncated,
+                "returncode": result.get("returncode"),
+                "cwd": str(result.get("cwd", "")),
+                "shell": str(result.get("shell", "")),
+                "platform": str(result.get("platform", "")),
+                "error_type": str(result.get("error_type", "")),
+                "failure_stage": str(result.get("failure_stage", "")),
+                "retryable": result.get("retryable"),
+                "recovery_hint": str(result.get("recovery_hint", "")),
                 "skills_used": event.get("skills_used", []) if isinstance(event.get("skills_used"), list) else [],
             }
         )
@@ -238,7 +269,7 @@ def _safe_skill_summary_fallback(skill_name: str, description: str) -> dict[str,
     """Return conservative bilingual fallback summary when LLM summarization fails."""
     base_en = (description or "").strip()
     if not base_en:
-        base_en = f"{skill_name} provides a specialized workflow for task execution in NeuroClaw."
+        base_en = f"{skill_name} provides a specialized workflow for task execution in NeuroRuntime."
     base_en = re.sub(r"\s+", " ", base_en).strip()
     if len(base_en) > 220:
         base_en = base_en[:217].rstrip() + "..."
@@ -671,7 +702,7 @@ def create_app() -> Any:
             api_key = os.environ.get(api_key_env, "")
         api_key = api_key or str(llm.get("api_key") or llm.get("apiKey") or "").strip()
         url = base_url.rstrip("/") + "/models"
-        headers = {"Accept": "application/json", "User-Agent": "NeuroClaw/0.2.1"}
+        headers = {"Accept": "application/json", "User-Agent": "NeuroDiscovery/0.2.2"}
         configured_headers = llm.get("default_headers") or llm.get("headers")
         if isinstance(configured_headers, dict):
             for key, value in configured_headers.items():
@@ -774,23 +805,28 @@ def create_app() -> Any:
         catalog, _probe = _runtime_model_catalog(llm)
         return catalog
 
-    app = FastAPI(title="NeuroClaw Web UI", docs_url=None, redoc_url=None)
+    app = FastAPI(title="NeuroDiscovery Web UI", docs_url=None, redoc_url=None)
     from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
     from core.web.claim_layer_v5 import AcceptedClaimLayer
     accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))
     app.state.accepted_claim_evidence = accepted_evidence
     study_service = UserStudyService()
-    study_password = os.environ.get("NEURODISCOVERY_STUDY_PASSWORD", "123456")
-    study_tokens: dict[str, float] = {}
+    study_password = (
+        os.environ.get("NEUROORACLE_STUDY_PASSWORD")
+        or os.environ.get("NEURODISCOVERY_STUDY_PASSWORD", "123456")
+    )
+    # Tokens intentionally live only in this local backend process. The desktop
+    # renderer keeps one token for its window lifetime, and closing the client
+    # stops the backend and invalidates every study token without persisting
+    # credentials to disk.
+    study_tokens: set[str] = set()
 
     @app.middleware("http")
     async def protect_study_api(request: Request, call_next: Any) -> Any:
         path = request.url.path.rstrip("/")
         if path.startswith("/api/studies") and path != "/api/studies/auth" and request.method != "OPTIONS":
-            token = request.headers.get("X-NeuroDiscovery-Study-Token", "")
-            expires_at = study_tokens.get(token, 0.0)
-            if not token or expires_at <= time.time():
-                study_tokens.pop(token, None)
+            token = request.headers.get("X-NeuroOracle-Study-Token", "")
+            if not token or token not in study_tokens:
                 return JSONResponse({"error": "Study authentication required"}, status_code=401)
         return await call_next(request)
 
@@ -815,7 +851,7 @@ def create_app() -> Any:
                 },
             )
         return HTMLResponse(
-            "<h1>NeuroClaw Web UI</h1>"
+            "<h1>NeuroDiscovery Web UI</h1>"
             f"<p>Static files not found at <code>{STATIC_DIR}</code>.</p>",
             status_code=500,
         )
@@ -966,7 +1002,7 @@ def create_app() -> Any:
             return {
                 "type": "done",
                 "content": render_help_response(help_request),
-                "provider_used": "NeuroClaw",
+                "provider_used": "NeuroOracle",
                 "model_used": "local help",
                 "autoresearch_mode": help_request.mode,
                 "tool_events": [],
@@ -978,7 +1014,11 @@ def create_app() -> Any:
         except ValueError as exc:
             return JSONResponse({"type": "error", "message": str(exc)}, status_code=400)
 
-        session = AgentSession(workspace=workspace)
+        chat_id = str(payload.get("chat_id") or "").strip()[:200]
+        session = AgentSession(
+            workspace=workspace,
+            checkpoint_scope=chat_id or None,
+        )
 
         try:
             loader = SkillLoader(REPO_ROOT / "skills")
@@ -1110,40 +1150,77 @@ def create_app() -> Any:
 
     # ── Checkpoint API endpoints ─────────────────────────────────────────────
 
-    @app.get("/api/checkpoints")
-    async def list_checkpoints() -> Any:
+    def checkpoint_context(chat_id: str, workspace_path: str) -> tuple[Path, Any]:
         from core.checkpoint.manager import ShadowCheckpointManager
-        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
-        cps = mgr.list_checkpoints(REPO_ROOT)
-        return {"checkpoints": cps}
+
+        normalized_chat_id = str(chat_id or "").strip()[:200]
+        if not normalized_chat_id:
+            raise ValueError("Missing chat_id")
+        workspace = _resolve_workspace_path(workspace_path)
+        return workspace, ShadowCheckpointManager(
+            repo_root=REPO_ROOT,
+            scope_id=normalized_chat_id,
+        )
+
+    @app.get("/api/checkpoints")
+    async def list_checkpoints(chat_id: str = "", workspace_path: str = "") -> Any:
+        try:
+            workspace, mgr = checkpoint_context(chat_id, workspace_path)
+            cps = mgr.list_checkpoints(workspace)
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+        return {"chat_id": chat_id, "checkpoints": cps}
 
     @app.get("/api/checkpoints/{checkpoint_id}/diff")
-    async def checkpoint_diff(checkpoint_id: str) -> Any:
-        from core.checkpoint.manager import ShadowCheckpointManager
-        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+    async def checkpoint_diff(
+        checkpoint_id: str,
+        chat_id: str = "",
+        workspace_path: str = "",
+    ) -> Any:
         try:
-            diff = mgr.diff_checkpoint(REPO_ROOT, checkpoint_id)
+            workspace, mgr = checkpoint_context(chat_id, workspace_path)
+            diff = mgr.diff_checkpoint(workspace, checkpoint_id)
         except Exception as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
         return diff
 
     @app.post("/api/checkpoints/{checkpoint_id}/restore")
-    async def restore_checkpoint(checkpoint_id: str, payload: dict = {}) -> Any:
-        from core.checkpoint.manager import ShadowCheckpointManager
-        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+    async def restore_checkpoint(
+        checkpoint_id: str,
+        payload: dict = Body(default={}),
+        chat_id: str = "",
+        workspace_path: str = "",
+    ) -> Any:
         filepath = payload.get("filepath") if payload else None
         try:
-            result = mgr.restore_checkpoint(REPO_ROOT, checkpoint_id, filepath=filepath)
+            workspace, mgr = checkpoint_context(chat_id, workspace_path)
+            result = mgr.restore_checkpoint(workspace, checkpoint_id, filepath=filepath)
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+        return {"type": "done", **result}
+
+    @app.delete("/api/checkpoints/{checkpoint_id}")
+    async def delete_checkpoint(
+        checkpoint_id: str,
+        chat_id: str = "",
+        workspace_path: str = "",
+    ) -> Any:
+        try:
+            workspace, mgr = checkpoint_context(chat_id, workspace_path)
+            result = mgr.delete_checkpoint(workspace, checkpoint_id)
         except Exception as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
         return {"type": "done", **result}
 
     @app.get("/api/checkpoints/{checkpoint_id}/files")
-    async def checkpoint_files(checkpoint_id: str) -> Any:
-        from core.checkpoint.manager import ShadowCheckpointManager
-        mgr = ShadowCheckpointManager(repo_root=REPO_ROOT)
+    async def checkpoint_files(
+        checkpoint_id: str,
+        chat_id: str = "",
+        workspace_path: str = "",
+    ) -> Any:
         try:
-            files = mgr.get_files_at_checkpoint(REPO_ROOT, checkpoint_id)
+            workspace, mgr = checkpoint_context(chat_id, workspace_path)
+            files = mgr.get_files_at_checkpoint(workspace, checkpoint_id)
         except Exception as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
         return {"files": files}
@@ -1221,7 +1298,7 @@ def create_app() -> Any:
                         await websocket.send_text(json.dumps({
                             "type": "done",
                             "content": reply,
-                            "provider_used": "NeuroClaw",
+                            "provider_used": "NeuroOracle",
                             "model_used": "local help",
                             "autoresearch_mode": help_request.mode,
                         }))
@@ -1568,7 +1645,7 @@ def create_app() -> Any:
         url = f"{NEUROORACLE_HF_BASE}/{remote_path}"
         req = urllib.request.Request(
             url,
-            headers={"User-Agent": "NeuroClaw Desktop"},
+            headers={"User-Agent": "NeuroDiscovery Desktop"},
             method="HEAD",
         )
         last_error: Exception | None = None
@@ -1715,7 +1792,7 @@ def create_app() -> Any:
     def _download_url_to_file(url: str, dest: Path, *, label: str) -> int:
         dest.parent.mkdir(parents=True, exist_ok=True)
         tmp = dest.with_name(dest.name + ".download")
-        req = urllib.request.Request(url, headers={"User-Agent": "NeuroClaw Desktop"})
+        req = urllib.request.Request(url, headers={"User-Agent": "NeuroDiscovery Desktop"})
         downloaded = 0
         with _neurooracle_urlopen(req, timeout=60) as resp:
             total = resp.headers.get("Content-Length")
@@ -2220,19 +2297,20 @@ def create_app() -> Any:
         candidate = str(payload.get("password") or "")
         if not secrets.compare_digest(candidate, study_password):
             return JSONResponse({"error": "Incorrect study password"}, status_code=401)
-        now = time.time()
-        for token, expires_at in list(study_tokens.items()):
-            if expires_at <= now:
-                study_tokens.pop(token, None)
         token = secrets.token_urlsafe(32)
-        expires_in = 12 * 60 * 60
-        study_tokens[token] = now + expires_in
-        return {"token": token, "expires_in": expires_in}
+        study_tokens.add(token)
+        return {"token": token, "lifetime": "client_process"}
 
     @app.get("/api/studies/config")
     async def study_config() -> Any:
         case_root = REPO_ROOT / "neurooracle" / "data" / "cs_runs" / "case1_transdiagnostic"
-        expert_subset = REPO_ROOT / "neurooracle" / "data" / "user_study" / "case1_expert_subset_v1.json"
+        expert_subset = (
+            REPO_ROOT
+            / "neurooracle"
+            / "data"
+            / "user_study"
+            / "case1_tcp_external_expert_study_v1.json"
+        )
         candidates: list[Path] = []
         if expert_subset.exists():
             candidates.append(expert_subset)
@@ -2245,17 +2323,34 @@ def create_app() -> Any:
                 )[:15]
             )
         graph_path = _neurooracle_graph_path()
+        session_protocol = (
+            study_service.load_study_protocol(candidates[0])
+            if candidates
+            else {
+                "completion_basis": "active_time",
+                "required_sessions": 1,
+                "active_seconds_per_session": 600,
+            }
+        )
         return {
             "protocol_version": USER_STUDY_PROTOCOL_VERSION,
-            "case_study": "case1_transdiagnostic",
+            "study_id": "case1-tcp-external-validation-v1",
+            "case_study": "case1_tcp_external_validation",
             "case_name": {
-                "en": "Transdiagnostic Brain Atlas of Psychiatric Disorders",
-                "zh": "跨诊断精神疾病脑影像图谱",
+                "en": "TCP Hypothesis External-Validation Expert Study",
+                "zh": "TCP 假设外部验证专家研究",
             },
-            "conditions": ["manual", "assisted", "generator"],
+            "conditions": ["manual", "assisted"],
             "suggested_candidate_sources": [str(item) for item in candidates],
+            "default_participant_id": str(
+                os.environ.get("USERNAME")
+                or os.environ.get("USER")
+                or Path.home().name
+                or ""
+            ).strip(),
             "graph_path": str(graph_path) if graph_path.exists() else "",
             "study_root": str(study_service.root),
+            "session_protocol": session_protocol,
         }
 
     @app.post("/api/studies/sessions")
@@ -2266,7 +2361,9 @@ def create_app() -> Any:
                 participant_id=str(payload.get("participant_id") or ""),
                 condition=str(payload.get("condition") or "manual"),
                 candidate_path=str(payload.get("candidate_path") or ""),
-                case_study=str(payload.get("case_study") or "case1_transdiagnostic"),
+                case_study=str(
+                    payload.get("case_study") or "case1_tcp_external_validation"
+                ),
                 random_seed=int(payload["random_seed"]) if payload.get("random_seed") not in (None, "") else 0,
                 graph_path=str(payload.get("graph_path") or "") or None,
             )
@@ -2284,6 +2381,13 @@ def create_app() -> Any:
     async def get_study_session(session_id: str, include_events: bool = False) -> Any:
         try:
             return study_service.get_session(session_id, include_events=include_events)
+        except Exception as exc:
+            return _study_error(exc)
+
+    @app.delete("/api/studies/sessions/{session_id}")
+    async def delete_study_session(session_id: str) -> Any:
+        try:
+            return study_service.delete_active_session(session_id)
         except Exception as exc:
             return _study_error(exc)
 
@@ -2306,6 +2410,7 @@ def create_app() -> Any:
                 active_seconds=float(payload.get("active_seconds") or 0.0),
                 wall_seconds=float(payload.get("wall_seconds") or 0.0),
                 buckets={str(key): str(value) for key, value in buckets.items()},
+                completion_reason=str(payload.get("completion_reason") or "submitted"),
             )
         except Exception as exc:
             return _study_error(exc)
@@ -3578,13 +3683,13 @@ def run_server(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
     import uvicorn  # type: ignore
 
     app = create_app()
-    print(f"\n  NeuroClaw Web UI  →  http://{host}:{port}\n")
+    print(f"\n  NeuroDiscovery Web UI  →  http://{host}:{port}\n")
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="NeuroClaw Web UI — start the browser-based chat interface."
+        description="NeuroDiscovery Web UI — start the browser-based chat interface."
     )
     parser.add_argument(
         "--host", default=DEFAULT_HOST,

@@ -9,7 +9,11 @@ Storage layout::
 
     .neuroclaw_checkpoints/
         {sha256(workspace)[:16]}/
-            git/          -- bare-ish shadow repo (HEAD, refs/, objects/, info/exclude)
+            .git/         -- legacy/shared shadow repo
+            sessions/
+                {sha256(chat_id)[:16]}/
+                    .git/ -- chat-scoped shadow repo
+                    deleted_checkpoints
 """
 
 from __future__ import annotations
@@ -49,11 +53,22 @@ _EXCLUDE_PATTERNS: list[str] = [
 class ShadowCheckpointManager:
     """Transparent file-system checkpointing via a shadow git repository."""
 
-    def __init__(self, repo_root: Path, max_checkpoints: int = 50) -> None:
+    def __init__(
+        self,
+        repo_root: Path,
+        max_checkpoints: int = 50,
+        scope_id: str | None = None,
+    ) -> None:
         self._repo_root = Path(repo_root).resolve()
         self._base_dir = self._repo_root / ".neuroclaw_checkpoints"
         self._base_dir.mkdir(parents=True, exist_ok=True)
         self._max_checkpoints = max_checkpoints
+        self._scope_id = str(scope_id or "").strip()
+        self._scope_hash = (
+            hashlib.sha256(self._scope_id.encode("utf-8")).hexdigest()[:16]
+            if self._scope_id
+            else ""
+        )
         self._dedup: set[str] = set()  # per-turn dedup keys
 
     # ── Internal helpers ─────────────────────────────────────────────────────
@@ -63,7 +78,41 @@ class ShadowCheckpointManager:
         return hashlib.sha256(str(workspace.resolve()).encode()).hexdigest()[:16]
 
     def _shadow_git_dir(self, workspace: Path) -> Path:
-        return self._base_dir / self._workspace_hash(workspace)
+        workspace_root = self._base_dir / self._workspace_hash(workspace)
+        if not self._scope_hash:
+            return workspace_root
+        return workspace_root / "sessions" / self._scope_hash
+
+    def _deleted_checkpoints_path(self, workspace: Path) -> Path:
+        return self._shadow_git_dir(workspace) / "deleted_checkpoints"
+
+    def _deleted_checkpoints(self, workspace: Path) -> set[str]:
+        path = self._deleted_checkpoints_path(workspace)
+        if not path.exists():
+            return set()
+        try:
+            return {
+                line.strip()
+                for line in path.read_text(encoding="utf-8").splitlines()
+                if re.fullmatch(r"[0-9a-f]{40}", line.strip())
+            }
+        except OSError:
+            return set()
+
+    def _validate_checkpoint(self, workspace: Path, commit_hash: str) -> None:
+        if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
+            raise ValueError(f"Invalid commit hash: {commit_hash}")
+        if commit_hash in self._deleted_checkpoints(workspace):
+            raise ValueError("Checkpoint not found")
+        result = self._run_git(
+            workspace,
+            "cat-file",
+            "-e",
+            f"{commit_hash}^{{commit}}",
+            check=False,
+        )
+        if result.returncode != 0:
+            raise ValueError("Checkpoint not found")
 
     def _ensure_shadow_repo(self, workspace: Path) -> Path:
         """Initialise the shadow repo if it does not exist yet."""
@@ -92,9 +141,9 @@ class ShadowCheckpointManager:
         env["GIT_CONFIG_GLOBAL"] = os.devnull
         env["GIT_CONFIG_NOSYSTEM"] = "1"
         # Identity for commits (shadow repo only)
-        env["GIT_AUTHOR_NAME"] = "NeuroClaw"
+        env["GIT_AUTHOR_NAME"] = "NeuroRuntime"
         env["GIT_AUTHOR_EMAIL"] = "checkpoint@neuroclaw.local"
-        env["GIT_COMMITTER_NAME"] = "NeuroClaw"
+        env["GIT_COMMITTER_NAME"] = "NeuroRuntime"
         env["GIT_COMMITTER_EMAIL"] = "checkpoint@neuroclaw.local"
         return env
 
@@ -185,6 +234,7 @@ class ShadowCheckpointManager:
         ws = Path(workspace).resolve()
         if not (self._shadow_git_dir(ws) / ".git" / "HEAD").exists():
             return []
+        deleted = self._deleted_checkpoints(ws)
         result = self._run_git(
             ws, "log", "--format=%H|%aI|%s", "--reverse", check=False
         )
@@ -198,6 +248,8 @@ class ShadowCheckpointManager:
             if len(parts) < 3:
                 continue
             hash_val, ts, msg = parts
+            if hash_val in deleted:
+                continue
             label = ""
             if " | " in msg:
                 label = msg.split(" | ", 1)[1]
@@ -213,6 +265,7 @@ class ShadowCheckpointManager:
         """
         ws = Path(workspace).resolve()
         self._ensure_shadow_repo(ws)
+        self._validate_checkpoint(ws, commit_hash)
 
         # File list
         stat = self._run_git(
@@ -231,6 +284,8 @@ class ShadowCheckpointManager:
     ) -> dict:
         """Diff a single file between *commit_hash* and HEAD."""
         ws = Path(workspace).resolve()
+        self._ensure_shadow_repo(ws)
+        self._validate_checkpoint(ws, commit_hash)
         diff = self._run_git(
             ws, "diff", f"{commit_hash}..HEAD", "--", filepath, check=False
         )
@@ -249,13 +304,10 @@ class ShadowCheckpointManager:
         """
         ws = Path(workspace).resolve()
         self._ensure_shadow_repo(ws)
+        self._validate_checkpoint(ws, commit_hash)
 
         # Pre-rollback snapshot (always create, even if no pending changes)
         self._force_checkpoint(ws, label=f"pre-rollback snapshot (restoring to {commit_hash[:8]})")
-
-        # Validate commit hash format
-        if not re.match(r"^[0-9a-f]{40}$", commit_hash):
-            raise ValueError(f"Invalid commit hash: {commit_hash}")
 
         if filepath:
             # Restore single file
@@ -288,10 +340,32 @@ class ShadowCheckpointManager:
     ) -> list[str]:
         """List all files tracked at *commit_hash*."""
         ws = Path(workspace).resolve()
+        self._ensure_shadow_repo(ws)
+        self._validate_checkpoint(ws, commit_hash)
         result = self._run_git(
             ws, "ls-tree", "-r", "--name-only", commit_hash, check=False
         )
         return [f for f in result.stdout.strip().splitlines() if f]
+
+    def delete_checkpoint(self, workspace: Path, commit_hash: str) -> dict:
+        """Remove one checkpoint from this manager's visible history.
+
+        The underlying git object is retained until normal repository garbage
+        collection, but all list/diff/restore/file operations reject it
+        immediately. Scoped managers therefore delete only the selected chat's
+        checkpoint without touching another chat's history.
+        """
+        ws = Path(workspace).resolve()
+        self._ensure_shadow_repo(ws)
+        self._validate_checkpoint(ws, commit_hash)
+        deleted = self._deleted_checkpoints(ws)
+        deleted.add(commit_hash)
+        path = self._deleted_checkpoints_path(ws)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text("\n".join(sorted(deleted)) + "\n", encoding="utf-8")
+        temporary.replace(path)
+        return {"deleted": True, "hash": commit_hash}
 
     def _prune(self, workspace: Path) -> None:
         """Keep only the most recent *max_checkpoints* commits."""

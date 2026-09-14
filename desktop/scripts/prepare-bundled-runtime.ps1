@@ -215,11 +215,11 @@ if (-not $SkipBackend) {
       Copy-RootFileIfExists -SourceRoot $RepoRoot -TargetRoot $BackendTarget -Name $fileName
     }
 
-    $StudySubsetSource = Join-Path $RepoRoot "neurooracle\data\user_study\case1_expert_subset_v1.json"
+    $StudySubsetSource = Join-Path $RepoRoot "neurooracle\data\user_study\case1_tcp_external_expert_study_v1.json"
     if (Test-Path -LiteralPath $StudySubsetSource -PathType Leaf) {
       $StudySubsetTarget = Join-Path $BackendTarget "neurooracle\data\user_study"
       New-Item -ItemType Directory -Path $StudySubsetTarget -Force | Out-Null
-      Copy-Item -LiteralPath $StudySubsetSource -Destination (Join-Path $StudySubsetTarget "case1_expert_subset_v1.json") -Force
+      Copy-Item -LiteralPath $StudySubsetSource -Destination (Join-Path $StudySubsetTarget "case1_tcp_external_expert_study_v1.json") -Force
     }
 
     $defaultEnvironment = [ordered]@{

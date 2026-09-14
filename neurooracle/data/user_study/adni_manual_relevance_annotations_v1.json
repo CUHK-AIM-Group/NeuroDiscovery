@@ -1,0 +1,584 @@
+{
+  "schema_version": "1.0",
+  "current_batch": "batch-01-hypotheses-001-030",
+  "batches": [
+    {
+      "id": "batch-01-hypotheses-001-030",
+      "hypothesis_range": [1, 30],
+      "status": "completed",
+      "method": "Manual abstract review; every displayed paper is assessed against its assigned hypothesis target."
+    }
+  ],
+  "assignments": {
+    "adni-ext-b0c32dcfc1a834": "ofc_falff",
+    "adni-ext-2656058e7a719b": "temporal_pole_falff",
+    "adni-ext-3b03dab93d421a": "temporal_pole_falff",
+    "adni-ext-4e0ecaa68ccf85": "temporal_pole_falff",
+    "adni-ext-b590ee653e43f7": "temporal_pole_falff",
+    "adni-ext-e3291c2d3b690f": "temporal_pole_falff",
+    "adni-ext-2a8bb184c283b9": "temporal_pole_falff",
+    "adni-ext-2737194d38feb4": "temporal_pole_falff",
+    "adni-ext-1babcbf51d0d1c": "temporal_pole_falff",
+    "adni-ext-00ecdbb6f25401": "temporal_pole_falff",
+    "adni-ext-4720d52d782986": "temporal_pole_falff",
+    "adni-ext-eda62c67e2fdac": "temporal_pole_falff",
+    "adni-ext-2be8b2fb2a063d": "ofc_falff",
+    "adni-ext-ddc2c378b6e9f4": "temporal_pole_falff",
+    "adni-ext-cbbd39a2f6c2b6": "temporal_pole_falff",
+    "adni-ext-01a63a22b6d61a": "temporal_pole_falff",
+    "adni-ext-592c8a703a9184": "temporal_pole_falff",
+    "adni-ext-dc0a531df7a764": "temporal_pole_falff",
+    "adni-ext-8ae85bba1488ac": "temporal_pole_alff",
+    "adni-ext-e8045046ab951c": "posterior_cingulate_falff",
+    "adni-ext-460c3f5c3b4d76": "temporal_pole_node_degree",
+    "adni-ext-0fe9969d88e98b": "temporal_pole_node_degree",
+    "adni-ext-b9da8c763a5f87": "temporal_pole_node_degree",
+    "adni-ext-663318f6d7c4e9": "paracingulate_falff",
+    "adni-ext-26e6dcd44e6cc3": "temporal_pole_alff",
+    "adni-ext-9997cdd2f668ef": "anterior_cingulate_falff",
+    "adni-ext-014db5c3caf8ca": "temporal_pole_alff",
+    "adni-ext-464b6f1fe3c546": "insula_falff",
+    "adni-ext-757b2aa94e7de1": "temporal_pole_alff",
+    "adni-ext-e813fc9b6b520b": "insula_falff"
+  },
+  "paper_profiles": {
+    "34675797": {
+      "study_zh": "一项纳入 39 篇功能影像研究的 ALE Meta 分析，汇总 MCI 的 ALFF/fALFF、ReHo 和功能连接结果；收敛异常位于双侧额下回、右内侧额叶、左顶下叶、双侧楔前叶、双侧颞叶及海马旁回。",
+      "study_en": "An ALE meta-analysis of 39 functional-imaging studies combined ALFF/fALFF, ReHo, and functional-connectivity findings in MCI; convergent abnormalities involved bilateral inferior frontal, right medial frontal, left inferior parietal, bilateral precuneus, bilateral temporal, and parahippocampal regions.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 34675797"
+    },
+    "33453729": {
+      "study_zh": "研究比较 62 名主观认知下降、75 名 MCI 和 70 名健康对照的静息态 fMRI，联合分析动态 fALFF 与动态功能连接状态；组间差异集中在默认网络主导状态的出现和共现频率，并与 MMSE 相关。",
+      "study_en": "Resting-state fMRI from 62 SCD, 75 MCI, and 70 controls was analyzed for dynamic fALFF and dynamic-connectivity states; group effects concerned the frequency and co-occurrence of DMN-dominated states and correlated with MMSE.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 33453729"
+    },
+    "42142219": {
+      "study_zh": "跨疾病 MRI 脑龄 Meta 分析显示 MCI 的脑龄差平均约为 3.77 年；该指标综合全脑结构 MRI，而不是测量某个脑区的静息态低频振幅。",
+      "study_en": "A cross-disorder MRI brain-age meta-analysis found an average brain-age gap of about 3.77 years in MCI; this is a global structural-MRI measure rather than regional resting-state low-frequency amplitude.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 42142219"
+    },
+    "41836094": {
+      "study_zh": "帕金森病及帕金森病轻度认知障碍的静息态 fMRI 研究发现右尾状核和左岛叶 ALFF 升高、左枕中回 ALFF 降低，并发现岛叶—中扣带回、岛叶—颞上回等连接改变。",
+      "study_en": "A resting-state fMRI study of Parkinson disease and PD-MCI found higher ALFF in the right caudate and left insula, lower ALFF in the left middle occipital gyrus, and altered insula–mid-cingulate and insula–superior-temporal connectivity.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 41836094"
+    },
+    "41636372": {
+      "study_zh": "任务态 EEG 系统综述总结 AD/MCI 的 P3 异常、delta/theta 增强、alpha/beta 减弱及连接受损；研究没有使用 fMRI，也没有定位本题的皮层分区。",
+      "study_en": "A task-EEG systematic review summarized P3 abnormalities, increased delta/theta, reduced alpha/beta, and disrupted connectivity in AD/MCI; it did not use fMRI or localize the cortical parcel in this hypothesis.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 41636372"
+    },
+    "40033775": {
+      "study_zh": "ADNI 多模态研究比较正常、早期 MCI、晚期 MCI 和 AD；早期 MCI 与 AD 在右岛叶 fALFF 上有差异，并出现海马与左/右颞下回及前扣带回的连接差异。",
+      "study_en": "An ADNI multimodal study compared controls, EMCI, LMCI, and AD; EMCI differed from AD in right-insula fALFF and showed hippocampal connectivity differences involving bilateral inferior temporal gyri and anterior cingulate.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 40033775"
+    },
+    "31920500": {
+      "study_zh": "研究比较伴与不伴抑郁症状的 MCI；伴抑郁组在颞回、额回、枕下回、小脑等处 fALFF 降低，而 ALFF 本身无显著组间差异。",
+      "study_en": "MCI with versus without depressive symptoms was compared; the depressed group had lower fALFF in temporal, frontal, inferior-occipital, and cerebellar regions, while ALFF itself did not differ significantly.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 31920500"
+    },
+    "26180816": {
+      "study_zh": "一项静息态 fMRI Meta 分析汇总 aMCI/AD 的 ReHo、ALFF、fALFF 和全局连接结果，发现广泛功能降低，并在 AD 中观察到左海马旁回较一致的降低；不同指标给出的空间模式并不相同。",
+      "study_en": "A resting-state fMRI meta-analysis combined ReHo, ALFF, fALFF, and global-connectivity studies in aMCI/AD, finding broadly reduced function and a relatively consistent left-parahippocampal reduction in AD; spatial patterns differed by metric.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 26180816"
+    },
+    "40415136": {
+      "study_zh": "纵向 MRI/PET 研究比较前驱 DLB、前驱 AD 及混合病例；混合组左眶额叶代谢下降更快，前驱 AD 和混合组的海马、内嗅皮层、杏仁核及左岛叶体积下降更明显。",
+      "study_en": "A longitudinal MRI/PET study compared prodromal DLB, prodromal AD, and mixed cases; mixed cases had greater left-orbitofrontal metabolic decline, while prodromal AD and mixed cases showed greater hippocampal, entorhinal, amygdala, and left-insula volume loss.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 40415136"
+    },
+    "34861133": {
+      "study_zh": "33 名遗忘型 MCI 接受静息态 fMRI 和淀粉样蛋白 PET；默认网络和视觉网络中的标准化 ALFF 与淀粉样沉积负相关，具体包括楔前叶、角回、舌回和梭状回。",
+      "study_en": "Thirty-three aMCI participants underwent resting-state fMRI and amyloid PET; standardized ALFF was negatively associated with amyloid deposition in DMN and visual regions, specifically precuneus, angular, lingual, and fusiform gyri.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 34861133"
+    },
+    "36003964": {
+      "study_zh": "研究提取双侧海马 slow-5 ALFF 纹理与结构 MRI 纹理；ALFF 模型对 aMCI 的区分优于单纯结构模型，二者联合的分类性能最高。",
+      "study_en": "The study extracted slow-5 ALFF and structural-MRI texture features from both hippocampi; ALFF features discriminated aMCI better than structural features alone, and the combined model performed best.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 36003964"
+    },
+    "40167963": {
+      "study_zh": "在认知正常或 MCI 的高淀粉样蓄积者中，研究将记忆下降与 APOE、淀粉样沉积和结构萎缩联系起来；淀粉样负荷涉及内侧眶额叶、扣带回和楔前叶，萎缩涉及颞叶、枕叶、眶额叶和顶叶。",
+      "study_en": "In high-amyloid accumulators with normal cognition or MCI, memory decline was related to APOE, amyloid, and structural atrophy; amyloid involved medial orbitofrontal, cingulate, and precuneus regions, while atrophy involved temporal, occipital, orbitofrontal, and parietal cortex.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 40167963"
+    },
+    "35922851": {
+      "study_zh": "结构 MRI 机器学习研究区分早期 AD/MCI 与对照；贡献最大的特征来自海马，其次为颞叶，并有较小比例来自扣带、额叶等区域。",
+      "study_en": "A structural-MRI machine-learning study classified early AD/MCI versus controls; hippocampal features contributed most, followed by temporal features, with smaller contributions from cingulate and frontal regions.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 35922851"
+    },
+    "33942449": {
+      "study_zh": "默认网络静息态功能连接系统综述指出 AD 的后扣带回/楔前叶连接降低，MCI 则常见后扣带回与前扣带回之间连接降低。",
+      "study_en": "A systematic review of DMN resting-state connectivity reported reduced posterior-cingulate/precuneus connectivity in AD and frequently reduced posterior-to-anterior cingulate connectivity in MCI.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 33942449"
+    },
+    "31833550": {
+      "study_zh": "NODDI 研究发现 MCI 的颞叶、顶叶和后扣带回神经突密度指数降低，测量的是皮层微结构而非静息态低频振幅。",
+      "study_en": "A NODDI study found reduced neurite-density index in temporal, parietal, and posterior-cingulate cortex in MCI, measuring cortical microstructure rather than resting-state low-frequency amplitude.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 31833550"
+    },
+    "32304722": {
+      "study_zh": "MCI 的 APOE4 研究发现额下回/岛叶及额中上回的镜像同伦连接升高；以上述区域为种子时，还观察到与额、颞、顶叶和小脑的广泛连接增强。",
+      "study_en": "An APOE4 study in MCI found increased voxel-mirrored homotopic connectivity in inferior-frontal/insula and middle/superior-frontal regions, plus broader seed connectivity to frontal, temporal, parietal, and cerebellar areas.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 32304722"
+    },
+    "26843991": {
+      "study_zh": "MCI 转化预测研究计算全脑功能连接强度；转化者在角回和枕中回的连接强度更低，并与背外侧前额叶、外侧颞叶等区域的连接减弱。",
+      "study_en": "An MCI-conversion study measured whole-brain functional-connectivity strength; converters had lower strength in angular and middle-occipital regions and weaker connectivity with dorsolateral prefrontal and lateral temporal areas.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 26843991"
+    },
+    "22230228": {
+      "study_zh": "aMCI/早期 AD 研究把自我评价准确性与内侧前额叶功能连接联系起来；准确性较低时，内侧前额叶与膝下前扣带、背外侧前额叶、尾状核及左后海马的连接较弱。",
+      "study_en": "In aMCI/early AD, self-appraisal accuracy was related to medial-prefrontal connectivity; lower accuracy accompanied weaker connectivity with subgenual anterior cingulate, dorsolateral prefrontal cortex, caudate, and left posterior hippocampus.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 22230228"
+    },
+    "42122964": {
+      "study_zh": "aMCI 与对照的多模态研究发现颞叶、额叶/眶额叶、边缘叶等皮层变薄，并发现双侧内侧颞叶与右丘脑功能连接升高。",
+      "study_en": "A multimodal aMCI-control study found cortical thinning across temporal, frontal/orbitofrontal, limbic, and other regions, together with increased connectivity between bilateral medial temporal regions and right thalamus.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 42122964"
+    },
+    "37674874": {
+      "study_zh": "aMCI 与健康对照的静息态 fMRI 研究发现左梭状回和左颞上回 ALFF 降低，而左、右颞下回及左额上回等 ALFF 升高；颞叶不同亚区呈现相反方向。",
+      "study_en": "A resting-state fMRI study of aMCI versus controls found lower ALFF in left fusiform and superior temporal gyri but higher ALFF in bilateral inferior temporal and left superior frontal regions, showing opposite directions across temporal subregions.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 37674874"
+    },
+    "35557608": {
+      "study_zh": "纳入 38 项研究的 ALE Meta 分析汇总 MCI 背侧注意网络的 ALFF、ReHo 和功能连接异常；收敛区域包括颞上回、颞中回及多个额顶区。",
+      "study_en": "An ALE meta-analysis of 38 studies combined ALFF, ReHo, and connectivity abnormalities in the MCI dorsal-attention network; convergent regions included superior and middle temporal gyri plus several frontal and parietal areas.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 35557608"
+    },
+    "39920001": {
+      "study_zh": "结构 MRI 深度学习研究预测认知正常者向 MCI 的转化，重要区域包括海马、杏仁核、颞叶和岛叶；没有测量这些区域的 fALFF。",
+      "study_en": "A structural-MRI deep-learning study predicted conversion from normal cognition to MCI; important regions included hippocampus, amygdala, temporal lobe, and insula, but regional fALFF was not measured.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 39920001"
+    },
+    "38107635": {
+      "study_zh": "结构形态研究比较主观认知下降、MCI 与对照，MCI 的左横颞回、颞上回、岛叶和额下回等出现表面积或厚度改变；未测量 fALFF。",
+      "study_en": "A structural-morphometry study compared SCD, MCI, and controls; MCI showed surface-area or thickness changes in left transverse/superior temporal, insular, and inferior-frontal regions, without measuring fALFF.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 38107635"
+    },
+    "34560530": {
+      "study_zh": "MDD 与 MCI 的 VBM Meta 分析发现岛叶、颞上回、额下回、杏仁核、海马及丘脑等共享灰质体积减少，说明两种疾病存在共同结构异常。",
+      "study_en": "A VBM meta-analysis of MDD and MCI found shared gray-matter volume reductions in insula, superior temporal and inferior frontal gyri, amygdala, hippocampus, and thalamus, indicating common structural abnormalities.",
+      "abstract_verified": true,
+      "abstract_source": "PubMed PMID 34560530"
+    }
+  },
+  "relation_profiles": {
+    "ofc_falff": {
+      "34675797": {
+        "support_zh": "这项 Meta 分析直接证明 MCI 存在低频振幅类指标异常，并把异常定位到右内侧额叶和双侧额下回；这些区域与 {region} 同属额叶—边缘系统，但摘要没有报告眶额叶分区，更没有报告该 Schaefer 子区。",
+        "support_en": "The meta-analysis directly establishes abnormal low-frequency-amplitude measures in MCI and localizes effects to right medial and bilateral inferior frontal cortex. These belong to a frontal-limbic system related to {region}, but the abstract does not identify orbitofrontal cortex or this Schaefer parcel.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和指标一致，解剖证据仅为邻近额叶系统，不能视为该眶额叶分区的直接验证。",
+        "boundary_en": "The disorder and measure match, but anatomy is limited to neighboring frontal systems and does not directly validate this orbitofrontal parcel."
+      },
+      "33453729": {
+        "support_zh": "论文说明 MCI 的动态 fALFF 与默认网络动态共同改变，因此支持“低频振幅动态可反映认知下降”；但结果只报告网络状态频率，没有指出眶额叶或 {region} 的局部 fALFF。",
+        "support_en": "The paper shows that dynamic fALFF co-varies with DMN dynamics in MCI, supporting low-frequency-amplitude dynamics as a marker of cognitive decline. It reports state frequencies rather than local fALFF in orbitofrontal cortex or {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "提供疾病与指标层面的背景证据，缺少目标脑区和局部效应。",
+        "boundary_en": "It provides disorder- and measure-level context but lacks the target region and a local effect."
+      },
+      "42142219": {
+        "support_zh": "脑龄差确认 MCI 已存在可检测的全脑结构老化，但它既没有分析静息态 fALFF，也没有给出眶额叶或 {region} 的结果。",
+        "support_en": "The brain-age gap confirms detectable global structural aging in MCI, but neither resting-state fALFF nor orbitofrontal/{region} results were analyzed.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "只支持 MCI 存在脑影像异常，不支持本题指定的指标—脑区组合。",
+        "boundary_en": "It supports the presence of imaging abnormalities in MCI, not the specified region–measure combination."
+      },
+      "41836094": {
+        "support_zh": "论文确实用 ALFF 检出局部自发活动变化，但异常位于尾状核、岛叶和枕中回，且样本为帕金森病而非 MCI；没有眶额叶结果可外推至 {region}。",
+        "support_en": "The paper uses ALFF to detect local spontaneous-activity changes, but findings concern caudate, insula, and middle occipital cortex in Parkinson disease rather than MCI; no orbitofrontal result supports extrapolation to {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "仅方法相近，疾病和脑区均不匹配。",
+        "boundary_en": "Only the method is related; both disorder and region differ."
+      },
+      "41636372": {
+        "support_zh": "EEG 综述表明 MCI/AD 存在低频节律变化，但 EEG 的 delta/theta 功率不是 BOLD fALFF，也无法定位到 {region}。",
+        "support_en": "The EEG review shows altered low-frequency rhythms in MCI/AD, but delta/theta power is not BOLD fALFF and cannot localize the effect to {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "疾病相关，但成像模态、指标定义和空间定位均不一致。",
+        "boundary_en": "The clinical context is related, but modality, metric definition, and spatial localization do not match."
+      }
+    },
+    "temporal_pole_falff": {
+      "34675797": {
+        "support_zh": "Meta 分析在 MCI 中汇总了 ALFF/fALFF 异常，并明确找到双侧颞叶和海马旁回的收敛异常；这为 {region} 所属颞叶—内侧颞叶系统提供直接的区域家族证据，但没有细分到颞极或该 atlas parcel，也未给出单独方向。",
+        "support_en": "The MCI meta-analysis directly identifies convergent ALFF/fALFF abnormalities in bilateral temporal and parahippocampal regions, supporting the temporal/medial-temporal system containing {region}. It does not isolate the temporal pole or this atlas parcel, or give a parcel-specific direction.",
+        "strength_zh": "高度相关",
+        "strength_en": "high",
+        "boundary_zh": "疾病、指标和大尺度解剖系统一致；精确脑区与方向仍未验证。",
+        "boundary_en": "Disorder, measure, and broad anatomical system match; exact parcel and direction remain unverified."
+      },
+      "33453729": {
+        "support_zh": "论文证明 MCI 的动态 fALFF—动态连接耦合异常与认知评分相关，但分析单位是默认网络状态，没有报告颞极或 {region} 的局部 fALFF。",
+        "support_en": "The paper links abnormal dynamic-fALFF/dynamic-connectivity coupling in MCI to cognition, but analyzes DMN states and reports no local fALFF result for temporal pole or {region}.",
+        "strength_zh": "中低度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "疾病和指标相符，缺少目标脑区。",
+        "boundary_en": "The disorder and measure match, but the target region is missing."
+      },
+      "42142219": {
+        "support_zh": "脑龄结果说明 MCI 有全脑结构老化信号，却没有分析颞极，也没有测量 fALFF，因此不能判断 {region} 的自发活动是否改变。",
+        "support_en": "The brain-age result indicates global structural aging in MCI but analyzes neither temporal pole nor fALFF, so it cannot establish altered spontaneous activity in {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "只有疾病背景一致。",
+        "boundary_en": "Only the clinical population matches."
+      },
+      "41836094": {
+        "support_zh": "帕金森病研究未发现颞极 ALFF，但发现岛叶—颞上回功能连接改变，说明相邻颞叶网络可受认知状态影响；这不是 {region} 的 fALFF 证据，疾病也不同。",
+        "support_en": "The Parkinson study reports no temporal-pole ALFF effect, although altered insula–superior-temporal connectivity shows that a neighboring temporal network can vary with cognition. This is not fALFF evidence for {region}, and the disorder differs.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "仅有邻近网络线索，不能支持目标脑区—指标组合。",
+        "boundary_en": "It offers only a neighboring-network clue, not support for the target region–measure combination."
+      },
+      "41636372": {
+        "support_zh": "EEG 综述支持 MCI/AD 存在低频电活动异常，但没有 BOLD fALFF 或颞极空间定位，无法判断 {region}。",
+        "support_en": "The EEG review supports abnormal low-frequency electrical activity in MCI/AD but has neither BOLD fALFF nor temporal-pole localization and therefore cannot assess {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "疾病相关，模态、指标与脑区证据缺失。",
+        "boundary_en": "The disorder is related, while modality, metric, and regional evidence are absent."
+      },
+      "40033775": {
+        "support_zh": "研究在早期 MCI 谱系中同时观察到右岛叶 fALFF 差异和海马—双侧颞下回连接差异，说明颞叶邻近回路与低频活动均已受累；然而 fALFF 显著区不是颞极，颞叶结果测量的是连接而非 {region} 的 fALFF。",
+        "support_en": "The EMCI study finds both right-insula fALFF differences and hippocampal connectivity differences involving bilateral inferior temporal cortex, showing involvement of neighboring temporal circuits and low-frequency activity. The fALFF locus is not temporal pole, while the temporal finding is connectivity rather than fALFF in {region}.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病一致并有邻近颞叶与同类指标证据，但二者未在目标脑区重合。",
+        "boundary_en": "The disorder matches and there is neighboring-temporal plus same-class measure evidence, but they do not coincide in the target region."
+      },
+      "31920500": {
+        "support_zh": "论文直接发现 MCI 伴抑郁组的颞回 fALFF 降低，证明 MCI 背景下颞叶低频振幅分数可发生改变；但比较的是 MCI 内部抑郁亚组，摘要未说明颞极或 {region}，不能把降低方向直接移植到本题。",
+        "support_en": "The paper directly finds lower temporal-gyrus fALFF in depressed versus non-depressed MCI, establishing that temporal fALFF can change in MCI. The contrast is between MCI subgroups, and the abstract does not identify temporal pole or {region}, so its direction cannot be transferred directly.",
+        "strength_zh": "高度相关",
+        "strength_en": "high",
+        "boundary_zh": "疾病、指标和颞叶系统一致；对照条件、精确脑区与可外推方向不同。",
+        "boundary_en": "Disorder, metric, and temporal system match; contrast, exact parcel, and transferable direction do not."
+      },
+      "26180816": {
+        "support_zh": "Meta 分析显示 aMCI/AD 存在广泛 ALFF/fALFF 类功能降低，并把相对稳定的异常定位到左海马旁回；海马旁回与颞极同属内侧/前颞叶系统，但不是 {region}，而且稳定定位主要来自 AD。",
+        "support_en": "The meta-analysis reports broad ALFF/fALFF-related reductions in aMCI/AD and a relatively consistent left-parahippocampal abnormality. Parahippocampal cortex belongs to a medial/anterior temporal system related to temporal pole but is not {region}, and the consistent locus was mainly observed in AD.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "指标和邻近解剖系统相关，精确脑区及 MCI 特异效应不足。",
+        "boundary_en": "The measure and neighboring anatomy are relevant, while exact-region and MCI-specific evidence are insufficient."
+      },
+      "40415136": {
+        "support_zh": "前驱 AD/DLB 研究发现海马、内嗅皮层和杏仁核等内侧颞叶结构加速萎缩，这些区域与颞极在解剖和边缘网络上相邻；但论文测量的是体积/代谢，不是 {region} 的 fALFF，也不是单纯 MCI 对照。",
+        "support_en": "Prodromal AD/DLB showed accelerated loss in hippocampal, entorhinal, and amygdalar structures, anatomically and limbically neighboring temporal pole. The measures were volume/metabolism rather than fALFF in {region}, and the contrast was not uncomplicated MCI versus controls.",
+        "strength_zh": "低至中度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "提供邻近内侧颞叶易损性的结构证据，不直接支持目标 fALFF。",
+        "boundary_en": "It provides structural evidence of neighboring medial-temporal vulnerability, not direct support for target fALFF."
+      }
+    },
+    "temporal_pole_alff": {
+      "41836094": {
+        "support_zh": "论文使用 ALFF 证明局部自发活动可在认知受损的帕金森病中改变，并发现岛叶—颞上回连接异常；但 ALFF 异常不在颞叶，疾病也不是 MCI，因此不能直接支持 {region} 的 ALFF。",
+        "support_en": "The study shows that local ALFF can change in cognitively impaired Parkinson disease and finds abnormal insula–superior-temporal connectivity, but its ALFF loci are not temporal and the disorder is not MCI, so it does not directly support ALFF in {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "方法相同，仅有邻近网络线索。",
+        "boundary_en": "The method matches, with only a neighboring-network clue."
+      },
+      "34861133": {
+        "support_zh": "论文直接在 aMCI 中测量 ALFF，并显示楔前叶、角回、舌回和梭状回的 ALFF 与淀粉样沉积负相关；梭状回属于腹侧颞叶，靠近但不等于 {region}。",
+        "support_en": "The paper directly measures ALFF in aMCI and relates ALFF in precuneus, angular, lingual, and fusiform regions to amyloid deposition. Fusiform cortex is ventral temporal and neighboring, but not identical to {region}.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和指标一致，只有邻近腹侧颞叶证据，且效应是与淀粉样负荷的相关而非病例—对照差异。",
+        "boundary_en": "Disorder and metric match; anatomy is neighboring ventral temporal, and the effect is an amyloid association rather than a case-control difference."
+      },
+      "36003964": {
+        "support_zh": "研究证明海马 ALFF 纹理能区分 aMCI 与对照；海马与颞极同属内侧/前颞叶记忆系统，但并未分析 {region}，且纹理分类特征不等同于平均 ROI ALFF。",
+        "support_en": "Hippocampal ALFF texture discriminated aMCI from controls. Hippocampus and temporal pole share a medial/anterior temporal memory system, but {region} was not analyzed and radiomic texture is not the same as mean ROI ALFF.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和 ALFF 类指标一致，脑区相邻且指标实现不同。",
+        "boundary_en": "The disorder and ALFF family match, while anatomy is neighboring and the metric implementation differs."
+      },
+      "34675797": {
+        "support_zh": "Meta 分析在 MCI 的 ALFF/fALFF、ReHo 和连接研究中找到双侧颞叶与海马旁回收敛异常，直接支持颞叶低频活动异常；但没有分离 {region}，也没有给出该 ROI 的方向。",
+        "support_en": "The MCI meta-analysis finds convergent abnormalities in bilateral temporal and parahippocampal regions across ALFF/fALFF, ReHo, and connectivity studies, directly supporting abnormal temporal low-frequency activity. It does not isolate {region} or provide its direction.",
+        "strength_zh": "高度相关",
+        "strength_en": "high",
+        "boundary_zh": "疾病、指标家族和颞叶系统一致，精确 ROI 与方向未验证。",
+        "boundary_en": "Disorder, measure family, and temporal system match; exact ROI and direction remain unverified."
+      },
+      "33453729": {
+        "support_zh": "动态 fALFF—动态连接状态能区分认知下降阶段并与 MMSE 相关，支持 MCI 中低频振幅动态的临床意义；论文没有报告 {region} 的局部 ALFF。",
+        "support_en": "Dynamic-fALFF/connectivity states distinguish stages of cognitive decline and correlate with MMSE, supporting clinical relevance of low-frequency dynamics in MCI. No local ALFF result for {region} is reported.",
+        "strength_zh": "中低度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "疾病和指标家族一致，目标脑区缺失且使用动态 fALFF 而非 ROI ALFF。",
+        "boundary_en": "Disorder and measure family match, but the target region is absent and dynamic fALFF differs from ROI ALFF."
+      },
+      "40033775": {
+        "support_zh": "EMCI 研究同时计算 ALFF/fALFF，并发现海马与双侧颞下回连接改变；说明 MCI 早期存在颞叶回路异常，但摘要没有报告 {region} 的 ALFF，显著低频振幅结果位于右岛叶。",
+        "support_en": "The EMCI study computed ALFF/fALFF and found altered hippocampal connectivity with bilateral inferior temporal cortex, indicating early temporal-circuit abnormalities. It reports no ALFF result in {region}; the significant low-frequency-amplitude finding was in right insula.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病与邻近颞叶回路相关，但指标和脑区没有在同一结果中重合。",
+        "boundary_en": "The disorder and neighboring temporal circuitry are relevant, but region and measure do not coincide in one result."
+      },
+      "37674874": {
+        "support_zh": "该研究直接比较 aMCI 与健康对照的 ALFF，并在颞上回、梭状回及双侧颞下回发现显著改变；它强力支持颞叶 ALFF 异常，但不同颞叶亚区方向相反，且没有单独检验 {region}。",
+        "support_en": "The study directly compares aMCI with controls and finds ALFF changes in superior temporal, fusiform, and bilateral inferior temporal gyri. It strongly supports abnormal temporal ALFF, but directions differ across subregions and {region} was not tested separately.",
+        "strength_zh": "高度相关",
+        "strength_en": "high",
+        "boundary_zh": "疾病、指标和颞叶解剖一致；精确颞极 ROI 与方向仍不能由摘要确定。",
+        "boundary_en": "Disorder, metric, and temporal anatomy match; the exact temporal-pole ROI and direction remain unresolved."
+      },
+      "35557608": {
+        "support_zh": "MCI 背侧注意网络 Meta 分析汇总 ALFF/ReHo/连接研究，并在颞上回和颞中回找到收敛异常；这些区域邻近颞极，但网络归属和空间位置不同于 {region}。",
+        "support_en": "The MCI dorsal-attention-network meta-analysis combines ALFF/ReHo/connectivity studies and identifies convergent superior- and middle-temporal abnormalities. These regions neighbor temporal pole but differ in network assignment and location from {region}.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病、指标家族和相邻颞叶一致，目标颞极未直接覆盖。",
+        "boundary_en": "Disorder, measure family, and neighboring temporal cortex match; target temporal pole is not directly covered."
+      }
+    },
+    "posterior_cingulate_falff": {
+      "41836094": {
+        "support_zh": "帕金森病研究发现岛叶—中扣带回连接改变，但没有后扣带回 fALFF 结果；它说明扣带网络可能参与认知异常，却不能验证 MCI 的 {region} fALFF。",
+        "support_en": "The Parkinson study finds altered insula–mid-cingulate connectivity but no posterior-cingulate fALFF result. It implicates cingulate networks in cognitive dysfunction without validating MCI fALFF in {region}.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "疾病、扣带分区和指标均不同。",
+        "boundary_en": "Disorder, cingulate subdivision, and measure all differ."
+      },
+      "40167963": {
+        "support_zh": "MCI/高淀粉样样本中，扣带回淀粉样负荷和多叶结构萎缩与记忆下降相关，支持扣带系统是病理易损区；但没有区分后扣带回的 fALFF。",
+        "support_en": "In MCI/high-amyloid participants, cingulate amyloid burden and multilobar atrophy relate to memory decline, supporting cingulate vulnerability. Posterior-cingulate fALFF was not measured.",
+        "strength_zh": "中低度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "疾病和扣带系统相关，病理/结构指标不能替代 fALFF。",
+        "boundary_en": "The disorder and cingulate system are relevant, but pathological/structural measures cannot substitute for fALFF."
+      },
+      "35922851": {
+        "support_zh": "结构 MRI 分类模型显示扣带特征对早期 AD/MCI 有一定贡献，但未报告具体前后扣带分区，也没有静息态 fALFF。",
+        "support_en": "Structural-MRI classification assigns some importance to cingulate features in early AD/MCI, but reports neither anterior/posterior subdivision nor resting-state fALFF.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "仅支持扣带结构可能有信息量。",
+        "boundary_en": "It only indicates that cingulate structure may carry diagnostic information."
+      },
+      "33942449": {
+        "support_zh": "系统综述直接指出 MCI 的后扣带—前扣带连接降低，并在 AD 中反复发现后扣带/楔前叶连接降低；因此明确支持 {region} 所在网络受损，但测量的是功能连接而非 fALFF。",
+        "support_en": "The review directly reports reduced posterior-to-anterior cingulate connectivity in MCI and recurrent posterior-cingulate/precuneus disconnection in AD, clearly supporting dysfunction of the network containing {region}. The measure is connectivity, not fALFF.",
+        "strength_zh": "高度解剖相关",
+        "strength_en": "high anatomical relevance",
+        "boundary_zh": "疾病和精确脑区一致，指标不同，不能推断 fALFF 的方向。",
+        "boundary_en": "Disorder and exact region match, but the metric differs and does not establish fALFF direction."
+      },
+      "31833550": {
+        "support_zh": "NODDI 直接发现 MCI 的后扣带回神经突密度降低，说明 {region} 存在微结构损伤；这可作为该区功能异常的生物学背景，但没有测量 fALFF。",
+        "support_en": "NODDI directly shows reduced neurite density in posterior cingulate in MCI, establishing microstructural injury in {region}. This is biological context for possible dysfunction, not a measurement of fALFF.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和脑区直接一致，成像指标不同。",
+        "boundary_en": "Disorder and region directly match, while the imaging measure differs."
+      }
+    },
+    "paracingulate_falff": {
+      "41836094": {
+        "support_zh": "帕金森病研究发现岛叶—中扣带连接改变，但旁扣带回及其 fALFF 未被分析；只能说明邻近扣带网络可能参与认知异常。",
+        "support_en": "The Parkinson study finds altered insula–mid-cingulate connectivity, but neither paracingulate cortex nor its fALFF was analyzed; it only implicates a neighboring cingulate network in cognitive dysfunction.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "疾病、脑区和指标均不直接匹配。",
+        "boundary_en": "Disorder, region, and measure do not directly match."
+      },
+      "40167963": {
+        "support_zh": "研究在 MCI/高淀粉样人群中发现内侧眶额叶、扣带和楔前叶淀粉样负荷，并关联记忆下降；旁扣带位于内侧额叶—扣带系统，因此有邻近病理证据，但没有 {region} fALFF。",
+        "support_en": "In MCI/high-amyloid participants, medial-orbitofrontal, cingulate, and precuneus amyloid burden relates to memory decline. Paracingulate belongs to this medial-frontal/cingulate system, providing neighboring pathological evidence but no fALFF result for {region}.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病与邻近系统一致，精确分区和指标不同。",
+        "boundary_en": "The disorder and neighboring system match, while exact parcel and measure differ."
+      },
+      "35922851": {
+        "support_zh": "结构分类研究显示扣带和额叶特征参与早期 AD/MCI 识别，但没有旁扣带分区，也没有 fALFF 结果。",
+        "support_en": "Structural classification indicates cingulate and frontal features contribute to early AD/MCI detection, without a paracingulate parcel or fALFF result.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "只提供宽泛的额—扣带结构背景。",
+        "boundary_en": "It provides only broad frontal-cingulate structural context."
+      },
+      "33942449": {
+        "support_zh": "MCI 中后扣带—前扣带连接降低说明扣带中线网络受损；旁扣带邻近前扣带，但综述没有报告 {region} 本身，也没有 fALFF。",
+        "support_en": "Reduced posterior-to-anterior cingulate connectivity in MCI demonstrates midline-cingulate network disruption. Paracingulate neighbors anterior cingulate, but {region} itself and fALFF were not reported.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和邻近网络一致，精确脑区与指标缺失。",
+        "boundary_en": "The disorder and neighboring network match, but exact region and measure are missing."
+      },
+      "31833550": {
+        "support_zh": "MCI 后扣带回神经突密度降低证明扣带系统存在微结构损伤，但后扣带与旁扣带位置不同，且 NODDI 不是 fALFF。",
+        "support_en": "Reduced posterior-cingulate neurite density in MCI establishes cingulate-system microstructural injury, but posterior cingulate differs from paracingulate and NODDI is not fALFF.",
+        "strength_zh": "低至中度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "疾病和大尺度系统相关，目标分区与指标均不一致。",
+        "boundary_en": "The disorder and broad system are relevant, while target subdivision and measure differ."
+      }
+    },
+    "anterior_cingulate_falff": {
+      "41836094": {
+        "support_zh": "帕金森病研究发现中扣带相关连接改变，但没有前扣带 fALFF；提示扣带网络参与认知异常，不能验证 MCI 的 {region}。",
+        "support_en": "The Parkinson study finds connectivity changes involving mid-cingulate but no anterior-cingulate fALFF, implicating cingulate networks without validating {region} in MCI.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "疾病、扣带分区和指标不同。",
+        "boundary_en": "Disorder, cingulate subdivision, and measure differ."
+      },
+      "40167963": {
+        "support_zh": "MCI/高淀粉样样本的扣带淀粉样负荷与记忆下降相关，说明扣带系统受病理影响；摘要没有区分前扣带分部，也没有 fALFF。",
+        "support_en": "Cingulate amyloid burden relates to memory decline in MCI/high-amyloid participants, indicating pathological involvement of the cingulate system; the abstract does not isolate anterior cingulate or measure fALFF.",
+        "strength_zh": "中低度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "疾病和系统相关，精确脑区及功能指标不足。",
+        "boundary_en": "The disorder and system are relevant, but exact-region and functional-measure evidence are insufficient."
+      },
+      "35922851": {
+        "support_zh": "结构 MRI 模型显示扣带特征对早期 AD/MCI 分类有贡献，但没有前扣带分部或静息态 fALFF。",
+        "support_en": "Structural-MRI models assign diagnostic contribution to cingulate features in early AD/MCI, without anterior-cingulate subdivision or resting-state fALFF.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "只提供结构层面的宽泛扣带证据。",
+        "boundary_en": "It provides only broad structural cingulate evidence."
+      },
+      "33942449": {
+        "support_zh": "系统综述直接报告 MCI 的后扣带—前扣带功能连接降低，明确把前扣带纳入异常网络；这对 {region} 有直接解剖支持，但测量的是跨区连接，不是局部 fALFF。",
+        "support_en": "The systematic review directly reports reduced posterior-to-anterior cingulate connectivity in MCI, explicitly implicating anterior cingulate. This anatomically supports {region}, but measures interregional connectivity rather than local fALFF.",
+        "strength_zh": "高度解剖相关",
+        "strength_en": "high anatomical relevance",
+        "boundary_zh": "疾病和脑区一致，指标不同，不能确定局部振幅方向。",
+        "boundary_en": "Disorder and region match, while the metric differs and local-amplitude direction cannot be inferred."
+      },
+      "31833550": {
+        "support_zh": "NODDI 显示 MCI 后扣带微结构损伤，说明扣带系统易损，但研究脑区不是前扣带，指标也不是 fALFF。",
+        "support_en": "NODDI shows posterior-cingulate microstructural injury in MCI, indicating cingulate-system vulnerability, but the region is not anterior cingulate and the metric is not fALFF.",
+        "strength_zh": "低至中度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "疾病和系统相关，分区与指标不一致。",
+        "boundary_en": "The disorder and system are relevant, while subdivision and measure differ."
+      }
+    },
+    "temporal_pole_node_degree": {
+      "41836094": {
+        "support_zh": "研究发现岛叶—颞上回等功能连接改变，说明颞叶网络连接可受认知状态影响；但样本为帕金森病，没有计算颞极或 {region} 的节点度。",
+        "support_en": "Altered insula–superior-temporal connectivity shows that temporal-network connections can vary with cognitive status, but the sample has Parkinson disease and node degree in temporal pole/{region} was not computed.",
+        "strength_zh": "低度相关",
+        "strength_en": "low",
+        "boundary_zh": "仅连接概念相关，疾病、精确脑区和图指标不匹配。",
+        "boundary_en": "Only the connectivity concept is related; disorder, exact region, and graph metric do not match."
+      },
+      "32304722": {
+        "support_zh": "MCI 中额下回/岛叶种子的连接扩展到颞叶，证明颞叶参与异常功能网络；但论文使用镜像同伦连接和种子连接，不是 {region} 的全脑节点度。",
+        "support_en": "In MCI, inferior-frontal/insula seed connectivity extends into temporal cortex, establishing temporal participation in abnormal networks. The study uses homotopic and seed connectivity, not whole-brain node degree of {region}.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和颞叶网络相关，图论指标及精确 ROI 不一致。",
+        "boundary_en": "The disorder and temporal network are relevant, but graph metric and exact ROI differ."
+      },
+      "26843991": {
+        "support_zh": "论文计算的全脑功能连接强度与节点度概念最接近，并在 MCI 转化者发现外侧颞叶连接减弱；但主要节点位于角回/枕中回，摘要没有颞极或 {region}。",
+        "support_en": "Whole-brain functional-connectivity strength is the closest metric to node degree, and converters showed weaker links involving lateral temporal cortex. The principal nodes were angular/middle-occipital, with no temporal-pole/{region} result.",
+        "strength_zh": "中度至高度相关",
+        "strength_en": "moderate-to-high",
+        "boundary_zh": "疾病与连接强度指标高度相近，目标颞极仍为间接证据。",
+        "boundary_en": "The disorder and connectivity-strength metric are closely aligned, while target temporal pole remains indirect."
+      },
+      "22230228": {
+        "support_zh": "MCI/早期 AD 的内侧前额叶连接与左后海马等区域相关，说明内侧颞叶网络连接具有临床意义；但没有颞极，也没有节点度分析。",
+        "support_en": "Medial-prefrontal connectivity with left posterior hippocampus and other regions is clinically meaningful in MCI/early AD, but temporal pole and node-degree analysis are absent.",
+        "strength_zh": "低至中度相关",
+        "strength_en": "low-to-moderate",
+        "boundary_zh": "提供相邻内侧颞叶连接背景，不能支持 {region} 的节点度。",
+        "boundary_en": "It provides neighboring medial-temporal connectivity context, not support for node degree in {region}."
+      },
+      "42122964": {
+        "support_zh": "aMCI 中双侧内侧颞叶与丘脑连接升高，同时颞叶和眶额叶变薄，直接说明内侧颞叶连接重组；但研究是种子连接，没有计算 {region} 的节点度。",
+        "support_en": "In aMCI, increased bilateral medial-temporal–thalamic connectivity accompanies temporal/orbitofrontal thinning, directly indicating medial-temporal network reorganization. It is a seed-connectivity study and does not compute node degree for {region}.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和邻近颞叶连接一致，精确脑区与节点度指标未覆盖。",
+        "boundary_en": "The disorder and neighboring temporal connectivity match, while exact region and node-degree metric are not covered."
+      }
+    },
+    "insula_falff": {
+      "41836094": {
+        "support_zh": "论文直接发现左岛叶 ALFF 升高，并发现岛叶—中扣带及岛叶—颞上回连接改变，证明岛叶自发活动和网络连接都可异常；但样本是帕金森病而非 MCI，且 ALFF 不完全等同于本题 fALFF。",
+        "support_en": "The paper directly finds higher left-insula ALFF and altered insula–mid-cingulate and insula–superior-temporal connectivity, establishing abnormal insular spontaneous activity and networking. The disorder is Parkinson disease rather than MCI, and ALFF is not identical to fALFF.",
+        "strength_zh": "中度至高度相关",
+        "strength_en": "moderate-to-high",
+        "boundary_zh": "脑区直接一致、指标高度相近，但疾病不同，不能外推效应方向。",
+        "boundary_en": "The region directly matches and the metric is closely related, but the disorder differs and direction cannot be transferred."
+      },
+      "40415136": {
+        "support_zh": "前驱 AD/混合病例的左岛叶体积下降说明岛叶在认知退化谱系中存在结构易损性；但研究不是单纯 MCI，对 {region} 测量的是体积而非 fALFF。",
+        "support_en": "Left-insula volume loss in prodromal AD/mixed cases indicates structural insular vulnerability along cognitive decline, but the cohort is not uncomplicated MCI and the measure in {region} is volume rather than fALFF.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "脑区直接一致、疾病谱系相邻，功能指标不同。",
+        "boundary_en": "The region directly matches and the disease spectrum is related, while the functional metric differs."
+      },
+      "39920001": {
+        "support_zh": "结构 MRI 模型把岛叶列为从正常认知转化为 MCI 的重要预测区，支持岛叶与 MCI 发生相关；但没有说明岛叶功能活动，也没有 fALFF。",
+        "support_en": "A structural-MRI model identifies insula as an important predictor of conversion from normal cognition to MCI, supporting insular relevance to MCI onset, but reports neither insular function nor fALFF.",
+        "strength_zh": "中度解剖相关",
+        "strength_en": "moderate anatomical relevance",
+        "boundary_zh": "疾病和脑区一致，证据为结构预测而非低频功能活动。",
+        "boundary_en": "Disorder and region match, but evidence is structural prediction rather than low-frequency function."
+      },
+      "38107635": {
+        "support_zh": "形态学研究直接发现 MCI 左岛叶表面积/厚度改变，证实岛叶结构受累；本题若为左侧或中岛叶，仍需注意摘要没有岛叶亚区，也没有 fALFF。",
+        "support_en": "Morphometry directly shows left-insula surface-area/thickness changes in MCI, confirming structural insular involvement. For left or mid-insula hypotheses, the abstract still lacks an insular subregion and does not measure fALFF.",
+        "strength_zh": "中度相关",
+        "strength_en": "moderate",
+        "boundary_zh": "疾病和脑区直接相关，指标与亚区不匹配。",
+        "boundary_en": "Disorder and region are directly relevant, while metric and subregion do not match."
+      },
+      "34560530": {
+        "support_zh": "VBM Meta 分析显示 MCI 与 MDD 共享岛叶灰质体积减少，说明岛叶是跨疾病的结构易损区；没有测量岛叶 fALFF，且共享结构异常不等于 MCI 特异功能效应。",
+        "support_en": "A VBM meta-analysis finds shared insular gray-matter loss in MCI and MDD, identifying insula as a cross-disorder structural vulnerability. It does not measure insular fALFF, and shared atrophy is not an MCI-specific functional effect.",
+        "strength_zh": "中度解剖相关",
+        "strength_en": "moderate anatomical relevance",
+        "boundary_zh": "疾病与脑区相关，成像指标及特异性不同。",
+        "boundary_en": "The disorder and region are relevant, while imaging metric and specificity differ."
+      }
+    }
+  }
+}

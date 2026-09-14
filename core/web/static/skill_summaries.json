@@ -16,8 +16,8 @@
     "zh": "该技能用于 adhd200-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the ADHD-200 dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ADHD-200', 'ADHD200', 'process ADHD data', 'ADHD fMRI', or any request..."
   },
   "adni-skill": {
-    "en": "Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroClaw dataset-orchestration layer for ADNI.",
-    "zh": "该技能用于 adni-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroClaw dataset-orchestration layer for ADNI."
+    "en": "Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroRuntime dataset-orchestration layer for ADNI.",
+    "zh": "该技能用于 adni-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for ADNI data (fMRI + T1), including BIDS preparation, fMRIPrep preprocessing, and DK68 ROI pipeline. This is the NeuroRuntime dataset-orchestration layer for ADNI."
   },
   "aibl-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the AIBL (Australian Imaging, Biomarkers and Lifestyle) dataset, including data access guidance, BIDS organization, and multimodal processing of sMRI and PET (PiB, FDG, tau). Triggers include...",
@@ -32,8 +32,8 @@
     "zh": "该技能用于 asl-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to process Arterial Spin Labeling (ASL) perfusion MRI data including CBF (cerebral blood flow) quantification, ASL preprocessing (motion correction, partial volume correction, M0 normalization), or ASL-based brain perf..."
   },
   "beautiful-log": {
-    "en": "Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroClaw <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored...",
-    "zh": "该技能用于 beautiful-log 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroClaw <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored..."
+    "en": "Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroRuntime <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored...",
+    "zh": "该技能用于 beautiful-log 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroRuntime <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored..."
   },
   "bids-organizer": {
     "en": "Use this skill whenever the user wants to automatically organize raw neuroimaging data (DICOM, NIfTI, EEG, etc.) into a valid BIDS (Brain Imaging Data Structure) dataset. Triggers include: 'organize to BIDS', 'BIDS organizer', 'convert to BIDS', 'BIDS conve...",
@@ -64,16 +64,16 @@
     "zh": "该技能用于 camcan-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Cam-CAN (Cambridge Centre for Ageing and Neuroscience) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, task-fMRI, and MEG, phenotype extraction, and QC integra..."
   },
   "claw-shell": {
-    "en": "Use this skill whenever any NeuroClaw skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', '...",
-    "zh": "该技能用于 claw-shell 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', '..."
+    "en": "Use this skill whenever any NeuroRuntime skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', '...",
+    "zh": "该技能用于 claw-shell 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroRuntime skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', '..."
   },
   "cobre-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the COBRE dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data for schizophrenia research. Triggers include: 'COBRE', 'process COBRE', 'COBRE schizophrenia'...",
     "zh": "该技能用于 cobre-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the COBRE dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data for schizophrenia research. Triggers include: 'COBRE', 'process COBRE', 'COBRE schizophrenia'..."
   },
   "combraintf": {
-    "en": "Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroClaw auto-d...",
-    "zh": "该技能用于 combraintf 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroClaw auto-d..."
+    "en": "Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroRuntime auto-d...",
+    "zh": "该技能用于 combraintf 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroRuntime auto-d..."
   },
   "conda-env-manager": {
     "en": "Use this skill whenever the user wants to create, activate, list, export, update, clone, remove, or otherwise manage conda environments, or when a deep-learning / model skill requires a clean, isolated conda environment (e.g. 'create conda env for torch 2.3...",
@@ -88,8 +88,8 @@
     "zh": "该技能用于 dcm2nii 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to convert DICOM files or folders to NIfTI format (.nii or .nii.gz), extract neuroimaging volumes from clinical DICOM series (MRI, CT, PET, etc.), prepare raw DICOM data for research processing pipelines, anonymize whi..."
   },
   "dependency-planner": {
-    "en": "Use this skill whenever a NeuroClaw skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler,...",
-    "zh": "该技能用于 dependency-planner 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever a NeuroClaw skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler,..."
+    "en": "Use this skill whenever a NeuroRuntime skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler,...",
+    "zh": "该技能用于 dependency-planner 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever a NeuroRuntime skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler,..."
   },
   "detrending": {
     "en": "Use this model doc whenever the user wants to perform neuroimaging signal denoising with classical detrending methods. This is a non-deep-learning preprocessing route focused on removing low-frequency drift and linear trends from time series before downstre...",
@@ -100,16 +100,16 @@
     "zh": "该技能用于 dictlearning 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to perform resting-state network decomposition using DictLearning. This is a non-deep-learning unsupervised route focused on sparse component extraction, network map discovery, and subject-level time series from re..."
   },
   "dipy-tool": {
-    "en": "Use this skill whenever any NeuroClaw diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool...",
-    "zh": "该技能用于 dipy-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool..."
+    "en": "Use this skill whenever any NeuroRuntime diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool...",
+    "zh": "该技能用于 dipy-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroRuntime diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool..."
   },
   "dmt-har-med-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the DMT-HAR-MED dataset (ds006644), including download, BIDS organization, and processing of rs-fMRI data from a psychedelic intervention study. Triggers include: 'DMT-HAR-MED', 'DMT HAR MED'...",
     "zh": "该技能用于 dmt-har-med-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the DMT-HAR-MED dataset (ds006644), including download, BIDS organization, and processing of rs-fMRI data from a psychedelic intervention study. Triggers include: 'DMT-HAR-MED', 'DMT HAR MED'..."
   },
   "docker-env-manager": {
-    "en": "Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroClaw skill (e.g. wmh-segmentation, freesurfer-processor in...",
-    "zh": "该技能用于 docker-env-manager 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroClaw skill (e.g. wmh-segmentation, freesurfer-processor in..."
+    "en": "Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroRuntime skill (e.g. wmh-segmentation, freesurfer-processor in...",
+    "zh": "该技能用于 docker-env-manager 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroRuntime skill (e.g. wmh-segmentation, freesurfer-processor in..."
   },
   "dwi-skill": {
     "en": "Use this skill whenever the user wants to preprocess diffusion MRI / DWI data, compute diffusion metrics (FA/MD/AD/RD, etc.), extract ROI-wise diffusion features, or run tractography/connectome-related workflows. Triggers include: 'DWI', 'DTI', 'diffusion M...",
@@ -164,8 +164,8 @@
     "zh": "该技能用于 harmonization-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to remove site/scanner/batch effects from neuroimaging features before running downstream models, run mega-analysis across multiple datasets, or evaluate models with leave-site-out / site-stratified protocols. Triggers..."
   },
   "harness-core": {
-    "en": "Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroClaw skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for...",
-    "zh": "该技能用于 harness-core 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroClaw skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for..."
+    "en": "Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroRuntime skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for...",
+    "zh": "该技能用于 harness-core 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroRuntime skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for..."
   },
   "hbn-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the Healthy Brain Network (HBN) dataset, including download, BIDS organization, and multimodal processing of sMRI, dMRI, rs-fMRI, task-fMRI, and EEG data. Triggers include: 'HBN', 'Healthy Br...",
@@ -216,8 +216,8 @@
     "zh": "该技能用于 knowledge-graph-builder 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill when users need to build, populate, or extend a domain-specific knowledge graph from literature and structured databases. Triggers include: 'build knowledge graph', 'extract claims from papers', 'ingest data into graph', 'batch extract claims..."
   },
   "lggnn": {
-    "en": "Use this model doc whenever the user wants to run LG-GNN (Local-to-Global GNN) for fMRI phenotype prediction. LG-GNN is a PyG-based GNN with SABP (Self-Attention Brain Pooling) and mutual-information regularization. NeuroClaw adapts the original population-...",
-    "zh": "该技能用于 lggnn 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run LG-GNN (Local-to-Global GNN) for fMRI phenotype prediction. LG-GNN is a PyG-based GNN with SABP (Self-Attention Brain Pooling) and mutual-information regularization. NeuroClaw adapts the original population-..."
+    "en": "Use this model doc whenever the user wants to run LG-GNN (Local-to-Global GNN) for fMRI phenotype prediction. LG-GNN is a PyG-based GNN with SABP (Self-Attention Brain Pooling) and mutual-information regularization. NeuroRuntime adapts the original population-...",
+    "zh": "该技能用于 lggnn 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this model doc whenever the user wants to run LG-GNN (Local-to-Global GNN) for fMRI phenotype prediction. LG-GNN is a PyG-based GNN with SABP (Self-Attention Brain Pooling) and mutual-information regularization. NeuroRuntime adapts the original population-..."
   },
   "meg-skill": {
     "en": "Use this skill whenever the user wants to process MEG (magnetoencephalography) data including source localization, time-frequency analysis, connectivity analysis, sensor-level preprocessing, or MEG-specific feature extraction. Triggers include: 'MEG', 'MEG...",
@@ -232,8 +232,8 @@
     "zh": "该技能用于 mnd-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the Motor Neuron Disease (MND) dataset from OpenNeuro ds005874, including BIDS validation, multimodal processing of rs-fMRI and task-fMRI, phenotype extraction, and QC integration. Triggers i..."
   },
   "mne-eeg-tool": {
-    "en": "Use this skill whenever any NeuroClaw modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the de...",
-    "zh": "该技能用于 mne-eeg-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the de..."
+    "en": "Use this skill whenever any NeuroRuntime modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the de...",
+    "zh": "该技能用于 mne-eeg-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroRuntime modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the de..."
   },
   "mschallenge-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the Longitudinal MS Lesion Segmentation Challenge dataset, including data validation, multimodal processing of T1w, T2w, FLAIR, and PD, lesion segmentation, and QC integration. Triggers inclu...",
@@ -248,8 +248,8 @@
     "zh": "该技能用于 neurostorm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to run the NeuroSTORM multi-model fMRI platform: preprocessing, pretraining (MAE or contrastive), fine-tuning, inference, or benchmarking. It covers 8 built-in models — NeuroSTORM, SwiFT, BrainGNN, BrainNetworkTransfor..."
   },
   "nibabel-skill": {
-    "en": "Use this skill whenever NeuroClaw needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading...",
-    "zh": "该技能用于 nibabel-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever NeuroClaw needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading..."
+    "en": "Use this skill whenever NeuroRuntime needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading...",
+    "zh": "该技能用于 nibabel-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever NeuroRuntime needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading..."
   },
   "nifd-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the Neuroimaging in Frontotemporal Dementia (NIFD) dataset, including BIDS validation, multimodal processing of sMRI, rs-fMRI, and dMRI, phenotype extraction, and QC integration. Triggers inc...",
@@ -260,8 +260,8 @@
     "zh": "该技能用于 nii2dcm 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to convert NIfTI files (.nii or .nii.gz) to DICOM format, create DICOM series from processed neuroimaging results, write segmentation/registration/analysis outputs back to DICOM for PACS compatibility or clinical viewe..."
   },
   "nilearn-tool": {
-    "en": "Use this skill whenever any NeuroClaw fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decodin...",
-    "zh": "该技能用于 nilearn-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroClaw fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decodin..."
+    "en": "Use this skill whenever any NeuroRuntime fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decodin...",
+    "zh": "该技能用于 nilearn-tool 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever any NeuroRuntime fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decodin..."
   },
   "nsd-skill": {
     "en": "Use this skill whenever the user wants an end-to-end workflow for the Natural Scenes Dataset (NSD), including data access, BIDS validation, multimodal processing of task-fMRI and structural MRI, stimulus metadata extraction, and QC integration. Triggers inc...",
@@ -272,8 +272,8 @@
     "zh": "该技能用于 oasis-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants an end-to-end workflow for the OASIS (Open Access Series of Imaging Studies) dataset, including BIDS validation, multimodal processing of sMRI, and phenotype extraction for aging and Alzheimer's disease research. Trigg..."
   },
   "overleaf-skill": {
-    "en": "Use this skill whenever the user wants to synchronize NeuroClaw-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'syn...",
-    "zh": "该技能用于 overleaf-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to synchronize NeuroClaw-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'syn..."
+    "en": "Use this skill whenever the user wants to synchronize NeuroRuntime-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'syn...",
+    "zh": "该技能用于 overleaf-skill 相关工作流。适合在需要执行、检查或组织此类任务时启用；核心能力包括：Use this skill whenever the user wants to synchronize NeuroRuntime-generated LaTeX manuscripts with Overleaf, read/write .tex files, download/upload projects, create/rename/archive projects, compare versions, or manage project structure. Triggers include: 'syn..."
   },
   "paper-writing": {
     "en": "Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create...",
