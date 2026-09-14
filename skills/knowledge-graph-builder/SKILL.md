@@ -77,11 +77,15 @@ When ingesting claims, entity names must be resolved to existing concept IDs. Us
 
 LLMs (especially via proxy endpoints) return empty responses when prompts + expected output exceed the token window. Hard-won rules:
 
-- **Truncate abstracts** to 2000 chars before sending to LLM
+- **Send the complete abstract** to the LLM. Do not apply a character cap to
+  abstracts. Conference/proceedings compilations must be excluded during paper
+  curation instead of being hidden by truncation. A separate bounded policy may
+  still be used for full-text bodies.
 - **Keep extraction prompts concise** — list field names and allowed values, not verbose descriptions
 - **Use `max_tokens=8192`** — 4096 is too small for papers with many claims
 - **Fix `[[` double brackets** — a common LLM error when outputting JSON arrays
-- **Temperature=0.1** for extraction consistency
+- **Temperature=0.0** for v3 combined extraction/scope audit; legacy extraction
+  may retain 0.1. Final reproducibility comes from seal reuse, not sampling.
 
 ### 4. Contextualized Triplets (MDKG-style)
 
@@ -221,18 +225,24 @@ Use `scripts/generate_atlas.py` as a template for generating brain region hierar
 
 ## Phase 2: Literature Claim Extraction
 
-### Pipeline: PubMed Search → LLM Extraction → Entity Resolution → Ingestion
+All Case Study literature searches use the single frozen publication window
+`1980-2026`. Do not narrow or widen this range for an individual Case Study,
+source, preset, or retry campaign.
+
+### Pipeline: Search → KG Deduplication → LLM Extraction → Ingestion
 
 ```
-PubMed query → PMIDs → XML parse → (abstract, PaperRef)
-                                         │
-                                    LLM extraction
-                                         │
-                                  [Claim objects]
-                                         │
-                                  Entity resolution
-                                         │
-                              Graph ingestion (nodes + edges)
+Literature search → candidate papers → candidate/KG/staging deduplication
+                                              │
+                                      abstract retrieval
+                                              │
+                                        LLM extraction
+                                              │
+                                       [Claim objects]
+                                              │
+                                       Entity resolution
+                                              │
+                                   Graph ingestion (nodes + edges)
 ```
 
 ### PubMed Search Strategy
@@ -247,6 +257,24 @@ AND {year}:{year}[pdat]
 ```
 
 Rate limit: 0.4s between NCBI API calls (3 req/sec without API key).
+
+### Mandatory Pre-Extraction Paper Deduplication
+
+Search results must never go directly into abstract retrieval or claim
+extraction. After search and before any LLM/API extraction:
+
+1. Deduplicate the candidate list by PMID, DOI, PMCID, arXiv ID, OpenAlex ID,
+   and normalized title/year.
+2. Stream the formal claim store and compare every candidate with the
+   `source_paper` identities already represented in the KG.
+3. Compare candidates with all staged, not-yet-injected claim files as well.
+4. Exclude matched papers from the extraction queue and write a separate audit
+   file containing the match evidence and exclusion reason.
+5. Report candidate counts before and after both deduplication gates.
+
+Only papers absent from both the formal KG and staged claim sets may proceed to
+abstract retrieval and claim extraction. This gate is required even when the
+search script already attempted deduplication.
 
 ### LLM Extraction Prompt Design
 
@@ -266,6 +294,36 @@ See `scripts/extraction_prompt_template.txt` for the recommended prompt structur
 | population | Study demographics |
 | raw_sentence | Source sentence from abstract |
 
+Each extracted claim must also carry the canonical, non-exclusive routing
+fields `paper_case_study_ids` and `claim_case_study_ids`. The paper field is the
+union of all claim-level assignments for that paper; the claim field remains
+specific to the individual assertion. The 17 IDs come from
+`neurooracle.src.case_studies`. `general` is implicit shared-corpus membership,
+and `hindcasting` is a validation protocol—neither is a Case Study ID.
+
+For v3 expansion, Case Study routing must use
+`neurooracle.src.case_study_membership_policy`, which parses the frozen
+`2026-08-10.peer17.v2` rubric. Do not
+copy or summarize the Case Study definitions into another prompt. Automated
+extraction must return all nine `case_study_gates`, evidence spans, confidence,
+and a decision basis; the resulting claim must carry a validated
+`scope_reaudit` seal from `case_study_membership_contract.v4`. Formal KG
+ingestion is fail-closed by default (`require_final_scope_audit=True`) and must
+fail the whole batch before mutation if any extraction failed or any claim is
+missing/fails that seal. Historical or manual repair paths must opt out
+explicitly. Search provenance is never membership evidence: search remains
+high-recall, while claim routing is decided only from extracted evidence under
+the frozen policy.
+
+`case2_pathway_mediation` follows the same contribution rule as Case 1. A direct
+genetic/pathway-to-neural claim or a direct baseline-neural-to-later-outcome
+claim is sufficient; the paper need not contain the complete mediation chain.
+Membership is canonicalized deterministically from `imaging_genetics`,
+`progression_prediction`, or `prognosis`, and a standalone Case 2 label is
+invalid. The historical same-paper `case2_paper_chain_validation.v1` record is
+retained only as optional analysis metadata and for validating immutable v3
+seals; it is not a v4 membership gate.
+
 ### Entity Resolution During Ingestion
 
 When a claim references "hippocampus" and the graph already has `NN:11` (preferred_name="Hippocampus"), the entity resolver matches them. If no match is found, a new concept node is created with prefix `CLM_CONCEPT:`.
@@ -284,7 +342,9 @@ Each claim generates **three** graph elements:
 
 | File | Description |
 |------|-------------|
-| `data/full_snapshot_v2/knowledge_graph.json` | Full graph (concepts + edges + metadata) |
+| `data/full_v2/knowledge_graph.json` | Authoritative current graph (concepts + edges + metadata) |
+| `data/full_v2/extracted_claims.jsonl` | Canonical synchronized extraction/audit store |
+| `data/full_v2/CURRENT_STATE.json` | Validated taxonomy and Case Study coverage snapshot |
 | `data/papers_metadata.csv` | Paper records: pmid, doi, title, authors, year, journal, disease, abstract_length, n_claims, timestamp |
 | `data/batch_checkpoint.json` | Resume checkpoint: completed_diseases, completed_years, totals |
 

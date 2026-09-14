@@ -13,12 +13,13 @@ plans/plausibility-scorer-c.md risks section.
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+
+from neurooracle.scripts.streaming_graph_json import iter_concepts, iter_edges
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,14 @@ _DROP_RELATIONS = frozenset({
 
 # Domain tags that mark "infrastructure" nodes. Edges incident to these are
 # skipped because they encode experimental setup rather than scientific claims.
-_INFRA_DOMAINS = frozenset({"atlas", "modality", "dataset", "ml_model", "recipe"})
+_INFRA_DOMAINS = frozenset({
+    "spatial_reference",
+    "atlas",  # legacy snapshots
+    "modality",
+    "dataset",
+    "ml_model",
+    "recipe",
+})
 
 
 @dataclass(frozen=True)
@@ -72,19 +80,17 @@ def load_triples_from_kg(
     for negative sampling restricted to plausible domains.
     """
     kg_path = Path(kg_path)
-    with kg_path.open(encoding="utf-8") as f:
-        kg = json.load(f)
-
-    concepts = kg.get("concepts") or {}
-    edges = kg.get("edges") or []
-
-    node_domain = {cid: _primary_domain(node) for cid, node in concepts.items()}
-    infra_nodes = {cid for cid, node in concepts.items() if _node_is_infra(node)}
+    node_domain: dict[str, str] = {}
+    infra_nodes: set[str] = set()
+    for cid, node in iter_concepts(kg_path):
+        node_domain[cid] = _primary_domain(node)
+        if _node_is_infra(node):
+            infra_nodes.add(cid)
 
     triples: list[Triple] = []
     drop_reasons: dict[str, int] = defaultdict(int)
 
-    for e in edges:
+    for e in iter_edges(kg_path):
         s = e.get("source_id")
         t = e.get("target_id")
         r = e.get("relation_type")
@@ -103,7 +109,7 @@ def load_triples_from_kg(
         if (e.get("confidence") or 0.0) < min_confidence:
             drop_reasons["low_confidence"] += 1
             continue
-        if s not in concepts or t not in concepts:
+        if s not in node_domain or t not in node_domain:
             drop_reasons["dangling"] += 1
             continue
         triples.append(Triple(s, r, t))
@@ -154,8 +160,41 @@ def split_triples(
         val.extend(group[n_train : n_train + n_val])
         test.extend(group[n_train + n_val : n_train + n_val + n_test])
 
+    train_entities = {
+        entity
+        for triple in train
+        for entity in (triple.source_id, triple.target_id)
+    }
+    train_relations = {triple.relation_type for triple in train}
+
+    def retain_transductive(group: list[Triple]) -> tuple[list[Triple], int]:
+        retained: list[Triple] = []
+        moved = 0
+        for triple in group:
+            known = (
+                triple.source_id in train_entities
+                and triple.target_id in train_entities
+                and triple.relation_type in train_relations
+            )
+            if known:
+                retained.append(triple)
+                continue
+            train.append(triple)
+            train_entities.update((triple.source_id, triple.target_id))
+            train_relations.add(triple.relation_type)
+            moved += 1
+        return retained, moved
+
+    val, val_moved = retain_transductive(val)
+    test, test_moved = retain_transductive(test)
     logger.info(
         "split %d triples → train=%d val=%d test=%d (%d strata)",
         len(triples), len(train), len(val), len(test), len(buckets),
     )
+    if val_moved or test_moved:
+        logger.info(
+            "moved %d val and %d test triples into train for transductive vocabulary coverage",
+            val_moved,
+            test_moved,
+        )
     return train, val, test

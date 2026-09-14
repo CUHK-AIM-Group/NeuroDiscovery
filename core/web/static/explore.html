@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NeuroOracle · Knowledge Graph Explorer</title>
+<link rel="stylesheet" href="/static/claim-evidence.css">
+<script src="/static/claim-evidence.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sigma@3.0.0/dist/sigma.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/graphology-layout-forceatlas2@0.10.1/worker.min.js"></script>
@@ -334,6 +336,12 @@ body {
   font-size: 12.5px;
   color: var(--text);
   cursor: pointer;
+}
+.scope-note {
+  margin-top: 6px;
+  color: var(--text-subtle);
+  font-size: 10.5px;
+  line-height: 1.4;
 }
 .graph-info {
   margin-left: auto;
@@ -872,7 +880,7 @@ body {
 <body>
 
 <header class="header">
-  <div class="header-sub" data-i18n="header_sub">Knowledge Graph Explorer</div>
+  <div class="header-sub" data-i18n="header_sub">NeuroOracle Graph</div>
   <div class="stats-line" id="statsLine">
     <span class="spinner" style="display:inline-block;width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></span>
     <span data-i18n="loading">Loading…</span>
@@ -912,6 +920,9 @@ body {
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);">
           <input type="checkbox" id="strictChainToggle" disabled> <span data-i18n="strict_chain">strict chain</span>
         </label>
+      </div>
+      <div class="scope-note" id="scopeNote" data-i18n="scope_note">
+        Formal Case Studies 1–17; hindcasting is a validation component, not a Case Study.
       </div>
     </div>
     <div class="results" id="results">
@@ -1059,7 +1070,7 @@ const DIM_EDGE = "#e5e7eb";
 // ── i18n ─────────────────────────────────────────────────────────────
 const I18N = {
   en: {
-    header_sub: "Knowledge Graph Explorer",
+    header_sub: "NeuroOracle Graph",
     loading: "Loading…",
     cold_start: "First load reads the 180MB knowledge graph (takes ~30–60s)…",
     search_placeholder: "Search biomarker / outcome / concept (≥2 chars)",
@@ -1075,6 +1086,9 @@ const I18N = {
     toggle_theme: "Toggle theme",
     task_chain: "— Task / Chain —",
     strict_chain: "strict chain",
+    scope_note: "Formal Case Studies 1–17; hindcasting is a validation component, not a Case Study.",
+    select_query_node_first: "— Select a query node first —",
+    no_task_covers: "— No task covers this node —",
     back_title: "Back to previous node",
     layout: "Layout",
     layout_ring: "Ring",
@@ -1158,7 +1172,7 @@ const I18N = {
     download_confirm: "Download the latest NeuroOracle graph from HuggingFace now?",
   },
   zh: {
-    header_sub: "知识图谱浏览器",
+    header_sub: "NeuroOracle 图谱",
     loading: "载入中…",
     cold_start: "首次打开需要加载 180MB 知识图谱（约 30–60 秒）…",
     search_placeholder: "搜索 biomarker / outcome / 概念（≥2 字符）",
@@ -1174,6 +1188,9 @@ const I18N = {
     toggle_theme: "切换主题",
     task_chain: "— 任务 / 链 —",
     strict_chain: "严格链",
+    scope_note: "正式 Case Study 为 1–17；hindcasting 是验证组件，不是 Case Study。",
+    select_query_node_first: "— 请先选择查询节点 —",
+    no_task_covers: "— 没有覆盖此节点的任务 —",
     back_title: "返回上一个节点",
     layout: "布局",
     layout_ring: "环形",
@@ -1398,11 +1415,23 @@ function centerCameraOn(nodeId, ratio) {
 
 // ── Theme ────────────────────────────────────────────────────────────
 (function initTheme() {
+  const requested = new URLSearchParams(location.search).get("theme");
   const saved = localStorage.getItem("neuroclaw-theme");
-  const theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const theme = requested === "dark" || requested === "light"
+    ? requested
+    : saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   document.documentElement.dataset.theme = theme;
   $("themeBtn").textContent = theme === "dark" ? "☀" : "☾";
 })();
+window.addEventListener("message", event => {
+  const payload = event.data && typeof event.data === "object" ? event.data : null;
+  if (event.origin !== window.location.origin || event.source !== window.parent || payload?.type !== "neurodiscovery:theme") return;
+  const theme = payload.theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem("neuroclaw-theme", theme);
+  $("themeBtn").textContent = theme === "dark" ? "☀" : "☾";
+  if (state.sigma) state.sigma.refresh();
+});
 $("themeBtn").addEventListener("click", () => {
   const cur = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = cur;
@@ -1442,6 +1471,7 @@ function syncLanguageFromApp() {
   state.lang = next;
   document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
   applyI18n();
+  renderTaskOptions();
   pollStatsRender();
   if (state.currentNode) {
     if (state.focusEdge) loadEdgeSources(state.focusEdge.source, state.focusEdge.target);
@@ -1597,6 +1627,7 @@ $("fontSelect").addEventListener("change", (e) => {
 // ── KG status polling ────────────────────────────────────────────────
 let _lastStats = null;
 async function pollStats() {
+  if (window.ClaimEvidenceExplorer?.active) return;
   try {
     const r = await fetch("/api/kg/stats").then((r) => r.json());
     if (r.loaded) {
@@ -1635,7 +1666,7 @@ function pollStatsRender() {
     ${r.n_recipes ? `<span class="stats-dot"></span><span>${r.n_recipes} ${t("stats_recipes")}</span>` : ""}
   `;
 }
-pollStats();
+// The accepted-claim view starts first; the larger concept graph loads on demand.
 
 // ── Search ───────────────────────────────────────────────────────────
 let searchTimer = null;
@@ -1852,9 +1883,40 @@ function refreshTaskOptionAvailability() {
   const placeholder = sel.options[0];
   if (placeholder && !placeholder.value) {
     placeholder.textContent = hasQuery
-      ? (enabledCount ? "— Task / Chain —" : "— No task covers this node —")
-      : "— Select a query node first —";
+      ? (enabledCount ? t("task_chain") : t("no_task_covers"))
+      : t("select_query_node_first");
   }
+}
+
+function taskCaseStudyPrefix(item) {
+  const number = Number(item?.case_study_number);
+  if (!Number.isInteger(number) || number < 1) return "";
+  return state.lang === "zh" ? `案例研究 ${number} · ` : `Case Study ${number} · `;
+}
+
+function renderTaskOptions() {
+  const sel = $("taskSelect");
+  if (!sel) return;
+  const previous = sel.value;
+  const optHtml = (label, items, kind) => items.length
+    ? `<optgroup label="${escapeHtml(label)}">` + items.map((it) => {
+        const atoms = (kind === "chain")
+          ? (it.chain || [])
+          : ([...(it.inputs || []), it.output].filter(Boolean));
+        const atomAttr = [...new Set(atoms)].join(",");
+        const displayName = `${taskCaseStudyPrefix(it)}${it.name}`;
+        const id = it.case_study_id || it.name;
+        return `<option value="${escapeHtml(it.name)}" data-kind="${kind}" data-atoms="${escapeHtml(atomAttr)}" title="${escapeHtml(id)}">${escapeHtml(displayName)}</option>`;
+      }).join("") + `</optgroup>`
+    : "";
+  const placeholder = state.currentNode ? t("task_chain") : t("select_query_node_first");
+  sel.innerHTML = `<option value="">${escapeHtml(placeholder)}</option>` +
+    optHtml(state.lang === "zh" ? "链（≥3 跳）" : "Chains (≥3-hop)", taskState.chains, "chain") +
+    optHtml(state.lang === "zh" ? "任务" : "Tasks", taskState.tasks, "task");
+  if (previous && [...sel.options].some((option) => option.value === previous)) {
+    sel.value = previous;
+  }
+  refreshTaskOptionAvailability();
 }
 
 async function loadTasks() {
@@ -1864,19 +1926,7 @@ async function loadTasks() {
     if (!sel || !r) return;
     taskState.tasks = r.tasks || [];
     taskState.chains = r.chains || [];
-    const optHtml = (label, items, kind) => items.length
-      ? `<optgroup label="${label}">` + items.map((it) => {
-          const atoms = (kind === "chain")
-            ? (it.chain || [])
-            : ([...(it.inputs || []), it.output].filter(Boolean));
-          const atomAttr = [...new Set(atoms)].join(",");
-          return `<option value="${escapeHtml(it.name)}" data-kind="${kind}" data-atoms="${escapeHtml(atomAttr)}">${escapeHtml(it.name)}</option>`;
-        }).join("") + `</optgroup>`
-      : "";
-    sel.innerHTML = `<option value="">— Select a query node first —</option>` +
-      optHtml("Chains (≥3-hop)", taskState.chains, "chain") +
-      optHtml("Tasks", taskState.tasks, "task");
-    refreshTaskOptionAvailability();
+    renderTaskOptions();
   } catch (e) {}
 }
 loadTasks();
@@ -2169,6 +2219,7 @@ function renderPathClaims(data, focusNode) {
           ${c.raw_text ? `<div class="raw-text">${escapeHtml(c.raw_text)}</div>` : ""}
           ${evRow ? `<div class="evidence-row">${evRow}</div>` : ""}
           ${paperLinks ? `<div class="paper-row">${paperLinks}</div>` : ""}
+          ${window.ClaimEvidenceExplorer.claimButton(c.claim_id)}
         </div>`;
     }).join("");
     return `
@@ -2863,6 +2914,7 @@ function renderClaimsList(claims) {
         ${c.raw_text ? `<div class="raw-text">${escapeHtml(c.raw_text)}</div>` : ""}
         ${evRow ? `<div class="evidence-row">${evRow}</div>` : ""}
         ${paperLinks ? `<div class="paper-row">${paperLinks}</div>` : ""}
+          ${window.ClaimEvidenceExplorer.claimButton(c.claim_id)}
       </div>`;
   }).join("");
   return `<div class="detail-section">${cards}</div>`;
@@ -2965,6 +3017,7 @@ function renderEdgeSources(data) {
             ${c.raw_text ? `<div class="raw-text">${escapeHtml(c.raw_text)}</div>` : ""}
             ${evRow ? `<div class="evidence-row">${evRow}</div>` : ""}
             ${paperLinks ? `<div class="paper-row">${paperLinks}</div>` : ""}
+          ${window.ClaimEvidenceExplorer.claimButton(c.claim_id)}
           </div>`;
       }).join("")}
     </div>` : "";
@@ -3013,6 +3066,7 @@ $("legendToggle").addEventListener("click", () => {
   $("legend").classList.remove("collapsed");
   $("legendToggle").classList.remove("visible");
 });
+window.ClaimEvidenceExplorer.mount({ legacyStart: pollStats, language: () => state.lang });
 </script>
 
 </body>

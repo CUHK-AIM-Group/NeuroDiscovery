@@ -8,7 +8,7 @@ NN:..., OUTCOME:..., INDIVIDUAL_DATA:..., etc.). This module:
        (a) (SAB, source_code) -> CUI        - exact source-id match
        (b) (domain, name_lower) -> CUI      - SAB-restricted name match
        (c) CUI -> {preferred_name, aliases, source_codes}
-  2. For every node in the KG that is in scope (see ELIGIBLE_PREFIXES),
+  2. For every canonical concept node in scope (see ELIGIBLE_PREFIXES),
      resolve it to a CUI. Hit -> rename to "CUI:Cxxxxxxx", merge aliases
      and external_ids into the CUI node. Miss -> keep native id.
   3. Update every edge's source_id / target_id to the new node ids.
@@ -102,18 +102,13 @@ ELIGIBLE_PREFIXES: dict[str, dict] = {
         "name_sabs": ("MSH", "FMA", "NCI"),
         "domain": "neuroanatomy",
     },
-    "CLM_CONCEPT": {
-        "sab_code": None,
-        "name_sabs": ("MSH",),
-        "domain": "individual_data",
-    },
 }
 
 # Prefixes that NEVER canonicalize (research-only entities).
 SKIP_PREFIXES = {
     "ATLAS", "MODALITY", "MODEL", "DATASET",
     "IF", "VROI", "COGAT_TASK", "COGAT_CONCEPT",
-    "UKB", "ADNI", "HCP",
+    "UKB", "ADNI", "HCP", "CLM_CONCEPT",
 }
 
 
@@ -433,7 +428,7 @@ def canonicalize_kg(
     _NAME_PRIORITY = {
         "MSH": 0, "NN": 1, "GENE": 2, "OUTCOME": 3,
         "INDIVIDUAL_DATA": 4, "COGAT_DISORDER": 5,
-        "DISGENET": 6, "ATC": 7, "CLM_CONCEPT": 8,
+        "DISGENET": 6, "ATC": 7,
     }
     def _prio(item):
         nid = item[0]
@@ -459,8 +454,8 @@ def canonicalize_kg(
                     existing.semantic_types.append(st)
             if not existing.definition and node.definition:
                 existing.definition = node.definition
-            if not existing.atlas_mapping and node.atlas_mapping:
-                existing.atlas_mapping = node.atlas_mapping
+            if not existing.spatial_mapping and node.spatial_mapping:
+                existing.spatial_mapping = node.spatial_mapping
             existing.metadata.setdefault("merged_from", []).append(nid)
             merged_count += 1
         else:

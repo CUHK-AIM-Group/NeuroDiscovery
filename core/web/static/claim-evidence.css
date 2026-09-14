@@ -1,0 +1,52 @@
+.claim-evidence-view { height: calc(100vh - var(--header-h)); display: grid; grid-template-columns: minmax(290px, 360px) minmax(0, 1fr); background: var(--bg); color: var(--text); }
+.claim-evidence-view[hidden], body.claim-evidence-active .layout { display: none !important; }
+body.claim-evidence-active #coldStartBanner, body.claim-evidence-active #graphUpdateStatus, body.claim-evidence-active #graphCheckUpdateBtn, body.claim-evidence-active #graphUpdateBtn { display: none !important; }
+.ce-sidebar { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--surface); }
+.ce-search { padding: 20px; border-bottom: 1px solid var(--border); }
+.ce-search h2 { font-size: 19px; margin-bottom: 8px; }
+.ce-muted { color: var(--text-muted, var(--muted)); font-size: 13px; line-height: 1.6; }
+.ce-search input { display: block; width: 100%; padding: 11px; margin: 14px 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
+.ce-search input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ce-search label { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.ce-search select { padding: 5px; border: 1px solid var(--border); border-radius: 5px; color: var(--text); background: var(--bg); }
+.ce-results { overflow-y: auto; flex: 1; min-height: 0; padding: 10px; }
+.ce-result { display: block; text-align: left; width: 100%; padding: 15px; border: 1px solid transparent; border-radius: 10px; margin-bottom: 7px; background: transparent; color: var(--text); cursor: pointer; font: inherit; }
+.ce-result:hover { background: var(--bg); border-color: var(--border); }
+.ce-result[aria-current="true"] { background: var(--bg); border-color: var(--accent); box-shadow: inset 3px 0 var(--accent); }
+.ce-result strong { font-size: 14px; line-height: 1.5; display: block; overflow-wrap: anywhere; }
+.ce-result .ce-predicate { font-size: 12px; margin: 5px 0; color: var(--accent); display: block; }
+.ce-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.ce-badge { font-size: 12px; line-height: 1.6; border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; overflow-wrap: anywhere; }
+.ce-support { color: var(--accent); font-weight: 600; }
+.ce-nonsupport { color: var(--danger, #a34b45); }
+.ce-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-top: 1px solid var(--border); font-size: 12px; }
+.ce-pagination button, .ce-action { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); padding: 7px 11px; cursor: pointer; font: inherit; font-size: 13px; }
+.ce-pagination button:disabled { opacity: .35; cursor: default; }
+.ce-detail { overflow-y: auto; padding: 30px clamp(18px, 4vw, 65px) 70px; min-width: 0; }
+.ce-detail:focus { outline: none; }
+.ce-empty { margin: 10vh auto; max-width: 520px; line-height: 1.7; }
+.ce-empty h2 { font-size: 23px; margin-bottom: 12px; }
+.ce-triple { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 16px; align-items: center; margin: 18px 0; }
+.ce-endpoint { padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-weight: 600; font-size: 19px; line-height: 1.5; overflow-wrap: anywhere; }
+.ce-relation { text-align: center; color: var(--accent); font-size: 13px; max-width: 170px; overflow-wrap: anywhere; }
+.ce-relation span { display: block; font-size: 26px; }
+.ce-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.ce-summary .ce-badge { font-size: 14px; padding: 6px 10px; }
+.ce-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin: 24px 0 18px; }
+.ce-toolbar h2 { font-size: 20px; }
+.ce-paper { padding: 22px; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; margin: 15px 0; }
+.ce-paper h3 { font-size: 17px; line-height: 1.6; margin: 0 0 8px; overflow-wrap: anywhere; }
+.ce-paper a { color: var(--accent); text-decoration: none; }
+.ce-paper a:hover { text-decoration: underline; }
+.ce-observation { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+.ce-observation blockquote { border-left: 3px solid var(--border); margin: 13px 0; padding: 3px 0 3px 13px; font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ce-observation dl { display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 6px 12px; font-size: 13px; line-height: 1.6; }
+.ce-observation dt { color: var(--text-muted, var(--muted)); }
+.ce-observation dd { overflow-wrap: anywhere; white-space: pre-wrap; }
+.ce-observation details, .ce-ids { margin-top: 12px; font-size: 12px; line-height: 1.8; }
+.ce-observation summary, .ce-ids summary { cursor: pointer; color: var(--text-muted, var(--muted)); }
+.ce-ids code { display: block; overflow-wrap: anywhere; }
+.ce-observation pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 240px; overflow: auto; padding: 12px; background: var(--bg); }
+.ce-full-evidence { display: inline-block; margin-top: 12px; color: var(--accent); cursor: pointer; }
+@media (max-width: 900px) { .claim-evidence-view { grid-template-columns: 290px minmax(0,1fr); } .ce-triple { grid-template-columns: 1fr; gap: 8px; } .ce-relation { max-width: none; } .ce-relation span { transform: rotate(90deg); } .ce-detail { padding: 20px; } .ce-endpoint { padding: 14px; font-size: 16px; } }
+@media (max-width: 650px) { .claim-evidence-view { display: block; height: auto; } .ce-sidebar { max-height: 55vh; border-bottom: 1px solid var(--border); } .ce-detail { overflow: visible; } body.claim-evidence-active { overflow: auto; } .ce-search { padding: 12px; } }

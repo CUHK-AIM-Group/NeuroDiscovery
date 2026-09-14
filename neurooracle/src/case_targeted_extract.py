@@ -23,7 +23,7 @@ import time
 from datetime import datetime
 from html import unescape
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 from .abstract_cache import AbstractCache, default_cache_path
 from .batch_extract import (
@@ -34,10 +34,57 @@ from .batch_extract import (
     _search_pubmed,
 )
 from .claim_extractor import ClaimExtractor
-from .claim_ingestion import ingest_claims
+from .claim_ingestion import ingest_claims, persist_ingestion_results
+from .paper_identity import (
+    CandidatePaperDeduplicator,
+    GlobalPaperIdentityIndex,
+)
 from .storage import load_graph, save_graph
 
 logger = logging.getLogger(__name__)
+
+
+CASE_STUDY_YEAR_START = 1980
+CASE_STUDY_YEAR_END = 2026
+MIN_USABLE_ABSTRACT_CHARS = 200
+_NEUROORACLE_DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+DEFAULT_FORMAL_CLAIM_STORE = _NEUROORACLE_DATA_DIR / "full_v2" / "extracted_claims.jsonl"
+DEFAULT_STAGING_ROOTS = (
+    _NEUROORACLE_DATA_DIR / "case_study_staging",
+    _NEUROORACLE_DATA_DIR / "phase2_staging",
+)
+DEFAULT_PAPER_IDENTITY_INDEX = (
+    _NEUROORACLE_DATA_DIR / "build_artifacts" / "paper_identity_dedup_v3.sqlite3"
+)
+
+
+class _SearchRecords(list):
+    """List-compatible search result carrying a source failure classification."""
+
+    def __init__(self, values=(), *, error: str = ""):
+        super().__init__(values)
+        self.error = error
+
+
+def _is_usable_abstract(value: object) -> bool:
+    text = re.sub(r"\s+", " ", unescape(str(value or ""))).strip()
+    if len(text) < MIN_USABLE_ABSTRACT_CHARS:
+        return False
+    lowered = text.casefold()
+    return not any(marker in lowered for marker in (
+        "no abstract is available",
+        "abstract no abtract",
+        "unknown accessibility",
+    ))
+
+
+def _require_canonical_year_range(year_start: int, year_end: int) -> None:
+    if (year_start, year_end) != (CASE_STUDY_YEAR_START, CASE_STUDY_YEAR_END):
+        raise ValueError(
+            "Case Study literature collection uses the canonical publication "
+            f"window {CASE_STUDY_YEAR_START}-{CASE_STUDY_YEAR_END}; got "
+            f"{year_start}-{year_end}"
+        )
 
 
 def _tiab(term: str) -> str:
@@ -151,6 +198,47 @@ OUTCOMES = [
     "treatment response",
 ]
 
+CASE2_LONGITUDINAL_TERMS = [
+    "longitudinal",
+    "follow-up",
+    "prospective",
+    "incident",
+    "conversion",
+    "progression",
+    "trajectory",
+    "change over time",
+    "time-to-event",
+    "survival analysis",
+]
+
+CASE2_MEDIATION_TERMS = [
+    "mediation",
+    "mediator",
+    "mediates",
+    "indirect effect",
+    "path analysis",
+    "structural equation model",
+    "causal pathway",
+    "causal chain",
+    "cross-lagged",
+    "Mendelian randomization",
+]
+
+CASE2_LONGITUDINAL_COHORTS = [
+    "ADNI",
+    "Alzheimer Disease Neuroimaging Initiative",
+    "UK Biobank",
+    "PPMI",
+    "Parkinson Progression Marker Initiative",
+    "ABCD",
+    "Alzheimer's Disease Sequencing Project",
+    "AIBL",
+    "BioFINDER",
+    "Framingham Heart Study",
+    "Rotterdam Study",
+    "Baltimore Longitudinal Study of Aging",
+]
+
 DISEASE_OUTCOME_ANCHORS = [
     "Alzheimer disease",
     "mild cognitive impairment",
@@ -158,6 +246,80 @@ DISEASE_OUTCOME_ANCHORS = [
     "schizophrenia",
     "major depression",
     "bipolar disorder",
+]
+
+CASE2_HIGH_RECALL_GENETIC_TERMS = [
+    "polygenic risk score",
+    "polygenic score",
+    "genome-wide association",
+    "GWAS",
+    "genetic risk",
+    "genetic variant",
+    "genotype",
+    "allele",
+    "SNP",
+    "mutation",
+    "gene expression",
+    "transcriptomic",
+    "DNA methylation",
+    "epigenetic",
+]
+
+CASE2_HIGH_RECALL_GENE_TARGETS = [
+    "APOE", "TREM2", "PSEN1", "APP", "BIN1", "CLU", "PICALM", "CR1", "ABCA7",
+    "GBA", "LRRK2", "SNCA", "MAPT", "BDNF", "COMT", "DRD2", "SLC6A4",
+    "CACNA1C", "DISC1", "FKBP5", "OXTR", "HTT", "C9orf72", "SOD1", "GRN",
+]
+
+CASE2_HIGH_RECALL_DISEASE_GROUPS = [
+    ["Alzheimer disease", "mild cognitive impairment", "dementia"],
+    ["Parkinson disease", "Lewy body dementia"],
+    ["frontotemporal dementia", "amyotrophic lateral sclerosis"],
+    ["Huntington disease"],
+    ["schizophrenia", "psychosis"],
+    ["bipolar disorder", "major depression"],
+    ["autism spectrum disorder", "attention deficit hyperactivity disorder"],
+    ["posttraumatic stress disorder", "anxiety disorder", "obsessive compulsive disorder"],
+    ["multiple sclerosis"],
+    ["stroke", "cerebrovascular disease", "small vessel disease"],
+    ["epilepsy"],
+    ["traumatic brain injury"],
+    ["substance use disorder", "alcohol use disorder"],
+    ["migraine"],
+    ["neurodevelopment", "psychopathology"],
+    ["cognitive aging", "age-related cognitive decline"],
+]
+
+CASE2_HIGH_RECALL_COHORT_GROUPS = [
+    ["ADNI", "Alzheimer Disease Neuroimaging Initiative"],
+    ["AIBL", "BioFINDER", "OASIS"],
+    ["PPMI", "Parkinson Progression Marker Initiative"],
+    ["UK Biobank"],
+    ["ABCD", "Adolescent Brain Cognitive Development"],
+    ["Human Connectome Project", "HCP Aging", "HCP Development"],
+    ["Rotterdam Study", "Framingham Heart Study"],
+    ["ARIC", "CARDIA", "Cardiovascular Health Study"],
+    ["Baltimore Longitudinal Study of Aging"],
+    ["Generation R", "IMAGEN", "ALSPAC"],
+    ["Philadelphia Neurodevelopmental Cohort", "PNC"],
+    ["ENIGMA"],
+]
+
+CASE2_HIGH_RECALL_MODALITY_GROUPS = [
+    ["structural MRI", "cortical thickness", "hippocampal volume", "brain atrophy"],
+    ["functional MRI", "resting-state fMRI", "functional connectivity"],
+    ["diffusion MRI", "DTI", "white matter integrity", "fractional anisotropy"],
+    ["amyloid PET", "tau PET", "FDG PET"],
+    ["DAT SPECT", "dopamine transporter imaging"],
+    ["brain age", "normative modeling"],
+]
+
+CASE2_HIGH_RECALL_OUTCOME_GROUPS = [
+    ["cognitive decline", "incident dementia", "conversion"],
+    ["clinical progression", "disease progression", "symptom trajectory"],
+    ["treatment response", "relapse", "remission"],
+    ["motor progression", "UPDRS"],
+    ["functional outcome", "disability progression", "mortality"],
 ]
 
 CASE1_DISORDERS = [
@@ -276,11 +438,129 @@ CASE_TARGETED_PRESETS = {
     "case1_transdiagnostic",
     "case2_pathway_mediation",
     "case2_supplemental_classic",
+    "case2_high_recall_expansion",
 }
 
 
 def canonical_case_targeted_preset(preset: str) -> str:
     return preset
+
+
+def _dedupe_preserve_order(values: Iterable[str]) -> list[str]:
+    return list(dict.fromkeys(value for value in values if value))
+
+
+def _build_case2_high_recall_queries(years: str) -> list[str]:
+    """Build a broad candidate-discovery grid without assigning membership."""
+
+    genetics = _or_group(CASE2_HIGH_RECALL_GENETIC_TERMS)
+    genes = _or_group(CASE2_HIGH_RECALL_GENE_TARGETS)
+    genetic_any = f"({genetics} OR {genes})"
+    imaging = _or_group(IMAGING_MARKERS)
+    longitudinal = _or_group(CASE2_LONGITUDINAL_TERMS)
+    outcomes = _or_group(OUTCOMES)
+    mediation = _or_group(CASE2_MEDIATION_TERMS)
+    neuro = _human_neuro_clause()
+
+    queries = [
+        f"{genetics} AND {imaging} AND {longitudinal} AND {neuro} AND {years}",
+        f"{genetics} AND {imaging} AND {outcomes} AND {neuro} AND {years}",
+        f"{genes} AND {imaging} AND {longitudinal} AND {neuro} AND {years}",
+        f"{genes} AND {imaging} AND {outcomes} AND {neuro} AND {years}",
+        f"{genetic_any} AND {imaging} AND {mediation} AND {neuro} AND {years}",
+        (
+            f"{genetic_any} AND {_or_group(['baseline MRI', 'baseline PET', 'baseline neuroimaging'])} "
+            f"AND {_or_group(['future outcome', 'incident disease', 'conversion', 'clinical progression'])} "
+            f"AND {years}"
+        ),
+        (
+            f"{genetic_any} AND {_or_group(['multimodal imaging', 'imaging biomarker', 'neuroimaging marker'])} "
+            f"AND {_or_group(['risk prediction', 'prognosis', 'survival', 'trajectory'])} AND {years}"
+        ),
+    ]
+
+    for diseases in CASE2_HIGH_RECALL_DISEASE_GROUPS:
+        disease = _or_group(diseases)
+        queries.extend([
+            f"{genetics} AND {imaging} AND {disease} AND {longitudinal} AND {years}",
+            f"{genetic_any} AND {imaging} AND {disease} AND {outcomes} AND {years}",
+        ])
+
+    longitudinal_or_outcome = f"({longitudinal} OR {outcomes})"
+    for cohorts in CASE2_HIGH_RECALL_COHORT_GROUPS:
+        cohort = _or_group(cohorts)
+        queries.append(
+            f"{cohort} AND {genetic_any} AND {imaging} AND {longitudinal_or_outcome} AND {years}"
+        )
+
+    for modalities in CASE2_HIGH_RECALL_MODALITY_GROUPS:
+        modality = _or_group(modalities)
+        queries.extend([
+            f"{genetics} AND {modality} AND {longitudinal} AND {neuro} AND {years}",
+            f"{genes} AND {modality} AND {outcomes} AND {neuro} AND {years}",
+        ])
+
+    for outcome_terms in CASE2_HIGH_RECALL_OUTCOME_GROUPS:
+        outcome = _or_group(outcome_terms)
+        queries.append(
+            f"{genetic_any} AND {imaging} AND {outcome} AND {longitudinal} AND {years}"
+        )
+
+    queries.extend([
+        (
+            f"{genetic_any} AND {imaging} AND "
+            f"{_or_group(['structural equation model', 'path analysis', 'latent growth model'])} AND {years}"
+        ),
+        (
+            f"{genetic_any} AND {imaging} AND "
+            f"{_or_group(['cross-lagged', 'mediation', 'indirect effect', 'mediated effect'])} AND {years}"
+        ),
+        (
+            f"{_or_group(['Mendelian randomization', 'two-step Mendelian randomization', 'network Mendelian randomization'])} "
+            f"AND {imaging} AND {outcomes} AND {years}"
+        ),
+        (
+            f"{genetic_any} AND {imaging} AND "
+            f"{_or_group(['Cox regression', 'time-to-event', 'survival analysis', 'hazard ratio'])} AND {years}"
+        ),
+        (
+            f"{genetic_any} AND {imaging} AND "
+            f"{_or_group(['longitudinal mediation', 'causal mediation', 'causal pathway', 'causal chain'])} AND {years}"
+        ),
+    ])
+    return _dedupe_preserve_order(queries)
+
+
+def _build_case2_high_recall_phrases() -> list[str]:
+    phrases = [
+        "genetic risk neuroimaging longitudinal clinical outcome",
+        "polygenic score MRI prospective disease progression",
+        "genetic variant brain imaging cognitive decline follow-up",
+        "gene expression neuroimaging longitudinal prognosis",
+        "DNA methylation MRI longitudinal clinical outcome",
+        "genotype imaging biomarker conversion progression",
+        "genetics baseline MRI future outcome mediation",
+        "imaging genetics survival trajectory prognosis",
+        "Mendelian randomization brain imaging clinical outcome",
+        "genetic risk neuroimaging structural equation model path analysis",
+    ]
+    phrases.extend(
+        f"genetic risk neuroimaging longitudinal {' '.join(group[:2])} clinical outcome"
+        for group in CASE2_HIGH_RECALL_DISEASE_GROUPS
+    )
+    phrases.extend(
+        f"{' '.join(group[:2])} genetics MRI longitudinal outcome"
+        for group in CASE2_HIGH_RECALL_COHORT_GROUPS
+    )
+    phrases.extend(
+        f"genetic risk {' '.join(group[:2])} longitudinal outcome"
+        for group in CASE2_HIGH_RECALL_MODALITY_GROUPS
+    )
+    phrases.extend(
+        f"genetics neuroimaging longitudinal {' '.join(group[:2])}"
+        for group in CASE2_HIGH_RECALL_OUTCOME_GROUPS
+    )
+    return _dedupe_preserve_order(phrases)
 
 
 def build_case_targeted_queries(
@@ -291,6 +571,7 @@ def build_case_targeted_queries(
 ) -> list[str]:
     """Return PubMed queries for a case-targeted preset."""
     preset = canonical_case_targeted_preset(preset)
+    _require_canonical_year_range(year_start, year_end)
     if preset not in CASE_TARGETED_PRESETS:
         raise ValueError(
             "unknown preset: "
@@ -298,6 +579,9 @@ def build_case_targeted_queries(
         )
 
     years = _year_clause(year_start, year_end)
+    if preset == "case2_high_recall_expansion":
+        return _build_case2_high_recall_queries(years)
+
     if preset == "case1_transdiagnostic":
         disorders = _or_group(CASE1_DISORDERS)
         transdx = _or_group(CASE1_TRANSDIAGNOSTIC_TERMS)
@@ -408,38 +692,90 @@ def build_case_targeted_queries(
     imaging = _or_group(IMAGING_MARKERS)
     outcomes = _or_group(OUTCOMES)
     disease_outcomes = _or_group(DISEASE_OUTCOME_ANCHORS)
+    longitudinal = _or_group(CASE2_LONGITUDINAL_TERMS)
+    mediation = _or_group(CASE2_MEDIATION_TERMS)
+    cohorts = _or_group(CASE2_LONGITUDINAL_COHORTS)
     neuro = _human_neuro_clause()
 
     queries = [
-        f"{genetic_general} AND {imaging} AND {outcomes} AND {neuro} AND {years}",
-        f"{gene_targets} AND {imaging} AND {outcomes} AND {neuro} AND {years}",
-        f"{genetic_any} AND {imaging} AND {disease_outcomes} AND {neuro} AND {years}",
+        (
+            f"{genetic_general} AND {imaging} AND {outcomes} AND {longitudinal} "
+            f"AND {mediation} AND {neuro} AND {years}"
+        ),
+        (
+            f"{gene_targets} AND {imaging} AND {outcomes} AND {longitudinal} "
+            f"AND {mediation} AND {neuro} AND {years}"
+        ),
+        (
+            f"{genetic_any} AND {imaging} AND {disease_outcomes} AND {longitudinal} "
+            f"AND {mediation} AND {neuro} AND {years}"
+        ),
         (
             f"{_or_group(['polygenic risk score', 'polygenic score', 'PRS', 'GWAS'])} "
             f"AND {_or_group(['cortical thickness', 'hippocampal volume', 'gray matter volume', 'brain volume', 'MRI', 'DTI'])} "
-            f"AND {outcomes} AND {years}"
+            f"AND {outcomes} AND {longitudinal} AND {mediation} AND {years}"
         ),
         (
             f"{_or_group(['APOE', 'TREM2', 'PSEN1', 'APP'])} "
             f"AND {_or_group(['amyloid PET', 'tau PET', 'FDG PET', 'FDG hypometabolism', 'hippocampal volume', 'entorhinal thickness'])} "
             f"AND {_or_group(['cognitive decline', 'conversion', 'MMSE', 'ADAS-Cog', 'CDR-SB', 'dementia', 'mild cognitive impairment'])} "
-            f"AND {years}"
+            f"AND {longitudinal} AND {mediation} AND {years}"
         ),
         (
             f"{_or_group(['GBA', 'MAPT', 'SNCA', 'LRRK2'])} "
             f"AND {_or_group(['MRI', 'fMRI', 'DTI', 'dopamine transporter', 'DAT SPECT', 'striatal binding', 'cortical thickness'])} "
             f"AND {_or_group(['cognition', 'cognitive decline', 'UPDRS', 'motor symptoms', 'Parkinson disease'])} "
-            f"AND {years}"
+            f"AND {longitudinal} AND {mediation} AND {years}"
         ),
         (
             f"{_or_group(['BDNF', 'COMT', 'DRD2', 'SLC6A4', 'CACNA1C', 'DISC1'])} "
             f"AND {_or_group(['functional connectivity', 'resting-state fMRI', 'gray matter volume', 'cortical thickness', 'hippocampal volume'])} "
             f"AND {_or_group(['PANSS', 'psychosis', 'depression severity', 'HAMD', 'MADRS', 'treatment response', 'executive function'])} "
-            f"AND {years}"
+            f"AND {longitudinal} AND {mediation} AND {years}"
         ),
         (
             f"{_or_group(['gene expression', 'transcriptomic', 'pathway', 'molecular pathway', 'proteomic'])} "
-            f"AND {imaging} AND {outcomes} AND {neuro} AND {years}"
+            f"AND {imaging} AND {outcomes} AND {longitudinal} AND {mediation} "
+            f"AND {neuro} AND {years}"
+        ),
+        (
+            f"{cohorts} AND {genetic_any} AND {imaging} AND {outcomes} "
+            f"AND {longitudinal} AND {mediation} AND {years}"
+        ),
+        (
+            f"{_or_group(['ADNI', 'AIBL', 'BioFINDER'])} "
+            f"AND {_or_group(['APOE', 'polygenic risk score', 'genetic risk', 'pathway'])} "
+            f"AND {_or_group(['amyloid PET', 'tau PET', 'MRI', 'hippocampal volume', 'cortical thickness'])} "
+            f"AND {_or_group(['cognitive decline', 'conversion', 'dementia progression'])} "
+            f"AND {mediation} AND {years}"
+        ),
+        (
+            f"{_or_group(['PPMI', 'Parkinson Progression Marker Initiative'])} "
+            f"AND {_or_group(['GBA', 'LRRK2', 'SNCA', 'MAPT', 'polygenic risk score'])} "
+            f"AND {_or_group(['DAT SPECT', 'MRI', 'functional connectivity', 'striatal binding'])} "
+            f"AND {_or_group(['UPDRS', 'cognitive decline', 'motor progression'])} "
+            f"AND {mediation} AND {years}"
+        ),
+        (
+            f"{_or_group(['UK Biobank', 'ABCD', 'Rotterdam Study', 'Framingham Heart Study'])} "
+            f"AND {genetic_general} AND {imaging} AND {longitudinal} AND {mediation} AND {years}"
+        ),
+        (
+            f"{_or_group(['Mendelian randomization', 'two-step Mendelian randomization', 'network Mendelian randomization'])} "
+            f"AND {imaging} AND {outcomes} AND {longitudinal} AND {years}"
+        ),
+        (
+            f"{_or_group(['structural equation model', 'path analysis', 'cross-lagged panel', 'latent growth model'])} "
+            f"AND {genetic_any} AND {imaging} AND {outcomes} AND {years}"
+        ),
+        (
+            f"{_or_group(['indirect effect', 'mediated effect', 'causal mediation'])} "
+            f"AND {genetic_any} AND {imaging} AND {longitudinal} AND {years}"
+        ),
+        (
+            f"{_or_group(['baseline MRI', 'baseline PET', 'baseline neuroimaging'])} "
+            f"AND {genetic_any} AND {_or_group(['future cognitive decline', 'incident dementia', 'conversion', 'clinical progression'])} "
+            f"AND {mediation} AND {years}"
         ),
     ]
 
@@ -461,6 +797,9 @@ def build_case_targeted_search_phrases(preset: str) -> list[str]:
             "unknown preset: "
             f"{preset!r}; valid: {', '.join(sorted(CASE_TARGETED_PRESETS))}"
         )
+
+    if preset == "case2_high_recall_expansion":
+        return _build_case2_high_recall_phrases()
 
     if preset == "case2_supplemental_classic":
         return [
@@ -497,16 +836,28 @@ def build_case_targeted_search_phrases(preset: str) -> list[str]:
         ]
 
     return [
-        "polygenic risk score cortical thickness cognitive decline Alzheimer MRI",
-        "polygenic score brain volume dementia neuroimaging",
-        "GWAS white matter hyperintensity cortical atrophy dementia",
-        "APOE amyloid PET tau PET hippocampal volume cognitive decline",
-        "TREM2 PSEN1 APP neuroimaging cognition Alzheimer disease",
-        "GBA MAPT SNCA LRRK2 MRI cognition UPDRS Parkinson disease",
-        "BDNF COMT DRD2 SLC6A4 functional connectivity schizophrenia depression",
-        "gene expression transcriptomic pathway neuroimaging cognition",
-        "genetic variant functional connectivity cognition psychiatric disorder",
-        "molecular pathway PET MRI cognitive decline neurodegeneration",
+        "polygenic risk score cortical thickness longitudinal cognitive decline mediation Alzheimer MRI",
+        "polygenic score brain volume prospective dementia indirect effect neuroimaging",
+        "GWAS white matter hyperintensity longitudinal cortical atrophy dementia mediation",
+        "APOE amyloid PET tau PET hippocampal volume longitudinal cognitive decline mediation",
+        "TREM2 PSEN1 APP neuroimaging longitudinal cognition Alzheimer causal pathway",
+        "GBA MAPT SNCA LRRK2 MRI longitudinal UPDRS Parkinson mediation",
+        "BDNF COMT DRD2 SLC6A4 functional connectivity prospective psychiatric outcome mediation",
+        "gene expression transcriptomic pathway neuroimaging longitudinal cognition mediation",
+        "genetic variant functional connectivity longitudinal cognition indirect effect",
+        "molecular pathway PET MRI longitudinal cognitive decline causal chain neurodegeneration",
+        "ADNI APOE genetic risk MRI PET cognitive decline longitudinal mediation",
+        "AIBL BioFINDER genetic risk amyloid tau imaging longitudinal cognition mediation",
+        "PPMI GBA LRRK2 DAT SPECT MRI longitudinal motor progression mediation",
+        "UK Biobank polygenic risk neuroimaging longitudinal clinical outcome mediation",
+        "ABCD polygenic risk brain imaging longitudinal psychopathology mediation",
+        "Rotterdam Framingham genetic risk MRI incident dementia mediation",
+        "Mendelian randomization brain imaging mediator longitudinal clinical outcome",
+        "two-step Mendelian randomization neuroimaging cognitive outcome mediation",
+        "structural equation model genetic risk brain imaging longitudinal outcome",
+        "cross-lagged genetic pathway neuroimaging clinical progression",
+        "baseline MRI genetic risk future cognitive decline mediator",
+        "baseline PET APOE conversion dementia causal mediation",
     ]
 
 
@@ -519,6 +870,8 @@ def _resolve_data_paths(data_dir: Optional[Path]) -> dict[str, Path]:
         "collection_csv": ddir / "collection_metadata.csv",
         "graph": ddir / "knowledge_graph.json",
         "claims": ddir / "extracted_claims.jsonl",
+        "dedup_audit": ddir / "paper_dedup_audit.jsonl",
+        "collection_manifest": ddir / "collection_manifest.json",
     }
 
 
@@ -651,6 +1004,33 @@ def _append_collection_metadata(
             ])
 
 
+def _append_collection_manifest(path: Path, summary: dict) -> None:
+    manifest = {
+        "schema_version": "case_study_literature_collection.v3",
+        "case_study_year_window": {
+            "start": CASE_STUDY_YEAR_START,
+            "end": CASE_STUDY_YEAR_END,
+        },
+        "kg_injection": False,
+        "runs": [],
+    }
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(existing, dict):
+                manifest.update(existing)
+        except (OSError, json.JSONDecodeError):
+            pass
+    runs = manifest.setdefault("runs", [])
+    runs.append({**summary, "completed_at": datetime.now().isoformat()})
+    manifest["updated_at"] = datetime.now().isoformat()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _ensure_papers_cached(papers: list[tuple[str, object]], data_dir: Path) -> int:
     cache = AbstractCache(default_cache_path(data_dir))
     to_cache = []
@@ -664,18 +1044,21 @@ def _ensure_papers_cached(papers: list[tuple[str, object]], data_dir: Path) -> i
     return cache.put_many(to_cache)
 
 
-def _append_claims_with_paper_year(jsonl_path: Path, results: list, label: str) -> None:
-    with open(jsonl_path, "a", encoding="utf-8") as f:
-        for result in results:
-            if result is None:
-                continue
-            paper = result.paper
-            for claim in result.claims:
-                record = claim.to_dict()
-                record["disease"] = label
-                record["year"] = paper.year or 0
-                record["extraction_timestamp"] = datetime.now().isoformat()
-                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+def _append_claims_with_paper_year(
+    jsonl_path: Path,
+    results: list,
+    label: str,
+    *,
+    kg,
+    ingest_summary: dict,
+) -> dict:
+    return persist_ingestion_results(
+        kg,
+        results,
+        ingest_summary,
+        jsonl_path,
+        label=label,
+    )
 
 
 def _append_paper_metadata(papers_csv: Path, papers: list, results: list, label: str) -> None:
@@ -730,7 +1113,7 @@ def _normalise_openalex_work(work: dict) -> tuple[str, str, object] | None:
     from .schema import PaperRef
 
     abstract = _abstract_from_openalex_index(work.get("abstract_inverted_index"))
-    if not abstract.strip():
+    if not _is_usable_abstract(abstract):
         return None
 
     ids = work.get("ids") or {}
@@ -787,7 +1170,7 @@ def _normalise_europepmc_result(result: dict) -> tuple[str, str, object] | None:
     from .schema import PaperRef
 
     abstract = _first_text(result.get("abstractText"))
-    if not abstract:
+    if not _is_usable_abstract(abstract):
         return None
 
     pmid = _first_text(result.get("pmid"))
@@ -827,47 +1210,66 @@ def _search_europepmc(
     import requests
 
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-    params = {
+    base_params = {
         "query": (
             f"({query}) AND HAS_ABSTRACT:Y AND "
             f"FIRST_PDATE:[{year_start}-01-01 TO {year_end}-12-31]"
         ),
         "resultType": "core",
         "format": "json",
-        "pageSize": max(1, min(max_results, 1000)),
         "sort": "CITED desc",
     }
-    backoff = 2.0
-    for attempt in range(4):
-        try:
-            resp = requests.get(url, params=params, timeout=45)
-            if resp.status_code in (429, 500, 502, 503):
-                logger.warning(
-                    "Europe PMC search %s, backing off %.0fs (attempt %d)",
-                    resp.status_code,
-                    backoff,
-                    attempt + 1,
-                )
+    records = []
+    cursor = "*"
+    while len(records) < max_results:
+        params = {
+            **base_params,
+            "pageSize": max(1, min(max_results - len(records), 1000)),
+            "cursorMark": cursor,
+        }
+        payload = None
+        backoff = 2.0
+        for attempt in range(4):
+            try:
+                resp = requests.get(url, params=params, timeout=45)
+                if resp.status_code in (429, 500, 502, 503):
+                    logger.warning(
+                        "Europe PMC search %s, backing off %.0fs (attempt %d)",
+                        resp.status_code,
+                        backoff,
+                        attempt + 1,
+                    )
+                    time.sleep(backoff)
+                    backoff *= 2
+                    continue
+                if resp.status_code == 400:
+                    logger.warning("Europe PMC rejected search query: %r", query)
+                    return records
+                resp.raise_for_status()
+                payload = resp.json() or {}
+                break
+            except Exception as exc:
+                logger.warning("Europe PMC search failed (attempt %d): %s", attempt + 1, exc)
                 time.sleep(backoff)
                 backoff *= 2
-                continue
-            if resp.status_code == 400:
-                logger.warning("Europe PMC rejected search query: %r", query)
-                return []
-            resp.raise_for_status()
-            results = (((resp.json() or {}).get("resultList") or {}).get("result") or [])
-            records = []
-            for item in results:
-                if isinstance(item, dict):
-                    rec = _normalise_europepmc_result(item)
-                    if rec is not None:
-                        records.append(rec)
-            return records
-        except Exception as exc:
-            logger.warning("Europe PMC search failed (attempt %d): %s", attempt + 1, exc)
-            time.sleep(backoff)
-            backoff *= 2
-    return []
+        if payload is None:
+            break
+
+        results = (((payload.get("resultList") or {}).get("result")) or [])
+        for item in results:
+            if isinstance(item, dict):
+                rec = _normalise_europepmc_result(item)
+                if rec is not None:
+                    records.append(rec)
+                    if len(records) >= max_results:
+                        break
+
+        next_cursor = str(payload.get("nextCursorMark") or "")
+        if not results or not next_cursor or next_cursor == cursor:
+            break
+        cursor = next_cursor
+        time.sleep(0.2)
+    return records
 
 
 def _arxiv_id_from_url(value: str) -> str:
@@ -890,7 +1292,7 @@ def _normalise_arxiv_entry(entry) -> tuple[str, str, object] | None:
     summary_el = entry.find("atom:summary", ns)
     abstract = _first_text(summary_el.text if summary_el is not None else "")
     arxiv_id = _arxiv_id_from_url(id_el.text if id_el is not None else "")
-    if not arxiv_id or not abstract:
+    if not arxiv_id or not _is_usable_abstract(abstract):
         return None
 
     title_el = entry.find("atom:title", ns)
@@ -1106,7 +1508,7 @@ def _normalise_preprint_result(item: dict, server: str) -> tuple[str, str, objec
 
     abstract = _first_text(item.get("abstract"))
     doi = _normalise_doi(_first_text(item.get("doi")))
-    if not abstract or not doi:
+    if not _is_usable_abstract(abstract) or not doi:
         return None
     server_key = server.upper()
     cache_id = f"{server_key}:{doi}"
@@ -1221,24 +1623,41 @@ def _search_openalex(
             "primary_location,authorships,abstract_inverted_index"
         ),
     }
+    openalex_api_key = os.environ.get("OPENALEX_API_KEY", "").strip()
+    openalex_mailto = os.environ.get("OPENALEX_MAILTO", "").strip()
+    if openalex_api_key:
+        params["api_key"] = openalex_api_key
+    if openalex_mailto:
+        params["mailto"] = openalex_mailto
     if sort:
         params["sort"] = sort
     backoff = 2.0
+    last_error = ""
     for attempt in range(4):
         try:
             resp = requests.get(url, params=params, timeout=30)
             if resp.status_code == 400:
                 logger.warning("OpenAlex rejected search query: %r", query)
-                return []
+                return _SearchRecords(error="query_rejected_http_400")
             if resp.status_code in (429, 500, 502, 503):
+                last_error = f"http_{resp.status_code}"
+                retry_after = resp.headers.get("Retry-After", "").strip()
+                try:
+                    retry_delay = float(retry_after) if retry_after else 0.0
+                except ValueError:
+                    retry_delay = 0.0
+                if resp.status_code == 429:
+                    retry_delay = max(retry_delay, 15.0, backoff)
+                else:
+                    retry_delay = max(retry_delay, backoff)
                 logger.warning(
                     "OpenAlex search %s, backing off %.0fs (attempt %d)",
                     resp.status_code,
-                    backoff,
+                    retry_delay,
                     attempt + 1,
                 )
-                time.sleep(backoff)
-                backoff *= 2
+                time.sleep(retry_delay)
+                backoff = max(backoff * 2, retry_delay * 2)
                 continue
             resp.raise_for_status()
             records = []
@@ -1246,12 +1665,13 @@ def _search_openalex(
                 rec = _normalise_openalex_work(work)
                 if rec is not None:
                     records.append(rec)
-            return records
+            return _SearchRecords(records)
         except Exception as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
             logger.warning("OpenAlex search failed (attempt %d): %s", attempt + 1, exc)
             time.sleep(backoff)
             backoff *= 2
-    return []
+    return _SearchRecords(error=last_error or "search_failed")
 
 
 def _search_openalex_by_doi(doi: str) -> tuple[str, str, object] | None:
@@ -1399,6 +1819,7 @@ def _select_pubmed_papers(
     max_results_per_query: int,
     seen_pmids: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     queries = build_case_targeted_queries(
         preset,
@@ -1415,6 +1836,7 @@ def _select_pubmed_papers(
     selected_pmids: list[str] = []
     selected_seen: set[str] = set()
     query_hits: list[dict] = []
+    pmid_query_index: dict[str, int] = {}
     skipped_seen = 0
     for idx, query in enumerate(queries, 1):
         pmids = _search_pubmed(query, max_results_per_query)
@@ -1423,10 +1845,19 @@ def _select_pubmed_papers(
             if pmid in selected_seen:
                 continue
             selected_seen.add(pmid)
-            if pmid in seen_pmids:
+            if deduplicator is not None and deduplicator.is_seen(
+                {"pmid": pmid},
+                source="pubmed",
+                preset=preset,
+                query_index=idx,
+            ):
+                skipped_seen += 1
+                continue
+            if deduplicator is None and pmid in seen_pmids:
                 skipped_seen += 1
                 continue
             selected_pmids.append(pmid)
+            pmid_query_index[pmid] = idx
             added += 1
             if len(selected_pmids) >= target_papers:
                 break
@@ -1453,7 +1884,31 @@ def _select_pubmed_papers(
         return [], skipped_seen, query_hits
 
     cache = AbstractCache(default_cache_path(paths["data_dir"]))
-    papers = _fetch_pubmed_details(selected_pmids, cache=cache)
+    fetched_papers = _fetch_pubmed_details(selected_pmids, cache=cache)
+    papers = []
+    for abstract, paper in fetched_papers:
+        pmid = str(getattr(paper, "pmid", "") or "")
+        if not _is_usable_abstract(abstract):
+            logger.warning("excluding PubMed candidate %s with unusable abstract", pmid)
+            continue
+        paper_year = getattr(paper, "year", None)
+        if paper_year is None or not year_start <= int(paper_year) <= year_end:
+            logger.warning(
+                "excluding PubMed candidate %s with unverifiable/out-of-range year=%r",
+                pmid,
+                paper_year,
+            )
+            continue
+        if deduplicator is not None and not deduplicator.accept(
+            paper,
+            source="pubmed",
+            preset=preset,
+            query_index=pmid_query_index.get(pmid),
+            collection_path=str(paths["collection_csv"]),
+        ):
+            skipped_seen += 1
+            continue
+        papers.append((abstract, paper))
     logger.info(
         "fetched %d papers with abstracts from %d selected PMIDs",
         len(papers),
@@ -1472,6 +1927,7 @@ def _select_openalex_papers(
     seen_ids: set[str],
     seen_dois: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     phrases = build_case_targeted_search_phrases(preset)
     logger.info(
@@ -1503,7 +1959,16 @@ def _select_openalex_papers(
             selected_ids.add(cache_id)
             if doi:
                 selected_dois.add(doi)
-            if cache_id in seen_ids or (doi and doi in seen_dois):
+            if deduplicator is not None and not deduplicator.accept(
+                paper,
+                source="openalex",
+                preset=preset,
+                query_index=idx,
+                collection_path=str(paths["collection_csv"]),
+            ):
+                skipped_seen += 1
+                continue
+            if deduplicator is None and (cache_id in seen_ids or (doi and doi in seen_dois)):
                 skipped_seen += 1
                 continue
 
@@ -1520,6 +1985,7 @@ def _select_openalex_papers(
             "query_index": idx,
             "hits": len(records),
             "new_added": added,
+            "source_error": getattr(records, "error", ""),
         })
         logger.info(
             "  openalex query %d/%d: hits_with_abstract=%d, added=%d, selected=%d/%d",
@@ -1532,7 +1998,7 @@ def _select_openalex_papers(
         )
         if len(selected) >= target_papers:
             break
-        time.sleep(0.8)
+        time.sleep(2.0)
 
     if not selected:
         logger.info("case-targeted OpenAlex search found no new abstracts")
@@ -1565,6 +2031,7 @@ def _select_search_adapter_papers(
     seen_ids: set[str],
     seen_dois: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     phrases = build_case_targeted_search_phrases(preset)
     logger.info(
@@ -1596,7 +2063,16 @@ def _select_search_adapter_papers(
             selected_ids.add(cache_id)
             if doi:
                 selected_dois.add(doi)
-            if cache_id in seen_ids or (doi and doi in seen_dois):
+            if deduplicator is not None and not deduplicator.accept(
+                paper,
+                source=source,
+                preset=preset,
+                query_index=idx,
+                collection_path=str(paths["collection_csv"]),
+            ):
+                skipped_seen += 1
+                continue
+            if deduplicator is None and (cache_id in seen_ids or (doi and doi in seen_dois)):
                 skipped_seen += 1
                 continue
 
@@ -1658,6 +2134,7 @@ def _select_europepmc_papers(
     seen_ids: set[str],
     seen_dois: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     return _select_search_adapter_papers(
         source="europepmc",
@@ -1670,6 +2147,7 @@ def _select_europepmc_papers(
         seen_ids=seen_ids,
         seen_dois=seen_dois,
         paths=paths,
+        deduplicator=deduplicator,
     )
 
 
@@ -1683,6 +2161,7 @@ def _select_arxiv_papers(
     seen_ids: set[str],
     seen_dois: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     return _select_search_adapter_papers(
         source="arxiv",
@@ -1695,6 +2174,7 @@ def _select_arxiv_papers(
         seen_ids=seen_ids,
         seen_dois=seen_dois,
         paths=paths,
+        deduplicator=deduplicator,
     )
 
 
@@ -1709,6 +2189,7 @@ def _select_preprint_papers(
     seen_ids: set[str],
     seen_dois: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     phrases = build_case_targeted_search_phrases(preset)
     logger.info(
@@ -1741,7 +2222,16 @@ def _select_preprint_papers(
         selected_ids.add(cache_id)
         if doi:
             selected_dois.add(doi)
-        if cache_id in seen_ids or (doi and doi in seen_dois):
+        if deduplicator is not None and not deduplicator.accept(
+            paper,
+            source=source,
+            preset=preset,
+            query_index=1,
+            collection_path=str(paths["collection_csv"]),
+        ):
+            skipped_seen += 1
+            continue
+        if deduplicator is None and (cache_id in seen_ids or (doi and doi in seen_dois)):
             skipped_seen += 1
             continue
         rec = cache.get(cache_id)
@@ -1792,6 +2282,7 @@ def _select_anysearch_papers(
     seen_ids: set[str],
     seen_dois: set[str],
     paths: dict[str, Path],
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> tuple[list, int, list[dict]]:
     phrases = build_case_targeted_search_phrases(preset)
     logger.info(
@@ -1835,7 +2326,16 @@ def _select_anysearch_papers(
             selected_ids.add(cache_id)
             if doi:
                 selected_dois.add(doi)
-            if cache_id in seen_ids or (doi and doi in seen_dois):
+            if deduplicator is not None and not deduplicator.accept(
+                paper,
+                source="anysearch",
+                preset=preset,
+                query_index=idx,
+                collection_path=str(paths["collection_csv"]),
+            ):
+                skipped_seen += 1
+                continue
+            if deduplicator is None and (cache_id in seen_ids or (doi and doi in seen_dois)):
                 skipped_seen += 1
                 continue
 
@@ -1882,8 +2382,8 @@ def _select_anysearch_papers(
 def run_case_targeted_extraction(
     *,
     preset: str = "case2_pathway_mediation",
-    year_start: int = 2010,
-    year_end: int = 2026,
+    year_start: int = CASE_STUDY_YEAR_START,
+    year_end: int = CASE_STUDY_YEAR_END,
     target_papers: int = 200,
     max_results_per_query: int = 100,
     source: str = "pubmed",
@@ -1894,13 +2394,46 @@ def run_case_targeted_extraction(
     include_seen: bool = False,
     lock_model: bool = False,
     collect_only: bool = False,
+    formal_claim_store: Optional[Path] = DEFAULT_FORMAL_CLAIM_STORE,
+    staging_roots: Optional[Iterable[Path]] = None,
+    identity_index_path: Path = DEFAULT_PAPER_IDENTITY_INDEX,
+    paper_identity_index: Optional[GlobalPaperIdentityIndex] = None,
+    deduplicator: Optional[CandidatePaperDeduplicator] = None,
 ) -> dict:
     """Run a hand-curated case-study literature search.
 
     With ``collect_only=True``, only collect/cache abstracts and write
     collection metadata; do not extract claims or write the graph.
     """
+    _require_canonical_year_range(year_start, year_end)
+    valid_sources = {
+        "pubmed", "openalex", "europepmc", "arxiv",
+        "biorxiv", "medrxiv", "anysearch",
+    }
+    if source not in valid_sources:
+        raise ValueError(
+            f"unknown source: {source!r}; valid: {', '.join(sorted(valid_sources))}"
+        )
     paths = _resolve_data_paths(data_dir)
+    owns_identity_index = False
+    if deduplicator is None:
+        if paper_identity_index is None:
+            paper_identity_index = GlobalPaperIdentityIndex(identity_index_path)
+            owns_identity_index = True
+            roots = list(DEFAULT_STAGING_ROOTS if staging_roots is None else staging_roots)
+            if paths["data_dir"].resolve() not in {Path(root).resolve() for root in roots}:
+                roots.append(paths["data_dir"])
+            paper_identity_index.sync(
+                formal_claim_store=formal_claim_store,
+                staging_roots=roots,
+            )
+        deduplicator = CandidatePaperDeduplicator(
+            paper_identity_index,
+            paths["dedup_audit"],
+        )
+    dedup_accepted_before = deduplicator.accepted
+    dedup_excluded_before = deduplicator.excluded
+
     if collect_only:
         _init_collection_csv(paths["collection_csv"])
         seen_paths = [paths["collection_csv"], paths["papers_csv"]]
@@ -1926,6 +2459,7 @@ def run_case_targeted_extraction(
             max_results_per_query=max_results_per_query,
             seen_pmids=seen_ids,
             paths=paths,
+            deduplicator=deduplicator,
         )
     elif source == "openalex":
         papers, skipped_seen, query_hits = _select_openalex_papers(
@@ -1937,6 +2471,7 @@ def run_case_targeted_extraction(
             seen_ids=seen_ids,
             seen_dois=seen_dois,
             paths=paths,
+            deduplicator=deduplicator,
         )
     elif source == "europepmc":
         papers, skipped_seen, query_hits = _select_europepmc_papers(
@@ -1948,6 +2483,7 @@ def run_case_targeted_extraction(
             seen_ids=seen_ids,
             seen_dois=seen_dois,
             paths=paths,
+            deduplicator=deduplicator,
         )
     elif source == "arxiv":
         papers, skipped_seen, query_hits = _select_arxiv_papers(
@@ -1959,6 +2495,7 @@ def run_case_targeted_extraction(
             seen_ids=seen_ids,
             seen_dois=seen_dois,
             paths=paths,
+            deduplicator=deduplicator,
         )
     elif source in ("biorxiv", "medrxiv"):
         papers, skipped_seen, query_hits = _select_preprint_papers(
@@ -1971,6 +2508,7 @@ def run_case_targeted_extraction(
             seen_ids=seen_ids,
             seen_dois=seen_dois,
             paths=paths,
+            deduplicator=deduplicator,
         )
     elif source == "anysearch":
         papers, skipped_seen, query_hits = _select_anysearch_papers(
@@ -1982,6 +2520,7 @@ def run_case_targeted_extraction(
             seen_ids=seen_ids,
             seen_dois=seen_dois,
             paths=paths,
+            deduplicator=deduplicator,
         )
     else:
         raise ValueError(
@@ -1990,15 +2529,29 @@ def run_case_targeted_extraction(
         )
 
     if not papers:
-        return {
+        dedup_audit_rows = deduplicator.flush()
+        summary = {
             "preset": preset,
             "source": source,
             "mode": "collect-only" if collect_only else "extract",
+            "year_start": year_start,
+            "year_end": year_end,
             "total_papers": 0,
             "total_claims": 0,
             "skipped_seen": skipped_seen,
             "query_hits": query_hits,
+            "dedup": {
+                **deduplicator.summary(),
+                "accepted_this_run": deduplicator.accepted - dedup_accepted_before,
+                "excluded_this_run": deduplicator.excluded - dedup_excluded_before,
+                "audit_rows_written_this_run": dedup_audit_rows,
+            },
         }
+        if collect_only:
+            _append_collection_manifest(paths["collection_manifest"], summary)
+        if owns_identity_index:
+            paper_identity_index.close()
+        return summary
 
     if collect_only:
         newly_cached = _ensure_papers_cached(papers, paths["data_dir"])
@@ -2008,10 +2561,13 @@ def run_case_targeted_extraction(
             source=source,
             preset=preset,
         )
+        dedup_audit_rows = deduplicator.flush()
         summary = {
             "preset": preset,
             "source": source,
             "mode": "collect-only",
+            "year_start": year_start,
+            "year_end": year_end,
             "total_papers": len(papers),
             "total_claims": 0,
             "skipped_seen": skipped_seen,
@@ -2019,7 +2575,15 @@ def run_case_targeted_extraction(
             "abstract_cache": str(default_cache_path(paths["data_dir"])),
             "collection_metadata": str(paths["collection_csv"]),
             "newly_cached": newly_cached,
+            "kg_injection": False,
+            "dedup": {
+                **deduplicator.summary(),
+                "accepted_this_run": deduplicator.accepted - dedup_accepted_before,
+                "excluded_this_run": deduplicator.excluded - dedup_excluded_before,
+                "audit_rows_written_this_run": dedup_audit_rows,
+            },
         }
+        _append_collection_manifest(paths["collection_manifest"], summary)
         logger.info("")
         logger.info("  CASE-TARGETED COLLECT-ONLY SUMMARY for %s source=%s", preset, source)
         logger.info("    papers collected:  %d", summary["total_papers"])
@@ -2027,20 +2591,35 @@ def run_case_targeted_extraction(
         logger.info("    newly cached:      %d", summary["newly_cached"])
         logger.info("    abstract cache:    %s", summary["abstract_cache"])
         logger.info("    metadata CSV:      %s", summary["collection_metadata"])
+        logger.info("    dedup audit:       %s", summary["dedup"]["audit_path"])
+        if owns_identity_index:
+            paper_identity_index.close()
         return summary
 
-    extractor = ClaimExtractor(lock_model=lock_model)
+    extractor = ClaimExtractor(lock_model=lock_model, strict_scope_audit=True)
     label = f"case_targeted:{preset}" if source == "pubmed" else f"case_targeted:{source}:{preset}"
     results = extractor.extract_batch(papers, max_workers=max_workers)
     raw_claims = sum(len(r.claims) for r in results if r and r.claims)
 
     before = kg.stats()
-    ingest_claims(kg, results, keep_noise=keep_noise, strict_phase1=strict_phase1)
+    ingest_summary = ingest_claims(
+        kg,
+        results,
+        keep_noise=keep_noise,
+        strict_phase1=strict_phase1,
+        require_final_scope_audit=True,
+    )
     after = kg.stats()
 
     _append_paper_metadata(paths["papers_csv"], papers, results, label)
-    _append_claims_with_paper_year(paths["claims"], results, label)
     save_graph(kg, paths["graph"])
+    persistence_summary = _append_claims_with_paper_year(
+        paths["claims"],
+        results,
+        label,
+        kg=kg,
+        ingest_summary=ingest_summary,
+    )
 
     errors = sum(1 for r in results if r and r.error)
     zero = sum(1 for r in results if r and not r.error and len(r.claims) == 0)
@@ -2048,7 +2627,10 @@ def run_case_targeted_extraction(
         "preset": preset,
         "source": source,
         "total_papers": len(papers),
-        "total_claims": raw_claims,
+        "total_claims": ingest_summary["claims_added"],
+        "raw_claims_extracted": raw_claims,
+        "claims_rejected": len(ingest_summary["rejected_claims"]),
+        "persistence": persistence_summary,
         "extraction_errors": errors,
         "zero_claim_papers": zero,
         "skipped_seen": skipped_seen,
@@ -2057,16 +2639,30 @@ def run_case_targeted_extraction(
         "edges_added": after["n_edges"] - before["n_edges"],
         "graph_concepts": after["n_concepts"],
         "graph_edges": after["n_edges"],
+        "year_start": year_start,
+        "year_end": year_end,
+    }
+
+    dedup_audit_rows = deduplicator.flush()
+    summary["dedup"] = {
+        **deduplicator.summary(),
+        "accepted_this_run": deduplicator.accepted - dedup_accepted_before,
+        "excluded_this_run": deduplicator.excluded - dedup_excluded_before,
+        "audit_rows_written_this_run": dedup_audit_rows,
     }
 
     logger.info("")
     logger.info("  CASE-TARGETED SUMMARY for %s source=%s", preset, source)
     logger.info("    papers extracted:   %d", summary["total_papers"])
-    logger.info("    raw claims:         %d", summary["total_claims"])
+    logger.info("    raw claims:         %d", summary["raw_claims_extracted"])
+    logger.info("    accepted claims:    %d", summary["total_claims"])
+    logger.info("    rejected claims:    %d", summary["claims_rejected"])
     logger.info("    extraction errors:  %d", summary["extraction_errors"])
     logger.info("    zero-claim papers:  %d", summary["zero_claim_papers"])
     logger.info("    skipped seen pmids: %d", summary["skipped_seen"])
     logger.info("    graph delta:        %+d concepts, %+d edges",
                 summary["concepts_added"], summary["edges_added"])
+    if owns_identity_index:
+        paper_identity_index.close()
     return summary
 

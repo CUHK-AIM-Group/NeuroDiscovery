@@ -1,16 +1,39 @@
 from __future__ import annotations
 
-from neurooracle.src.claim_extractor import ClaimExtractor, EXTRACTION_PROMPT, _normalize_predicate
+import json
+
+import pytest
+
+from neurooracle.src.case_study_membership_contract import (
+    AUDIT_CONTRACT_VERSION,
+    validate_final_scope_reaudit,
+)
+from neurooracle.src.case_study_membership_policy import (
+    RUBRIC_VERSION,
+    gates_for_labels,
+)
+from neurooracle.src.claim_extractor import (
+    ClaimExtractor,
+    EXTRACTION_PROMPT,
+    ExtractionResult,
+    _normalize_predicate,
+)
 from neurooracle.src.claim_ingestion import (
     _is_vague_endpoint_name,
     _normalize_entity_type,
-    ingest_claims,
+    ingest_claims as _ingest_claims,
 )
 from neurooracle.src.batch_extract import _collect_pubmed_abstract
 from neurooracle.src.chain_extract import _select_failed_pmids, _select_second_pass_pmids
 from neurooracle.src.graph_manager import KnowledgeGraph
 from neurooracle.src.hypothesis_engine import HypothesisEngine
 from neurooracle.src.schema import Claim, DomainTag, Evidence, PaperRef
+
+
+def ingest_claims(kg, results, **kwargs):
+    """Explicit legacy/manual opt-out for ingestion-control unit fixtures."""
+    kwargs.setdefault("require_final_scope_audit", False)
+    return _ingest_claims(kg, results, **kwargs)
 
 
 def _claim(
@@ -132,6 +155,146 @@ def test_claim_extractor_prompt_has_case1_meta_analysis_guidance():
     assert "multiple psychiatric disorders" in EXTRACTION_PROMPT
     assert "Do NOT split one reported bilateral or" in EXTRACTION_PROMPT
     assert "Do NOT extract explicit null findings" in EXTRACTION_PROMPT
+    assert "Formal non-exclusive IDs and exact decision conditions" in EXTRACTION_PROMPT
+    assert "paper need not itself compare multiple diagnoses" in EXTRACTION_PROMPT
+    assert "case_study_ids" in EXTRACTION_PROMPT
+    assert "Never emit general or hindcasting as IDs" in EXTRACTION_PROMPT
+    assert RUBRIC_VERSION in EXTRACTION_PROMPT
+    assert "case_study_gates" in EXTRACTION_PROMPT
+
+
+def test_claim_extractor_keeps_claim_labels_and_unions_paper_labels():
+    extractor = ClaimExtractor(model="gpt-5.5", api_key="test-key", lock_model=True)
+    paper = PaperRef(pmid="scope-1", title="Multi-label paper", year=2026)
+    first_sentence = (
+        "In major depressive disorder, pretreatment amygdala connectivity "
+        "predicted later response to sertraline."
+    )
+    first_labels = [
+        "case1_transdiagnostic",
+        "drug_response_prediction",
+        "prognosis",
+    ]
+    second_sentence = (
+        "In Alzheimer disease, APOE epsilon-4 carriers had lower hippocampal "
+        "volume than non-carriers."
+    )
+    second_labels = ["case1_transdiagnostic", "imaging_genetics"]
+    raw = json.dumps(
+        [
+            {
+                "subject": "pretreatment amygdala connectivity",
+                "predicate": "predicts",
+                "object": "later response to sertraline",
+                "raw_sentence": first_sentence,
+                "case_study_ids": first_labels,
+                "case_study_gates": gates_for_labels(first_labels),
+                "scope_evidence_spans": [first_sentence],
+                "scope_confidence": 0.94,
+                "scope_decision_basis": (
+                    "The baseline neural measure predicts a later named-drug response."
+                ),
+            },
+            {
+                "subject": "APOE epsilon-4",
+                "predicate": "correlates_with",
+                "object": "hippocampal volume",
+                "raw_sentence": second_sentence,
+                "case_study_ids": second_labels,
+                "case_study_gates": gates_for_labels(second_labels),
+                "scope_evidence_spans": [second_sentence],
+                "scope_confidence": 0.9,
+                "scope_decision_basis": (
+                    "The claim directly links a genetic variant to a disease-related neural phenotype."
+                ),
+            },
+        ]
+    )
+
+    claims = extractor._parse_response(
+        raw,
+        paper,
+        scope_source_text=f"{first_sentence} {second_sentence}",
+        scope_reviewer_id="gpt-5.5",
+    )
+
+    assert len(claims) == 2
+    expected_paper = [
+        "case1_transdiagnostic",
+        "case2_pathway_mediation",
+        "imaging_genetics",
+        "drug_response_prediction",
+        "prognosis",
+    ]
+    assert all(c.paper_case_study_ids == expected_paper for c in claims)
+    assert claims[0].claim_case_study_ids == [
+        "case1_transdiagnostic",
+        "case2_pathway_mediation",
+        "drug_response_prediction",
+        "prognosis",
+    ]
+    assert claims[1].claim_case_study_ids == [
+        "case1_transdiagnostic",
+        "case2_pathway_mediation",
+        "imaging_genetics",
+    ]
+    assert all(
+        c.metadata["scope_assignment_stage"]
+        == "combined_extraction_and_scope_audit"
+        for c in claims
+    )
+    assert all(c.scope_reaudit["review_status"] == "final_complete" for c in claims)
+    assert all(
+        c.scope_reaudit["audit_contract_version"] == AUDIT_CONTRACT_VERSION
+        for c in claims
+    )
+    assert all(validate_final_scope_reaudit(c.to_dict()) for c in claims)
+    restored = Claim.from_dict(claims[0].to_dict())
+    assert restored.scope_reaudit == claims[0].scope_reaudit
+    assert validate_final_scope_reaudit(restored.to_dict())
+
+
+def test_claim_extractor_never_treats_hindcasting_as_case_study_membership():
+    extractor = ClaimExtractor(model="gpt-5.5", api_key="test-key", lock_model=True)
+    paper = PaperRef(pmid="scope-2", title="General paper", year=2026)
+    claim = extractor._item_to_claim(
+        {
+            "subject": "hippocampal volume",
+            "predicate": "correlates_with",
+            "object": "memory",
+            "raw_sentence": "Hippocampal volume correlated with memory.",
+            "case_study_ids": ["hindcasting", "invalid_task"],
+        },
+        paper,
+        paper_case_study_ids=["case3_hindcasting"],
+        claim_case_study_ids=[],
+    )
+
+    assert claim is not None
+    assert claim.paper_case_study_ids == []
+    assert claim.claim_case_study_ids == []
+
+
+def test_automated_ingestion_refuses_unsealed_scope_before_graph_mutation():
+    kg = KnowledgeGraph()
+    claim = _claim(
+        claim_id="CLM:unsealed",
+        subject="APOE",
+        predicate="correlates_with",
+        obj="hippocampal volume",
+        raw_text="APOE was associated with hippocampal volume.",
+    )
+    result = ExtractionResult(paper=claim.source_paper, claims=[claim])
+    before = kg.stats()
+
+    with pytest.raises(ValueError, match="refusing KG mutation"):
+        _ingest_claims(
+            kg,
+            [result],
+            refine_vague_predicates=False,
+        )
+
+    assert kg.stats() == before
 
 
 def test_pubmed_abstract_parser_keeps_structured_result_sections():

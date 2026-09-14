@@ -41,6 +41,7 @@ class TrainConfig:
     weight_decay: float = 1e-6
     eval_every: int = 5
     early_stop_patience: int = 0  # 0 = disabled; otherwise # of evals without val improvement
+    random_seed: int = 42
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -93,6 +94,9 @@ class ComplExScorer(Scorer):
             cfg: TrainConfig | None = None) -> dict:
         cfg = cfg or TrainConfig(embedding_dim=self.dim)
         self.dim = cfg.embedding_dim
+        torch.manual_seed(cfg.random_seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(cfg.random_seed)
 
         ents, rels = set(), set()
         for t in train:
@@ -169,7 +173,15 @@ class ComplExScorer(Scorer):
                 if auroc > best_auroc:
                     best_auroc = auroc
                     best_epoch = epoch
-                    best_state = {k: v.detach().clone() for k, v in self.model.state_dict().items()}
+                    # Keep the validation checkpoint off the accelerator.  A full
+                    # copy on CUDA can push large temporal KG runs over the VRAM
+                    # limit after the first evaluation and trigger severe WDDM
+                    # paging.  ``load_state_dict`` copies these CPU tensors back
+                    # to the model device when training finishes.
+                    best_state = {
+                        k: v.detach().cpu().clone()
+                        for k, v in self.model.state_dict().items()
+                    }
                     evals_since_best = 0
                     log_line += "  (best)"
                 else:
@@ -233,6 +245,213 @@ class ComplExScorer(Scorer):
         probs = torch.sigmoid(logits).tolist()
         return [0.5 if oov else p for p, oov in zip(probs, oov_mask)]
 
+    def has_entity(self, entity_id: str) -> bool:
+        """Return whether an entity can receive a learned, non-neutral score."""
+
+        return entity_id in self.ent2idx
+
+    @torch.no_grad()
+    def top_pair_scores(
+        self,
+        source_ids: list[str],
+        relation_types: list[str],
+        target_ids: list[str],
+        *,
+        top_k: int,
+        source_chunk_size: int = 128,
+        per_source_k: int = 0,
+        per_target_k: int = 0,
+    ) -> list[tuple[float, str, str]]:
+        """Return highest-scoring source-target pairs over several relations.
+
+        The implementation evaluates the ComplEx bilinear form as chunked
+        matrix multiplication.  This lets candidate generation search a broad
+        frozen endpoint pool without materialising one Python triple per
+        source-relation-target combination.  OOV entities and relations are
+        deliberately omitted; the generator's coverage quota handles them.
+        """
+
+        if self.model is None:
+            raise RuntimeError("Scorer is not trained or loaded.")
+        if top_k <= 0 or not source_ids or not target_ids or not relation_types:
+            return []
+        sources = [node_id for node_id in dict.fromkeys(source_ids) if node_id in self.ent2idx]
+        targets = [node_id for node_id in dict.fromkeys(target_ids) if node_id in self.ent2idx]
+        relations = [
+            relation
+            for relation in dict.fromkeys(relation_types)
+            if relation in self.rel2idx
+        ]
+        if not sources or not targets or not relations:
+            return []
+
+        device = next(self.model.parameters()).device
+        target_index = torch.tensor(
+            [self.ent2idx[node_id] for node_id in targets],
+            dtype=torch.long,
+            device=device,
+        )
+        target_re = self.model.ent_re(target_index)
+        target_im = self.model.ent_im(target_index)
+        relation_index = torch.tensor(
+            [self.rel2idx[relation] for relation in relations],
+            dtype=torch.long,
+            device=device,
+        )
+        relation_re = self.model.rel_re(relation_index)
+        relation_im = self.model.rel_im(relation_index)
+
+        keep = min(top_k, len(sources) * len(targets))
+        quota_rows: list[tuple[float, str, str]] = []
+        target_quota_values: torch.Tensor | None = None
+        target_quota_sources: torch.Tensor | None = None
+        global_rows: list[tuple[float, str, str]] = []
+        threshold: float | None = None
+        for start in range(0, len(sources), max(1, source_chunk_size)):
+            chunk_sources = sources[start : start + max(1, source_chunk_size)]
+            source_index = torch.tensor(
+                [self.ent2idx[node_id] for node_id in chunk_sources],
+                dtype=torch.long,
+                device=device,
+            )
+            source_re = self.model.ent_re(source_index)
+            source_im = self.model.ent_im(source_index)
+            best_logits = torch.full(
+                (len(chunk_sources), len(targets)),
+                -torch.inf,
+                dtype=source_re.dtype,
+                device=device,
+            )
+            for rel_re, rel_im in zip(relation_re, relation_im, strict=False):
+                query_re = source_re * rel_re - source_im * rel_im
+                query_im = source_im * rel_re + source_re * rel_im
+                logits = query_re @ target_re.T + query_im @ target_im.T
+                best_logits = torch.maximum(best_logits, logits)
+
+            if per_source_k > 0:
+                source_keep = min(per_source_k, len(targets))
+                source_values, source_offsets = torch.topk(
+                    best_logits,
+                    source_keep,
+                    dim=1,
+                )
+                for source_offset, source_id in enumerate(chunk_sources):
+                    for probability, target_offset in zip(
+                        torch.sigmoid(source_values[source_offset]).cpu().tolist(),
+                        source_offsets[source_offset].cpu().tolist(),
+                        strict=False,
+                    ):
+                        quota_rows.append(
+                            (float(probability), source_id, targets[target_offset])
+                        )
+            if per_target_k > 0:
+                target_keep = min(per_target_k, len(chunk_sources))
+                target_values, source_offsets = torch.topk(
+                    best_logits,
+                    target_keep,
+                    dim=0,
+                )
+                absolute_sources = source_offsets + start
+                if target_quota_values is None:
+                    target_quota_values = target_values
+                    target_quota_sources = absolute_sources
+                else:
+                    merged_values = torch.cat(
+                        (target_quota_values, target_values),
+                        dim=0,
+                    )
+                    merged_sources = torch.cat(
+                        (target_quota_sources, absolute_sources),
+                        dim=0,
+                    )
+                    merged_keep = min(per_target_k, merged_values.shape[0])
+                    target_quota_values, offsets = torch.topk(
+                        merged_values,
+                        merged_keep,
+                        dim=0,
+                    )
+                    target_quota_sources = torch.gather(
+                        merged_sources,
+                        0,
+                        offsets,
+                    )
+            if per_source_k > 0 or per_target_k > 0:
+                continue
+
+            local_keep = min(keep, best_logits.numel())
+            values, flat_indices = torch.topk(best_logits.reshape(-1), local_keep)
+            if threshold is not None:
+                best_probability = float(torch.sigmoid(values[0]).item())
+                if best_probability < threshold:
+                    continue
+            probabilities = torch.sigmoid(values).cpu().tolist()
+            flat_indices = flat_indices.cpu().tolist()
+            for probability, flat_index in zip(
+                probabilities,
+                flat_indices,
+                strict=False,
+            ):
+                if threshold is not None and probability < threshold:
+                    break
+                source_offset, target_offset = divmod(flat_index, len(targets))
+                global_rows.append(
+                    (
+                        float(probability),
+                        chunk_sources[source_offset],
+                        targets[target_offset],
+                    )
+                )
+            global_rows.sort(key=lambda row: (-row[0], row[1], row[2]))
+            del global_rows[keep:]
+            if len(global_rows) >= keep:
+                threshold = global_rows[-1][0]
+
+        if per_source_k > 0 or per_target_k > 0:
+            if target_quota_values is not None and target_quota_sources is not None:
+                target_probabilities = torch.sigmoid(target_quota_values).cpu().tolist()
+                target_sources = target_quota_sources.cpu().tolist()
+                for rank in range(len(target_probabilities)):
+                    for target_offset, target_id in enumerate(targets):
+                        quota_rows.append(
+                            (
+                                float(target_probabilities[rank][target_offset]),
+                                sources[target_sources[rank][target_offset]],
+                                target_id,
+                            )
+                        )
+            unique = {
+                (source_id, target_id): probability
+                for probability, source_id, target_id in quota_rows
+            }
+            quota_rows = [
+                (probability, source_id, target_id)
+                for (source_id, target_id), probability in unique.items()
+            ]
+            quota_rows.sort(key=lambda row: (-row[0], row[1], row[2]))
+            selected: dict[tuple[str, str], tuple[float, str, str]] = {}
+            if per_source_k > 0:
+                source_counts: dict[str, int] = {}
+                for row in quota_rows:
+                    source_id = row[1]
+                    if source_counts.get(source_id, 0) >= per_source_k:
+                        continue
+                    selected[(row[1], row[2])] = row
+                    source_counts[source_id] = source_counts.get(source_id, 0) + 1
+            if per_target_k > 0:
+                target_counts: dict[str, int] = {}
+                for row in quota_rows:
+                    target_id = row[2]
+                    if target_counts.get(target_id, 0) >= per_target_k:
+                        continue
+                    selected[(row[1], row[2])] = row
+                    target_counts[target_id] = target_counts.get(target_id, 0) + 1
+            result = sorted(
+                selected.values(),
+                key=lambda row: (-row[0], row[1], row[2]),
+            )
+            return result[:keep]
+        return global_rows
+
     @torch.no_grad()
     def auroc(self, eval_triples: list[Triple], n_negatives: int = 5) -> float:
         """Quick AUROC on positive vs random-corruption negatives."""
@@ -240,38 +459,61 @@ class ComplExScorer(Scorer):
             return 0.0
         device = next(self.model.parameters()).device
         n_ent = len(self.ent2idx)
-        pos_scores, neg_scores = [], []
+        positive_ids: list[tuple[int, int, int]] = []
         for t in eval_triples:
             s = self.ent2idx.get(t.source_id)
             r = self.rel2idx.get(t.relation_type)
             o = self.ent2idx.get(t.target_id)
             if s is None or r is None or o is None:
                 continue
-            s_t = torch.tensor([s], device=device)
-            r_t = torch.tensor([r], device=device)
-            o_t = torch.tensor([o], device=device)
-            pos_scores.append(self.model.score(s_t, r_t, o_t).item())
-            for _ in range(n_negatives):
-                # Corrupt tail
-                o_neg = int(torch.randint(0, n_ent, (1,), device=device).item())
-                if (s, r, o_neg) in self._train_set:
-                    continue
-                o_neg_t = torch.tensor([o_neg], device=device)
-                neg_scores.append(self.model.score(s_t, r_t, o_neg_t).item())
-        if not pos_scores or not neg_scores:
+            positive_ids.append((s, r, o))
+        if not positive_ids:
             return 0.0
+
+        positive_cpu = torch.tensor(positive_ids, dtype=torch.long)
+        generator = torch.Generator(device="cpu")
+        generator.manual_seed(0)
+        negative_tails = torch.randint(
+            0,
+            n_ent,
+            (len(positive_ids), n_negatives),
+            generator=generator,
+        )
+        negative_ids = []
+        for row, tails in zip(positive_ids, negative_tails.tolist(), strict=False):
+            s, r, _ = row
+            negative_ids.extend(
+                (s, r, tail)
+                for tail in tails
+                if (s, r, tail) not in self._train_set
+            )
+        if not negative_ids:
+            return 0.0
+
+        def score_rows(rows: torch.Tensor, chunk_size: int = 65_536) -> torch.Tensor:
+            chunks = []
+            for start in range(0, len(rows), chunk_size):
+                batch = rows[start : start + chunk_size].to(device)
+                chunks.append(
+                    self.model.score(batch[:, 0], batch[:, 1], batch[:, 2]).cpu()
+                )
+            return torch.cat(chunks)
+
+        pos_scores = score_rows(positive_cpu)
+        neg_scores = score_rows(torch.tensor(negative_ids, dtype=torch.long))
         # Manual AUROC: P(pos > neg)
-        wins, total = 0, 0
-        # Sample pairs to keep this O(N) instead of O(N²)
         max_pairs = 50_000
-        import random as _r
-        rng = _r.Random(0)
-        for _ in range(max_pairs):
-            p = rng.choice(pos_scores)
-            n = rng.choice(neg_scores)
-            wins += (p > n) + 0.5 * (p == n)
-            total += 1
-        return wins / max(1, total)
+        pair_generator = torch.Generator(device="cpu")
+        pair_generator.manual_seed(0)
+        sampled_pos = pos_scores[
+            torch.randint(len(pos_scores), (max_pairs,), generator=pair_generator)
+        ]
+        sampled_neg = neg_scores[
+            torch.randint(len(neg_scores), (max_pairs,), generator=pair_generator)
+        ]
+        wins = (sampled_pos > sampled_neg).float()
+        ties = 0.5 * (sampled_pos == sampled_neg).float()
+        return float((wins + ties).mean().item())
 
     # ── persistence ─────────────────────────────────────────────────────
 
@@ -303,3 +545,6 @@ class ComplExScorer(Scorer):
         scorer.model.eval()
         logger.info("loaded ComplEx checkpoint ← %s", path)
         return scorer
+
+
+# Updated: 2026-08-12 23:51 HKT - keep broad KGE retrieval globally bounded while expanding frozen endpoint search.

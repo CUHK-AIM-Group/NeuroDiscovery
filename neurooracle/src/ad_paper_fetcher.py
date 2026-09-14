@@ -244,7 +244,7 @@ def _parse_pubmed_xml_element(elem) -> tuple[str, PaperRef]:
     pmid = pmid_el.text if pmid_el is not None else ""
 
     title_el = elem.find(".//ArticleTitle")
-    title = title_el.text if title_el is not None else ""
+    title = " ".join("".join(title_el.itertext()).split()) if title_el is not None else ""
 
     abstract_parts = []
     for abstract_el in elem.findall(".//Abstract/AbstractText"):
@@ -283,8 +283,15 @@ def _parse_pubmed_xml_element(elem) -> tuple[str, PaperRef]:
     journal_el = elem.find(".//Journal/Title")
     journal = journal_el.text if journal_el is not None else ""
 
+    # Read this article's own identifier, never one from its reference list.
+    doi_el = elem.find("./PubmedData/ArticleIdList/ArticleId[@IdType='doi']")
+    if doi_el is None:
+        doi_el = elem.find("./MedlineCitation/Article/ELocationID[@EIdType='doi']")
+    doi = (doi_el.text or "").strip() if doi_el is not None and doi_el.get("ValidYN") != "N" else ""
+
     paper_ref = PaperRef(
         pmid=pmid,
+        doi=doi,
         title=title,
         authors=authors_str,
         year=year,

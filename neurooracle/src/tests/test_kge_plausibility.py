@@ -11,7 +11,9 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 import pytest
+import torch
 
+from neurooracle.src.kge.complex_scorer import ComplExScorer, _ComplEx
 from neurooracle.src.kge.base import Scorer
 from neurooracle.src.kge.plausibility import (
     WEAK_LINK_PENALTY,
@@ -58,6 +60,93 @@ class _StubScorer(Scorer):
         return self.table.get((s, p, o), 0.5)
 
 
+def test_complex_top_pair_scores_matches_exhaustive_scoring() -> None:
+    scorer = ComplExScorer(dim=2, device="cpu")
+    scorer.ent2idx = {"S:1": 0, "S:2": 1, "T:1": 2, "T:2": 3}
+    scorer.rel2idx = {"predicts": 0, "associated_with": 1}
+    scorer.model = _ComplEx(4, 2, 2)
+    with torch.no_grad():
+        scorer.model.ent_re.weight.copy_(
+            torch.tensor([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]])
+        )
+        scorer.model.ent_im.weight.zero_()
+        scorer.model.rel_re.weight.copy_(
+            torch.tensor([[1.0, 0.2], [0.2, 1.0]])
+        )
+        scorer.model.rel_im.weight.zero_()
+    scorer.model.eval()
+
+    sources = ["S:1", "S:2", "OOV:S"]
+    targets = ["T:1", "T:2", "OOV:T"]
+    relations = ["predicts", "associated_with", "OOV:R"]
+    expected = []
+    for source in sources[:2]:
+        for target in targets[:2]:
+            score = max(
+                scorer.score_batch(
+                    [(source, relation, target) for relation in relations[:2]]
+                )
+            )
+            expected.append((score, source, target))
+    expected.sort(key=lambda row: (-row[0], row[1], row[2]))
+
+    actual = scorer.top_pair_scores(
+        sources,
+        relations,
+        targets,
+        top_k=3,
+        source_chunk_size=1,
+    )
+
+    assert [(source, target) for _, source, target in actual] == [
+        (source, target) for _, source, target in expected[:3]
+    ]
+    assert [score for score, _, _ in actual] == pytest.approx(
+        [score for score, _, _ in expected[:3]]
+    )
+
+
+def test_complex_top_pair_scores_preserves_per_endpoint_quotas() -> None:
+    scorer = ComplExScorer(dim=2, device="cpu")
+    scorer.ent2idx = {"S:1": 0, "S:2": 1, "T:1": 2, "T:2": 3}
+    scorer.rel2idx = {"predicts": 0}
+    scorer.model = _ComplEx(4, 1, 2)
+    with torch.no_grad():
+        scorer.model.ent_re.weight.copy_(
+            torch.tensor([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]])
+        )
+        scorer.model.ent_im.weight.zero_()
+        scorer.model.rel_re.weight.copy_(torch.tensor([[1.0, 1.0]]))
+        scorer.model.rel_im.weight.zero_()
+    scorer.model.eval()
+
+    per_source = scorer.top_pair_scores(
+        ["S:1", "S:2"],
+        ["predicts"],
+        ["T:1", "T:2"],
+        top_k=4,
+        source_chunk_size=1,
+        per_source_k=1,
+    )
+    per_target = scorer.top_pair_scores(
+        ["S:1", "S:2"],
+        ["predicts"],
+        ["T:1", "T:2"],
+        top_k=4,
+        source_chunk_size=1,
+        per_target_k=1,
+    )
+
+    assert {(source, target) for _, source, target in per_source} == {
+        ("S:1", "T:1"),
+        ("S:2", "T:2"),
+    }
+    assert {(source, target) for _, source, target in per_target} == {
+        ("S:1", "T:1"),
+        ("S:2", "T:2"),
+    }
+
+
 # ── unit tests ─────────────────────────────────────────────────────────
 
 
@@ -98,6 +187,9 @@ def test_local_plausibility_empty_path():
     scorer = _StubScorer({})
     score, per = local_plausibility(h, scorer)
     assert score == 0.0
+
+
+# Updated: 2026-08-12 23:51 HKT - verify global and per-endpoint chunked KGE retrieval.
     assert per == []
 
 

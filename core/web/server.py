@@ -775,6 +775,10 @@ def create_app() -> Any:
         return catalog
 
     app = FastAPI(title="NeuroClaw Web UI", docs_url=None, redoc_url=None)
+    from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
+    from core.web.claim_layer_v5 import AcceptedClaimLayer
+    accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))
+    app.state.accepted_claim_evidence = accepted_evidence
     study_service = UserStudyService()
     study_password = os.environ.get("NEURODISCOVERY_STUDY_PASSWORD", "123456")
     study_tokens: dict[str, float] = {}
@@ -2353,6 +2357,35 @@ def create_app() -> Any:
                 status_code=500,
             )
 
+    async def _accepted_evidence_response(method: str, **kwargs: Any) -> Any:
+        try:
+            return await asyncio.to_thread(getattr(app.state.accepted_claim_evidence, method), **kwargs)
+        except KeyError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=404)
+        except (EvidenceUnavailable, OSError) as exc:
+            return JSONResponse({"configured": True, "available": False, "error": str(exc)}, status_code=503)
+        except ValueError as exc:
+            # Input ranges are checked by the routes; a stale or invalid accepted
+            # artifact must remain an explicit unavailable state, never old evidence.
+            return JSONResponse({"configured": True, "available": False, "error": str(exc)}, status_code=503)
+
+    @app.get("/api/kg/evidence-status")
+    async def kg_evidence_status() -> Any:
+        return await _accepted_evidence_response("status")
+
+    @app.get("/api/kg/shared-claims")
+    async def kg_shared_claims(q: str = "", minimum_papers: int = 2, offset: int = 0, limit: int = 30) -> Any:
+        if len(q) > 300 or not 0 <= minimum_papers <= 10000 or offset < 0 or not 1 <= limit <= 100:
+            return JSONResponse({"error": "Invalid claim search or page"}, status_code=422)
+        return await _accepted_evidence_response("search", query=q, minimum_papers=minimum_papers, offset=offset, limit=limit)
+
+    @app.get("/api/kg/claim-evidence")
+    async def kg_claim_evidence(claim_id: str = "", relation_id: str = "") -> Any:
+        value = claim_id or relation_id
+        if bool(claim_id) == bool(relation_id) or len(value) > 300 or not value.startswith("CLM:" if claim_id else "REL:"):
+            return JSONResponse({"error": "Provide exactly one original CLM ID or shared REL ID"}, status_code=422)
+        return await _accepted_evidence_response("query", claim_id=claim_id or None, relation_id=relation_id or None)
+
     @app.get("/api/kg/stats")
     async def kg_stats() -> Any:
         if not _neurooracle_graph_path().exists():
@@ -2384,14 +2417,42 @@ def create_app() -> Any:
             from neurooracle.src.atoms import (
                 CANONICAL_TASKS, CANONICAL_CHAINS, ATOM_TO_DOMAINS, Atom,
             )
+            from neurooracle.src.case_studies import (
+                CASE_STUDY_DISPLAY_NUMBERS,
+                list_case_study_catalog,
+            )
+            from neurooracle.src.validation_protocols import HINDCASTING
         except Exception as exc:
             return JSONResponse({"error": str(exc)}, status_code=500)
         tasks = [{**t.to_dict(), "kind": "task"} for t in CANONICAL_TASKS]
         chains = [{**c.to_dict(), "kind": "chain"} for c in CANONICAL_CHAINS]
+
+        # Case-study numbering is display metadata only.  The option value
+        # remains the canonical task/chain slug so existing URLs, CLI calls,
+        # audit records, and graph memberships are unaffected.  The
+        # transdiagnostic task is the generator backing Case Study 1, while
+        # pathway_polygenic_mediation is the chain backing Case Study 2.
+        backing_case_study_ids = {
+            "transdiagnostic_clustering": "case1_transdiagnostic",
+            "pathway_polygenic_mediation": "case2_pathway_mediation",
+        }
+        formal_ids = set(CASE_STUDY_DISPLAY_NUMBERS)
+        for item in (*tasks, *chains):
+            name = str(item.get("name") or "")
+            case_study_id = (
+                name if name in formal_ids else backing_case_study_ids.get(name)
+            )
+            if case_study_id is None:
+                continue
+            item["case_study_id"] = case_study_id
+            item["case_study_number"] = CASE_STUDY_DISPLAY_NUMBERS[case_study_id]
+
         atom_domains = {a.value: sorted(ATOM_TO_DOMAINS[a]) for a in Atom}
         return {
             "tasks": tasks,
             "chains": chains,
+            "case_studies": list(list_case_study_catalog()),
+            "validation_protocols": [HINDCASTING.to_dict()],
             "atom_domains": atom_domains,
             "atom_colors": ATOM_COLORS,
         }
@@ -2905,7 +2966,7 @@ def create_app() -> Any:
             "aliases": list(node.aliases or []),
             "external_ids": dict(node.external_ids or {}),
             "external_links": _external_links(node.external_ids),
-            "atlas_mapping": node.atlas_mapping,
+            "spatial_mapping": node.spatial_mapping,
             "n_claims": n_claims,
             "n_hypotheses": n_hyps,
             "noise_score": noise,

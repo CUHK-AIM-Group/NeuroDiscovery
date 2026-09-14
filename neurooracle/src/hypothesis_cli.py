@@ -15,8 +15,10 @@ Usage (run from project root):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import subprocess
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -81,11 +83,51 @@ def format_gap(g: Gap, index: int) -> str:
 
 # ── commands ───────────────────────────────────────────────────────────
 
+
+def _hypothesis_semantic_key(hypothesis: Hypothesis) -> tuple:
+    nodes = [str(hypothesis.source_id or "")]
+    for link in hypothesis.path or []:
+        from_id = str(getattr(link, "from_id", "") or "")
+        to_id = str(getattr(link, "to_id", "") or "")
+        if from_id and nodes[-1] != from_id:
+            nodes.append(from_id)
+        if to_id:
+            nodes.append(to_id)
+    if len(nodes) == 1 and hypothesis.target_id:
+        nodes.append(str(hypothesis.target_id))
+    if not any(nodes):
+        nodes = [str(hypothesis.id or "")]
+    return (str(hypothesis.hypothesis_type or ""), tuple(nodes))
+
+
+def _reserve_hypothesis_id(
+    hypothesis: Hypothesis,
+    key: tuple,
+    occupied: dict[str, tuple],
+) -> None:
+    requested = str(hypothesis.id or "HYP")
+    existing = occupied.get(requested)
+    if existing is None or existing == key:
+        hypothesis.id = requested
+        occupied[requested] = key
+        return
+    digest = hashlib.sha256(repr(key).encode("utf-8")).hexdigest()[:12]
+    candidate = f"{requested}:{digest}"
+    suffix = 1
+    while candidate in occupied and occupied[candidate] != key:
+        suffix += 1
+        candidate = f"{requested}:{digest}:{suffix}"
+    hypothesis.id = candidate
+    occupied[candidate] = key
+
+
 def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
               max_seeds=50, as_json=False, legacy_domain_pairs=False,
               task_filter=None, chain_filter=None,
               target_per_task=None, max_retries=3, retry_scale=2.0,
-              min_hops=2, metapath_min_domains=2, prefer_longer_paths=True):
+              min_hops=2, metapath_min_domains=2, prefer_longer_paths=True,
+              claim_scope=None, random_seed=None, seed_diversity_fraction=0.0,
+              print_top_n=10):
     """Batch-generate hypotheses across the entire graph.
 
     Default (atom-task driven): traverses every Task in CANONICAL_TASKS via
@@ -133,9 +175,14 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
             min_hops=min_hops,
             metapath_min_domains=metapath_min_domains,
             prefer_longer_paths=prefer_longer_paths,
+            random_seed=random_seed,
+            seed_diversity_fraction=seed_diversity_fraction,
         )
     else:
         from .atoms import CANONICAL_TASKS, CANONICAL_CHAINS
+
+        if claim_scope:
+            engine.set_task_claim_scope(claim_scope)
 
         task_names = None
         if task_filter is not None:
@@ -157,7 +204,8 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
         hypotheses: list = []
         for task in tasks_to_run:
             print(f"  task: {task.name} [{task.signature}]")
-            seen_ids: set = set()
+            seen_keys: set[tuple] = set()
+            occupied_ids: dict[str, tuple] = {}
             kept: list = []
             cur_paths, cur_seeds = max_paths, max_seeds
             for attempt in range(1, max_retries + 1):
@@ -169,13 +217,18 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
                     min_hops=min_hops,
                     metapath_min_domains=metapath_min_domains,
                     prefer_longer_paths=prefer_longer_paths,
+                    random_seed=random_seed,
+                    seed_diversity_fraction=seed_diversity_fraction,
                 )
                 added = 0
                 for h in hs:
-                    if h.id not in seen_ids:
-                        seen_ids.add(h.id)
-                        kept.append(h)
-                        added += 1
+                    key = _hypothesis_semantic_key(h)
+                    if key in seen_keys:
+                        continue
+                    seen_keys.add(key)
+                    _reserve_hypothesis_id(h, key, occupied_ids)
+                    kept.append(h)
+                    added += 1
                 print(f"    attempt {attempt}: +{added} (total {len(kept)}, paths={cur_paths}, seeds={cur_seeds})")
                 if target_per_task is None or len(kept) >= target_per_task:
                     break
@@ -191,12 +244,20 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
             # prefix produced across retries is the same mechanism.
             best_by_prefix: dict[tuple, "Hypothesis"] = {}
             cur_paths, cur_seeds = max_paths, max_seeds
+            # Chain QA is intentionally strict. Generate a wider internal
+            # candidate set when a target count is requested so retries are
+            # not capped at 200 before post-processing can do its work.
+            chain_candidate_cap = max(
+                200,
+                (target_per_task or 0) * 20,
+            )
             for attempt in range(1, max_retries + 1):
                 hs = engine.batch_generate_for_chain(
                     chain,
                     max_hops_per_segment=max(max_hops // 2, 2),
                     max_paths_per_segment=cur_paths,
                     max_seeds=cur_seeds,
+                    max_chains=chain_candidate_cap,
                 )
                 added = 0
                 for h in hs:
@@ -221,38 +282,43 @@ def cmd_batch(engine, output, domain_pairs=None, max_hops=4, max_paths=5,
 
     # Cross-task / cross-chain deduplication: same path can be reachable from
     # multiple task templates. Keep first occurrence (task_name tag wins) and
-    # drop any hypothesis lacking a stable id.
-    seen_ids: set = set()
+    # assign a collision-safe id when separate generator calls reuse a local
+    # ordinal such as HYP:000001.
+    seen_keys: set[tuple] = set()
+    occupied_ids: dict[str, tuple] = {}
     deduped = []
     n_dups = 0
     n_empty = 0
     for h in hypotheses:
-        if not h.id:
+        key = _hypothesis_semantic_key(h)
+        if not any(key[1]):
             n_empty += 1
             continue
-        if h.id in seen_ids:
+        if key in seen_keys:
             n_dups += 1
             continue
-        seen_ids.add(h.id)
+        seen_keys.add(key)
+        _reserve_hypothesis_id(h, key, occupied_ids)
         deduped.append(h)
     if n_dups or n_empty:
-        print(f"  deduplicated: -{n_dups} duplicate id(s), -{n_empty} empty id(s)")
+        print(f"  deduplicated: -{n_dups} duplicate path(s), -{n_empty} empty path(s)")
     hypotheses = deduped
     print(f"After dedup: {len(hypotheses)} unique hypotheses")
 
     # auto-rank
-    ranked = engine.rank_hypotheses(hypotheses)
+    ranked = engine.rank_hypotheses(hypotheses, top_n=len(hypotheses))
     print(f"Top {len(ranked)} hypotheses ranked")
 
     # save
-    engine.save_hypotheses(hypotheses, output)
+    engine.save_hypotheses(ranked, output)
     print(f"Saved to {output}")
 
     # print top 10
-    print(f"\nTop 10:")
-    for i, h in enumerate(ranked[:10], 1):
-        print(format_hypothesis(h, i))
-        print()
+    if print_top_n > 0:
+        print(f"\nTop {print_top_n}:")
+        for i, h in enumerate(ranked[:print_top_n], 1):
+            print(format_hypothesis(h, i))
+            print()
 
 
 def cmd_rank(engine, input_path, top_n=20, as_json=False):
@@ -1031,8 +1097,8 @@ def cmd_gm_brainstorm(graph_path: str, output: str, n: int = 50,
 # == main =================================================================
 
 def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
-                   graph_path, snapshot_2022_kg=None, snapshot_2022_kge=None,
-                   feedback_state=None, as_json=False):
+                   graph_path, feedback_state=None, as_json=False,
+                   target_per_task_override=None):
     """Run the four-stage autoresearch cycle for a registered case study.
 
     Reads a :class:`CaseStudy` from :mod:`case_studies`, dispatches stage
@@ -1049,7 +1115,7 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
     from .case_studies import (
         case_study_by_name,
         GENERATOR_TASK, GENERATOR_CHAIN,
-        GENERATOR_CASE1_CANDIDATE, GENERATOR_ATOM_SUBSTITUTION,
+        GENERATOR_CASE1_CANDIDATE,
     )
 
     case = case_study_by_name(case_study_name)
@@ -1076,12 +1142,28 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
 
     stages_set = {s.strip() for s in stages.split(",") if s.strip()}
 
+    def _tag_case_study_output(engine: HypothesisEngine) -> None:
+        hypotheses = engine.load_hypotheses(raw_out)
+        for hypothesis in hypotheses:
+            metadata = hypothesis.metadata or {}
+            metadata["case_study_id"] = case.name
+            hypothesis.metadata = metadata
+        engine.save_hypotheses(hypotheses, raw_out)
+
     # ── Stage [1/4]: generation ────────────────────────────────────────
     if "batch" in stages_set:
         bp = case.stage_params.batch
+        target_per_task = (
+            int(target_per_task_override)
+            if target_per_task_override is not None
+            else bp.target_per_task
+        )
+        if target_per_task is not None and target_per_task < 1:
+            raise ValueError("target_per_task_override must be positive")
         if case.generator == GENERATOR_TASK:
             kg = load_graph(Path(graph_path))
             engine = HypothesisEngine(kg)
+            engine.set_task_claim_scope(case.name)
             if feedback_state:
                 engine.load_feedback_state(feedback_state)
             for hook in case.pre_hooks:
@@ -1091,12 +1173,13 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
                 max_hops=bp.max_hops, min_hops=bp.min_hops,
                 metapath_min_domains=bp.metapath_min_domains,
                 max_paths=bp.max_paths, max_seeds=bp.max_seeds,
-                target_per_task=bp.target_per_task,
+                target_per_task=target_per_task,
                 max_retries=bp.max_retries, retry_scale=bp.retry_scale,
                 prefer_longer_paths=bp.prefer_longer_paths,
                 task_filter=case.task.name, chain_filter="",
                 as_json=as_json,
             )
+            _tag_case_study_output(engine)
             for hook in case.post_hooks:
                 hook(engine, case, raw_out)
 
@@ -1112,12 +1195,13 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
                 max_hops=bp.max_hops, min_hops=bp.min_hops,
                 metapath_min_domains=bp.metapath_min_domains,
                 max_paths=bp.max_paths, max_seeds=bp.max_seeds,
-                target_per_task=bp.target_per_task,
+                target_per_task=target_per_task,
                 max_retries=bp.max_retries, retry_scale=bp.retry_scale,
                 prefer_longer_paths=bp.prefer_longer_paths,
                 task_filter="", chain_filter=case.chain.name,
                 as_json=as_json,
             )
+            _tag_case_study_output(engine)
             for hook in case.post_hooks:
                 hook(engine, case, raw_out)
 
@@ -1151,18 +1235,12 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
                         if case.task.modifier is not None
                         else None
                     )
-                meta["case_study"] = case.name
+                meta["case_study_id"] = case.name
                 h.metadata = meta
             engine.save_hypotheses(hypotheses, str(raw_out))
             print(f"Saved to {raw_out}")
             for hook in case.post_hooks:
                 hook(engine, case, raw_out)
-
-        elif case.generator == GENERATOR_ATOM_SUBSTITUTION:
-            raise NotImplementedError(
-                f"case-study '{case.name}' uses generator='atom_substitution'; "
-                "implementation lands in Case Study 3 hindcasting."
-            )
 
         else:
             raise ValueError(f"unknown generator: {case.generator}")
@@ -1222,6 +1300,12 @@ def main():
     parser.add_argument("--graph", default=None, help="Path to graph JSON")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.add_argument(
+        "--generation-seed",
+        type=int,
+        default=None,
+        help="Seed Python and NumPy generation RNGs (PYTHONHASHSEED is set by callers).",
+    )
+    parser.add_argument(
         "--feedback-state",
         default=None,
         help=(
@@ -1248,6 +1332,11 @@ def main():
                                "the candidate set exceeds the per-pair quota.")
     p_batch.add_argument("--max-paths", type=int, default=5, help="Max paths per domain pair seed")
     p_batch.add_argument("--max-seeds", type=int, default=50, help="Max seed concepts per domain")
+    p_batch.add_argument(
+        "--claim-scope",
+        default=None,
+        help="Require audited claim endpoints and at least one claim edge from this Case Study ID.",
+    )
     p_batch.add_argument("--legacy-domain-pairs", action="store_true",
                           help="Use raw KG domain-pair traversal (pre-atom-algebra). "
                                "Default is task-driven generation over CANONICAL_TASKS + CANONICAL_CHAINS.")
@@ -1447,8 +1536,7 @@ def main():
     p_gm.add_argument("--seed", type=int, default=0,
                         help="RNG seed for batched family rotation")
 
-    # case-study (Nature paper rollout — orchestrates the 4-stage cycle for
-    # one of Case Study 1 / 2 / 3; reads stage params from case_studies.py)
+    # case-study — orchestrates the four-stage cycle for any registered scope.
     from .case_studies import list_case_study_names
     p_cs = sub.add_parser("case-study",
                           help="Run autoresearch cycle for a registered Nature-paper case study")
@@ -1458,19 +1546,31 @@ def main():
                       help="Directory for stage outputs (raw / novel / critic / final JSONs)")
     p_cs.add_argument("--stages", default="batch,novelty,critic,plausibility",
                       help="Comma-separated subset of {batch,novelty,critic,plausibility} to run")
+    p_cs.add_argument(
+        "--target-per-task",
+        type=int,
+        default=None,
+        help="Override the registered generation-pool target for batch generation.",
+    )
     p_cs.add_argument("--kge",
                       default="neurooracle/data/full_snapshot_v2/kge_complex.pt",
                       help="Trained KGE checkpoint for stage [4/4]")
     p_cs.add_argument("--kg-for-plausibility",
                       default=None,
                       help="KG path passed to plausibility stage (default: --graph)")
-    p_cs.add_argument("--snapshot-2022-kg",
-                      default=None,
-                      help="(Case Study 3 only) Path to 2022 KG snapshot; overrides extras default")
-    p_cs.add_argument("--snapshot-2022-kge",
-                      default=None,
-                      help="(Case Study 3 only) Path to 2022 KGE checkpoint; overrides extras default")
 
+    p_hindcast = sub.add_parser(
+        "hindcast",
+        help="Run the generic hindcasting validation protocol for a case study",
+    )
+    p_hindcast.add_argument("name", choices=list(list_case_study_names()))
+    p_hindcast.add_argument("--input-dir", default="neurooracle/data/full_v2")
+    p_hindcast.add_argument("--snapshot-root", default=None)
+    p_hindcast.add_argument("--output-root", default=None)
+    p_hindcast.add_argument("--windows", nargs="*", default=None,
+                            help="Optional freeze:start:end windows")
+    p_hindcast.add_argument("--generate-only", action="store_true")
+    p_hindcast.add_argument("--force", action="store_true")
     # host-agent autoresearch: file-based protocol for Codex / Claude Code /
     # Cursor and similar host agents that provide their own model.
     p_ha_init = sub.add_parser(
@@ -1505,6 +1605,13 @@ def main():
                              help="Host-agent autoresearch run directory")
 
     args = parser.parse_args()
+    if args.generation_seed is not None:
+        import random
+
+        import numpy as np
+
+        random.seed(args.generation_seed)
+        np.random.seed(args.generation_seed)
 
     if args.command == "host-agent-init":
         from .host_agent_autoresearch import init_run
@@ -1589,11 +1696,31 @@ def main():
             kge_path=args.kge,
             kg_path=kg_for_plaus,
             graph_path=graph_p,
-            snapshot_2022_kg=args.snapshot_2022_kg,
-            snapshot_2022_kge=args.snapshot_2022_kge,
             feedback_state=args.feedback_state,
             as_json=args.json,
+            target_per_task_override=args.target_per_task,
         )
+        return
+
+    if args.command == "hindcast":
+        command = [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "scripts" / "run_case_study_hindcasting.py"),
+            args.name,
+            "--input-dir",
+            args.input_dir,
+        ]
+        if args.snapshot_root:
+            command.extend(["--snapshot-root", args.snapshot_root])
+        if args.output_root:
+            command.extend(["--output-root", args.output_root])
+        if args.windows is not None:
+            command.extend(["--windows", *args.windows])
+        if args.generate_only:
+            command.append("--generate-only")
+        if args.force:
+            command.append("--force")
+        subprocess.run(command, check=True)
         return
 
     graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json")
@@ -1615,7 +1742,8 @@ def main():
                   retry_scale=args.retry_scale,
                   min_hops=args.min_hops,
                   metapath_min_domains=args.metapath_min_domains,
-                  prefer_longer_paths=not args.no_prefer_longer_paths)
+                  prefer_longer_paths=not args.no_prefer_longer_paths,
+                  claim_scope=args.claim_scope)
     elif args.command == "rank":
         cmd_rank(engine, args.input, top_n=args.top, as_json=as_json)
     elif args.command == "paths":
@@ -1650,3 +1778,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# Last Updated At: 2026-08-11 22:57 HKT

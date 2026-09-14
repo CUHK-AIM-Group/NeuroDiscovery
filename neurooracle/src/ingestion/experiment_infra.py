@@ -1,7 +1,7 @@
 """Phase 1.5: Experiment infrastructure ingestion.
 
 Adds static NeuroClaw experiment components into the knowledge graph:
-- Brain atlases (Schaefer*, AAL*, Desikan, Destrieux, Glasser, etc.)
+- Spatial references (atlases, parcellations, voxel grids, electrode layouts)
 - Imaging/data modalities (fMRI, dMRI, sMRI, PET, MEG, EEG, genetics, clinical)
 - ML model architectures (BrainGNN, NeuroStorm, BrainLM, SwiFT, 3D-CNN, XGBoost, SVM)
 - Datasets (UKB, ADNI, HCP_YA)
@@ -25,9 +25,9 @@ from ..schema import ConceptNode, DomainTag, Edge
 
 logger = logging.getLogger(__name__)
 
-# ── Atlas registry ─────────────────────────────────────────────────────
+# ── Spatial-reference registry ─────────────────────────────────────────
 
-SUPPORTED_ATLASES: dict[str, dict] = {
+SPATIAL_REFERENCES: dict[str, dict] = {
     # Cortical functional parcellations (Schaefer 2018)
     "Schaefer100":  {"n_regions": 100,  "family": "Schaefer", "kind": "cortical_functional",
                      "ref": "Schaefer et al. 2018 Cereb Cortex",
@@ -43,6 +43,24 @@ SUPPORTED_ATLASES: dict[str, dict] = {
     "Schaefer1000": {"n_regions": 1000, "family": "Schaefer", "kind": "cortical_functional",
                      "ref": "Schaefer et al. 2018 Cereb Cortex",
                      "aliases": ["Schaefer 1000 parcellation", "Schaefer-1000"]},
+    "Schaefer300":  {"n_regions": 300,  "family": "Schaefer", "kind": "cortical_functional",
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 300 parcellation", "Schaefer-300"]},
+    "Schaefer500":  {"n_regions": 500,  "family": "Schaefer", "kind": "cortical_functional",
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 500 parcellation", "Schaefer-500"]},
+    "Schaefer600":  {"n_regions": 600,  "family": "Schaefer", "kind": "cortical_functional",
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 600 parcellation", "Schaefer-600"]},
+    "Schaefer700":  {"n_regions": 700,  "family": "Schaefer", "kind": "cortical_functional",
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 700 parcellation", "Schaefer-700"]},
+    "Schaefer800":  {"n_regions": 800,  "family": "Schaefer", "kind": "cortical_functional",
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 800 parcellation", "Schaefer-800"]},
+    "Schaefer900":  {"n_regions": 900,  "family": "Schaefer", "kind": "cortical_functional",
+                     "ref": "Schaefer et al. 2018 Cereb Cortex",
+                     "aliases": ["Schaefer 900 parcellation", "Schaefer-900"]},
     # Automated Anatomical Labeling
     "AAL90":   {"n_regions": 90,  "family": "AAL", "kind": "anatomical",
                 "ref": "Tzourio-Mazoyer et al. 2002 NeuroImage",
@@ -73,6 +91,54 @@ SUPPORTED_ATLASES: dict[str, dict] = {
                 "aliases": ["Glasser atlas", "Glasser multi-modal parcellation",
                             "HCP-MMP1", "HCP multi-modal parcellation",
                             "Glasser 360-region atlas"]},
+    # Common functional/network parcellations
+    "Yeo7": {"n_regions": 7, "family": "Yeo", "kind": "cortical_functional",
+             "ref": "Yeo et al. 2011 J Neurophysiol",
+             "aliases": ["Yeo 7-network atlas", "Yeo-7", "Yeo 7 networks"]},
+    "Yeo17": {"n_regions": 17, "family": "Yeo", "kind": "cortical_functional",
+              "ref": "Yeo et al. 2011 J Neurophysiol",
+              "aliases": ["Yeo 17-network atlas", "Yeo-17", "Yeo 17 networks"]},
+    "Brainnetome246": {"n_regions": 246, "family": "Brainnetome", "kind": "multimodal",
+                       "ref": "Fan et al. 2016 Cereb Cortex",
+                       "aliases": ["Brainnetome atlas", "Brainnetome-246", "BN246"]},
+    "Power264": {"n_regions": 264, "family": "Power", "kind": "cortical_functional",
+                 "ref": "Power et al. 2011 Neuron",
+                 "aliases": ["Power atlas", "Power-264", "Power 264 atlas"]},
+    "Gordon333": {"n_regions": 333, "family": "Gordon", "kind": "cortical_functional",
+                  "ref": "Gordon et al. 2016 Cereb Cortex",
+                  "aliases": ["Gordon atlas", "Gordon-333", "Gordon 333 atlas"]},
+    "Dosenbach160": {"n_regions": 160, "family": "Dosenbach", "kind": "cortical_functional",
+                     "ref": "Dosenbach et al. 2010 Science",
+                     "aliases": ["Dosenbach atlas", "Dosenbach-160", "Dosenbach 160 atlas"]},
+    "Craddock200": {"n_regions": 200, "family": "Craddock", "kind": "cortical_functional",
+                    "ref": "Craddock et al. 2012 Hum Brain Mapp",
+                    "aliases": ["Craddock atlas", "Craddock-200", "CC200"]},
+    "Craddock400": {"n_regions": 400, "family": "Craddock", "kind": "cortical_functional",
+                    "ref": "Craddock et al. 2012 Hum Brain Mapp",
+                    "aliases": ["Craddock-400", "CC400"]},
+    "Shen268": {"n_regions": 268, "family": "Shen", "kind": "functional",
+                "ref": "Shen et al. 2013 NeuroImage",
+                "aliases": ["Shen atlas", "Shen-268", "Shen 268 atlas"]},
+    "AICHA384": {"n_regions": 384, "family": "AICHA", "kind": "cortical_functional",
+                 "ref": "Joliot et al. 2015 J Neurosci Methods",
+                 "aliases": ["AICHA atlas", "AICHA-384"]},
+    # Additional anatomical, cortical and white-matter references
+    "DKT62": {"n_regions": 62, "family": "FreeSurfer", "kind": "anatomical",
+              "ref": "Klein and Tourville 2012 Front Neurosci",
+              "aliases": ["DKT atlas", "Desikan-Killiany-Tourville atlas", "aparc.DKTatlas40"]},
+    "HarvardOxford_cortical": {
+        "n_regions": 48, "family": "HarvardOxford", "kind": "cortical_anatomical",
+        "ref": "Harvard-Oxford cortical atlas",
+        "aliases": ["Harvard-Oxford cortical atlas", "Harvard Oxford cortical atlas"],
+    },
+    "JHU_ICBM_DTI_81": {
+        "n_regions": 48, "family": "JHU", "kind": "white_matter",
+        "ref": "Mori et al. 2008 NeuroImage",
+        "aliases": ["JHU ICBM-DTI-81 atlas", "ICBM-DTI-81 white-matter labels atlas"],
+    },
+    "Brodmann52": {"n_regions": 52, "family": "Brodmann", "kind": "cytoarchitectonic",
+                   "ref": "Brodmann 1909",
+                   "aliases": ["Brodmann atlas", "Brodmann areas", "BA atlas"]},
     # Voxel-level / whole-brain CNN input
     "voxel": {"n_regions": 0, "family": "voxel", "kind": "whole_brain",
               "ref": "whole-brain 3D voxel grid",
@@ -94,6 +160,11 @@ SUPPORTED_ATLASES: dict[str, dict] = {
                       "ref": "32-channel standard BCI/biosemi layout",
                       "aliases": ["32-channel BCI layout", "Biosemi 32 layout"]},
 }
+
+# Import compatibility for downstream callers. New code should use
+# SPATIAL_REFERENCES; the historical constant remains a reference to the same
+# mapping and therefore cannot drift.
+SUPPORTED_ATLASES = SPATIAL_REFERENCES
 
 # ── Modality registry ──────────────────────────────────────────────────
 
@@ -204,6 +275,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI", "sMRI", "dMRI"],
         "description": "graph neural network operating on parcellated brain graphs",
         "ref": "Li et al. 2021 Med Image Anal",
+        "aliases": ["Brain GNN"],
         "kg_node": True,
     },
     "NeuroStorm": {
@@ -212,10 +284,8 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI"],
         "description": "4D fMRI foundation model (large-scale pretraining)",
         "ref": "NeuroStorm Nat BME 2026",
-        # Engineering brand name with no measured paper occurrences -- kept
-        # as metadata only so dataset-level specificity scoring can still
-        # pick it up without polluting KG traversal with a dead-end node.
-        "kg_node": False,
+        "aliases": ["NeuroStorm foundation model"],
+        "kg_node": True,
     },
     "BrainLM": {
         "family": "foundation_model",
@@ -223,7 +293,8 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI"],
         "description": "time-series transformer over ROI-level BOLD",
         "ref": "Caro et al. 2024 ICLR",
-        "kg_node": False,
+        "aliases": ["Brain Language Model"],
+        "kg_node": True,
     },
     "SwiFT": {
         "family": "vision_transformer",
@@ -231,6 +302,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["fMRI"],
         "description": "swin transformer for 4D fMRI",
         "ref": "Kim et al. 2023 NeurIPS",
+        "aliases": ["Swin 4D fMRI Transformer"],
         "kg_node": True,
     },
     "3D-CNN": {
@@ -239,6 +311,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["sMRI", "PET"],
         "description": "3D convolutional network for volumetric images",
         "ref": "generic 3D CNN",
+        "aliases": ["3D convolutional neural network", "3D convolutional network"],
         "kg_node": True,
     },
     "XGBoost": {
@@ -248,6 +321,7 @@ ML_MODELS: dict[str, dict] = {
                         "eye_tracking", "genetics", "clinical"],
         "description": "gradient-boosted decision trees on tabular features",
         "ref": "Chen & Guestrin 2016 KDD",
+        "aliases": ["Extreme Gradient Boosting", "XGB"],
         "kg_node": True,
     },
     "SVM": {
@@ -256,6 +330,226 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["sMRI", "dMRI", "PET", "EEG", "EOG", "genetics"],
         "description": "support vector machine classifier/regressor",
         "ref": "Cortes & Vapnik 1995",
+        "aliases": ["support vector machine", "support vector regression", "SVR"],
+        "kg_node": True,
+    },
+    # ── Canonical statistical and tabular model families ───────────────
+    "LogisticRegression": {
+        "family": "generalized_linear_model",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "logistic regression classifier for binary or multinomial outcomes",
+        "ref": "Cox 1958 JRSS B",
+        "aliases": ["logistic regression", "multinomial logistic regression"],
+        "kg_node": True,
+    },
+    "LinearRegression": {
+        "family": "linear_model",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "ordinary or regularized linear regression for continuous outcomes",
+        "ref": "standard linear model",
+        "aliases": ["linear regression", "ordinary least squares", "OLS"],
+        "kg_node": True,
+    },
+    "ElasticNet": {
+        "family": "regularized_linear_model",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "linear model combining L1 and L2 regularization",
+        "ref": "Zou and Hastie 2005 JRSS B",
+        "aliases": ["elastic net", "LASSO", "lasso regression", "ridge regression"],
+        "kg_node": True,
+    },
+    "RandomForest": {
+        "family": "tree_ensemble",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "bagged decision-tree ensemble for classification or regression",
+        "ref": "Breiman 2001 Machine Learning",
+        "aliases": ["random forest", "random forest classifier", "random forest regressor"],
+        "kg_node": True,
+    },
+    "LightGBM": {
+        "family": "gradient_boosting",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "leaf-wise gradient-boosted decision tree model",
+        "ref": "Ke et al. 2017 NeurIPS",
+        "aliases": ["Light Gradient Boosting Machine", "LGBM"],
+        "kg_node": True,
+    },
+    "GaussianProcess": {
+        "family": "kernel_method",
+        "input_level": ["ROI", "connectivity", "variable"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "genetics", "clinical"],
+        "description": "Bayesian Gaussian-process classifier or regressor",
+        "ref": "Rasmussen and Williams 2006",
+        "aliases": ["Gaussian process", "Gaussian process regression", "GPR"],
+        "kg_node": True,
+    },
+    "kNN": {
+        "family": "instance_based_learning",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "k-nearest-neighbours classifier or regressor",
+        "ref": "Cover and Hart 1967 IEEE TIT",
+        "aliases": ["k-nearest neighbors", "k-nearest neighbours", "KNN"],
+        "kg_node": True,
+    },
+    "CoxPH": {
+        "family": "survival_model",
+        "input_level": ["ROI", "connectivity", "variable"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "genetics", "clinical"],
+        "description": "Cox proportional-hazards model for time-to-event outcomes",
+        "ref": "Cox 1972 JRSS B",
+        "aliases": ["Cox proportional hazards", "Cox regression", "Cox model"],
+        "kg_node": True,
+    },
+    # ── Canonical neural-network families ─────────────────────────────
+    "MLP": {
+        "family": "feedforward_neural_network",
+        "input_level": ["ROI", "connectivity", "variable", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "genetics", "clinical"],
+        "description": "multilayer perceptron feed-forward neural network",
+        "ref": "Rumelhart et al. 1986 Nature",
+        "aliases": ["multilayer perceptron", "feed-forward neural network"],
+        "kg_node": True,
+    },
+    "Autoencoder": {
+        "family": "representation_learning",
+        "input_level": ["voxel", "ROI", "connectivity", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG"],
+        "description": "encoder-decoder network trained to reconstruct its input",
+        "ref": "Hinton and Salakhutdinov 2006 Science",
+        "aliases": ["autoencoder", "AE", "denoising autoencoder"],
+        "kg_node": True,
+    },
+    "VAE": {
+        "family": "generative_model",
+        "input_level": ["voxel", "ROI", "connectivity", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG"],
+        "description": "variational autoencoder with probabilistic latent variables",
+        "ref": "Kingma and Welling 2014 ICLR",
+        "aliases": ["variational autoencoder"],
+        "kg_node": True,
+    },
+    "CNN": {
+        "family": "convolutional_network",
+        "input_level": ["voxel", "ROI", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG"],
+        "description": "convolutional neural network for spatially structured signals",
+        "ref": "LeCun et al. 1998 Proc IEEE",
+        "aliases": ["convolutional neural network", "convolutional network", "2D-CNN"],
+        "kg_node": True,
+    },
+    "ResNet": {
+        "family": "convolutional_network",
+        "input_level": ["voxel", "ROI", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG"],
+        "description": "deep residual convolutional network",
+        "ref": "He et al. 2016 CVPR",
+        "aliases": ["residual network", "residual neural network"],
+        "kg_node": True,
+    },
+    "DenseNet": {
+        "family": "convolutional_network",
+        "input_level": ["voxel", "ROI", "channel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG"],
+        "description": "densely connected convolutional network",
+        "ref": "Huang et al. 2017 CVPR",
+        "aliases": ["densely connected convolutional network"],
+        "kg_node": True,
+    },
+    "U-Net": {
+        "family": "encoder_decoder_convolutional_network",
+        "input_level": ["voxel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET"],
+        "description": "encoder-decoder convolutional network for image segmentation",
+        "ref": "Ronneberger et al. 2015 MICCAI",
+        "aliases": ["UNet", "U Net"],
+        "kg_node": True,
+    },
+    "RNN": {
+        "family": "recurrent_neural_network",
+        "input_level": ["ROI", "connectivity", "channel", "variable"],
+        "modalities": ["fMRI", "EEG", "MEG", "EOG", "eye_tracking", "clinical"],
+        "description": "recurrent neural network for sequential signals",
+        "ref": "generic recurrent neural network",
+        "aliases": ["recurrent neural network"],
+        "kg_node": True,
+    },
+    "LSTM": {
+        "family": "recurrent_neural_network",
+        "input_level": ["ROI", "connectivity", "channel", "variable"],
+        "modalities": ["fMRI", "EEG", "MEG", "EOG", "eye_tracking", "clinical"],
+        "description": "long short-term memory recurrent network",
+        "ref": "Hochreiter and Schmidhuber 1997 Neural Computation",
+        "aliases": ["long short-term memory", "LSTM network"],
+        "kg_node": True,
+    },
+    "GRU": {
+        "family": "recurrent_neural_network",
+        "input_level": ["ROI", "connectivity", "channel", "variable"],
+        "modalities": ["fMRI", "EEG", "MEG", "EOG", "eye_tracking", "clinical"],
+        "description": "gated recurrent unit network for sequential signals",
+        "ref": "Cho et al. 2014 EMNLP",
+        "aliases": ["gated recurrent unit", "GRU network"],
+        "kg_node": True,
+    },
+    "Transformer": {
+        "family": "transformer",
+        "input_level": ["voxel", "ROI", "connectivity", "channel", "variable"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET", "EEG", "MEG", "clinical"],
+        "description": "self-attention neural network for sequences or tokenized measurements",
+        "ref": "Vaswani et al. 2017 NeurIPS",
+        "aliases": ["transformer network", "self-attention model"],
+        "kg_node": True,
+    },
+    "VisionTransformer": {
+        "family": "vision_transformer",
+        "input_level": ["voxel"],
+        "modalities": ["sMRI", "fMRI", "dMRI", "PET"],
+        "description": "vision transformer operating on image or volume patches",
+        "ref": "Dosovitskiy et al. 2021 ICLR",
+        "aliases": ["Vision Transformer", "ViT"],
+        "kg_node": True,
+    },
+    # ── Graph models used with connectomes ────────────────────────────
+    "GCN": {
+        "family": "graph_neural_network",
+        "input_level": ["ROI", "connectivity"],
+        "modalities": ["fMRI", "dMRI", "sMRI"],
+        "description": "graph convolutional network over brain regions and connections",
+        "ref": "Kipf and Welling 2017 ICLR",
+        "aliases": ["graph convolutional network"],
+        "kg_node": True,
+    },
+    "GAT": {
+        "family": "graph_neural_network",
+        "input_level": ["ROI", "connectivity"],
+        "modalities": ["fMRI", "dMRI", "sMRI"],
+        "description": "graph attention network over brain regions and connections",
+        "ref": "Velickovic et al. 2018 ICLR",
+        "aliases": ["graph attention network"],
+        "kg_node": True,
+    },
+    "GraphSAGE": {
+        "family": "graph_neural_network",
+        "input_level": ["ROI", "connectivity"],
+        "modalities": ["fMRI", "dMRI", "sMRI"],
+        "description": "inductive graph neural network with neighbourhood aggregation",
+        "ref": "Hamilton et al. 2017 NeurIPS",
+        "aliases": ["Graph SAGE"],
+        "kg_node": True,
+    },
+    "BrainNetCNN": {
+        "family": "connectome_convolutional_network",
+        "input_level": ["connectivity"],
+        "modalities": ["fMRI", "dMRI"],
+        "description": "convolutional neural network designed for brain connectivity matrices",
+        "ref": "Kawahara et al. 2017 NeuroImage",
+        "aliases": ["BrainNet CNN"],
         "kg_node": True,
     },
     # ── EEG-specific deep learning models ──────────────────────────────
@@ -265,6 +559,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "compact 2D conv net (depthwise + separable) for EEG classification",
         "ref": "Lawhern et al. 2018 J Neural Eng",
+        "aliases": ["EEG Net"],
         "kg_node": True,
     },
     "ShallowConvNet": {
@@ -273,6 +568,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "shallow temporal+spatial conv net, inspired by FBCSP",
         "ref": "Schirrmeister et al. 2017 Hum Brain Mapp",
+        "aliases": ["Shallow ConvNet"],
         "kg_node": True,
     },
     "DeepConvNet": {
@@ -281,6 +577,7 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "deep 5-block conv net for raw EEG classification",
         "ref": "Schirrmeister et al. 2017 Hum Brain Mapp",
+        "aliases": ["Deep ConvNet"],
         "kg_node": True,
     },
     "EEGConformer": {
@@ -289,7 +586,8 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "conv + self-attention hybrid for EEG emotion/MI/visual decoding",
         "ref": "Song et al. 2023 IEEE TNSRE",
-        "kg_node": False,
+        "aliases": ["EEG Conformer"],
+        "kg_node": True,
     },
     "LaBraM": {
         "family": "foundation_model",
@@ -297,7 +595,8 @@ ML_MODELS: dict[str, dict] = {
         "modalities":  ["EEG"],
         "description": "large brain foundation model for EEG (cross-task transfer)",
         "ref": "Jiang et al. 2024 ICLR",
-        "kg_node": False,
+        "aliases": ["Large Brain Model"],
+        "kg_node": True,
     },
 }
 
@@ -442,20 +741,31 @@ def _ensure(kg: KnowledgeGraph, node: ConceptNode) -> bool:
     return True
 
 
-def _build_atlas_node(name: str, info: dict) -> ConceptNode:
+def _build_spatial_reference_node(name: str, info: dict) -> ConceptNode:
     aliases = list(info.get("aliases", []))
     if name not in aliases:
         aliases.insert(0, name)
     return ConceptNode(
+        # Keep the long-standing ATLAS:* identifier namespace so saved paths,
+        # edges and external callers do not break during the tag rename.
         id=f"ATLAS:{name}",
         preferred_name=name,
-        domain_tags=[DomainTag.ATLAS.value],
+        domain_tags=[DomainTag.SPATIAL_REFERENCE.value],
         source_vocab="experiment_infra",
         aliases=aliases,
-        definition=f"Brain parcellation ({info['kind']}): {info['n_regions']} regions. "
+        definition=f"Spatial reference ({info['kind']}): {info['n_regions']} regions. "
                    f"Reference: {info['ref']}",
-        metadata={k: info[k] for k in ("n_regions", "family", "kind", "ref")},
+        metadata={
+            **{k: info[k] for k in ("n_regions", "family", "kind", "ref")},
+            "legacy_domain_tag": "atlas",
+            "stable_id_namespace": "ATLAS",
+        },
     )
+
+
+def _build_atlas_node(name: str, info: dict) -> ConceptNode:
+    """Backward-compatible wrapper for the former private builder name."""
+    return _build_spatial_reference_node(name, info)
 
 
 def _build_modality_node(name: str, info: dict) -> ConceptNode:
@@ -477,6 +787,7 @@ def _build_model_node(name: str, info: dict) -> ConceptNode:
         preferred_name=name,
         domain_tags=[DomainTag.ML_MODEL.value],
         source_vocab="experiment_infra",
+        aliases=list(info.get("aliases", [])),
         definition=f"{info['description']}. Reference: {info['ref']}",
         metadata={
             "family": info["family"],
@@ -506,6 +817,7 @@ def ingest_experiment_infrastructure(kg: KnowledgeGraph) -> dict:
     Returns a stats dict.
     """
     stats = {
+        "spatial_references_added": 0,
         "atlases_added":    0,
         "modalities_added": 0,
         "models_added":     0,
@@ -513,9 +825,11 @@ def ingest_experiment_infrastructure(kg: KnowledgeGraph) -> dict:
         "edges_added":      0,
     }
 
-    # 1. Atlases
-    for name, info in SUPPORTED_ATLASES.items():
-        if _ensure(kg, _build_atlas_node(name, info)):
+    # 1. Spatial references. `atlases_added` mirrors the new counter for
+    # compatibility with callers that consume the historical stats key.
+    for name, info in SPATIAL_REFERENCES.items():
+        if _ensure(kg, _build_spatial_reference_node(name, info)):
+            stats["spatial_references_added"] += 1
             stats["atlases_added"] += 1
 
     # 2. Modalities
@@ -573,8 +887,8 @@ def ingest_experiment_infrastructure(kg: KnowledgeGraph) -> dict:
                 stats["edges_added"] += 1
 
     logger.info(
-        "experiment_infra ingest: %d atlases, %d modalities, %d models, %d datasets, %d edges",
-        stats["atlases_added"], stats["modalities_added"], stats["models_added"],
+        "experiment_infra ingest: %d spatial references, %d modalities, %d models, %d datasets, %d edges",
+        stats["spatial_references_added"], stats["modalities_added"], stats["models_added"],
         stats["datasets_added"], stats["edges_added"],
     )
     return stats
@@ -585,7 +899,8 @@ def ingest_experiment_infrastructure(kg: KnowledgeGraph) -> dict:
 #: Domain tags that should be excluded from UMLS MRCONSO alignment.
 #: These are engineering/methodological concepts with no UMLS CUI.
 UMLS_SKIP_DOMAINS = {
-    DomainTag.ATLAS.value,
+    DomainTag.SPATIAL_REFERENCE.value,
+    "atlas",  # legacy serialized graphs
     DomainTag.MODALITY.value,
     DomainTag.ML_MODEL.value,
     DomainTag.DATASET.value,

@@ -76,7 +76,10 @@ def test_dataset_variable_serves_two_atoms():
 
 def test_infrastructure_domains_are_outside_alphabet():
     """Atlas/modality/dataset/ml_model/claim/recipe describe apparatus, not science."""
-    for d in ("atlas", "modality", "dataset", "ml_model", "claim", "recipe"):
+    for d in (
+        "spatial_reference", "atlas", "modality", "dataset", "ml_model",
+        "claim", "recipe",
+    ):
         assert atoms_for_domain(d) == frozenset(), f"{d} should not map to any atom"
 
 

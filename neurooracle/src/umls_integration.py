@@ -40,6 +40,11 @@ def _collect_graph_names(kg) -> dict[str, list[str]]:
     for nid, node in kg._index.items():
         if "claim" in node.domain_tags:
             continue
+        # Claim-derived mentions are evidence-bearing graph identities.  They
+        # are preserved and aligned through explicit CLM_ATOM -> CUI maps_to
+        # projections, never annotated here as canonical concepts.
+        if nid.startswith("CLM_CONCEPT:"):
+            continue
         key = node.preferred_name.lower().strip()
         if key:
             name_to_ids[key].append(nid)
@@ -147,6 +152,9 @@ def align_graph_to_umls(
     skipped = 0
     for nid, node in kg._index.items():
         if "claim" in node.domain_tags:
+            continue
+        if nid.startswith("CLM_CONCEPT:"):
+            skipped += 1
             continue
         if should_skip_umls_alignment(node):
             skipped += 1

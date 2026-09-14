@@ -92,7 +92,11 @@ from .src.chain_extract import (
     run_retry_failed, run_second_pass_zero,
     run_fill_sparse, run_backfill_cache,
 )
-from .src.case_targeted_extract import run_case_targeted_extraction
+from .src.case_targeted_extract import (
+    CASE_STUDY_YEAR_END,
+    CASE_STUDY_YEAR_START,
+    run_case_targeted_extraction,
+)
 from .src.case1_manual_claims import run_manual_case1_claim_ingestion
 
 
@@ -152,8 +156,18 @@ def _cmd_case_targeted():
                        "case2_supplemental_classic",
                    ],
                    help="Curated query preset to run")
-    p.add_argument("--year-start", type=int, default=2010)
-    p.add_argument("--year-end", type=int, default=2026)
+    p.add_argument(
+        "--year-start",
+        type=int,
+        default=CASE_STUDY_YEAR_START,
+        help="Frozen Case Study publication window start (must be 1980)",
+    )
+    p.add_argument(
+        "--year-end",
+        type=int,
+        default=CASE_STUDY_YEAR_END,
+        help="Frozen Case Study publication window end (must be 2026)",
+    )
     p.add_argument("--target-papers", type=int, default=200,
                    help="Stop searching after this many new papers are selected")
     p.add_argument("--max-results", type=int, default=100,

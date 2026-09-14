@@ -1,8 +1,13 @@
-"""Case-study registry for the NeuroClaw Nature paper.
+"""Formal case-study registry for NeuroOracle autoresearch.
 
 The autoresearch CLI runs a four-stage cycle (batch -> novelty -> critic ->
 plausibility) over the canonical task / chain registry in :mod:`atoms`. The
-three case studies that anchor the Nature paper do not all map cleanly onto a
+formal registry separates research scope from evaluation protocol. A case
+study describes a scientific research scope and its optional hypothesis
+generator; hindcasting is a validation protocol declared separately in
+``validation_protocols.py`` and can be applied to every registered case study.
+
+The two implemented manuscript experiments do not both map cleanly onto a
 single canonical task, so this module records the extra routing metadata the
 generic engine needs:
 
@@ -10,7 +15,9 @@ generic engine needs:
   hypotheses, with exhaustive, random-walk, LLM-brainstorm, and NeuroDiscovery
   strategies.
 - Case Study 2 uses a canonical chain plus case-specific atom-pool restrictions.
-- Case Study 3 is reserved for hindcasting over a frozen historical KG snapshot.
+- Fifteen task-backed research scopes are registered as first-class case
+  studies. They are not nested under another case study and are not
+  automatically scheduled for primary experiments.
 
 This module declares each case study as a :class:`CaseStudy` config: the
 generator family it dispatches to, the underlying canonical task / chain
@@ -18,9 +25,9 @@ generator family it dispatches to, the underlying canonical task / chain
 the generic engine to case-specific constraints. The CLI's ``case-study``
 subcommand reads this registry and routes execution accordingly.
 
-At the current rollout state, Case Study 1 and Case Study 2 are wired into the
-case-study orchestrator. Case Study 3 remains a reserved generator family until the
-historical claim / snapshot pipeline is finalized.
+The registry therefore contains seventeen peer case-study IDs: Case Study 1,
+Case Study 2, and the fifteen task-backed scopes. ``case3_hindcasting`` is not
+a case-study ID.
 """
 
 from __future__ import annotations
@@ -35,6 +42,7 @@ from typing import Any, Callable, Optional
 
 from .atoms import (
     Atom,
+    CANONICAL_TASKS,
     Task,
     TaskChain,
     chain_by_name,
@@ -48,13 +56,11 @@ from .atoms import (
 GENERATOR_TASK              = "task"               # CANONICAL_TASKS via batch_generate_for_task
 GENERATOR_CHAIN             = "chain"              # CANONICAL_CHAINS via batch_generate_for_chain
 GENERATOR_CASE1_CANDIDATE   = "case1_candidate_space"  # CS1 disease x ROI x feature search
-GENERATOR_ATOM_SUBSTITUTION = "atom_substitution"  # Case Study 3 hindcasting (reserved)
 
 _KNOWN_GENERATORS = frozenset({
     GENERATOR_TASK,
     GENERATOR_CHAIN,
     GENERATOR_CASE1_CANDIDATE,
-    GENERATOR_ATOM_SUBSTITUTION,
 })
 
 NEUROSTORM_ATLAS_ROOT = Path(
@@ -388,12 +394,11 @@ class CaseStudy:
         echoes both in the run log so figure / paper text stays in sync
         with whatever the orchestrator actually generated.
     generator:
-        One of GENERATOR_TASK / GENERATOR_CHAIN / GENERATOR_CASE1_CANDIDATE
-        / GENERATOR_ATOM_SUBSTITUTION.
+        One of GENERATOR_TASK / GENERATOR_CHAIN / GENERATOR_CASE1_CANDIDATE.
     task / chain:
         The canonical Task or TaskChain backing the generator. Exactly one
         is set for GENERATOR_TASK / GENERATOR_CHAIN. Case Study 1 still pins a
-        Task for downstream tagging; Case Study 3 pins a chain as its schema anchor.
+        Task for downstream tagging.
     stage_params:
         Per-stage parameter overrides. Defaults match run_cycle.sh.
     pre_hooks / post_hooks:
@@ -403,7 +408,7 @@ class CaseStudy:
         pathway-only GENE pool) or rewrap generated hypotheses.
     extras:
         Generator-specific config dict that doesn't fit anywhere else
-        (snapshot paths for Case Study 3, cluster-mining knobs for Case Study 1, ...).
+        (cluster-mining knobs for Case Study 1, scheduling metadata, ...).
     """
     name: str
     chinese_name: str
@@ -450,6 +455,19 @@ _CASE2_NON_IMAGING_BIOMARKER_RE = re.compile(
     re.I,
 )
 
+_CASE2_IMAGING_MEASUREMENT_RE = re.compile(
+    r"(PET|MRI|fMRI|SPECT|DTI|FDG|SUVR|hypometabolism|atrophy|volume|"
+    r"thickness|surface area|fractional anisotropy|diffusivity|perfusion|"
+    r"cerebral blood flow|connectivity|activation|activity|signal|ALFF|ReHo|"
+    r"homogeneity|network topology|density|binding|uptake)",
+    re.I,
+)
+
+_CASE2_GENETIC_ENTITY_RE = re.compile(
+    r"\b(gene|genetic|genotype|allele|variant|polygenic|PRS)\w*\b",
+    re.I,
+)
+
 _CASE2_OUTCOME_RE = re.compile(
     r"("
     r"ADAS|MMSE|MoCA|CDR|HAMD|HAM-D|MADRS|UPDRS|PACC|CBI|inventory|"
@@ -461,12 +479,52 @@ _CASE2_OUTCOME_RE = re.compile(
 )
 
 
-def _case2_is_claim_backed_clm(nid: str, node, claim_incident: Counter) -> bool:
-    return (
-        node is not None
-        and nid.startswith("CLM_CONCEPT:")
-        and claim_incident.get(nid, 0) > 0
+def _case2_endpoint_atom_roles(name: str, declared_type: str) -> set[Atom]:
+    """Assign one unambiguous Case 2 atom role unless the type is explicitly mixed."""
+    name = str(name or "").strip()
+    declared = str(declared_type or "").strip().upper()
+
+    if "IMAGING_AND_OUTCOME" in declared:
+        return set()
+    if "IMAGING" in declared or declared in {
+        "NEUROIMAGING", "CONNECTIVITY", "PET_MARKER"
+    }:
+        return {Atom.IMAGING_MARKER}
+    if declared == "BRAIN_REGION":
+        return {Atom.IMAGING_MARKER} if _CASE2_IMAGING_MEASUREMENT_RE.search(name) else set()
+    if "OUTCOME" in declared or declared in {
+        "CLINICAL_EVENT", "COGNITIVE_FUNCTION", "SYMPTOM", "RATING_SCALE"
+    }:
+        return {Atom.OUTCOME}
+    if any(
+        token in declared
+        for token in (
+            "GENE", "GENETIC", "POLYGENIC", "PATHWAY", "MOLECULAR", "CELLULAR"
+        )
+    ):
+        return {Atom.GENE_TARGET}
+
+    imaging_named = bool(
+        _CASE2_IMAGING_MARKER_RE.search(name)
+        and _CASE2_IMAGING_MEASUREMENT_RE.search(name)
+        and not _CASE2_GENETIC_ENTITY_RE.search(name)
+    ) and not (
+        _CASE2_NON_IMAGING_BIOMARKER_RE.search(name)
+        and not re.search(
+            r"\b(PET|MRI|fMRI|SPECT|DTI|FDG|SUVR)\b|amyloid|tau|brain|"
+            r"cortical|hippocamp|connectivity|atrophy|hypometabolism",
+            name,
+            re.I,
+        )
     )
+    outcome_named = bool(_CASE2_OUTCOME_RE.search(name))
+    if imaging_named == outcome_named:
+        return set()
+    return {Atom.IMAGING_MARKER if imaging_named else Atom.OUTCOME}
+
+
+def _case2_is_claim_backed_node(nid: str, node, claim_incident: Counter) -> bool:
+    return node is not None and claim_incident.get(nid, 0) > 0
 
 
 def _case2_pin_atom_pools(engine, case) -> None:
@@ -478,20 +536,120 @@ def _case2_pin_atom_pools(engine, case) -> None:
     serving as the marker anchor and the new IM:* atom layer is never
     reached. Case Study 2 now keeps those curated IM:*/OUTCOME:* anchors, but also
     admits high-confidence CLM_CONCEPT claim entities when they look like
-    concrete imaging markers or clinical/cognitive outcomes. Gene seeds stay
-    pathway-aware, with Phase-2 claim-backed genes ranked first.
+    concrete imaging markers or clinical/cognitive outcomes. When scoped
+    Case Study 2 claims are present, their genes and anchors are ranked ahead
+    of equally dense nodes from unrelated parts of the full community KG.
     """
     # Genes that participate in any GENESET (the "pathway_aggregated" pool).
     pathway_genes: set[str] = set()
     claim_incident: Counter[str] = Counter()
+    case2_claim_incident: Counter[str] = Counter()
     gene_claim_scores: Counter[str] = Counter()
+    case2_gene_claim_scores: Counter[str] = Counter()
+    case2_imaging_scores: Counter[str] = Counter()
+    case2_outcome_scores: Counter[str] = Counter()
+    case2_endpoint_names: dict[str, set[str]] = {}
+    case2_imaging_ids: set[str] = set()
+    case2_outcome_ids: set[str] = set()
+    case2_gene_ids: set[str] = set()
+    case2_claim_endpoint_roles: dict[tuple[str, str], set[Atom]] = {}
     imaging_domains = {"biomarker", "connectivity", "imaging_feature", "neuroanatomy"}
     outcome_domains = {"treatment_outcome", "dataset_variable", "cognitive_function"}
 
+    def _claim_scopes(claim_id: str) -> set[str]:
+        claim_node = engine._index.get(claim_id)
+        if claim_node is None:
+            return set()
+        claim_meta = claim_node.metadata or {}
+        nested_meta = claim_meta.get("metadata") or {}
+        scopes: set[str] = set()
+        for holder in (claim_meta, nested_meta):
+            values = holder.get("claim_case_study_ids") or []
+            if isinstance(values, str):
+                values = [values]
+            scopes.update(str(value).strip() for value in values if value)
+        return scopes
+
+    def _score_gene(
+        scores: Counter[str],
+        nid: str,
+        node_domains: set[str],
+        other_domains: set[str],
+    ) -> None:
+        if "gene" not in node_domains:
+            return
+        scores[nid] += 1
+        if other_domains & imaging_domains:
+            scores[nid] += 3
+        if other_domains & outcome_domains:
+            scores[nid] += 2
+
+    def _score_anchor(
+        scores: Counter[str],
+        nid: str,
+        node_domains: set[str],
+        other_domains: set[str],
+        anchor_domains: set[str],
+    ) -> None:
+        if not (node_domains & anchor_domains):
+            return
+        scores[nid] += 1
+        if other_domains & {"gene"}:
+            scores[nid] += 3
+        if other_domains & imaging_domains:
+            scores[nid] += 2
+        if other_domains & outcome_domains:
+            scores[nid] += 2
+
+    def _remember_endpoint(
+        nid: str,
+        name: str,
+        declared_type: str,
+    ) -> set[Atom]:
+        if not nid:
+            return set()
+        name = str(name or "").strip()
+        if name:
+            case2_endpoint_names.setdefault(nid, set()).add(name)
+        roles = _case2_endpoint_atom_roles(name, declared_type)
+        if Atom.IMAGING_MARKER in roles:
+            case2_imaging_ids.add(nid)
+        if Atom.OUTCOME in roles:
+            case2_outcome_ids.add(nid)
+        if Atom.GENE_TARGET in roles:
+            case2_gene_ids.add(nid)
+        return roles
+
+    # Scope membership is authoritative on the claim nodes. Building the
+    # endpoint pools from those nodes also survives DiGraph edge coalescing,
+    # where a different claim may be retained as the display edge.
+    for claim_id, claim_node in engine._index.items():
+        if "claim" not in (claim_node.domain_tags or []):
+            continue
+        if "case2_pathway_mediation" not in _claim_scopes(claim_id):
+            continue
+        claim_meta = claim_node.metadata or {}
+        nested_meta = claim_meta.get("metadata") or {}
+        subject_id = str(claim_meta.get("subject_id") or "")
+        object_id = str(claim_meta.get("object_id") or "")
+        for endpoint_id in (subject_id, object_id):
+            if endpoint_id:
+                case2_claim_incident[endpoint_id] += 1
+        case2_claim_endpoint_roles[(claim_id, "subject")] = _remember_endpoint(
+            subject_id,
+            claim_meta.get("subject_name", ""),
+            nested_meta.get("subject_type", ""),
+        )
+        case2_claim_endpoint_roles[(claim_id, "object")] = _remember_endpoint(
+            object_id,
+            claim_meta.get("object_name", ""),
+            nested_meta.get("object_type", ""),
+        )
     for u, v, d in engine.G.edges(data=True):
         if d.get("relation_type") == "part_of" and v.startswith("GENESET:"):
             pathway_genes.add(u)
-        if not d.get("metadata", {}).get("claim_id"):
+        claim_id = d.get("metadata", {}).get("claim_id")
+        if not claim_id:
             continue
         claim_incident[u] += 1
         claim_incident[v] += 1
@@ -499,24 +657,38 @@ def _case2_pin_atom_pools(engine, case) -> None:
         v_node = engine._index.get(v)
         u_domains = set(u_node.domain_tags or []) if u_node else set()
         v_domains = set(v_node.domain_tags or []) if v_node else set()
-        if "gene" in u_domains:
-            gene_claim_scores[u] += 1
-            if v_domains & imaging_domains:
-                gene_claim_scores[u] += 3
-            if v_domains & outcome_domains:
-                gene_claim_scores[u] += 2
-        if "gene" in v_domains:
-            gene_claim_scores[v] += 1
-            if u_domains & imaging_domains:
-                gene_claim_scores[v] += 3
-            if u_domains & outcome_domains:
-                gene_claim_scores[v] += 2
+        _score_gene(gene_claim_scores, u, u_domains, v_domains)
+        _score_gene(gene_claim_scores, v, v_domains, u_domains)
+
+        if "case2_pathway_mediation" not in _claim_scopes(claim_id):
+            continue
+        _score_gene(case2_gene_claim_scores, u, u_domains, v_domains)
+        _score_gene(case2_gene_claim_scores, v, v_domains, u_domains)
+        _score_anchor(
+            case2_imaging_scores, u, u_domains, v_domains, imaging_domains
+        )
+        _score_anchor(
+            case2_imaging_scores, v, v_domains, u_domains, imaging_domains
+        )
+        _score_anchor(
+            case2_outcome_scores, u, u_domains, v_domains, outcome_domains
+        )
+        _score_anchor(
+            case2_outcome_scores, v, v_domains, u_domains, outcome_domains
+        )
+
+    active_claim_incident = (
+        case2_claim_incident if case2_claim_incident else claim_incident
+    )
+    active_gene_scores = (
+        case2_gene_claim_scores if case2_gene_claim_scores else gene_claim_scores
+    )
 
     def _im_filter(nid, node):
-        if nid.startswith("IM:"):
-            return True
-        if not _case2_is_claim_backed_clm(nid, node, claim_incident):
+        if not _case2_is_claim_backed_node(nid, node, active_claim_incident):
             return False
+        if nid in case2_imaging_ids:
+            return True
         domains = set(node.domain_tags or [])
         if not (domains & imaging_domains):
             return False
@@ -535,27 +707,39 @@ def _case2_pin_atom_pools(engine, case) -> None:
     def _gene_filter(nid, node):
         if node is None:
             return False
-        if nid.startswith("GENESET:") or nid.startswith("CLM_CONCEPT:"):
+        if nid.startswith("GENESET:"):
+            return False
+        if nid in case2_gene_ids:
+            return True
+        if nid in case2_imaging_ids or nid in case2_outcome_ids:
+            return False
+        if nid.startswith("CLM_CONCEPT:"):
             return False
         if "gene" not in (node.domain_tags or []):
             return False
         # Keep pathway genes as the Case Study 2 backbone, but allow claim-backed genes
         # into the seed pool too. The ranker below tries claim-backed genes
         # first, so the run starts in the dense case-study evidence region.
-        return ((nid in pathway_genes) if pathway_genes else True) or nid in gene_claim_scores
+        return ((nid in pathway_genes) if pathway_genes else True) or nid in active_gene_scores
 
     def _outcome_filter(nid, node):
-        if nid.startswith("OUTCOME:"):
-            return True
-        if not _case2_is_claim_backed_clm(nid, node, claim_incident):
+        if not _case2_is_claim_backed_node(nid, node, active_claim_incident):
             return False
+        if nid in case2_outcome_ids:
+            return True
         domains = set(node.domain_tags or [])
         if not (domains & outcome_domains):
             return False
         return bool(_CASE2_OUTCOME_RE.search(node.preferred_name or ""))
 
     def _gene_ranker(nid, node):
-        return gene_claim_scores.get(nid, 0)
+        return active_gene_scores.get(nid, 0)
+
+    def _im_ranker(nid, node):
+        return case2_imaging_scores.get(nid, active_claim_incident.get(nid, 0))
+
+    def _outcome_ranker(nid, node):
+        return case2_outcome_scores.get(nid, active_claim_incident.get(nid, 0))
 
     engine._chain_atom_filters = {
         Atom.IMAGING_MARKER: _im_filter,
@@ -567,12 +751,26 @@ def _case2_pin_atom_pools(engine, case) -> None:
     }
     engine._chain_atom_rankers = {
         Atom.GENE_TARGET: _gene_ranker,
+        Atom.IMAGING_MARKER: _im_ranker,
+        Atom.OUTCOME: _outcome_ranker,
     }
+    engine._chain_atom_explicit_pools = {
+        Atom.GENE_TARGET: case2_gene_ids,
+        Atom.IMAGING_MARKER: case2_imaging_ids,
+        Atom.OUTCOME: case2_outcome_ids,
+    }
+    engine._chain_claim_endpoint_roles = case2_claim_endpoint_roles
+    engine._chain_claim_first_scope = case.name
+    engine._chain_forbidden_bridge_ids = (
+        set(engine._path_ignore_ids) | set(engine._intermediate_only_ignore_ids)
+    )
     engine._chain_prefer_claim_backed_paths = True
-    engine._chain_claimless_path_fraction = 0.15
+    engine._chain_claimless_path_fraction = 0.0
+    engine._chain_require_claim_backed_paths = True
+    engine._chain_required_claim_scope = case.name
 
 
-# ── Concrete case studies (frozen for the Nature paper) ──────────────────────
+# ── Formal case studies ──────────────────────────────────────────────────────
 
 CASE1 = CaseStudy(
     name="case1_transdiagnostic",
@@ -643,35 +841,106 @@ CASE2 = CaseStudy(
     },
 )
 
-CASE3 = CaseStudy(
-    name="case3_hindcasting",
-    chinese_name="假设回溯预测",
-    english_name="Hypothesis Hindcasting",
-    generator=GENERATOR_ATOM_SUBSTITUTION,
-    chain=chain_by_name("genetic_imaging_disease"),
-    stage_params=StageParams(
-        batch=BatchParams(max_paths=4, max_seeds=30, target_per_task=100),
-        novelty=NoveltyParams(top=200, alpha=0.5),
-        critic=CriticParams(top=100, max_rounds=2, threshold=0.55),
-        plausibility=PlausibilityParams(top=100),
-    ),
-    extras={
-        "snapshot_2022_kg":         "neurooracle/data/snapshots/kg_2022.json",
-        "snapshot_2022_kge":        "neurooracle/data/snapshots/kge_2022.pt",
-        "substitution_axes":        ("GENE_TARGET", "IMAGING_MARKER", "DISEASE"),
-        "max_substitutions_per_seed": 5,
-    },
-)
+_TASK_CASE_STUDY_NAMES: dict[str, tuple[str, str]] = {
+    "biomarker_discovery": ("生物标志物发现", "Biomarker Discovery"),
+    "disease_subtyping": ("疾病亚型划分", "Disease Subtyping"),
+    "progression_prediction": ("疾病进展预测", "Progression Prediction"),
+    "imaging_genetics": ("影像遗传学", "Imaging Genetics"),
+    "differential_diagnosis": ("鉴别诊断", "Differential Diagnosis"),
+    "drug_response_prediction": ("药物反应预测", "Drug Response Prediction"),
+    "personalised_treatment": ("个体化治疗", "Personalised Treatment"),
+    "drug_repurposing": ("药物重定位", "Drug Repurposing"),
+    "adverse_event_prediction": ("不良事件预测", "Adverse Event Prediction"),
+    "neuromodulation_target": ("神经调控靶点", "Neuromodulation Target"),
+    "functional_localization": ("功能定位", "Functional Localisation"),
+    "cognitive_decoding": ("认知解码", "Cognitive Decoding"),
+    "connectome_behavior": ("连接组—行为关联", "Connectome–Behaviour"),
+    "brain_age": ("脑龄", "Brain Age"),
+    "prognosis": ("预后预测", "Prognosis"),
+}
 
 
-CASE_STUDIES: tuple[CaseStudy, ...] = (CASE1, CASE2, CASE3)
+def _build_task_case_studies() -> tuple[CaseStudy, ...]:
+    studies: list[CaseStudy] = []
+    for task in CANONICAL_TASKS:
+        if task.name == "transdiagnostic_clustering":
+            continue
+        try:
+            chinese_name, english_name = _TASK_CASE_STUDY_NAMES[task.name]
+        except KeyError as exc:
+            raise RuntimeError(
+                f"canonical task {task.name!r} has no formal case-study name"
+            ) from exc
+        studies.append(
+            CaseStudy(
+                name=task.name,
+                chinese_name=chinese_name,
+                english_name=english_name,
+                generator=GENERATOR_TASK,
+                task=task,
+                stage_params=StageParams(
+                    batch=BatchParams(max_paths=4, max_seeds=30, target_per_task=100),
+                    novelty=NoveltyParams(top=200, alpha=0.5),
+                    critic=CriticParams(top=100, max_rounds=2, threshold=0.55),
+                    plausibility=PlausibilityParams(top=100),
+                ),
+                extras={
+                    "primary_experiment_scheduled": False,
+                    "hindcasting_supported": True,
+                },
+            )
+        )
+    return tuple(studies)
+
+
+TASK_CASE_STUDIES = _build_task_case_studies()
+CASE_STUDIES: tuple[CaseStudy, ...] = (CASE1, CASE2, *TASK_CASE_STUDIES)
+CASE_STUDY_BY_NAME = {case.name: case for case in CASE_STUDIES}
+
+if len(CASE_STUDIES) != 17 or len(CASE_STUDY_BY_NAME) != 17:
+    raise RuntimeError("the formal case-study registry must contain 17 unique IDs")
+if "case3_hindcasting" in CASE_STUDY_BY_NAME:
+    raise RuntimeError("hindcasting is a validation protocol, not a case-study ID")
+
+# Display numbering is deliberately derived from the frozen registry order.
+# It is a UI convenience only: the slug remains the stable identifier used by
+# the CLI, graph membership, audit contracts, and persisted experiment files.
+CASE_STUDY_DISPLAY_NUMBERS: dict[str, int] = {
+    case.name: index
+    for index, case in enumerate(CASE_STUDIES, start=1)
+}
+
+
+def case_study_display_number(name: str) -> int:
+    """Return the one-based UI number for a formal Case Study ID."""
+
+    try:
+        return CASE_STUDY_DISPLAY_NUMBERS[name]
+    except KeyError as exc:
+        valid = ", ".join(list_case_study_names())
+        raise KeyError(f"unknown case study: {name!r} (valid: {valid})") from exc
+
+
+def list_case_study_catalog() -> tuple[dict[str, object], ...]:
+    """Return renderer-facing metadata without exposing mutable registry state."""
+
+    return tuple(
+        {
+            "number": CASE_STUDY_DISPLAY_NUMBERS[case.name],
+            "id": case.name,
+            "name": case.english_name,
+            "chinese_name": case.chinese_name,
+            "english_name": case.english_name,
+        }
+        for case in CASE_STUDIES
+    )
 
 
 def case_study_by_name(name: str) -> CaseStudy:
     """Look up a case study by its registry slug. Raises KeyError."""
-    for cs in CASE_STUDIES:
-        if cs.name == name:
-            return cs
+    case = CASE_STUDY_BY_NAME.get(name)
+    if case is not None:
+        return case
     valid = ", ".join(list_case_study_names())
     raise KeyError(f"unknown case study: {name!r} (valid: {valid})")
 
@@ -689,12 +958,15 @@ __all__ = [
     "CaseStudy",
     "CASE1",
     "CASE2",
-    "CASE3",
+    "TASK_CASE_STUDIES",
     "CASE_STUDIES",
+    "CASE_STUDY_BY_NAME",
+    "CASE_STUDY_DISPLAY_NUMBERS",
     "case_study_by_name",
+    "case_study_display_number",
+    "list_case_study_catalog",
     "list_case_study_names",
     "GENERATOR_TASK",
     "GENERATOR_CHAIN",
     "GENERATOR_CASE1_CANDIDATE",
-    "GENERATOR_ATOM_SUBSTITUTION",
 ]

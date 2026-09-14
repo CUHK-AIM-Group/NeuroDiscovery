@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from .paper_scope import infer_paper_scope_from_claim_dict, normalize_paper_scope
+from .claim_compatibility import compatible_metadata
+
+from .case_study_scope import (
+    apply_case_study_membership,
+    claim_case_study_ids_from_dict,
+    normalize_case_study_ids,
+    paper_case_study_ids_from_dict,
+    remove_legacy_scope_fields,
+)
 
 
 class DomainTag(str, Enum):
@@ -23,11 +32,15 @@ class DomainTag(str, Enum):
     CONNECTIVITY = "connectivity"  # functional/structural connections
     IMAGING_FEATURE = "imaging_feature"  # cortical thickness, volume, FA, FC, SUVR, etc.
     DATASET_VARIABLE = "dataset_variable"  # genetics, environment, medication, etc.
-    # Phase 1.5 Experiment infrastructure (atlas/modality/dataset/ml_model)
+    # Phase 1.5 Experiment infrastructure
+    # (spatial_reference/modality/dataset/ml_model)
     # + reserved RECIPE tag (former Phase 4.3, removed 2026-05-13 but kept
     # in UMLS-skip set for forward compat).
     RECIPE = "recipe"          # reserved
-    ATLAS = "atlas"            # brain parcellation (ATLAS:*)
+    SPATIAL_REFERENCE = "spatial_reference"  # atlas/template/grid/layout (ATLAS:*)
+    # Source-compatibility alias.  The persisted tag is spatial_reference, but
+    # callers using DomainTag.ATLAS continue to resolve to the same member.
+    ATLAS = "spatial_reference"
     MODALITY = "modality"      # imaging/data modality (MODALITY:*)
     DATASET = "dataset"        # research dataset (DATASET:*)
     ML_MODEL = "ml_model"      # ML architecture (MODEL:*)
@@ -48,6 +61,33 @@ class DomainTag(str, Enum):
     # connect concept-side IM/disease/gene nodes to dataset variables in two
     # hops without polluting either side's domain.
     INDIVIDUAL_DATA_ANCHOR = "individual_data_anchor"
+
+    @classmethod
+    def _missing_(cls, value: object) -> DomainTag | None:
+        """Accept the retired ``atlas`` value at API/deserialisation boundaries."""
+        if value == "atlas":
+            return cls.SPATIAL_REFERENCE
+        return None
+
+
+LEGACY_DOMAIN_TAG_ALIASES: dict[str, str] = {
+    "atlas": DomainTag.SPATIAL_REFERENCE.value,
+}
+
+
+def normalize_domain_tag(value: str) -> str:
+    """Return the canonical persisted domain tag for a legacy-compatible input."""
+    return LEGACY_DOMAIN_TAG_ALIASES.get(value, value)
+
+
+def normalize_domain_tags(values: list[str]) -> list[str]:
+    """Canonicalise and de-duplicate domain tags while preserving their order."""
+    normalized: list[str] = []
+    for value in values:
+        tag = normalize_domain_tag(value)
+        if tag not in normalized:
+            normalized.append(tag)
+    return normalized
 
 
 class SemanticType(str, Enum):
@@ -76,8 +116,11 @@ class ConceptNode:
     definition: str = ""             # text definition
     aliases: list[str] = field(default_factory=list)         # synonyms / alternate names
     external_ids: dict[str, str] = field(default_factory=dict)  # cross-references
-    atlas_mapping: Optional[dict] = None  # MNI coords, atlas region ID, etc.
+    spatial_mapping: Optional[dict] = None  # coordinates, spatial reference, region ID, etc.
     metadata: dict = field(default_factory=dict)             # catch-all for extra info
+
+    def __post_init__(self) -> None:
+        self.domain_tags = normalize_domain_tags(list(self.domain_tags or []))
 
     def to_dict(self) -> dict:
         return {
@@ -89,13 +132,18 @@ class ConceptNode:
             "definition": self.definition,
             "aliases": self.aliases,
             "external_ids": self.external_ids,
-            "atlas_mapping": self.atlas_mapping,
+            "spatial_mapping": self.spatial_mapping,
             "metadata": self.metadata,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> ConceptNode:
-        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+        values = {k: v for k, v in d.items() if k in cls.__dataclass_fields__}
+        # Read legacy artifacts without keeping the retired field in memory or
+        # emitting it again.  Current/formal serialization is spatial_mapping.
+        if "spatial_mapping" not in values and "atlas_mapping" in d:
+            values["spatial_mapping"] = d["atlas_mapping"]
+        return cls(**values)
 
 
 RELATION_TYPES = {
@@ -161,6 +209,7 @@ RELATION_TYPES = {
     "has_adverse_effect",      # drug → AE SOC (drug → outcome)
     # Atlas / imaging-feature anchoring edges
     "defines_region",          # atlas → neuroanatomy ROI (atlas covers ROI)
+    "maps_to",                 # atlas-specific ROI → canonical anatomy concept
     "measured_by_modality",    # imaging_feature → modality (e.g. CortThick → sMRI)
     "is_imaging_feature_of",   # imaging_feature → neuroanatomy (feature lives on ROI)
     "has_imaging_feature",     # neuroanatomy → imaging_feature (inverse, for D/G → region → IM closure)
@@ -225,6 +274,7 @@ EDGE_TIER: dict[str, str] = {
     "supports_modality":             "skeleton",
     "provides_modality":             "skeleton",
     "defines_region":                "skeleton",
+    "maps_to":                       "skeleton",
     "measured_by_modality":          "skeleton",
     "is_imaging_feature_of":         "skeleton",
     # Tier 3 — inverse mirrors of canonical Tier-1 edges
@@ -304,9 +354,11 @@ class Evidence:
     sample_size: Optional[int] = None
     replicability: str = "single_study"  # "replicated", "single_study", "controversial"
     direction: str = ""              # "positive", "negative"
+    extra_fields: dict = field(default_factory=dict, repr=False)
 
     def to_dict(self) -> dict:
-        return {
+        serialized = deepcopy(self.extra_fields)
+        serialized.update({
             "study_type": self.study_type,
             "methodology": self.methodology,
             "p_value": self.p_value,
@@ -315,11 +367,20 @@ class Evidence:
             "sample_size": self.sample_size,
             "replicability": self.replicability,
             "direction": self.direction,
-        }
+        })
+        return serialized
 
     @classmethod
-    def from_dict(cls, d: dict) -> Evidence:
-        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+    def from_dict(cls, d: object) -> Evidence:
+        if isinstance(d, cls):
+            return deepcopy(d)
+        if not isinstance(d, dict):
+            # A legacy string/number/null is not structured scientific evidence.
+            # Keep it verbatim without inventing a statistic or study design.
+            return cls(replicability="", extra_fields={"legacy_value": deepcopy(d)})
+        known = set(cls.__dataclass_fields__) - {"extra_fields"}
+        return cls(**{k: deepcopy(v) for k, v in d.items() if k in known},
+                   extra_fields={k: deepcopy(v) for k, v in d.items() if k not in known})
 
 
 @dataclass
@@ -331,20 +392,25 @@ class PaperRef:
     authors: str = ""
     year: Optional[int] = None
     journal: str = ""
+    extra_fields: dict = field(default_factory=dict, repr=False)
 
     def to_dict(self) -> dict:
-        return {
+        serialized = deepcopy(self.extra_fields)
+        serialized.update({
             "pmid": self.pmid,
             "doi": self.doi,
             "title": self.title,
             "authors": self.authors,
             "year": self.year,
             "journal": self.journal,
-        }
+        })
+        return serialized
 
     @classmethod
     def from_dict(cls, d: dict) -> PaperRef:
-        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+        known = set(cls.__dataclass_fields__) - {"extra_fields"}
+        return cls(**{k: deepcopy(v) for k, v in d.items() if k in known},
+                   extra_fields={k: deepcopy(v) for k, v in d.items() if k not in known})
 
 
 @dataclass
@@ -365,17 +431,25 @@ class Claim:
     evidence: Evidence = field(default_factory=Evidence)
     source_paper: PaperRef = field(default_factory=PaperRef)
     raw_text: str = ""                   # original sentence from paper
-    paper_scope: list[str] = field(default_factory=list)
+    paper_case_study_ids: list[str] = field(default_factory=list)
+    claim_case_study_ids: list[str] = field(default_factory=list)
+    scope_reaudit: dict = field(default_factory=dict)
     metadata: dict = field(default_factory=dict)
+    extra_fields: dict = field(default_factory=dict, repr=False)
 
     def to_dict(self) -> dict:
-        claim_data = {
-            "id": self.id,
-            "metadata": self.metadata,
-            "paper_scope": self.paper_scope,
-        }
-        paper_scope = self.paper_scope or infer_paper_scope_from_claim_dict(claim_data)
-        return {
+        claim_case_study_ids = normalize_case_study_ids(self.claim_case_study_ids)
+        paper_case_study_ids = normalize_case_study_ids(
+            [*self.paper_case_study_ids, *claim_case_study_ids]
+        )
+        metadata = deepcopy(self.metadata)
+        apply_case_study_membership(
+            metadata,
+            paper_case_study_ids=paper_case_study_ids,
+            claim_case_study_ids=claim_case_study_ids,
+        )
+        serialized = deepcopy(self.extra_fields)
+        serialized.update({
             "id": self.id,
             "subject_id": self.subject_id,
             "subject_name": self.subject_name,
@@ -384,25 +458,42 @@ class Claim:
             "object_name": self.object_name,
             "negated": self.negated,
             "confidence": self.confidence,
-            "evidence": self.evidence.to_dict(),
+            "evidence": Evidence.from_dict(self.evidence).to_dict(),
             "source_paper": self.source_paper.to_dict(),
             "raw_text": self.raw_text,
-            "paper_scope": paper_scope,
-            "metadata": self.metadata,
-        }
+            "paper_case_study_ids": paper_case_study_ids,
+            "claim_case_study_ids": claim_case_study_ids,
+            "metadata": metadata,
+        })
+        if self.scope_reaudit:
+            serialized["scope_reaudit"] = dict(self.scope_reaudit)
+        return serialized
 
     @classmethod
     def from_dict(cls, d: dict) -> Claim:
-        d = d.copy()
-        if "evidence" in d and isinstance(d["evidence"], dict):
+        d = deepcopy(d)
+        paper_case_study_ids = paper_case_study_ids_from_dict(d)
+        claim_case_study_ids = claim_case_study_ids_from_dict(d)
+        if "evidence" in d:
             d["evidence"] = Evidence.from_dict(d["evidence"])
         if "source_paper" in d and isinstance(d["source_paper"], dict):
             d["source_paper"] = PaperRef.from_dict(d["source_paper"])
-        if "paper_scope" in d:
-            d["paper_scope"] = normalize_paper_scope(d["paper_scope"])
-        else:
-            d["paper_scope"] = infer_paper_scope_from_claim_dict(d)
-        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+        metadata = compatible_metadata(d)
+        remove_legacy_scope_fields(metadata)
+        apply_case_study_membership(
+            metadata,
+            paper_case_study_ids=paper_case_study_ids,
+            claim_case_study_ids=claim_case_study_ids,
+        )
+        d["metadata"] = metadata
+        remove_legacy_scope_fields(d)
+        d["paper_case_study_ids"] = normalize_case_study_ids(
+            [*paper_case_study_ids, *claim_case_study_ids]
+        )
+        d["claim_case_study_ids"] = claim_case_study_ids
+        known = set(cls.__dataclass_fields__) - {"extra_fields"}
+        return cls(**{k: v for k, v in d.items() if k in known},
+                   extra_fields={k: v for k, v in d.items() if k not in known})
 
     def to_edge(self) -> Edge:
         """Convert claim to a simplified graph edge for traversal."""

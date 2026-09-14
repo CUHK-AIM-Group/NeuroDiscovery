@@ -64,6 +64,7 @@ def cmd_kge_train(
         weight_decay=weight_decay,
         eval_every=eval_every,
         early_stop_patience=early_stop_patience,
+        random_seed=seed,
         device=device or ("cuda" if _has_cuda() else "cpu"),
     )
     ckpt_name = Path(output).stem

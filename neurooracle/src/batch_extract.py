@@ -20,6 +20,7 @@ import csv
 import json
 import logging
 import os
+import re
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
@@ -28,7 +29,7 @@ from queue import Queue
 from typing import Optional
 
 from .claim_extractor import ClaimExtractor
-from .claim_ingestion import ingest_claims
+from .claim_ingestion import ingest_claims, persist_ingestion_results
 from .graph_manager import KnowledgeGraph
 from .schema import PaperRef
 from .storage import load_graph, save_graph
@@ -76,12 +77,22 @@ def _search_pubmed(query: str, max_results: int) -> list[str]:
         "retmax": max_results,
         "sort": "relevance",
         "retmode": "json",
-        "api_key": NCBI_API_KEY,
     }
+    if NCBI_API_KEY:
+        params["api_key"] = NCBI_API_KEY
     backoff = 2.0
     for attempt in range(4):
         try:
-            resp = requests.get(search_url, params=params, timeout=30)
+            # Case Study queries routinely exceed safe URL lengths.  NCBI
+            # supports form-encoded POST for ESearch and recommends it for
+            # large requests; using POST also avoids proxy/browser URI limits.
+            resp = requests.post(search_url, data=params, timeout=30)
+            if resp.status_code == 400:
+                logger.warning(
+                    "PubMed rejected ESearch query (400): %s",
+                    (resp.text or "")[:300],
+                )
+                return []
             if resp.status_code in (429, 502, 503):
                 logger.warning(f"PubMed esearch {resp.status_code}, backing off {backoff:.0f}s (attempt {attempt+1})")
                 time.sleep(backoff)
@@ -118,6 +129,26 @@ def _collect_pubmed_abstract(article) -> str:
             text = f"{label}: {text}"
         parts.append(text)
     return " ".join(parts)
+
+
+def _extract_pubmed_year(article) -> Optional[int]:
+    """Resolve publication year across regular and ahead-of-print XML forms."""
+
+    for path in (
+        ".//PubDate/Year",
+        ".//ArticleDate/Year",
+        ".//PubMedPubDate[@PubStatus='pubmed']/Year",
+        ".//PubMedPubDate[@PubStatus='entrez']/Year",
+    ):
+        element = article.find(path)
+        if element is not None and element.text and element.text.strip().isdigit():
+            return int(element.text.strip())
+    medline_date = article.find(".//PubDate/MedlineDate")
+    if medline_date is not None and medline_date.text:
+        match = re.search(r"\b(?:19|20)\d{2}\b", medline_date.text)
+        if match:
+            return int(match.group(0))
+    return None
 
 
 def _fetch_pubmed_details(
@@ -168,14 +199,33 @@ def _fetch_pubmed_details(
             "id": ",".join(batch),
             "rettype": "xml",
             "retmode": "xml",
-            "api_key": NCBI_API_KEY,
         }
-        try:
-            resp = requests.post(fetch_url, data=data, timeout=120)
-            resp.raise_for_status()
-            root = ET.fromstring(resp.content)
-        except Exception as e:
-            logger.warning(f"PubMed fetch failed (batch {i}-{i+len(batch)}): {e}")
+        if NCBI_API_KEY:
+            data["api_key"] = NCBI_API_KEY
+        root = None
+        backoff = 2.0
+        for attempt in range(4):
+            try:
+                # Small PMID lists are more reliable as GET requests through some
+                # institutional proxies; larger lists remain POST to avoid HTTP 414.
+                if len(batch) <= 50:
+                    resp = requests.get(fetch_url, params=data, timeout=120)
+                else:
+                    resp = requests.post(fetch_url, data=data, timeout=120)
+                if resp.status_code in (429, 502, 503, 504):
+                    raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:160]}")
+                resp.raise_for_status()
+                root = ET.fromstring(resp.content)
+                break
+            except Exception as e:
+                logger.warning(
+                    f"PubMed fetch failed (batch {i}-{i+len(batch)}, "
+                    f"attempt {attempt+1}/4): {e}"
+                )
+                if attempt < 3:
+                    time.sleep(backoff)
+                    backoff *= 2
+        if root is None:
             continue
 
         for article in root.findall(".//PubmedArticle"):
@@ -184,7 +234,7 @@ def _fetch_pubmed_details(
                 pmid = pmid_el.text if pmid_el is not None else ""
 
                 title_el = article.find(".//ArticleTitle")
-                title = title_el.text if title_el is not None else ""
+                title = _element_text(title_el) if title_el is not None else ""
 
                 abstract = _collect_pubmed_abstract(article)
                 if not abstract or not abstract.strip():
@@ -201,13 +251,12 @@ def _fetch_pubmed_details(
                         authors.append(name)
                 authors_str = ", ".join(authors)
 
-                year_el = article.find(".//PubDate/Year")
-                year = int(year_el.text) if year_el is not None and year_el.text else None
+                year = _extract_pubmed_year(article)
 
                 journal_el = article.find(".//Journal/Title")
                 journal = journal_el.text if journal_el is not None else ""
 
-                doi_el = article.find(".//ArticleIdList/ArticleId[@IdType='doi']")
+                doi_el = article.find("./PubmedData/ArticleIdList/ArticleId[@IdType='doi']")
                 doi = doi_el.text if doi_el is not None else ""
 
                 paper_ref = PaperRef(
@@ -393,16 +442,19 @@ def _append_claims_to_jsonl(
     results: list,
     disease: str,
     year: int,
-):
-    """Append extracted claims to JSONL file (one JSON object per line)."""
-    with open(jsonl_path, "a", encoding="utf-8") as f:
-        for result in results:
-            for claim in result.claims:
-                record = claim.to_dict()
-                record["disease"] = disease
-                record["year"] = year
-                record["extraction_timestamp"] = datetime.now().isoformat()
-                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    *,
+    kg: KnowledgeGraph,
+    ingest_summary: dict,
+) -> dict:
+    """Persist graph-accepted claims and audit rejected extraction candidates."""
+    return persist_ingestion_results(
+        kg,
+        results,
+        ingest_summary,
+        jsonl_path,
+        label=disease,
+        year=year,
+    )
 
 
 # ── Main Pipeline ──────────────────────────────────────────────────
@@ -479,7 +531,7 @@ def run_batch_extraction(
     abstract_cache = AbstractCache(cache_path)
 
     # init extractor
-    extractor = ClaimExtractor(lock_model=lock_model)
+    extractor = ClaimExtractor(lock_model=lock_model, strict_scope_audit=True)
     logger.info(f"using {max_workers} parallel LLM workers")
 
     # stats
@@ -505,8 +557,13 @@ def run_batch_extraction(
             if result.claims:
                 batch_claims += len(result.claims)
 
-        ingest_claims(kg_, results_, keep_noise=keep_noise_,
-                      strict_phase1=strict_phase1_)
+        ingest_summary = ingest_claims(
+            kg_,
+            results_,
+            keep_noise=keep_noise_,
+            strict_phase1=strict_phase1_,
+            require_final_scope_audit=True,
+        )
 
         papers_meta = []
         for (abstract, ref), result in zip(papers_list, results_):
@@ -523,11 +580,28 @@ def run_batch_extraction(
                 "timestamp": datetime.now().isoformat(),
             })
         _append_to_csv(papers_csv_, papers_meta)
-        _append_claims_to_jsonl(claims_file_, results_, d, yr)
+        persistence_summary = _append_claims_to_jsonl(
+            claims_file_,
+            results_,
+            d,
+            yr,
+            kg=kg_,
+            ingest_summary=ingest_summary,
+        )
 
         total_papers += len(papers_list)
-        total_claims += batch_claims
-        logger.info(f"  {yr}: ingested {batch_claims} claims (total: {total_claims})")
+        accepted_claims = int(ingest_summary["claims_added"])
+        total_claims += accepted_claims
+        logger.info(
+            "  %s: extracted %s candidates, accepted %s, rejected %s "
+            "(accepted total: %s; canonical writes: %s)",
+            yr,
+            batch_claims,
+            accepted_claims,
+            len(ingest_summary["rejected_claims"]),
+            total_claims,
+            persistence_summary["claims_written"],
+        )
 
         disease_years_.append(yr)
         completed_years_[d] = disease_years_
