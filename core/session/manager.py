@@ -133,9 +133,10 @@ class SessionManager:
                 f"Summary:"
             )
 
-            # Call LLM (use lightweight model for cost efficiency)
+            # Preserve the lightweight role; never send an OpenAI model to another API.
+            from core.llm.adapters import auxiliary_model
             response = self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",  # Lightweight model for summarization
+                model=auxiliary_model(self.llm_client),
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
                 max_tokens=200,

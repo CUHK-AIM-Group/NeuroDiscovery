@@ -680,9 +680,9 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn("['llmApiKey', 'llmBaseUrl'].includes(row.key)", index_html)
         self.assertIn('class="settings-required-notice"', index_html)
         self.assertIn(
-            "Enter an API key and confirm the API endpoint below.", index_html
+            "Enter an API key and confirm the API endpoint below, then save the settings.", index_html
         )
-        self.assertIn("请在下方填写 API key，并确认 API 接入点。", index_html)
+        self.assertIn("请在下方填写 API key 并确认 API 接入点，然后保存设置。", index_html)
         send_message = index_html[index_html.index("async function sendMessage()") :]
         send_message = send_message[: send_message.index("function stopCurrentRequest(")]
         self.assertIn(
@@ -1091,9 +1091,9 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         )[1].split("const STUDY_VIEW_NAMES", 1)[0]
         self.assertEqual(
             re.findall(r"\n\s+id: '([^']+)'", settings_sections),
-            ["general", "llm", "runtime", "advanced"],
+            ["general", "llm", "usage", "runtime", "advanced"],
         )
-        self.assertIn("Model & API", settings_sections)
+        self.assertIn("title: 'Models'", settings_sections)
         self.assertIn("Reset application", index_html)
         self.assertIn("重置应用", index_html)
         self.assertIn("window.neuroclawDesktop.resetApplication()", index_html)

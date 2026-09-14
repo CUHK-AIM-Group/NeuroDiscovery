@@ -189,8 +189,8 @@ _MODE_CONTENT = {
     AUTORESEARCH_MODE_END_TO_END: {
         "zh_title": "端到端 autoresearch",
         "en_title": "End-to-end autoresearch",
-        "zh_scope": "依次覆盖 idea、数据、方法/模型、实验与验证；每一阶段保留可复现产物，并在长任务或高成本执行前确认方案。",
-        "en_scope": "Cover idea, data, method/model, experiment, and validation in sequence. Preserve reproducible artifacts and confirm plans before long or costly execution.",
+        "zh_scope": "依次覆盖 idea、数据、方法/模型、实验与验证；在已授权范围和预算内持续执行到交付并检查产物，保留各阶段可复现记录。",
+        "en_scope": "Cover idea, data, method/model, experiment, and validation in sequence. Continue within the authorized scope and budget until deliverables are produced and checked; preserve reproducible stage records.",
         "zh_items": (
             "总体科学问题、目标结论、预期输出和成功标准",
             "数据集路径/访问方式、模态、样本范围、标签/协变量和使用限制",
@@ -244,9 +244,9 @@ def render_help_response(request: AutoResearchHelpRequest) -> str:
     scope_heading = "范围：" if zh else "Scope:"
     heading = "请提供以下资料" if zh else "Please provide"
     next_step = (
-        "资料不完整也可以先发；NeuroRuntime 会标出缺失项，并在你确认范围后再执行。"
+        "资料不完整也可以先发；启用 AutoResearch 并发送任务后，NeuroRuntime 会先检查现有资料，采用合理默认值并持续执行到产物交付。仅缺少不可替代的输入、权限或预算等硬阻塞时才暂停。此 /help 仅提供指导，不启动执行。"
         if zh else
-        "You can start with incomplete information; NeuroRuntime will identify gaps and wait for scope confirmation before execution."
+        "Incomplete information is fine. After you enable AutoResearch and send a task, NeuroRuntime checks existing inputs, uses reasonable defaults, and continues through delivery. It pauses only for hard blockers such as indispensable inputs, permissions, or budget. This /help response is guidance only and does not start execution."
     )
     checklist = "\n".join(f"- [ ] {item}" for item in items)
     return f"## {title}\n\n**{scope_heading}** {scope}\n\n### {heading}\n\n{checklist}\n\n{next_step}"
@@ -263,9 +263,27 @@ def build_autoresearch_scope_prompt(mode: object) -> str:
     return (
         f"[NeuroRuntime AutoResearch component scope: {normalized}]\n"
         f"Scope boundary: {content['en_scope']}\n"
-        "Before substantive work, check whether the following inputs are available:\n"
-        f"{required}\n"
-        "If essential inputs are missing, ask only for those missing inputs. "
+        "Execution policy: work continuously through the requested deliverables, not just a plan. "
         "State the active component scope in the plan and do not execute components outside it. "
-        "Require explicit confirmation before dependency installation, long-running jobs, or costly experiments."
+        "This mode does not turn an explanation/review-only request into authorization to mutate data or run experiments. "
+        "Inspect the user's supplied paths, attachments, relevant workspace files and configured tools first. "
+        "The following are useful context, NOT a mandatory questionnaire:\n"
+        f"{required}\n"
+        "Reuse valid existing inputs/results and record reasonable, reversible defaults for nonessential choices. "
+        "Do not ask 'shall I continue', stop after planning, or require confirmation merely because a normal "
+        "in-scope step is long-running. Diagnose recoverable errors and try a materially different safe repair. "
+        "Task-local dependency setup may proceed when already authorized; never alter a shared environment, "
+        "incur unapproved costs, access restricted data, publish, delete, or expand scientific scope without authority. "
+        "Respect cancellation, explicit budgets, provider/model settings and frozen protocols; never rerun completed "
+        "experiments or modify a frozen source/result in place. Preserve intermediate artifacts and resumable state. "
+        "Use appropriate per-command timeouts within existing limits; wait for live jobs and inspect their outputs, "
+        "rather than launch duplicates or treat submission as completion. "
+        "Only pause for an indispensable missing input (for example no usable data for a data/model task after "
+        "checking supplied locations and authorized alternatives), unavailable access/credentials, an exhausted "
+        "explicit budget, a required authorization, or an unrecoverable execution failure. An idea-only task does "
+        "not require local patient data. Ask only for the precise missing requirement and report checks already made. "
+        "Completion means ALL requested in-scope deliverables and their checks, not a placeholder, a script that "
+        "has not run, an intermediate file, or a promise. Report real artifact paths, validation and limitations. "
+        "Negative results and an audited empty selection in strict novelty mode are valid outputs; never fabricate "
+        "data, relax novelty/evidence gates, relabel known relations, or chase a positive result."
     )

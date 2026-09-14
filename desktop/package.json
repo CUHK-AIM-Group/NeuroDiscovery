@@ -1,6 +1,6 @@
 {
   "name": "neurodiscovery-desktop",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "NeuroDiscovery cross-platform desktop client",
   "main": "main.js",
   "author": "NeuroDiscovery",
@@ -32,6 +32,10 @@
     },
     "files": [
       "main.js",
+      "llm-settings.js",
+      "llm-credentials.js",
+      "model-library.js",
+      "settings-restart.js",
       "preload.js",
       "package.json"
     ],

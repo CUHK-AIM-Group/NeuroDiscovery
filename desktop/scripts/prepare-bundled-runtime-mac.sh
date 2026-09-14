@@ -164,6 +164,13 @@ stage_backend_dir() {
   fi
 
   mkdir -p "$target"
+  local extra_excludes=(--exclude='tests' --exclude='test_*.py' --exclude='*_test.py')
+  if [ "$dir_name" = "core" ] || [ "$dir_name" = "neurooracle" ]; then
+    extra_excludes+=(--exclude='scripts')
+  fi
+  if [ "$dir_name" = "models" ]; then
+    extra_excludes+=(--exclude='sweep_atlases.py' --exclude='sweep_targets.py' --exclude='tune_braingnn.py' --exclude='run_benchmark.py')
+  fi
   rsync -a --delete \
     --exclude='.pytest_cache' \
     --exclude='.mypy_cache' \
@@ -172,7 +179,9 @@ stage_backend_dir() {
     --exclude='build' \
     --exclude='node_modules' \
     --exclude='data' \
-    --exclude='models' \
+    --exclude='checkpoints' \
+    --exclude='benchmark_results' \
+    --exclude='experiment_results' \
     --exclude='papers' \
     --exclude='runs' \
     --exclude='logs' \
@@ -182,8 +191,13 @@ stage_backend_dir() {
     --exclude='venv' \
     --exclude='*.pyc' \
     --exclude='*.pyo' \
+    --exclude='*.pt' \
+    --exclude='*.pth' \
+    --exclude='*.ckpt' \
+    --exclude='*.safetensors' \
     --exclude='*.log' \
     --exclude='.env' \
+    "${extra_excludes[@]}" \
     "$source/" "$target/"
 }
 
@@ -238,6 +252,7 @@ if [ "$SKIP_BACKEND" -eq 0 ]; then
   stage_backend_dir "core"
   stage_backend_dir "skills"
   stage_backend_dir "neurooracle"
+  stage_backend_dir "models"
 
   copy_root_file_if_exists "LICENSE"
   copy_root_file_if_exists "README.md"
@@ -245,6 +260,13 @@ if [ "$SKIP_BACKEND" -eq 0 ]; then
   copy_root_file_if_exists "SOUL.md"
   copy_root_file_if_exists "pyproject.toml"
   copy_optimized_logo_if_exists
+
+  # Preserve the exact import-time policy bytes without copying graph/run data.
+  POLICY_RELATIVE_PATH="neurooracle/data/case_study_reaudit/full_graph_v3/RUBRIC.md"
+  assert_file "$REPO_ROOT/$POLICY_RELATIVE_PATH" "Required NeuroOracle policy asset is missing"
+  mkdir -p "$(dirname "$BACKEND_TARGET/$POLICY_RELATIVE_PATH")"
+  cp "$REPO_ROOT/$POLICY_RELATIVE_PATH" "$BACKEND_TARGET/$POLICY_RELATIVE_PATH"
+  "$PYTHON_EXE" "$SCRIPT_DIR/stage-runtime-helpers.py" --source "$REPO_ROOT" --backend "$BACKEND_TARGET"
 
   cat > "$BACKEND_TARGET/neuroclaw_environment.json" <<'JSON'
 {

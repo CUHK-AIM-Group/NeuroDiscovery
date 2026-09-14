@@ -29,14 +29,24 @@
   function mountView() {
     const view = document.createElement("section");
     view.id = "claimEvidenceView"; view.className = "claim-evidence-view"; view.hidden = true;
+    view.setAttribute('role', 'tabpanel'); view.setAttribute('aria-labelledby', 'claimEvidenceToggle');
     view.innerHTML = `<aside class="ce-sidebar"><div class="ce-search"><h2 id="ceHeading"></h2><p class="ce-muted" id="ceHint"></p>
       <input id="ceSearch" type="search" autocomplete="off"><label><span id="ceFilterLabel"></span><select id="ceMinimum"><option value="2">2+</option><option value="3">3+</option><option value="5">5+</option><option value="0"></option></select><button class="ce-action" id="ceRefresh" type="button"></button></label></div>
       <div class="ce-results" id="ceResults" aria-live="polite"></div><div class="ce-pagination"><button id="cePrevious" type="button"></button><span id="cePage"></span><button id="ceNext" type="button"></button></div></aside>
       <main class="ce-detail" id="ceDetail" tabindex="-1" aria-live="polite"></main>`;
     document.body.append(view);
-    const button = document.createElement("button"); button.id = "claimEvidenceToggle"; button.type = "button"; button.className = "icon-btn primary";
-    document.querySelector(".header-actions").prepend(button);
-    button.addEventListener("click", () => setActive(!s.active));
+    const tabs = $('oracleViewTabs');
+    for (const [id, panel, active] of [['claimEvidenceToggle', 'claimEvidenceView', true], ['conceptGraphToggle', 'conceptGraphView', false]]) {
+      const button = document.createElement('button'); button.id = id; button.type = 'button'; button.className = 'oracle-view-tab';
+      button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', panel); tabs.append(button);
+      button.addEventListener('click', () => setActive(active));
+      button.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const available = [...tabs.querySelectorAll('button:not([hidden])')];
+        const next = event.key === 'Home' ? available[0] : event.key === 'End' ? available.at(-1) : available[(available.indexOf(button) + (event.key === 'ArrowLeft' ? -1 : 1) + available.length) % available.length];
+        event.preventDefault(); next.focus(); next.click();
+      });
+    }
     $("ceSearch").addEventListener("input", () => { clearTimeout(s.timer); s.offset = 0; s.timer = setTimeout(search, 250); });
     $("ceSearch").addEventListener("keydown", e => { if (e.key === "Enter") { clearTimeout(s.timer); search(); } });
     $("ceMinimum").addEventListener("change", () => { s.offset = 0; search(); });
@@ -67,7 +77,12 @@
     $("ceMinimum").lastElementChild.textContent = tr("All shared claims", "全部共同主张");
     $("cePrevious").textContent = tr("Previous", "上一页"); $("ceNext").textContent = tr("Next", "下一页");
     $("ceRefresh").textContent = tr("Refresh", "刷新");
-    $("claimEvidenceToggle").textContent = s.active ? tr("Concept graph", "概念关系图") : tr("Shared claims & papers", "共同主张与论文");
+    $('oracleViewTabs').setAttribute('aria-label', tr('NeuroOracle views', 'NeuroOracle 视图'));
+    $("claimEvidenceToggle").textContent = tr("Claims & evidence", "主张与证据");
+    $('conceptGraphToggle').textContent = tr('Concept graph', '概念图谱');
+    for (const [id, active] of [['claimEvidenceToggle', s.active], ['conceptGraphToggle', !s.active]]) {
+      $(id).setAttribute('aria-selected', String(active)); $(id).tabIndex = active ? 0 : -1;
+    }
   }
   function setActive(active, refresh = true) {
     s.active = active; document.body.classList.toggle("claim-evidence-active", active); $("claimEvidenceView").hidden = !active; translate();
@@ -76,7 +91,7 @@
     else s.hooks.legacyStart();
   }
   function showEmpty() {
-    $("ceDetail").innerHTML = `<div class="ce-empty"><h2>${tr("One claim, all its papers", "一个主张，查看全部论文")}</h2><p class="ce-muted">${tr("Select a claim to compare its original observations, populations, statistics and evidence roles. Papers are deduplicated; their independence is not assumed.", "选择左侧主张，逐篇查看原句、人群、统计和证据角色。论文已按确认的版本去重，篇数不代表独立研究数。")}</p></div>`;
+    $("ceDetail").innerHTML = `<div class="ce-empty"><div class="oracle-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="m7 7 3 3m4-1 3-2M10 14l-3 3"/></svg></div><h2>${tr("One claim, all its papers", "一个主张，查看全部论文")}</h2><p class="ce-muted">${tr("Select a claim to compare its original observations, populations, statistics and evidence roles. Papers are deduplicated; their independence is not assumed.", "选择一个主张，逐篇查看原句、人群、统计和证据角色。论文已按确认的版本去重，篇数不代表独立研究数。")}</p></div>`;
   }
   function showError(error, target = "ceDetail") {
     const missing = error.status === 404;
@@ -108,6 +123,7 @@
   }
   async function openClaim(id) {
     setActive(true, false); const request = ++s.detailRequest; s.selected = id; s.data = null;
+    window.NeuroOracleWorkspace?.revealEvidence();
     $("ceDetail").innerHTML = `<div class="ce-empty">${tr("Reading all papers and original observations…", "正在读取全部论文和原始观察…")}</div>`;
     try {
       const data = await api("/api/kg/claim-evidence", id.startsWith("CLM:") ? { claim_id: id } : { relation_id: id });
@@ -154,7 +170,7 @@
     const direct = params.get("claim") || params.get("relation");
     try {
       const status = await api("/api/kg/evidence-status");
-      if (!status.configured) { $("claimEvidenceToggle").hidden = true; hooks.legacyStart(); return; }
+      if (!status.configured) { $("claimEvidenceToggle").hidden = true; setActive(false); return; }
       s.revision = status.graph_revision;
       if (params.get("view") === "concepts" && !direct) { setActive(false); return; }
       setActive(true); if (direct) openClaim(direct);

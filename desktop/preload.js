@@ -1,10 +1,12 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
-const DESKTOP_VERSION = '0.2.2';
+const DESKTOP_VERSION = '1.0.0';
 
 contextBridge.exposeInMainWorld('neuroclawDesktop', {
   version: DESKTOP_VERSION,
   platform: process.platform,
+  titleBarOverlay: process.platform === 'win32',
+  showApplicationMenu: () => ipcRenderer.invoke('neuroclaw:show-application-menu'),
   onMenuAction: (callback) => {
     if (typeof callback !== 'function') return () => {};
     const listener = (_event, action) => callback(action);
@@ -13,6 +15,7 @@ contextBridge.exposeInMainWorld('neuroclawDesktop', {
   },
   getConfig: () => ipcRenderer.invoke('neuroclaw:get-config'),
   saveConfig: (config) => ipcRenderer.invoke('neuroclaw:save-config', config),
+  discoverModels: (config) => ipcRenderer.invoke('neuroclaw:discover-models', config),
   setLanguage: (language) => ipcRenderer.invoke('neuroclaw:set-language', language),
   setTheme: (theme) => ipcRenderer.invoke('neuroclaw:set-theme', theme),
   resetApplication: () => ipcRenderer.invoke('neuroclaw:reset-application'),

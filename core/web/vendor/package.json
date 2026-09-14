@@ -1,0 +1,15 @@
+{
+  "name": "neurodiscovery-oracle-layout",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build-only dependencies for the local NeuroOracle layout worker",
+  "scripts": {
+    "build": "esbuild oracle-layout.cjs --bundle --minify --format=iife --global-name=graphologyLibrary --legal-comments=linked --outfile=../static/vendor/oracle-layout.js"
+  },
+  "dependencies": {
+    "graphology-layout-forceatlas2": "0.10.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

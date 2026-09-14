@@ -95,6 +95,10 @@
       "enabled": true,
       "description": "Ollama OpenAI-compatible local endpoint"
     },
+    "ollama_cloud": {
+      "enabled": true,
+      "description": "Authenticated Ollama Cloud OpenAI-compatible API"
+    },
     "llamacpp": {
       "enabled": true,
       "description": "llama.cpp OpenAI-compatible local endpoint"
