@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import gzip
+import hashlib
 import io
 import json
 import logging
@@ -13,6 +15,8 @@ from typing import Optional
 
 from .graph_manager import KnowledgeGraph
 from .schema import ConceptNode, DISPLAY_TIERS_DEFAULT, Edge
+from .kg_metadata_compaction import compact_layout_enabled, compact_record
+from .correlation_grouping import enabled as correlation_grouping_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -52,24 +56,55 @@ def save_graph(kg: KnowledgeGraph, path: Optional[Path] = None) -> Path:
     """
     path = Path(path) if path else DEFAULT_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
+    graph_metadata = deepcopy(kg.serialization_metadata)
+    # This export is not the independently validated campaign snapshot. A
+    # relative, hash-bound sidecar from the input must never look current here.
+    graph_metadata.pop("relation_evidence", None)
+    graph_metadata.pop("entity_identity", None)
+    graph_metadata.pop("paper_identity", None)
+    use_compact = compact_layout_enabled(graph_metadata)
+    correlation_grouping_enabled(graph_metadata)
 
     edges = []
-    for src, tgt, edata in kg.G.edges(data=True):
-        # Ensure source_id and target_id are always present
-        edge_dict = dict(edata)
-        edge_dict["source_id"] = src
-        edge_dict["target_id"] = tgt
-        edges.append(edge_dict)
+    for edge_dict in kg.iter_edge_records():
+        edges.append(compact_record("edge", edge_dict) if use_compact else edge_dict)
 
+    graph_metadata.update(version="0.1", created=datetime.now().isoformat(), stats=kg.stats())
+    graph_metadata["stats"]["n_stored_edge_records"] = len(edges)
     data = {
-        "metadata": {
-            "version": "0.1",
-            "created": datetime.now().isoformat(),
-            "stats": kg.stats(),
-        },
-        "concepts": {nid: node.to_dict() for nid, node in kg._index.items()},
+        "metadata": graph_metadata,
+        "concepts": {nid: compact_record("node", node.to_dict()) if use_compact else node.to_dict()
+                     for nid, node in kg._index.items()},
         "edges": edges,
     }
+
+    if kg.relation_identities:
+        from .verified_entity_terms import VERSION
+        registry = kg.relation_identities.export_payload(kg, data["concepts"], edges)
+        raw = json.dumps(registry, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        signature = hashlib.sha256(raw).hexdigest()
+        # Content-addressed sidecar never overwrites the registry of a still
+        # current graph, and repeated ordinary ingestions reuse the same file.
+        sidecar = path.with_name(path.name + ".entity_terms." + signature[:16] + ".json")
+        if sidecar.exists():
+            if sidecar.read_bytes() != raw: raise ValueError("identity sidecar content conflict")
+        else:
+            with sidecar.open("xb") as handle:
+                handle.write(raw); handle.flush(); os.fsync(handle.fileno())
+        graph_metadata["entity_identity"] = dict(version=VERSION, registry=sidecar.name, sha256=signature)
+
+    if kg.paper_identities:
+        from .kg_paper_identity import VERSION as PAPER_VERSION
+        raw = json.dumps(kg.paper_identities.export_payload(), ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False).encode("utf-8")
+        signature = hashlib.sha256(raw).hexdigest()
+        sidecar = path.with_name(path.name + ".paper_identities." + signature[:16] + ".json")
+        if sidecar.exists():
+            if sidecar.read_bytes() != raw: raise ValueError("paper identity sidecar content conflict")
+        else:
+            with sidecar.open("xb") as handle:
+                handle.write(raw); handle.flush(); os.fsync(handle.fileno())
+        graph_metadata["paper_identity"] = dict(version=PAPER_VERSION, registry=sidecar.name, sha256=signature)
 
     tmp_path = path.with_name(path.name + ".tmp")
     try:
@@ -99,7 +134,16 @@ def load_graph(path: Optional[Path] = None) -> KnowledgeGraph:
     with _open_for_read(path) as f:
         data = json.load(f)
 
+    from .verified_entity_terms import load_graph_terms
+    identities = load_graph_terms(path, data)
+    from .kg_paper_identity import load_graph_papers
+    paper_identities = load_graph_papers(path, data.get("metadata") or {})
+
     kg = KnowledgeGraph()
+    kg.paper_identities = paper_identities
+    kg.serialization_metadata = deepcopy(data.get("metadata") or {})
+    compact_layout_enabled(kg.serialization_metadata)  # fail closed on unknown layouts
+    correlation_grouping_enabled(kg.serialization_metadata)
 
     for nid, ndata in data.get("concepts", {}).items():
         node = ConceptNode.from_dict(ndata)
@@ -113,6 +157,9 @@ def load_graph(path: Optional[Path] = None) -> KnowledgeGraph:
             logger.warning(f"skipping malformed edge: {e}")
             continue
 
+    if identities:
+        identities.bind_runtime(kg)
+        kg.relation_identities = identities
     stats = kg.stats()
     logger.info(f"loaded graph from {path}: {stats['n_concepts']} concepts, {stats['n_edges']} edges")
     return kg
@@ -130,6 +177,12 @@ def save_display_graph(
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    graph_metadata = deepcopy(kg.serialization_metadata)
+    graph_metadata.pop("relation_evidence", None)
+    graph_metadata.pop("entity_identity", None)  # display projection omits identity proof nodes/edges
+    graph_metadata.pop("paper_identity", None)
+    use_compact = compact_layout_enabled(graph_metadata)
+    correlation_grouping_enabled(graph_metadata)
 
     sub = kg.export_display_subgraph(tiers=tiers)
     keep_ids = set(sub.nodes())
@@ -139,18 +192,15 @@ def save_display_graph(
         edge_dict = dict(edata)
         edge_dict["source_id"] = src
         edge_dict["target_id"] = tgt
-        edges.append(edge_dict)
+        edges.append(compact_record("edge", edge_dict) if use_compact else edge_dict)
 
+    graph_metadata.update(version="0.1-display", created=datetime.now().isoformat(),
+                          tiers=sorted(tiers if tiers is not None else DISPLAY_TIERS_DEFAULT),
+                          n_concepts=len(keep_ids), n_edges=len(edges))
     data = {
-        "metadata": {
-            "version": "0.1-display",
-            "created": datetime.now().isoformat(),
-            "tiers": sorted(tiers if tiers is not None else DISPLAY_TIERS_DEFAULT),
-            "n_concepts": len(keep_ids),
-            "n_edges": len(edges),
-        },
+        "metadata": graph_metadata,
         "concepts": {
-            nid: node.to_dict()
+            nid: compact_record("node", node.to_dict()) if use_compact else node.to_dict()
             for nid, node in kg._index.items()
             if nid in keep_ids
         },

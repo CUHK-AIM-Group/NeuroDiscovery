@@ -1,1 +1,5 @@
 *.sh text eol=lf
+
+# These policy files are byte-hashed by sealed claim membership records.
+neurooracle/src/CASE_STUDY_MEMBERSHIP_RUBRIC_V2.md -text
+neurooracle/data/case_study_reaudit/full_graph_v3/RUBRIC.md -text

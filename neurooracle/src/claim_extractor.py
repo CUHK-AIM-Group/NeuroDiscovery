@@ -13,11 +13,23 @@ import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
 from openai import OpenAI
 
+from .case_study_scope import CASE_STUDY_IDS, normalize_case_study_ids
+from .case_study_membership_contract import (
+    build_final_scope_reaudit,
+    source_text_sha256,
+)
+from .case_study_membership_policy import (
+    GATE_NAMES,
+    RUBRIC_VERSION,
+    case_study_policy_prompt,
+    validate_scope_decision,
+)
 from .schema import Claim, Evidence, PaperRef
 
 logger = logging.getLogger(__name__)
@@ -44,6 +56,9 @@ def _env_flag(name: str, default: bool = False) -> bool:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
+CASE_STUDY_POLICY_PROMPT = case_study_policy_prompt(extraction=True)
+
+
 EXTRACTION_PROMPT = """Extract ALL scientific claims from this neuroscience paper abstract as JSON array.
 
 Each claim object fields:
@@ -51,6 +66,8 @@ Each claim object fields:
 - predicate, object, object_type, object_canonical_hint, object_atlas, negated
 - effect_metric, effect_size, p_value, sample_size
 - study_type, methodology, replicability, direction, raw_sentence
+- case_study_ids, case_study_gates
+- scope_evidence_spans, scope_confidence, scope_decision_basis
 - conditions: list of conditions under which this claim holds (e.g. ["female only", "age > 65", "resting-state fMRI"]). Empty list [] if unconditional.
 - population: object with study population info, null if not reported:
   {{"mean_age": number or null, "age_range": "e.g. 18-65" or null, "n_female": int or null, "n_male": int or null, "ethnicity": str or null, "cohort_name": str or null}}
@@ -61,6 +78,22 @@ IMPORTANT rules for numeric fields:
 - sample_size: output the integer (e.g. 150, 2048), or "not_reported" if not mentioned.
 - effect_metric: output the metric name (e.g. "Cohen's d", "odds ratio", "AUC", "beta"), or "not_reported" if not mentioned.
 - NEVER output null for these four fields — use "not_reported" instead.
+
+""" + CASE_STUDY_POLICY_PROMPT + """
+
+CASE-STUDY OUTPUT CONTRACT — REQUIRED ON EVERY CLAIM:
+- `case_study_ids` is a JSON list of unique formal IDs in registry order.
+- `case_study_gates` is an object containing exactly these JSON booleans:
+  """ + ", ".join(GATE_NAMES) + """.
+- `scope_evidence_spans` is a list of short verbatim spans grounded in the supplied
+  abstract/full text. Use [] only when `case_study_ids` is [].
+- `scope_confidence` is a number in 0..1.
+- `scope_decision_basis` concisely explains why the claim does or does not receive
+  formal labels. It is required even for a general-only decision.
+- `case2_pathway_mediation` is component-based like Case 1: a direct
+  genetic/pathway-to-neural claim or a direct baseline-neural-to-later-outcome
+  claim is sufficient. It is canonicalized from the corresponding
+  imaging_genetics, progression_prediction, or prognosis label.
 
 Entity types (aligned to the 7-atom alphabet — DISEASE / DRUG / IMAGING_MARKER /
 GENE_TARGET / COGNITIVE_TASK / OUTCOME / INDIVIDUAL_DATA):
@@ -602,10 +635,23 @@ class ClaimExtractor:
         model: str = DEFAULT_MODEL,
         api_keys: list[str] | None = None,
         lock_model: bool | None = None,
+        strict_scope_audit: bool | None = None,
     ):
         self.preferred_model = model
         self.base_url = base_url
-        self.lock_model = _env_flag("OPENAI_LOCK_MODEL", False) if lock_model is None else lock_model
+        self.strict_scope_audit = (
+            _env_flag("NEUROORACLE_STRICT_SCOPE_AUDIT", True)
+            if strict_scope_audit is None
+            else strict_scope_audit
+        )
+        requested_lock = (
+            _env_flag("OPENAI_LOCK_MODEL", False)
+            if lock_model is None
+            else lock_model
+        )
+        # A final scope seal must identify one fixed reviewer/model.  Strict
+        # production extraction therefore cannot silently cascade models.
+        self.lock_model = bool(requested_lock or self.strict_scope_audit)
 
         if self.lock_model:
             self._cascade = [model]
@@ -621,6 +667,7 @@ class ClaimExtractor:
 
         request_timeout = float(os.environ.get("OPENAI_REQUEST_TIMEOUT", "180"))
         self.max_attempts = max(1, int(os.environ.get("OPENAI_EXTRACTION_MAX_ATTEMPTS", "4")))
+        self.reasoning_effort = os.environ.get("OPENAI_REASONING_EFFORT", "").strip()
 
         self._clients: list[OpenAI] = []
         for k in keys:
@@ -644,6 +691,7 @@ class ClaimExtractor:
         logger.info(
             f"initialized {len(self._clients)} LLM client(s), model cascade: "
             f"{self._cascade} (lock_model={self.lock_model}, "
+            f"strict_scope_audit={self.strict_scope_audit}, "
             f"timeout={request_timeout:.1f}s, max_attempts={self.max_attempts})"
         )
 
@@ -677,17 +725,18 @@ class ClaimExtractor:
     ) -> ExtractionResult:
         """Extract claims from a single paper.
 
-        By default operates on the abstract. Pass `full_text` to re-extract from
+        By default operates on the complete abstract. Pass `full_text` to re-extract from
         the full body when the abstract under-covers the paper's claims (e.g.
         targeted refresh of high-value anchors). The body is truncated to
         `full_text_max_chars` to bound LLM cost and context.
         """
         if full_text:
-            body = full_text if len(full_text) <= full_text_max_chars else full_text[:full_text_max_chars] + "..."
+            source_body = full_text if len(full_text) <= full_text_max_chars else full_text[:full_text_max_chars] + "..."
             source_label = "Full text"
         else:
-            body = abstract if len(abstract) <= 2000 else abstract[:2000] + "..."
+            source_body = abstract
             source_label = "Abstract"
+        body = source_body
 
         if second_pass:
             body = (
@@ -719,19 +768,30 @@ class ClaimExtractor:
             import time as _time
             req_start = _time.time()
             try:
-                response = self.client.chat.completions.create(
-                    model=current_model,
-                    messages=[
+                request_kwargs = {
+                    "model": current_model,
+                    "messages": [
                         {"role": "system", "content": "You are a precise neuroscience data extraction system. Output only valid JSON."},
                         {"role": "user", "content": prompt},
                     ],
-                    temperature=0.1,
-                    max_tokens=DEFAULT_MAX_TOKENS,
+                    "temperature": 0.0 if self.strict_scope_audit else 0.1,
+                    "max_tokens": DEFAULT_MAX_TOKENS,
+                }
+                if self.reasoning_effort:
+                    request_kwargs["reasoning_effort"] = self.reasoning_effort
+                response = self.client.chat.completions.create(
+                    **request_kwargs,
                 )
 
                 latency = _time.time() - req_start
                 raw_text = response.choices[0].message.content.strip()
-                claims = self._parse_response(raw_text, paper)
+                claims = self._parse_response(
+                    raw_text,
+                    paper,
+                    scope_source_text=source_body,
+                    scope_source_kind=source_label.lower().replace(" ", "_"),
+                    scope_reviewer_id=current_model,
+                )
 
                 # Slow response = soft failure (no exception thrown but service degraded)
                 if latency > slow_response_threshold:
@@ -750,7 +810,8 @@ class ClaimExtractor:
                 err_str = str(e)
                 cascade.record_failure()
                 if (
-                    "429" in err_str
+                    isinstance(e, ValueError)
+                    or "429" in err_str
                     or "rate" in err_str.lower()
                     or "forbidden" in err_str.lower()
                     or "timed out" in err_str.lower()
@@ -804,34 +865,106 @@ class ClaimExtractor:
 
         return results
 
-    def _parse_response(self, raw_text: str, paper: PaperRef) -> list[Claim]:
-        """Parse LLM JSON response into Claim objects."""
+    def _parse_response(
+        self,
+        raw_text: str,
+        paper: PaperRef,
+        *,
+        scope_source_text: str = "",
+        scope_source_kind: str = "abstract",
+        scope_reviewer_id: str = "claim_extractor",
+    ) -> list[Claim]:
+        """Parse and, in strict mode, seal claim-level scope decisions."""
         # try to extract JSON array from response
         json_str = self._extract_json(raw_text)
         if not json_str:
+            if self.strict_scope_audit:
+                raise ValueError(f"no JSON found in response for PMID {paper.pmid}")
             logger.warning(f"no JSON found in response for PMID {paper.pmid}")
             return []
 
         try:
             data = json.loads(json_str)
         except json.JSONDecodeError as e:
+            if self.strict_scope_audit:
+                raise ValueError(f"JSON parse error for PMID {paper.pmid}: {e}") from e
             logger.warning(f"JSON parse error for PMID {paper.pmid}: {e}")
             return []
 
         if not isinstance(data, list):
             data = [data]
 
-        claims = []
-        for item in data:
+        if self.strict_scope_audit and any(
+            not isinstance(item, dict) for item in data
+        ):
+            raise ValueError(
+                f"every extracted claim must be a JSON object for PMID {paper.pmid}"
+            )
+
+        context_hash = source_text_sha256(scope_source_text)
+        claims: list[Claim] = []
+        for item_index, item in enumerate(data):
             try:
-                claim = self._item_to_claim(item, paper)
+                if not isinstance(item, dict):
+                    raise ValueError("every extracted claim must be a JSON object")
+                if self.strict_scope_audit:
+                    decision = validate_scope_decision(
+                        item.get("case_study_ids"),
+                        item.get("case_study_gates"),
+                    )
+                    claim_case_study_ids = list(decision.labels)
+                    case_study_gates = dict(decision.gates)
+                else:
+                    claim_case_study_ids = self._normalize_case_study_ids(
+                        item.get("case_study_ids")
+                    )
+                    case_study_gates = None
+                claim = self._item_to_claim(
+                    item,
+                    paper,
+                    paper_case_study_ids=claim_case_study_ids,
+                    claim_case_study_ids=claim_case_study_ids,
+                    case_study_gates=case_study_gates,
+                    scope_context_sha256=context_hash,
+                    scope_source_text=scope_source_text,
+                    scope_source_kind=scope_source_kind,
+                    scope_reviewer_id=scope_reviewer_id,
+                    extraction_claim_index=item_index,
+                    finalize_scope_audit=self.strict_scope_audit,
+                )
                 if claim:
                     claims.append(claim)
             except Exception as e:
+                if self.strict_scope_audit:
+                    raise ValueError(f"invalid scoped claim item: {e}") from e
                 logger.warning(f"failed to parse claim item: {e}")
                 continue
 
+        paper_case_study_ids = self._normalize_case_study_ids(
+            [
+                case_study_id
+                for claim in claims
+                for case_study_id in claim.claim_case_study_ids
+            ]
+        )
+        for claim in claims:
+            claim.paper_case_study_ids = list(paper_case_study_ids)
+            claim.metadata["paper_case_study_ids"] = list(paper_case_study_ids)
         return claims
+
+    @staticmethod
+    def _normalize_case_study_ids(raw: object) -> list[str]:
+        return normalize_case_study_ids(raw)
+
+    @classmethod
+    def _paper_assignment_from_items(cls, items: list[dict]) -> list[str]:
+        """Union claim-level assignments into paper-level membership."""
+        selected: set[str] = set()
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            selected.update(cls._normalize_case_study_ids(item.get("case_study_ids")))
+        return [case_study_id for case_study_id in CASE_STUDY_IDS if case_study_id in selected]
 
     def _extract_json(self, text: str) -> Optional[str]:
         """Extract JSON array or object from LLM response text."""
@@ -894,7 +1027,21 @@ class ClaimExtractor:
 
         return None, s
 
-    def _item_to_claim(self, item: dict, paper: PaperRef) -> Optional[Claim]:
+    def _item_to_claim(
+        self,
+        item: dict,
+        paper: PaperRef,
+        *,
+        paper_case_study_ids: list[str] | None = None,
+        claim_case_study_ids: list[str] | None = None,
+        case_study_gates: dict[str, bool] | None = None,
+        scope_context_sha256: str = "",
+        scope_source_text: str = "",
+        scope_source_kind: str = "abstract",
+        scope_reviewer_id: str = "claim_extractor",
+        extraction_claim_index: int | None = None,
+        finalize_scope_audit: bool = False,
+    ) -> Optional[Claim]:
         """Convert a single JSON item to a Claim object."""
         subject = item.get("subject", "").strip()
         obj = item.get("object", "").strip()
@@ -902,8 +1049,11 @@ class ClaimExtractor:
         raw_sentence = item.get("raw_sentence", "")
         predicate = _normalize_directional_comparison_predicate(predicate, obj, raw_sentence)
 
-        if bool(item.get("negated", False)):
-            logger.debug("skipped negated claim: %r -> %r", subject, obj)
+        # A null/negative finding is an observation, not an extraction failure.
+        # Do not infer polarity from truthiness (e.g. bool("false") is True).
+        negated = item.get("negated", False)
+        if type(negated) is not bool:
+            logger.debug("skipped claim with non-boolean negated value: %r -> %r", subject, obj)
             return None
         if not subject or not obj or not predicate:
             return None
@@ -963,18 +1113,63 @@ class ClaimExtractor:
         else:
             population = None
 
-        return Claim(
+        if claim_case_study_ids is None:
+            claim_case_study_ids = self._normalize_case_study_ids(
+                item.get("case_study_ids")
+            )
+        else:
+            claim_case_study_ids = self._normalize_case_study_ids(
+                claim_case_study_ids
+            )
+        if paper_case_study_ids is None:
+            paper_case_study_ids = list(claim_case_study_ids)
+        else:
+            paper_case_study_ids = self._normalize_case_study_ids(
+                [*paper_case_study_ids, *claim_case_study_ids]
+            )
+
+        scope_evidence_spans = item.get("scope_evidence_spans") or []
+        if not isinstance(scope_evidence_spans, list):
+            scope_evidence_spans = [str(scope_evidence_spans)]
+        scope_evidence_spans = [
+            str(value).strip() for value in scope_evidence_spans if str(value).strip()
+        ]
+        try:
+            scope_confidence = float(item.get("scope_confidence", 0.0))
+        except (TypeError, ValueError):
+            scope_confidence = 0.0
+        if not finalize_scope_audit:
+            scope_confidence = min(max(scope_confidence, 0.0), 1.0)
+
+        if finalize_scope_audit and claim_case_study_ids and not scope_evidence_spans:
+            raise ValueError("labeled claim requires scope_evidence_spans")
+        if finalize_scope_audit and scope_evidence_spans and scope_source_text:
+            normalized_source = " ".join(scope_source_text.lower().split())
+            ungrounded = [
+                span
+                for span in scope_evidence_spans
+                if " ".join(span.lower().split()) not in normalized_source
+            ]
+            if ungrounded:
+                raise ValueError(
+                    "scope_evidence_spans must be verbatim source spans: "
+                    + repr(ungrounded[:2])
+                )
+
+        claim = Claim(
             id=claim_id,
             subject_id="",  # will be resolved during ingestion
             subject_name=subject,
             predicate=predicate,
             object_id="",   # will be resolved during ingestion
             object_name=obj,
-            negated=bool(item.get("negated", False)),
+            negated=negated,
             confidence=self._estimate_confidence(evidence),
             evidence=evidence,
             source_paper=paper,
             raw_text=raw_sentence,
+            paper_case_study_ids=paper_case_study_ids,
+            claim_case_study_ids=claim_case_study_ids,
             metadata={
                 "subject_type": item.get("subject_type", ""),
                 "object_type": item.get("object_type", ""),
@@ -985,8 +1180,52 @@ class ClaimExtractor:
                 "conditions": conditions,
                 "population": population,
                 "raw_stats": raw_stats,
+                "paper_case_study_ids": list(paper_case_study_ids),
+                "claim_case_study_ids": list(claim_case_study_ids),
+                "scope_evidence_spans": scope_evidence_spans,
+                "scope_confidence": scope_confidence,
+                "scope_decision_basis": str(item.get("scope_decision_basis") or "").strip(),
+                "scope_rubric_version": RUBRIC_VERSION,
+                "extraction_claim_index": extraction_claim_index,
+                "extraction_profile": {
+                    "schema_version": "neurooracle.claim_extraction_profile.v1",
+                    "prompt_sha256": source_text_sha256(EXTRACTION_PROMPT),
+                    "scope_rubric_version": RUBRIC_VERSION,
+                    "model": str(scope_reviewer_id),
+                    "reasoning_effort": str(self.reasoning_effort or "unspecified"),
+                    "temperature": 0.0 if finalize_scope_audit else 0.1,
+                    "max_tokens": DEFAULT_MAX_TOKENS,
+                    "model_locked": bool(self.lock_model),
+                    "input_policy": (
+                        "complete_abstract"
+                        if scope_source_kind == "abstract"
+                        else "bounded_full_text"
+                    ),
+                },
+                "scope_assignment_stage": (
+                    "combined_extraction_and_scope_audit"
+                    if finalize_scope_audit
+                    else "initial_claim_extraction"
+                ),
+                "scope_review_status": (
+                    "final_complete" if finalize_scope_audit else "provisional"
+                ),
             },
         )
+        if finalize_scope_audit:
+            claim.scope_reaudit = build_final_scope_reaudit(
+                claim.to_dict(),
+                labels=claim_case_study_ids,
+                gates=case_study_gates,
+                confidence=scope_confidence,
+                decision_basis=claim.metadata["scope_decision_basis"],
+                scope_context_sha256=scope_context_sha256,
+                reviewer_id=scope_reviewer_id,
+                reasoning_effort=self.reasoning_effort,
+                reviewed_at=datetime.now(timezone.utc).isoformat(),
+                source_kind=scope_source_kind,
+            )
+        return claim
 
     def _estimate_confidence(self, evidence: Evidence) -> float:
         """Estimate claim confidence based on evidence quality."""

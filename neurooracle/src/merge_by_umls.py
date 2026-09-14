@@ -3,8 +3,8 @@
 Steps:
 1. Pre-populate `metadata.umls_cui` for nodes that already encode CUI in their ID
    (e.g. `DISGENET:C0005695`).
-2. Stream MRCONSO.RRF once to assign CUIs to remaining concepts (MeSH, NeuroNames,
-   Cognitive Atlas, claim-derived) by exact name/alias match.
+2. Stream MRCONSO.RRF once to assign CUIs to remaining canonical concepts
+   (MeSH, NeuroNames, Cognitive Atlas) by exact name/alias match.
 3. Group nodes sharing the same CUI within compatible domains (disease/gene/etc.)
    and merge each group into a single canonical node:
    - Pick canonical by source-vocab priority (MSH > COGAT > NeuroNames > DisGeNET > CLM)
@@ -84,6 +84,8 @@ def _seed_cuis_from_ids(kg: KnowledgeGraph) -> int:
     """Pre-populate metadata.umls_cui for nodes whose ID already encodes a CUI."""
     seeded = 0
     for nid, node in kg._index.items():
+        if nid.startswith("CLM_CONCEPT:"):
+            continue
         if node.metadata.get("umls_cui"):
             continue
         cui = _extract_cui_from_id(nid)
@@ -100,6 +102,8 @@ def _align_via_mrconso(kg: KnowledgeGraph, mrconso_path: Path) -> int:
     name_to_ids: dict[str, list[str]] = defaultdict(list)
     for nid, node in kg._index.items():
         if "claim" in node.domain_tags:
+            continue
+        if nid.startswith("CLM_CONCEPT:"):
             continue
         if node.metadata.get("umls_cui"):
             continue
@@ -143,6 +147,8 @@ def _node_priority(node: ConceptNode) -> tuple:
 def _group_by_cui(kg: KnowledgeGraph) -> dict[tuple[str, frozenset[str]], list[str]]:
     groups: dict[tuple[str, frozenset[str]], list[str]] = defaultdict(list)
     for nid, node in kg._index.items():
+        if nid.startswith("CLM_CONCEPT:"):
+            continue
         cui = node.metadata.get("umls_cui")
         if not cui:
             continue

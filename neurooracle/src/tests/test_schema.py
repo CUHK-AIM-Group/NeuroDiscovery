@@ -15,6 +15,7 @@ from neurooracle.src.schema import (
     Evidence,
     PaperRef,
     SemanticType,
+    normalize_domain_tag,
 )
 
 
@@ -75,6 +76,20 @@ def test_concept_node_roundtrip():
     assert restored.definition == original.definition
     assert restored.aliases == original.aliases
     assert restored.external_ids == original.external_ids
+
+
+def test_concept_node_uses_spatial_mapping_and_reads_legacy_field():
+    node = ConceptNode.from_dict(
+        {
+            "id": "NN:spatial",
+            "preferred_name": "Spatial concept",
+            "atlas_mapping": {"space": "MNI152", "region_id": 7},
+        }
+    )
+
+    assert node.spatial_mapping == {"space": "MNI152", "region_id": 7}
+    assert node.to_dict()["spatial_mapping"] == node.spatial_mapping
+    assert "atlas_mapping" not in node.to_dict()
 
 
 def test_edge_creation():
@@ -221,6 +236,8 @@ def test_claim_roundtrip():
         evidence=Evidence(study_type="fMRI", p_value=0.01),
         source_paper=PaperRef(pmid="98765"),
         raw_text="Hippocampus is associated with Alzheimer Disease.",
+        paper_case_study_ids=["biomarker_discovery", "prognosis"],
+        claim_case_study_ids=["biomarker_discovery"],
     )
     d = original.to_dict()
     restored = Claim.from_dict(d)
@@ -229,26 +246,32 @@ def test_claim_roundtrip():
     assert restored.predicate == original.predicate
     assert restored.evidence.study_type == "fMRI"
     assert restored.source_paper.pmid == "98765"
+    assert restored.paper_case_study_ids == ["biomarker_discovery", "prognosis"]
+    assert restored.claim_case_study_ids == ["biomarker_discovery"]
 
 
-def test_claim_to_dict_infers_paper_scope_from_curation_scope():
-    claim = Claim(
-        id="CLM:003",
-        subject_id="IM:hippocampal_volume",
-        subject_name="hippocampal volume",
-        predicate="predicts",
-        object_id="OUT:cognitive_decline",
-        object_name="cognitive decline",
-        metadata={"curation_scope": "case1_transdiagnostic"},
-    )
+def test_claim_from_dict_reads_legacy_scope_but_writes_only_v2_fields():
+    legacy = {
+        "id": "CLM:003",
+        "subject_id": "IM:hippocampal_volume",
+        "subject_name": "hippocampal volume",
+        "predicate": "predicts",
+        "object_id": "OUT:cognitive_decline",
+        "object_name": "cognitive decline",
+        "paper_scope": ["general", "case1", "case3"],
+        "case3_tasks": ["prognosis"],
+    }
 
-    d = claim.to_dict()
+    restored = Claim.from_dict(legacy)
+    serialized = restored.to_dict()
 
-    assert d["paper_scope"] == ["general", "case1"]
-    assert Claim.from_dict(d).paper_scope == ["general", "case1"]
+    assert restored.paper_case_study_ids == ["case1_transdiagnostic", "prognosis"]
+    assert restored.claim_case_study_ids == ["case1_transdiagnostic", "prognosis"]
+    assert "paper_scope" not in serialized
+    assert "case3_tasks" not in serialized
 
 
-def test_claim_to_dict_defaults_unscoped_claims_to_general():
+def test_claim_to_dict_keeps_general_implicit_for_unscoped_claims():
     claim = Claim(
         id="CLM:004",
         subject_id="GENE:APOE",
@@ -258,7 +281,8 @@ def test_claim_to_dict_defaults_unscoped_claims_to_general():
         object_name="Alzheimer Disease",
     )
 
-    assert claim.to_dict()["paper_scope"] == ["general"]
+    assert claim.to_dict()["paper_case_study_ids"] == []
+    assert claim.to_dict()["claim_case_study_ids"] == []
 
 
 def test_domain_tag_values():
@@ -267,6 +291,25 @@ def test_domain_tag_values():
     assert DomainTag.DISEASE.value == "disease"
     assert DomainTag.GENE.value == "gene"
     assert DomainTag.NEUROTRANSMITTER.value == "neurotransmitter"
+
+
+def test_spatial_reference_domain_keeps_atlas_compatibility():
+    assert DomainTag.SPATIAL_REFERENCE.value == "spatial_reference"
+    assert DomainTag.ATLAS is DomainTag.SPATIAL_REFERENCE
+    assert DomainTag("atlas") is DomainTag.SPATIAL_REFERENCE
+    assert normalize_domain_tag("atlas") == "spatial_reference"
+
+
+def test_concept_node_normalizes_legacy_atlas_tag():
+    node = ConceptNode.from_dict(
+        {
+            "id": "ATLAS:legacy",
+            "preferred_name": "legacy",
+            "domain_tags": ["atlas", "spatial_reference"],
+        }
+    )
+    assert node.domain_tags == ["spatial_reference"]
+    assert node.to_dict()["domain_tags"] == ["spatial_reference"]
 
 
 def test_semantic_type_values():

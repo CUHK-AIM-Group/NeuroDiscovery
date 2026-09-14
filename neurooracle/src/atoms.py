@@ -66,7 +66,7 @@ _DISPLAY_ORDER: tuple[Atom, ...] = (
 # responder labels) and INDIVIDUAL_DATA (age, lifestyle); disambiguation
 # happens at use site, either by task semantics or node metadata.
 #
-# Infrastructure tags (atlas, modality, dataset, ml_model) and meta tags
+# Infrastructure tags (spatial_reference, modality, dataset, ml_model) and meta tags
 # (claim, recipe) are intentionally *not* members of any atom — they describe
 # the experimental apparatus, not the scientific content of a hypothesis.
 ATOM_TO_DOMAINS: dict[Atom, frozenset[str]] = {

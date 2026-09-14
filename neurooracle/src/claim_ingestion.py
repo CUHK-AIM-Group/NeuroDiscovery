@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -12,12 +13,25 @@ from typing import Optional
 
 from openai import OpenAI
 
+from .atoms import Atom, DOMAIN_TO_ATOMS
+from .claim_semantics import (
+    _roles_compatible, concept_atom_roles, declared_type_atoms,
+    name_compatibility_score,
+)
+from .case_study_membership_contract import validate_final_scope_reaudit
+from .claim_evidence_identity import evidence_dedup_key, evidence_signature
 from .claim_extractor import ClaimExtractor, ExtractionResult
 from .graph_manager import KnowledgeGraph
-from .paper_scope import infer_paper_scope_from_claim_dict
 from .schema import CLAIM_PREDICATES, Claim, ConceptNode, DomainTag, Edge, PaperRef
 
 logger = logging.getLogger(__name__)
+
+CLAIM_REJECTION_AUDIT_FILENAME = "claim_ingestion_rejections.jsonl"
+
+# Loading a million-line canonical store before every 100-paper batch would
+# dominate ingestion time.  Keep per-process indexes keyed by the absolute
+# output path; all supported extraction drivers serialize persistence calls.
+_JSONL_FIELD_CACHE: dict[tuple[Path, str], set[str]] = {}
 
 # ── Build-time noise filter ────────────────────────────────────────────
 # Gates the step-6 "mint new CLM_CONCEPT" fallback in resolve_entity.
@@ -911,19 +925,43 @@ def _normalize_entity_type(entity_type: str) -> str:
     return _ENTITY_TYPE_ALIASES.get(normalized, normalized)
 
 
-# Min length for short-string matches. Below this, only exact (case-insensitive)
-# matches are allowed — otherwise 2-letter aliases like "IC" (Internal Capsula)
-# match any substring containing those letters (e.g. "specific" contains "ic").
-_MIN_SUBSTRING_LEN = 4
+ENTITY_RESOLUTION_VERSION = "entity-resolution.v3"
 
 
 def _word_boundary_match(short: str, long: str) -> bool:
-    """True if `short` appears in `long` as a whole token.
+    """Require phrase boundaries for every alias length, including FACE/TERA."""
+    return bool(short) and short in long and re.search(r"(?<!\w)" + re.escape(short) + r"(?!\w)", long) is not None
 
-    Uses \\b word boundaries so "IC" matches "IC lesion" but NOT "specific".
-    Assumes both args are lowercase.
-    """
-    return re.search(r"\b" + re.escape(short) + r"\b", long) is not None
+
+def _resolution_roles(entity_name: str, entity_type: str) -> frozenset[Atom]:
+    roles = declared_type_atoms(entity_type, entity_name)
+    if roles:
+        return roles
+    domain = ENTITY_TYPE_TO_DOMAIN.get(_normalize_entity_type(entity_type))
+    return frozenset(DOMAIN_TO_ATOMS.get(domain.value, ())) if domain else frozenset()
+
+
+def _resolution_compatible(node: ConceptNode, entity_name: str, entity_type: str) -> bool:
+    """All lookup paths require nonempty, compatible type evidence and names."""
+    # Observation nodes can have disease/gene tags and human-readable aliases;
+    # those do not make them entity identities. CLM_CONCEPT mentions are valid.
+    if node is None or node.id.startswith("CLM:"):
+        return False
+    return _roles_compatible(_resolution_roles(entity_name, entity_type), concept_atom_roles(node)) and any(
+        name_compatibility_score(entity_name, label) >= 0.70
+        for label in (node.preferred_name, *node.aliases)
+    )
+
+
+def _mint_domain(entity_name: str, entity_type: str) -> str:
+    roles = _resolution_roles(entity_name, entity_type)
+    expected = ENTITY_TYPE_TO_DOMAIN.get(_normalize_entity_type(entity_type))
+    if expected and roles & set(DOMAIN_TO_ATOMS.get(expected.value, ())):
+        return expected.value
+    domains = {Atom.IMAGING_MARKER: "imaging_feature", Atom.GENE_TARGET: "gene", Atom.DRUG: "drug",
+               Atom.DISEASE: "disease", Atom.OUTCOME: "treatment_outcome", Atom.COGNITIVE_TASK: "paradigm",
+               Atom.INDIVIDUAL_DATA: "dataset_variable"}
+    return domains[next(iter(roles))] if len(roles) == 1 else "external"
 
 
 # ── Name resolution index (O(1) lookup instead of O(n) scan) ──────────
@@ -931,87 +969,114 @@ class _ResolutionIndex:
     """Pre-built lookup tables for fast entity resolution."""
 
     def __init__(self):
-        self._exact: dict[str, str] = {}          # preferred_name -> id
-        self._lower: dict[str, str] = {}          # preferred_name.lower() -> id
-        self._alias_lower: dict[str, str] = {}    # alias.lower() -> id
+        # Keep singleton entries compact in million-node graphs; allocate a
+        # set only when a name actually has multiple candidate identities.
+        self._exact: dict[str, str | set[str]] = {}
+        self._lower: dict[str, str | set[str]] = {}
+        self._alias_lower: dict[str, str | set[str]] = {}
         self._built = False
+        self._kg: Optional[KnowledgeGraph] = None
+        self._size = 0
 
     def build(self, kg: KnowledgeGraph):
         self._exact.clear()
         self._lower.clear()
         self._alias_lower.clear()
         for node in kg._index.values():
-            self._exact[node.preferred_name] = node.id
-            lower = node.preferred_name.lower()
-            if lower not in self._lower:
-                self._lower[lower] = node.id
-            for alias in node.aliases:
-                al = alias.lower()
-                if al not in self._alias_lower:
-                    self._alias_lower[al] = node.id
+            self.add(node.id, node.preferred_name, node.aliases)
         self._built = True
+        self._kg = kg
+        self._size = len(kg._index)
         logger.info(f"resolution index built: {len(self._exact)} exact, {len(self._alias_lower)} aliases")
+
+    def is_for(self, kg: KnowledgeGraph) -> bool:
+        return self._built and self._kg is kg and self._size == len(kg._index)
 
     def add(self, node_id: str, preferred_name: str, aliases: list[str] = None):
         """Incrementally add a new node to the index."""
-        self._exact[preferred_name] = node_id
-        lower = preferred_name.lower()
-        if lower not in self._lower:
-            self._lower[lower] = node_id
+        if self._kg is not None:
+            self._size = len(self._kg._index)
+        if node_id.startswith("CLM:"):
+            return
+        self._append(self._exact, preferred_name, node_id)
+        self._append(self._lower, preferred_name.lower(), node_id)
         for alias in (aliases or []):
-            al = alias.lower()
-            if al not in self._alias_lower:
-                self._alias_lower[al] = node_id
+            if alias:
+                self._append(self._alias_lower, alias.lower(), node_id)
+        if self._kg is not None:
+            self._size = len(self._kg._index)
+
+    @staticmethod
+    def _append(index, key, node_id):
+        previous = index.get(key)
+        if previous is None:
+            index[key] = node_id
+        elif isinstance(previous, str):
+            if previous != node_id:
+                index[key] = {previous, node_id}
+        else:
+            previous.add(node_id)
+
+    @staticmethod
+    def _ids(value):
+        return {value} if isinstance(value, str) else value
+
+    @staticmethod
+    def _unique(ids: str | set[str]) -> Optional[str]:
+        return ids if isinstance(ids, str) else next(iter(ids)) if len(ids) == 1 else None
+
+    def lookup_candidates(self, name: str) -> set[str]:
+        return self._ids(self._lower.get(name.lower(), set())) | self._ids(self._alias_lower.get(name.lower(), set()))
 
     def lookup_exact(self, name: str) -> Optional[str]:
-        return self._exact.get(name)
+        return self._unique(self._exact.get(name, set()))
 
     def lookup_lower(self, name: str) -> Optional[str]:
-        return self._lower.get(name.lower())
+        return self._unique(self._lower.get(name.lower(), set()))
 
     def lookup_alias(self, name: str) -> Optional[str]:
-        return self._alias_lower.get(name.lower())
+        return self._unique(self._alias_lower.get(name.lower(), set()))
 
 
 _resolution_idx = _ResolutionIndex()
+
+
+def _safe_salvage_id(kg: KnowledgeGraph, original: str, salvaged: str, entity_type: str) -> Optional[str]:
+    candidates = [node_id for node_id in _resolution_idx.lookup_candidates(salvaged)
+                  if node_id in kg._index and _resolution_compatible(kg._index[node_id], original, entity_type)]
+    return candidates[0] if len(candidates) == 1 else None
 
 
 # ── Persistent dedup state (across ingest_claims calls) ───────────────
 # Building these from scratch every call requires scanning all CLM nodes
 # (~178K+ in a mature graph), which costs 30-60s per call. Cache them
 # module-level so they survive between disease-year batches in the same
-# process, and use the seeded-flag to know when a fresh seed is needed.
-_persistent_seen_triples: set[tuple[str, str, str, str]] = set()
-_persistent_seen_pairs: dict[tuple[str, str, str], str] = {}
-_dedup_seeded: bool = False
+# process, while binding the cache to one KnowledgeGraph instance at a time.
+_persistent_seen_evidence: set[str] = set()
+_dedup_kg: Optional[KnowledgeGraph] = None
+_dedup_revision = -1
+_dedup_papers = None
 
 
 def _seed_dedup_from_kg(kg: KnowledgeGraph):
     """Build cross-run dedup state from existing CLM nodes. Idempotent."""
-    global _dedup_seeded
-    if _dedup_seeded:
+    global _dedup_kg, _dedup_revision, _dedup_papers
+    if _dedup_kg is kg and _dedup_revision == kg.claim_revision and _dedup_papers is kg.paper_identities:
         return
+    _persistent_seen_evidence.clear()
     for node in kg._index.values():
         if not node.id.startswith("CLM:"):
             continue
         meta = node.metadata
         if not isinstance(meta, dict):
             continue
-        pmid = ""
-        sp = meta.get("source_paper")
-        if isinstance(sp, dict):
-            pmid = sp.get("pmid", "")
-        sid = meta.get("subject_id", "")
-        pred = meta.get("predicate", "")
-        oid = meta.get("object_id", "")
-        if sid and pred and oid:
-            _persistent_seen_triples.add((pmid, sid, pred, oid))
-            pair_key = (pmid, sid, oid)
-            existing_pred = _persistent_seen_pairs.get(pair_key)
-            if existing_pred is None or (existing_pred in _VAGUE_PREDICATES and pred not in _VAGUE_PREDICATES):
-                _persistent_seen_pairs[pair_key] = pred
-    _dedup_seeded = True
-    logger.info(f"dedup state seeded: {len(_persistent_seen_triples):,} triples, {len(_persistent_seen_pairs):,} pairs")
+        key = evidence_dedup_key(meta, papers=kg.paper_identities)
+        if key:
+            _persistent_seen_evidence.add(key)
+    _dedup_kg = kg
+    _dedup_revision = kg.claim_revision
+    _dedup_papers = kg.paper_identities
+    logger.info("dedup state seeded: %s exact evidence records", len(_persistent_seen_evidence))
 
 
 def resolve_entity(
@@ -1021,71 +1086,42 @@ def resolve_entity(
 ) -> Optional[str]:
     """Resolve an entity name to a concept ID in the knowledge graph.
 
-    Strategy:
-    1. Exact match on preferred_name (O(1) via index)
-    2. Case-insensitive match (O(1) via index)
-    3. Alias match (O(1) via index)
-    4. Safe fuzzy match: substring only when both strings are long enough,
-       short aliases (<4 chars) require word-boundary match
-    5. If entity_type is given, prefer candidates whose domain matches
-    6. If not found, create a new concept node
+    Exact names and aliases share a type-checked candidate set. Fuzzy matches
+    require phrase boundaries and semantic name compatibility. Ambiguity or
+    unknown types never select an arbitrary existing identity. The existing
+    strict/noise controls still govern unresolved mention creation.
     """
     if not entity_name:
         return None
     normalized_entity_type = _normalize_entity_type(entity_type)
 
+    # The current KG's verified dictionary takes precedence over multiple old
+    # mention spellings. It matches the complete endpoint and checks its role;
+    # no fuzzy match or compound stripping is introduced by this route.
+    registry = kg.relation_identities
+    if registry:
+        term = registry.term_for({"subject_name": entity_name, "subject_type": entity_type}, "subject")
+        if term and not term["target_id"].startswith("CLM:") and kg.has_concept(term["target_id"]):
+            return term["target_id"]
+
     # Build index on first call
-    if not _resolution_idx._built:
+    if not _resolution_idx.is_for(kg):
         _resolution_idx.build(kg)
 
-    # 1. exact match (O(1))
-    hit = _resolution_idx.lookup_exact(entity_name)
-    if hit:
-        return hit
-
-    # 2. case-insensitive match (O(1))
     entity_lower = entity_name.lower()
-    hit = _resolution_idx.lookup_lower(entity_name)
-    if hit:
-        return hit
-
-    # 3. alias match (O(1))
-    hit = _resolution_idx.lookup_alias(entity_name)
-    if hit:
-        return hit
-
-    # 4. safe fuzzy match (still O(n) but only reached for cache misses)
-    candidates = []
-    entity_len = len(entity_lower)
-    for node in kg._index.values():
-        name_lower = node.preferred_name.lower()
-        if entity_len >= _MIN_SUBSTRING_LEN and len(name_lower) >= _MIN_SUBSTRING_LEN:
-            if entity_lower in name_lower or name_lower in entity_lower:
+    candidates = [kg._index[node_id] for node_id in sorted(_resolution_idx.lookup_candidates(entity_name))
+                  if node_id in kg._index and _resolution_compatible(kg._index[node_id], entity_name, entity_type)]
+    if not candidates and _resolution_roles(entity_name, entity_type):
+        for node in kg._index.values():
+            if any((_word_boundary_match(label.lower(), entity_lower)
+                    or _word_boundary_match(entity_lower, label.lower()))
+                   for label in (node.preferred_name, *node.aliases)) and _resolution_compatible(node, entity_name, entity_type):
                 candidates.append(node)
-                continue
-        for alias in node.aliases:
-            alias_lower = alias.lower()
-            if len(alias_lower) < _MIN_SUBSTRING_LEN:
-                if _word_boundary_match(alias_lower, entity_lower):
-                    candidates.append(node)
-                    break
-            else:
-                if entity_lower in alias_lower or alias_lower in entity_lower:
-                    candidates.append(node)
-                    break
-
-    # 5. prefer domain-matching candidate when entity_type is known
-    expected_domain = ENTITY_TYPE_TO_DOMAIN.get(normalized_entity_type) if normalized_entity_type else None
-    if candidates and expected_domain is not None:
-        typed = [c for c in candidates if expected_domain.value in c.domain_tags]
-        if typed:
-            candidates = typed
-
     if len(candidates) == 1:
         return candidates[0].id
-    elif len(candidates) > 1:
-        candidates.sort(key=lambda n: len(n.preferred_name))
-        return candidates[0].id
+    if candidates:
+        logger.warning("ambiguous entity resolution retained as an unresolved mention: %r (%d candidates)",
+                       entity_name, len(candidates))
 
     # 6. not found — noise check before minting a brand-new CLM_CONCEPT.
     # Curated matches (steps 1-5) already returned above, so we only see
@@ -1095,15 +1131,10 @@ def resolve_entity(
     if _NOISE_FILTER_ENABLED and _is_noisy_name(entity_name):
         salvaged = _salvage_noisy_name(entity_name)
         if salvaged:
-            salvaged_lower = salvaged.lower()
-            for node in kg._index.values():
-                if node.preferred_name.lower() == salvaged_lower:
-                    _DROP_LOG.record(entity_name, "salvaged", salvaged, node.id)
-                    return node.id
-                for alias in node.aliases:
-                    if alias.lower() == salvaged_lower:
-                        _DROP_LOG.record(entity_name, "salvaged", salvaged, node.id)
-                        return node.id
+            hit = _safe_salvage_id(kg, entity_name, salvaged, entity_type)
+            if hit:
+                _DROP_LOG.record(entity_name, "salvaged", salvaged, hit)
+                return hit
         _DROP_LOG.record(entity_name, "dropped", salvaged, None, _noise_reasons(entity_name))
         logger.debug(f"dropped noise entity: {entity_name!r} (salvage={salvaged!r})")
         return None
@@ -1116,15 +1147,10 @@ def resolve_entity(
         # (plural, minor morphology) of something in the index.
         salvaged = _salvage_noisy_name(entity_name) if _NOISE_FILTER_ENABLED else None
         if salvaged:
-            salvaged_lower = salvaged.lower()
-            for node in kg._index.values():
-                if node.preferred_name.lower() == salvaged_lower:
-                    _DROP_LOG.record(entity_name, "salvaged_strict", salvaged, node.id)
-                    return node.id
-                for alias in node.aliases:
-                    if alias.lower() == salvaged_lower:
-                        _DROP_LOG.record(entity_name, "salvaged_strict", salvaged, node.id)
-                        return node.id
+            hit = _safe_salvage_id(kg, entity_name, salvaged, entity_type)
+            if hit:
+                _DROP_LOG.record(entity_name, "salvaged_strict", salvaged, hit)
+                return hit
         _DROP_LOG.record(entity_name, "strict_dropped", salvaged, None,
                          ["not in phase1 curated index"])
         logger.debug(f"strict_phase1 dropped entity: {entity_name!r}")
@@ -1139,20 +1165,24 @@ def resolve_entity(
         logger.debug(f"vague endpoint dropped: {entity_name!r}")
         return None
 
-    # 6d. Dedup by preferred_name: if an existing CLM_CONCEPT already has
-    # the same name (case-insensitive), reuse it instead of minting a
-    # duplicate with a different ID.
-    for node in kg._index.values():
-        if node.id.startswith("CLM_CONCEPT:") and node.preferred_name.lower() == entity_lower:
-            return node.id
-
-    # 7. mint a new concept
-    domain = ENTITY_TYPE_TO_DOMAIN.get(normalized_entity_type, DomainTag.DISEASE)
+    # Preserve a typed/unclassified mention; never overwrite a conflicting ID.
+    domain = _mint_domain(entity_name, entity_type)
     new_id = f"CLM_CONCEPT:{entity_name.replace(' ', '_')}"
+    existing = kg.get_concept(new_id)
+    if existing is not None:
+        if existing.preferred_name == entity_name and existing.source_vocab == "claim_extraction" and existing.domain_tags == [domain]:
+            return new_id
+        digest = hashlib.sha256((entity_lower + "|" + normalized_entity_type).encode("utf-8")).hexdigest()[:16]
+        new_id += "__" + digest
+        existing = kg.get_concept(new_id)
+        if existing is not None:
+            if existing.preferred_name == entity_name and existing.source_vocab == "claim_extraction" and existing.domain_tags == [domain]:
+                return new_id
+            raise ValueError("unresolved mention ID collision; refusing to overwrite an existing entity")
     kg.add_concept(ConceptNode(
         id=new_id,
         preferred_name=entity_name,
-        domain_tags=[domain.value],
+        domain_tags=[domain],
         source_vocab="claim_extraction",
     ))
     _resolution_idx.add(new_id, entity_name)
@@ -1177,13 +1207,13 @@ def _resolve_canonical_hint(kg: KnowledgeGraph, hint: str) -> Optional[str]:
     if not hint:
         return None
     hint = hint.strip()
-    if not hint:
+    if not hint or hint.startswith("CLM:"):
         return None
 
     if kg.has_concept(hint):
         return hint
 
-    if not _resolution_idx._built:
+    if not _resolution_idx.is_for(kg):
         _resolution_idx.build(kg)
 
     if ":" in hint:
@@ -1193,16 +1223,16 @@ def _resolve_canonical_hint(kg: KnowledgeGraph, hint: str) -> Optional[str]:
             return None
         if prefix == "HGNC":
             for cand in (payload, payload.upper()):
-                node_id = _resolution_idx.lookup_exact(cand) or _resolution_idx.lookup_alias(cand)
+                node_id = _resolution_idx._unique(_resolution_idx.lookup_candidates(cand))
                 if node_id:
                     return node_id
         else:
-            node_id = _resolution_idx.lookup_exact(payload) or _resolution_idx.lookup_alias(payload)
+            node_id = _resolution_idx._unique(_resolution_idx.lookup_candidates(payload))
             if node_id:
                 return node_id
         return None
 
-    return _resolution_idx.lookup_exact(hint) or _resolution_idx.lookup_alias(hint)
+    return _resolution_idx._unique(_resolution_idx.lookup_candidates(hint))
 
 
 def resolve_claim_entities(
@@ -1214,20 +1244,120 @@ def resolve_claim_entities(
     Honors `subject_canonical_hint` / `object_canonical_hint` from the
     atom-aware extractor first; falls back to name+type resolution otherwise.
     """
+    # The current KG may carry finite, independently source-reviewed repairs.
+    # Apply them before hints/fuzzy resolution; other graphs retain the normal
+    # resolver. An applicable rule rechecks its exact target seals and fails
+    # closed if they changed, while preserving the original evidence payload.
+    from .kg_multipaper_reinforcement import apply_multipaper_reimport as apply_reinforcement_multipaper_reimport
+    reinforcement_multipaper = apply_reinforcement_multipaper_reimport(kg, claim)
+    if reinforcement_multipaper is not None:
+        return reinforcement_multipaper
+    from .kg_multipaper_growth import apply_multipaper_reimport as apply_growth_multipaper_reimport
+    growth_multipaper = apply_growth_multipaper_reimport(kg, claim)
+    if growth_multipaper is not None:
+        return growth_multipaper
+    from .kg_multipaper_continuity import apply_multipaper_reimport as apply_continuity_multipaper_reimport
+    continuity_multipaper = apply_continuity_multipaper_reimport(kg, claim)
+    if continuity_multipaper is not None:
+        return continuity_multipaper
+    from .kg_multipaper_accretion import apply_multipaper_reimport as apply_accretion_multipaper_reimport
+    accretion_multipaper = apply_accretion_multipaper_reimport(kg, claim)
+    if accretion_multipaper is not None:
+        return accretion_multipaper
+    from .kg_multipaper_synthesis import apply_multipaper_reimport as apply_synthesis_multipaper_reimport
+    synthesis_multipaper = apply_synthesis_multipaper_reimport(kg, claim)
+    if synthesis_multipaper is not None:
+        return synthesis_multipaper
+    from .kg_multipaper_fusion import apply_multipaper_reimport as apply_fusion_multipaper_reimport
+    fusion_multipaper = apply_fusion_multipaper_reimport(kg, claim)
+    if fusion_multipaper is not None:
+        return fusion_multipaper
+    from .kg_multipaper_accumulation import apply_multipaper_reimport as apply_accumulation_multipaper_reimport
+    accumulation_multipaper = apply_accumulation_multipaper_reimport(kg, claim)
+    if accumulation_multipaper is not None:
+        return accumulation_multipaper
+    from .kg_multipaper_aggregation import apply_multipaper_reimport as apply_aggregation_multipaper_reimport
+    aggregation_multipaper = apply_aggregation_multipaper_reimport(kg, claim)
+    if aggregation_multipaper is not None:
+        return aggregation_multipaper
+    from .kg_multipaper_integration import apply_multipaper_reimport as apply_integration_multipaper_reimport
+    integration_multipaper = apply_integration_multipaper_reimport(kg, claim)
+    if integration_multipaper is not None:
+        return integration_multipaper
+    from .kg_multipaper_harmonization import apply_multipaper_reimport as apply_harmonization_multipaper_reimport
+    harmonization_multipaper = apply_harmonization_multipaper_reimport(kg, claim)
+    if harmonization_multipaper is not None:
+        return harmonization_multipaper
+    from .kg_multipaper_reconciliation import apply_multipaper_reimport as apply_reconciliation_multipaper_reimport
+    reconciliation_multipaper = apply_reconciliation_multipaper_reimport(kg, claim)
+    if reconciliation_multipaper is not None:
+        return reconciliation_multipaper
+    from .kg_multipaper_alignment import apply_multipaper_reimport as apply_alignment_multipaper_reimport
+    alignment_multipaper = apply_alignment_multipaper_reimport(kg, claim)
+    if alignment_multipaper is not None:
+        return alignment_multipaper
+    from .kg_multipaper_convergence import apply_multipaper_reimport as apply_convergence_multipaper_reimport
+    convergence_multipaper = apply_convergence_multipaper_reimport(kg, claim)
+    if convergence_multipaper is not None:
+        return convergence_multipaper
+    from .kg_multipaper_predicates import apply_multipaper_reimport as apply_predicate_multipaper_reimport
+    predicate_multipaper = apply_predicate_multipaper_reimport(kg, claim)
+    if predicate_multipaper is not None:
+        return predicate_multipaper
+    from .kg_multipaper_aliases import apply_multipaper_reimport as apply_alias_multipaper_reimport
+    alias_multipaper = apply_alias_multipaper_reimport(kg, claim)
+    if alias_multipaper is not None:
+        return alias_multipaper
+    from .kg_multipaper_broadening import apply_multipaper_reimport as apply_broad_multipaper_reimport
+    broad_multipaper = apply_broad_multipaper_reimport(kg, claim)
+    if broad_multipaper is not None:
+        return broad_multipaper
+    from .kg_multipaper_semantics import apply_multipaper_reimport as apply_semantic_multipaper_reimport
+    semantic_multipaper = apply_semantic_multipaper_reimport(kg, claim)
+    if semantic_multipaper is not None:
+        return semantic_multipaper
+    from .kg_multipaper_expansion import apply_multipaper_reimport as apply_expanded_multipaper_reimport
+    expanded_multipaper = apply_expanded_multipaper_reimport(kg, claim)
+    if expanded_multipaper is not None:
+        return expanded_multipaper
+    from .kg_multipaper_claim_repair import apply_multipaper_reimport
+    multipaper = apply_multipaper_reimport(kg, claim)
+    if multipaper is not None:
+        return multipaper
+    from .kg_source_scoped_sets_repair import apply_source_sets_reimport
+    source_sets = apply_source_sets_reimport(kg, claim)
+    if source_sets is not None:
+        return source_sets
+    from .kg_semantic_measurement_repair import apply_semantic_reimport
+    semantic = apply_semantic_reimport(kg, claim)
+    if semantic is not None:
+        return semantic
+    from .kg_systematic_consolidation import apply_systematic_reimport
+    systematic = apply_systematic_reimport(kg, claim)
+    if systematic is not None:
+        return systematic
+    from .kg_reviewed_relation_repair import apply_reviewed_reimport
+    reviewed = apply_reviewed_reimport(kg, claim)
+    if reviewed is not None:
+        return reviewed
+
     meta = claim.metadata or {}
 
     subject_id = _resolve_canonical_hint(kg, meta.get("subject_canonical_hint", ""))
+    if subject_id and not _resolution_compatible(kg.get_concept(subject_id), claim.subject_name, meta.get("subject_type", "")):
+        subject_id = None
     if not subject_id:
         subject_id = resolve_entity(kg, claim.subject_name, meta.get("subject_type", ""))
 
     object_id = _resolve_canonical_hint(kg, meta.get("object_canonical_hint", ""))
+    if object_id and not _resolution_compatible(kg.get_concept(object_id), claim.object_name, meta.get("object_type", "")):
+        object_id = None
     if not object_id:
         object_id = resolve_entity(kg, claim.object_name, meta.get("object_type", ""))
 
-    if subject_id:
-        claim.subject_id = subject_id
-    if object_id:
-        claim.object_id = object_id
+    # A rejected resolution must not leave a stale, previously supplied ID.
+    claim.subject_id = subject_id or ""
+    claim.object_id = object_id or ""
 
     return claim
 
@@ -1241,6 +1371,7 @@ def ingest_claims(
     llm_model: str = "",
     keep_noise: bool = False,
     strict_phase1: bool = False,
+    require_final_scope_audit: bool = True,
     drop_log_path: Optional[Path] = None,
 ) -> dict:
     """Ingest extracted claims into the knowledge graph.
@@ -1257,6 +1388,10 @@ def ingest_claims(
             subject or object cannot resolve to a Phase-1-curated node are
             dropped. Use this when Phase 1 (NeuroNames/MeSH/DisGeNET/Cognitive
             Atlas + UMLS) is considered sufficient to cover medical terminology.
+        require_final_scope_audit: fail the entire batch before graph mutation
+            unless every claim has a valid current-policy ``scope_reaudit`` seal.
+            This is fail-closed by default. Historical/manual repair paths must
+            opt out explicitly with ``require_final_scope_audit=False``.
         drop_log_path: override path for the dropped-entities audit log.
 
     Returns summary dict.
@@ -1272,6 +1407,23 @@ def ingest_claims(
     claims_skipped_modality_method = 0
     claims_skipped_low_confidence = 0
     claims_skipped_unsupported_endpoint = 0
+    claim_outcomes: list[dict] = []
+
+    def _record_claim_outcome(
+        claim: Claim,
+        *,
+        status: str,
+        reason: str,
+        details: Optional[dict] = None,
+    ) -> None:
+        outcome = {
+            "claim_id": str(claim.id),
+            "status": status,
+            "reason": reason,
+        }
+        if details:
+            outcome["details"] = details
+        claim_outcomes.append(outcome)
 
     # Configure build-time noise filter + strict_phase1 mode
     global _NOISE_FILTER_ENABLED, _STRICT_PHASE1
@@ -1307,11 +1459,38 @@ def ingest_claims(
     # Gather all claims across results, then optionally pre-refine predicates
     # in parallel (ingest is serial but refinement is IO-bound).
     all_claims: list = []
+    extraction_failures: list[str] = []
     for result in results:
         if result.error:
             errors += 1
+            extraction_failures.append(
+                f"{result.paper.pmid or result.paper.doi or result.paper.title}: "
+                f"{result.error}"
+            )
             continue
         all_claims.extend(result.claims)
+
+    if require_final_scope_audit:
+        if extraction_failures:
+            preview = "; ".join(extraction_failures[:5])
+            _DROP_LOG.close()
+            raise ValueError(
+                "refusing KG mutation because automated extraction failed for "
+                f"{len(extraction_failures)} paper(s): {preview}"
+            )
+        invalid_scope_audits: list[str] = []
+        for claim in all_claims:
+            try:
+                validate_final_scope_reaudit(claim.to_dict())
+            except Exception as exc:
+                invalid_scope_audits.append(f"{claim.id}: {exc}")
+        if invalid_scope_audits:
+            preview = "; ".join(invalid_scope_audits[:5])
+            _DROP_LOG.close()
+            raise ValueError(
+                "refusing KG mutation because claim scope audit validation failed "
+                f"for {len(invalid_scope_audits)} claim(s): {preview}"
+            )
 
     # Parallel rule-based + LLM refinement of vague predicates.
     # Only claims whose predicate is VAGUE and whose rule-based pass misses
@@ -1344,16 +1523,14 @@ def ingest_claims(
                     logger.debug(f"refine_predicate worker failed: {e}")
 
     # Serial KG mutation: resolve entities + add concept/edges.
-    # Triple dedup: skip claims whose (PMID, subject_id, predicate, object_id)
-    # has already been ingested in this batch or exists in the graph.
+    # Deduplicate complete observations, never just a same-paper triple.
     # Use persistent module-level state to avoid rescanning all CLM nodes
     # on every batch (would cost 30-60s per disease-year on a mature KG).
     _seed_dedup_from_kg(kg)
-    _seen_triples = _persistent_seen_triples
-    _seen_pairs = _persistent_seen_pairs
+    _seen_evidence = _persistent_seen_evidence
     claims_skipped_dedup = 0
 
-    logger.debug(f"triple dedup state: {len(_seen_triples)} triples")
+    logger.debug("evidence dedup state: %s observations", len(_seen_evidence))
 
     for claim in all_claims:
         try:
@@ -1363,6 +1540,12 @@ def ingest_claims(
             modality_method_reasons = _modality_method_guard_reasons(claim)
             if modality_method_reasons:
                 claims_skipped_modality_method += 1
+                _record_claim_outcome(
+                    claim,
+                    status="rejected",
+                    reason="modality_method_guard",
+                    details={"guard_reasons": modality_method_reasons},
+                )
                 logger.debug(
                     f"skipped modality/method claim {claim.id}: "
                     f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}; "
@@ -1373,6 +1556,12 @@ def ingest_claims(
             unsupported_endpoint_reasons = _unsupported_endpoint_guard_reasons(claim)
             if unsupported_endpoint_reasons:
                 claims_skipped_unsupported_endpoint += 1
+                _record_claim_outcome(
+                    claim,
+                    status="rejected",
+                    reason="unsupported_endpoint_guard",
+                    details={"guard_reasons": unsupported_endpoint_reasons},
+                )
                 logger.debug(
                     f"skipped unsupported-endpoint claim {claim.id}: "
                     f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}; "
@@ -1390,6 +1579,12 @@ def ingest_claims(
                     and study_type in _BACKGROUND_SKIP_STUDY_TYPES
                 ):
                     claims_skipped_background += 1
+                    _record_claim_outcome(
+                        claim,
+                        status="rejected",
+                        reason="background_claim_guard",
+                        details={"guard_reasons": background_reasons},
+                    )
                     logger.debug(
                         f"skipped background claim {claim.id}: "
                         f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
@@ -1406,6 +1601,15 @@ def ingest_claims(
 
             if claim.confidence < _MIN_INGEST_CLAIM_CONFIDENCE:
                 claims_skipped_low_confidence += 1
+                _record_claim_outcome(
+                    claim,
+                    status="rejected",
+                    reason="low_confidence",
+                    details={
+                        "confidence": claim.confidence,
+                        "minimum_confidence": _MIN_INGEST_CLAIM_CONFIDENCE,
+                    },
+                )
                 logger.debug(
                     f"skipped low-confidence claim {claim.id}: "
                     f"confidence={claim.confidence:.3f}; "
@@ -1420,6 +1624,11 @@ def ingest_claims(
                 # Distinguish noise drop, strict_phase1 drop, and real error
                 if _STRICT_PHASE1:
                     claims_skipped_unresolved += 1
+                    _record_claim_outcome(
+                        claim,
+                        status="rejected",
+                        reason="unresolved_strict_phase1",
+                    )
                     logger.debug(
                         f"strict_phase1 skipped claim {claim.id}: "
                         f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
@@ -1429,6 +1638,15 @@ def ingest_claims(
                     or _is_noisy_name(claim.object_name)
                 ):
                     claims_skipped_noise += 1
+                    _record_claim_outcome(
+                        claim,
+                        status="rejected",
+                        reason="unresolved_noise",
+                        details={
+                            "subject_reasons": _noise_reasons(claim.subject_name),
+                            "object_reasons": _noise_reasons(claim.object_name),
+                        },
+                    )
                     logger.debug(
                         f"skipped noise claim {claim.id}: "
                         f"{claim.subject_name!r} {claim.predicate} {claim.object_name!r}"
@@ -1436,37 +1654,69 @@ def ingest_claims(
                 else:
                     logger.warning(f"could not resolve entities for claim {claim.id}")
                     errors += 1
+                    _record_claim_outcome(
+                        claim,
+                        status="rejected",
+                        reason="entity_resolution_error",
+                    )
                 continue
 
-            # Triple dedup: same paper + same (subject, predicate, object) = duplicate
-            pmid = claim.source_paper.pmid or ""
-            triple_key = (pmid, claim.subject_id, claim.predicate, claim.object_id)
-            if triple_key in _seen_triples:
-                claims_skipped_dedup += 1
-                logger.debug(
-                    f"dedup skipped claim {claim.id}: "
-                    f"({pmid}, {claim.subject_id}, {claim.predicate}, {claim.object_id})"
+            missing_endpoint_ids = [
+                endpoint_id
+                for endpoint_id in (claim.subject_id, claim.object_id)
+                if not kg.has_concept(endpoint_id)
+            ]
+            if missing_endpoint_ids:
+                errors += 1
+                _record_claim_outcome(
+                    claim,
+                    status="rejected",
+                    reason="resolved_endpoint_absent_from_graph",
+                    details={"missing_endpoint_ids": missing_endpoint_ids},
+                )
+                logger.warning(
+                    "resolved endpoint ids absent from graph for claim %s: %s",
+                    claim.id,
+                    missing_endpoint_ids,
                 )
                 continue
-            _seen_triples.add(triple_key)
 
-            # Cross-predicate PMID dedup: same paper + same (subject, object)
-            # but different predicate. Keep only the most precise one.
-            pair_key = (pmid, claim.subject_id, claim.object_id)
-            existing_pred = _seen_pairs.get(pair_key)
-            if existing_pred is not None:
-                if claim.predicate in _VAGUE_PREDICATES and existing_pred not in _VAGUE_PREDICATES:
-                    # Already have a precise predicate, skip this vague one
+            payload = claim.to_dict()
+            if kg.has_concept(claim.id):
+                existing = kg.get_concept(claim.id).metadata
+                conflict = evidence_signature(existing) != evidence_signature(payload)
+                if conflict:
+                    errors += 1
+                else:
                     claims_skipped_dedup += 1
-                    logger.debug(
-                        f"cross-pred dedup skipped vague {claim.id}: "
-                        f"already have {existing_pred} for pair"
-                    )
-                    continue
-            _seen_pairs[pair_key] = claim.predicate
+                _record_claim_outcome(claim, status="rejected",
+                    reason="conflicting_claim_id" if conflict else "duplicate_claim_id")
+                continue
+
+            observation_key = evidence_dedup_key(payload, papers=kg.paper_identities)
+            if observation_key is not None and observation_key in _seen_evidence:
+                claims_skipped_dedup += 1
+                _record_claim_outcome(
+                    claim,
+                    status="rejected",
+                    reason="duplicate_paper_evidence",
+                    details={
+                        "pmid": claim.source_paper.pmid,
+                        "subject_id": claim.subject_id,
+                        "predicate": claim.predicate,
+                        "object_id": claim.object_id,
+                    },
+                )
+                logger.debug(
+                    f"dedup skipped claim {claim.id}: "
+                    f"exact recorded observation {observation_key}"
+                )
+                continue
+
+            # Different predicates, polarity, contexts and source sentences
+            # remain independent evidence even when the paper/endpoints match.
 
             # add claim node
-            claim.paper_scope = claim.paper_scope or infer_paper_scope_from_claim_dict(claim.to_dict())
             kg.add_concept(ConceptNode(
                 id=claim.id,
                 preferred_name=f"{claim.subject_name} {claim.predicate} {claim.object_name}",
@@ -1475,7 +1725,6 @@ def ingest_claims(
                 definition=claim.raw_text,
                 metadata=claim.to_dict(),
             ))
-            claims_added += 1
 
             # add simplified edge
             edge = claim.to_edge()
@@ -1498,9 +1747,53 @@ def ingest_claims(
                 confidence=claim.confidence,
             ))
 
+            # Dedup state is committed only after the claim node and all edges
+            # have been added.  A failed mutation therefore remains retryable.
+            if observation_key is not None:
+                _seen_evidence.add(observation_key)
+            claims_added += 1
+            _record_claim_outcome(
+                claim,
+                status="accepted",
+                reason="ingested",
+            )
+
         except Exception as e:
             logger.warning(f"failed to ingest claim {claim.id}: {e}")
             errors += 1
+            _record_claim_outcome(
+                claim,
+                status="rejected",
+                reason="ingestion_error",
+                details={"error": str(e)},
+            )
+
+    # Cache is valid only for graph mutations accounted for by this ingestion.
+    # On failures, rebuild next time (partial mutations may have occurred).
+    global _dedup_revision
+    _dedup_revision = kg.claim_revision if not errors else -1
+
+    if len(claim_outcomes) != len(all_claims):
+        _DROP_LOG.close()
+        raise RuntimeError(
+            "claim ingestion accounting error: "
+            f"{len(all_claims)} candidate claims but {len(claim_outcomes)} outcomes"
+        )
+
+    accepted_claim_ids = [
+        outcome["claim_id"]
+        for outcome in claim_outcomes
+        if outcome["status"] == "accepted"
+    ]
+    rejected_claims = [
+        outcome for outcome in claim_outcomes if outcome["status"] == "rejected"
+    ]
+    if len(accepted_claim_ids) != claims_added:
+        _DROP_LOG.close()
+        raise RuntimeError(
+            "claim ingestion accounting error: "
+            f"claims_added={claims_added} but accepted outcomes={len(accepted_claim_ids)}"
+        )
 
     summary = {
         "claims_added": claims_added,
@@ -1519,7 +1812,220 @@ def ingest_claims(
         "papers_processed": len(results),
         "predicates_refined": predicates_refined,
         "strict_phase1": strict_phase1,
+        "require_final_scope_audit": require_final_scope_audit,
+        "candidate_claims": len(all_claims),
+        "accepted_claim_ids": accepted_claim_ids,
+        "rejected_claims": rejected_claims,
+        "claim_outcomes": claim_outcomes,
     }
     _DROP_LOG.close()
-    logger.info(f"claim ingestion complete: {summary}")
+    logger.info(
+        "claim ingestion complete: %s",
+        {
+            key: value
+            for key, value in summary.items()
+            if key not in {"accepted_claim_ids", "rejected_claims", "claim_outcomes"}
+        },
+    )
     return summary
+
+
+def _cached_jsonl_field(path: Path, field: str) -> set[str]:
+    """Return a per-process exact-value index for one top-level JSONL field."""
+    path = Path(path).resolve()
+    cache_key = (path, field)
+    cached = _JSONL_FIELD_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    values: set[str] = set()
+    if path.exists():
+        with path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    value = json.loads(line).get(field)
+                except Exception as exc:
+                    raise ValueError(
+                        f"invalid JSONL at {path}:{line_number}: {exc}"
+                    ) from exc
+                if value:
+                    values.add(str(value))
+    _JSONL_FIELD_CACHE[cache_key] = values
+    return values
+
+
+def _append_jsonl_records(path: Path, records: list[dict]) -> None:
+    """Durably append a validated group of complete JSONL records."""
+    if not records:
+        return
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = "".join(
+        json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+        for record in records
+    )
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def persist_ingestion_results(
+    kg: KnowledgeGraph,
+    results: list[ExtractionResult],
+    ingest_summary: dict,
+    claims_path: Path,
+    *,
+    label: str,
+    year: Optional[int] = None,
+    rejection_path: Optional[Path] = None,
+) -> dict:
+    """Persist only graph-accepted claims and audit every rejected candidate.
+
+    ``ingest_claims`` returns one ordered outcome for every candidate claim.
+    This function validates that contract against the original results and the
+    in-memory graph before touching either JSONL file.  Accepted claims go to
+    the canonical ``extracted_claims.jsonl``; all other candidates go to a
+    separate, idempotent rejection audit.
+    """
+    claims_path = Path(claims_path)
+    rejection_path = Path(rejection_path) if rejection_path else (
+        claims_path.parent / CLAIM_REJECTION_AUDIT_FILENAME
+    )
+    if claims_path.resolve() == rejection_path.resolve():
+        raise ValueError("canonical claims path and rejection audit path must differ")
+
+    entries: list[tuple[ExtractionResult, Claim]] = []
+    for result in results:
+        if result is None or result.error:
+            continue
+        entries.extend((result, claim) for claim in result.claims)
+
+    outcomes = ingest_summary.get("claim_outcomes")
+    if not isinstance(outcomes, list):
+        raise ValueError("ingest summary is missing ordered claim_outcomes")
+    if len(entries) != len(outcomes):
+        raise ValueError(
+            "ingestion persistence accounting mismatch: "
+            f"{len(entries)} candidate claims but {len(outcomes)} outcomes"
+        )
+
+    timestamp = datetime.now().isoformat()
+    accepted_records: list[dict] = []
+    rejection_records: list[dict] = []
+    accepted_ids: list[str] = []
+
+    for occurrence, ((result, claim), outcome) in enumerate(
+        zip(entries, outcomes),
+        start=1,
+    ):
+        claim_id = str(claim.id)
+        if str(outcome.get("claim_id", "")) != claim_id:
+            raise ValueError(
+                "ingestion outcome order mismatch at occurrence "
+                f"{occurrence}: claim={claim_id!r}, outcome={outcome.get('claim_id')!r}"
+            )
+        status = outcome.get("status")
+        if status not in {"accepted", "rejected"}:
+            raise ValueError(
+                f"invalid ingestion outcome status for {claim_id}: {status!r}"
+            )
+
+        record_year = year if year is not None else (result.paper.year or 0)
+        claim_payload = claim.to_dict()
+        canonical_record = dict(claim_payload)
+        canonical_record["disease"] = label
+        canonical_record["year"] = record_year
+        canonical_record["extraction_timestamp"] = timestamp
+
+        if status == "accepted":
+            if not kg.has_concept(claim_id):
+                raise ValueError(
+                    f"refusing canonical write: accepted claim {claim_id} is absent from graph"
+                )
+            accepted_ids.append(claim_id)
+            accepted_records.append(canonical_record)
+            continue
+
+        rejection_identity = {
+            "claim_id": claim_id,
+            "reason": outcome.get("reason", "unspecified"),
+            "details": outcome.get("details", {}),
+            "source_label": label,
+            "year": record_year,
+            "claim": claim_payload,
+        }
+        digest = hashlib.sha256(
+            json.dumps(
+                rejection_identity,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        rejection_records.append({
+            "schema_version": "claim-ingestion-rejection.v1",
+            "audit_id": f"REJ:{digest}",
+            "claim_id": claim_id,
+            "status": "rejected",
+            "reason": outcome.get("reason", "unspecified"),
+            "details": outcome.get("details", {}),
+            "source_label": label,
+            "year": record_year,
+            "rejected_at": timestamp,
+            "claim": claim_payload,
+        })
+
+    summary_accepted_ids = [
+        str(value) for value in ingest_summary.get("accepted_claim_ids", [])
+    ]
+    if accepted_ids != summary_accepted_ids:
+        raise ValueError(
+            "ingestion persistence accounting mismatch: accepted ids differ "
+            "from ingest summary"
+        )
+    if len(accepted_records) != int(ingest_summary.get("claims_added", -1)):
+        raise ValueError(
+            "ingestion persistence accounting mismatch: accepted record count "
+            "differs from claims_added"
+        )
+    if len(set(accepted_ids)) != len(accepted_ids):
+        raise ValueError("ingestion persistence accounting mismatch: duplicate accepted ids")
+
+    known_claim_ids = _cached_jsonl_field(claims_path, "id")
+    pending_claim_ids = set(known_claim_ids)
+    new_accepted: list[dict] = []
+    for record in accepted_records:
+        claim_id = str(record.get("id", ""))
+        if claim_id in pending_claim_ids:
+            continue
+        pending_claim_ids.add(claim_id)
+        new_accepted.append(record)
+
+    known_audit_ids = _cached_jsonl_field(rejection_path, "audit_id")
+    pending_audit_ids = set(known_audit_ids)
+    new_rejections: list[dict] = []
+    for record in rejection_records:
+        audit_id = str(record["audit_id"])
+        if audit_id in pending_audit_ids:
+            continue
+        pending_audit_ids.add(audit_id)
+        new_rejections.append(record)
+
+    _append_jsonl_records(claims_path, new_accepted)
+    known_claim_ids.update(str(record["id"]) for record in new_accepted)
+    _append_jsonl_records(rejection_path, new_rejections)
+    known_audit_ids.update(str(record["audit_id"]) for record in new_rejections)
+
+    return {
+        "accepted_candidates": len(accepted_records),
+        "claims_written": len(new_accepted),
+        "claims_already_present": len(accepted_records) - len(new_accepted),
+        "rejected_candidates": len(rejection_records),
+        "rejections_written": len(new_rejections),
+        "rejections_already_present": len(rejection_records) - len(new_rejections),
+        "claims_path": str(claims_path.resolve()),
+        "rejection_path": str(rejection_path.resolve()),
+    }

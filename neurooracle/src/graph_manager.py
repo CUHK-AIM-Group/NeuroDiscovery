@@ -3,12 +3,24 @@
 from __future__ import annotations
 
 import logging
+import json
 from collections import Counter
+from copy import deepcopy
 from typing import Optional
 
 import networkx as nx
 
-from .schema import Claim, ConceptNode, Edge, Evidence, EDGE_TIER, DISPLAY_TIERS_DEFAULT, RELATION_TYPES
+from .schema import (
+    Claim,
+    ConceptNode,
+    Edge,
+    Evidence,
+    EDGE_TIER,
+    DISPLAY_TIERS_DEFAULT,
+    RELATION_TYPES,
+    normalize_domain_tag,
+    normalize_domain_tags,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +36,14 @@ class KnowledgeGraph:
         self.G = nx.DiGraph()
         self._index: dict[str, ConceptNode] = {}  # id -> ConceptNode
         self._semantic_view = None  # lazy: built on first access
+        self.serialization_metadata: dict = {}  # opt-in storage layout and source declarations
+        self.claim_revision = 0  # supported claim mutations invalidate ingestion caches
+        self.relation_identities = None  # optional, independently validated exact-term registry
+        self.paper_identities = None  # immutable bibliography witnesses; claims are checked on every query
+        # G remains the legacy traversal projection, NOT the evidence store.
+        # Preserve distinct non-winning records and self loops for lossless IO.
+        self._parallel_edges: dict[tuple[str, str], list[dict]] = {}
+        self._self_loop_edges: dict[tuple[str, str], list[dict]] = {}
 
     @property
     def semantic_view(self) -> nx.DiGraph:
@@ -58,6 +78,8 @@ class KnowledgeGraph:
     # ── node operations ──────────────────────────────────────────────
 
     def add_concept(self, node: ConceptNode) -> None:
+        if self.relation_identities and (node.id in self.relation_identities.node_ids or node.id.startswith("CLM_ATOM:")):
+            self.relation_identities = None
         if node.id in self._index:
             # merge: update existing node with new info
             existing = self._index[node.id]
@@ -65,8 +87,8 @@ class KnowledgeGraph:
             existing.external_ids.update(node.external_ids)
             if not existing.definition and node.definition:
                 existing.definition = node.definition
-            if not existing.atlas_mapping and node.atlas_mapping:
-                existing.atlas_mapping = node.atlas_mapping
+            if not existing.spatial_mapping and node.spatial_mapping:
+                existing.spatial_mapping = node.spatial_mapping
             for tag in node.domain_tags:
                 if tag not in existing.domain_tags:
                     existing.domain_tags.append(tag)
@@ -77,6 +99,8 @@ class KnowledgeGraph:
 
         self._index[node.id] = node
         self.G.add_node(node.id, **node.to_dict())
+        if node.id.startswith("CLM:"):
+            self.claim_revision += 1
 
     def get_concept(self, concept_id: str) -> Optional[ConceptNode]:
         return self._index.get(concept_id)
@@ -87,8 +111,10 @@ class KnowledgeGraph:
     # ── edge operations ──────────────────────────────────────────────
 
     def add_edge(self, edge: Edge) -> None:
-        if edge.source_id == edge.target_id:
-            return
+        # Uniqueness was checked across ALL candidate atoms, not just the
+        # selected proof atom. New mappings may introduce an alternate CUI.
+        if self.relation_identities and edge.relation_type == "maps_to":
+            self.relation_identities = None
         if edge.source_id not in self._index:
             logger.warning(f"source node {edge.source_id} not in graph, skipping edge")
             return
@@ -98,23 +124,66 @@ class KnowledgeGraph:
         if edge.relation_type not in RELATION_TYPES:
             logger.debug(f"unknown relation type: {edge.relation_type}")
 
-        # for DiGraph: use relation_type as key to allow multiple relation types
-        # between the same pair of nodes
-        key = edge.relation_type
+        pair = (edge.source_id, edge.target_id)
+        incoming = edge.to_dict()
+        if pair[0] == pair[1]:
+            self._remember_edge(self._self_loop_edges, pair, incoming)
+            return  # self loops stay out of traversal, but survive saving
         if self.G.has_edge(edge.source_id, edge.target_id):
             existing = self.G.edges[edge.source_id, edge.target_id]
-            if existing.get("relation_type") == edge.relation_type:
-                # same relation type: keep higher confidence
-                if edge.confidence > existing.get("confidence", 0):
-                    self.G.edges[edge.source_id, edge.target_id].update(edge.to_dict())
-                return
-            # different relation type: store as metadata on the edge
-            # since DiGraph only supports one edge per pair, we keep the higher-confidence one
+            # Only the traversal representative competes on confidence. Every
+            # distinct paper/relation/negation payload remains accessible.
             if edge.confidence > existing.get("confidence", 0):
-                self.G.edges[edge.source_id, edge.target_id].update(edge.to_dict())
+                self._remember_edge(self._parallel_edges, pair, dict(existing))
+                existing.clear()
+                existing.update(deepcopy(incoming))
+                self._parallel_edges[pair] = [record for record in self._parallel_edges[pair]
+                    if self._edge_signature(record) != self._edge_signature(incoming)]
+                self.invalidate_semantic_view()
+            elif self._edge_signature(existing) != self._edge_signature(incoming):
+                self._remember_edge(self._parallel_edges, pair, incoming)
             return
 
-        self.G.add_edge(edge.source_id, edge.target_id, **edge.to_dict())
+        self._parallel_edges.pop(pair, None)  # stale records after direct G removal
+        self.G.add_edge(edge.source_id, edge.target_id, **deepcopy(incoming))
+        self.invalidate_semantic_view()
+
+    @staticmethod
+    def _edge_signature(record: dict) -> str:
+        # JSON equality preserves distinctions such as False versus 0.
+        return json.dumps(record, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+
+    def _remember_edge(self, store: dict, pair: tuple[str, str], record: dict) -> None:
+        values = store.setdefault(pair, [])
+        signature = self._edge_signature(record)
+        if all(self._edge_signature(value) != signature for value in values):
+            values.append(deepcopy(record))
+
+    def iter_edge_records(self):
+        """Yield detached evidence records; G/semantic_view are lossy projections.
+
+        Repeated identical API insertion is idempotent. Distinct claim owners,
+        predicates, negations and attributes are never confidence-deduplicated.
+        """
+        for sid, tid, primary in self.G.edges(data=True):
+            record = dict(primary, source_id=sid, target_id=tid)
+            signature = self._edge_signature(record)
+            yield deepcopy(record)
+            for other in self._parallel_edges.get((sid, tid), ()):
+                if self._edge_signature(other) != signature:
+                    yield deepcopy(other)
+        for (sid, tid), records in self._self_loop_edges.items():
+            if sid in self.G and tid in self.G:
+                yield from deepcopy(records)
+
+    def iter_relation_evidence(self, *, minimum_claims: int = 1):
+        """Group claim evidence without asserting consensus or losing context."""
+        from .relation_evidence import group_claim_evidence
+        from .correlation_grouping import enabled, IndexTerms
+        identities = IndexTerms(self.relation_identities) if enabled(self.serialization_metadata) else self.relation_identities
+        return group_claim_evidence((node.metadata for nid, node in self._index.items()
+            if nid.startswith("CLM:")), minimum_claims=minimum_claims, identities=identities,
+            papers=self.paper_identities)
 
     def add_edges(self, edges: list[Edge]) -> int:
         count = 0
@@ -183,6 +252,7 @@ class KnowledgeGraph:
 
         # also update the serialized claim in node.metadata so it round-trips
         node.metadata = meta
+        self.claim_revision += 1
 
         # update simplified edge (subject → object)
         conf = new_confidence if new_confidence is not None else meta.get("confidence", 0.5)
@@ -192,6 +262,19 @@ class KnowledgeGraph:
             edge_data = self.G.edges[subj_id, obj_id]
             if edge_data.get("metadata", {}).get("claim_id") == claim_id:
                 edge_data["confidence"] = conf
+            for record in self._parallel_edges.get((subj_id, obj_id), ()):
+                if record.get("metadata", {}).get("claim_id") == claim_id:
+                    record["confidence"] = conf
+            candidates = [dict(edge_data), *self._parallel_edges.get((subj_id, obj_id), ())]
+            winner = max(candidates, key=lambda item: item.get("confidence", 0))
+            if winner is not candidates[0]:
+                edge_data.clear()
+                edge_data.update(deepcopy(winner))
+            self._parallel_edges[(subj_id, obj_id)] = [deepcopy(item) for item in candidates
+                if self._edge_signature(item) != self._edge_signature(winner)]
+        for record in self._self_loop_edges.get((subj_id, obj_id), ()):
+            if record.get("metadata", {}).get("claim_id") == claim_id:
+                record["confidence"] = conf
 
         # update 'about' edges (claim → subject, claim → object)
         for _, tgt, data in self.G.out_edges(claim_id, data=True):
@@ -199,6 +282,7 @@ class KnowledgeGraph:
                 data["confidence"] = conf
 
         logger.debug(f"updated claim {claim_id}, confidence={conf}")
+        self.invalidate_semantic_view()
         return True
 
     # ── query ────────────────────────────────────────────────────────
@@ -288,9 +372,10 @@ class KnowledgeGraph:
 
     def get_subgraph_by_domain(self, domain_tag: str) -> nx.DiGraph:
         """Extract subgraph containing only concepts with a given domain tag."""
+        domain_tag = normalize_domain_tag(domain_tag)
         nodes = [
             nid for nid, data in self.G.nodes(data=True)
-            if domain_tag in data.get("domain_tags", [])
+            if domain_tag in normalize_domain_tags(data.get("domain_tags", []))
         ]
         return self.G.subgraph(nodes).copy()
 
@@ -394,6 +479,7 @@ class KnowledgeGraph:
                 node.aliases.append(a)
                 changed = True
         for tag in seed_domain_tags or []:
+            tag = normalize_domain_tag(tag)
             if tag and tag not in node.domain_tags:
                 node.domain_tags.append(tag)
                 changed = True
@@ -428,7 +514,11 @@ class KnowledgeGraph:
         return results
 
     def search_by_domain(self, domain_tag: str) -> list[ConceptNode]:
-        return [n for n in self._index.values() if domain_tag in n.domain_tags]
+        domain_tag = normalize_domain_tag(domain_tag)
+        return [
+            n for n in self._index.values()
+            if domain_tag in normalize_domain_tags(n.domain_tags)
+        ]
 
     # ── statistics ───────────────────────────────────────────────────
 

@@ -85,7 +85,13 @@ def _ingest_results(
     """Ingest a batch and append to CSV/JSONL. Returns (n_papers, n_claims)."""
     batch_claims = sum(len(r.claims) for r in results if r and r.claims)
 
-    ingest_claims(kg, results, keep_noise=keep_noise, strict_phase1=strict_phase1)
+    ingest_summary = ingest_claims(
+        kg,
+        results,
+        keep_noise=keep_noise,
+        strict_phase1=strict_phase1,
+        require_final_scope_audit=True,
+    )
 
     papers_meta = []
     for (abstract, ref), result in zip(papers_list, results):
@@ -103,9 +109,25 @@ def _ingest_results(
             "extraction_error": result.error if result else "missing extraction result",
         })
     _append_to_csv(paths["papers_csv"], papers_meta)
-    _append_claims_to_jsonl(paths["claims"], results, disease_label, year_label)
+    persistence_summary = _append_claims_to_jsonl(
+        paths["claims"],
+        results,
+        disease_label,
+        year_label,
+        kg=kg,
+        ingest_summary=ingest_summary,
+    )
 
-    return len(papers_list), batch_claims
+    accepted_claims = int(ingest_summary["claims_added"])
+    logger.info(
+        "  persistence: raw=%s accepted=%s rejected=%s canonical_writes=%s",
+        batch_claims,
+        accepted_claims,
+        len(ingest_summary["rejected_claims"]),
+        persistence_summary["claims_written"],
+    )
+
+    return len(papers_list), accepted_claims
 
 
 def _init_collection_csv(csv_path: Path) -> None:
@@ -199,7 +221,11 @@ def run_chain_extraction(
     logger.info(f"seen-pmids index: {len(seen_pmids):,}")
 
     cache = AbstractCache(default_cache_path(paths["data_dir"]))
-    extractor = None if collect_only else ClaimExtractor(lock_model=lock_model)
+    extractor = (
+        None
+        if collect_only
+        else ClaimExtractor(lock_model=lock_model, strict_scope_audit=True)
+    )
     if collect_only:
         _init_collection_csv(paths["collection_csv"])
         seen_pmids.update(_load_seen_pmids(paths["collection_csv"]))
@@ -448,7 +474,7 @@ def run_rerun_cached(
         return {"total_papers": 0, "total_claims": 0}
 
     kg = load_graph(paths["graph"])
-    extractor = ClaimExtractor(lock_model=lock_model)
+    extractor = ClaimExtractor(lock_model=lock_model, strict_scope_audit=True)
     _init_csv(paths["papers_csv"])
 
     # Build the (abstract, paper) iterator
@@ -556,7 +582,7 @@ def run_second_pass_zero(
             records.append((pmid, abstract, paper))
 
     kg = load_graph(paths["graph"])
-    extractor = ClaimExtractor(lock_model=lock_model)
+    extractor = ClaimExtractor(lock_model=lock_model, strict_scope_audit=True)
     _init_csv(paths["papers_csv"])
     logger.info(
         f"second-pass auditing {len(records)} zero-claim papers "

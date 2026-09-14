@@ -1,16 +1,21 @@
-"""Unified task registry for the manuscript autoresearch benchmark."""
+"""Primary-experiment schedule over the formal case-study registry.
+
+Registration, primary experiments, and validation protocols are deliberately
+separate.  All seventeen scopes are formal case studies.  Only Case Study 1
+and Case Study 2 are scheduled for primary experiments at present; hindcasting
+support is declared in :mod:`neurooracle.src.validation_protocols`.
+"""
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from typing import Iterable, Literal
 
-from .case3_subtasks import case3_subtasks
+from .case_studies import CASE_STUDIES
 
 
-BenchmarkFamily = Literal["ordinary", "case_study"]
-EvaluationProtocol = Literal[
-    "temporal_claim_hindcasting",
+BenchmarkFamily = Literal["case_study"]
+PrimaryExperimentProtocol = Literal[
     "transdiagnostic_exhaustive",
     "pathway_mediation",
 ]
@@ -21,59 +26,79 @@ class AutoresearchBenchmarkTask:
     name: str
     label: str
     family: BenchmarkFamily
-    protocol: EvaluationProtocol
     signature: str
     description: str
+    primary_protocol: PrimaryExperimentProtocol | None = None
     default_deferred: bool = False
     deferred_reason: str = ""
 
-    def to_dict(self) -> dict[str, str | bool]:
-        return asdict(self)
+    @property
+    def primary_experiment_scheduled(self) -> bool:
+        return not self.default_deferred
+
+    def to_dict(self) -> dict[str, str | bool | None]:
+        payload = asdict(self)
+        payload["primary_experiment_scheduled"] = self.primary_experiment_scheduled
+        return payload
 
 
 def _build_registry() -> tuple[AutoresearchBenchmarkTask, ...]:
-    ordinary = tuple(
-        AutoresearchBenchmarkTask(
-            name=task.name,
-            label=task.name.replace("_", " ").title(),
-            family="ordinary",
-            protocol="temporal_claim_hindcasting",
-            signature=task.signature,
-            description=task.description,
-        )
-        for task in case3_subtasks()
-    )
-    case_studies = (
-        AutoresearchBenchmarkTask(
-            name="case1_transdiagnostic",
-            label="Case Study 1: Transdiagnostic brain atlas",
-            family="case_study",
-            protocol="transdiagnostic_exhaustive",
-            signature="disease x atlas/ROI x imaging feature",
-            description=(
+    registry: list[AutoresearchBenchmarkTask] = []
+    for case in CASE_STUDIES:
+        if case.name == "case1_transdiagnostic":
+            protocol: PrimaryExperimentProtocol | None = "transdiagnostic_exhaustive"
+            deferred = False
+            reason = ""
+        elif case.name == "case2_pathway_mediation":
+            protocol = "pathway_mediation"
+            deferred = False
+            reason = ""
+        else:
+            protocol = None
+            deferred = True
+            reason = (
+                "Registered formal case study; its primary experiment is not "
+                "scheduled in the current rollout."
+            )
+
+        signature = ""
+        description = ""
+        if case.task is not None:
+            signature = case.task.signature
+            description = case.task.description
+        elif case.chain is not None:
+            signature = case.chain.signature
+            description = case.chain.description
+        if case.name == "case1_transdiagnostic":
+            signature = "disease x atlas/ROI x imaging feature"
+            description = (
                 "Recover disease-region-feature discoveries from the exhaustive "
                 "cross-diagnostic experiment space."
-            ),
-        ),
-        AutoresearchBenchmarkTask(
-            name="case2_pathway_mediation",
-            label="Case Study 2: Pathway polygenic mediation",
-            family="case_study",
-            protocol="pathway_mediation",
-            signature="G->IM->O[longitudinal]",
-            description=(
+            )
+        elif case.name == "case2_pathway_mediation":
+            signature = "G->IM->O[longitudinal]"
+            description = (
                 "Prioritise pathway-level polygenic risk to imaging marker to "
                 "longitudinal outcome mediation hypotheses."
-            ),
-            default_deferred=True,
-            deferred_reason="Case Study 2 currently has insufficient task-specific literature coverage.",
-        ),
-    )
-    registry = ordinary + case_studies
+            )
+
+        registry.append(
+            AutoresearchBenchmarkTask(
+                name=case.name,
+                label=case.english_name,
+                family="case_study",
+                signature=signature,
+                description=description,
+                primary_protocol=protocol,
+                default_deferred=deferred,
+                deferred_reason=reason,
+            )
+        )
+
     names = [task.name for task in registry]
     if len(registry) != 17 or len(names) != len(set(names)):
-        raise RuntimeError("The autoresearch benchmark registry must contain 17 unique tasks")
-    return registry
+        raise RuntimeError("the autoresearch benchmark registry must contain 17 unique case studies")
+    return tuple(registry)
 
 
 AUTORESEARCH_BENCHMARK_TASKS = _build_registry()
@@ -87,10 +112,14 @@ def benchmark_tasks(
     *,
     include_deferred: bool = False,
 ) -> tuple[AutoresearchBenchmarkTask, ...]:
-    requested = list(names) if names is not None else [task.name for task in AUTORESEARCH_BENCHMARK_TASKS]
+    requested = (
+        list(names)
+        if names is not None
+        else [task.name for task in AUTORESEARCH_BENCHMARK_TASKS]
+    )
     unknown = sorted(set(requested) - AUTORESEARCH_BENCHMARK_TASK_BY_NAME.keys())
     if unknown:
-        raise KeyError(f"unknown autoresearch benchmark tasks: {', '.join(unknown)}")
+        raise KeyError(f"unknown autoresearch benchmark case studies: {', '.join(unknown)}")
 
     seen: set[str] = set()
     selected: list[AutoresearchBenchmarkTask] = []
@@ -110,6 +139,6 @@ __all__ = [
     "AUTORESEARCH_BENCHMARK_TASK_BY_NAME",
     "AutoresearchBenchmarkTask",
     "BenchmarkFamily",
-    "EvaluationProtocol",
+    "PrimaryExperimentProtocol",
     "benchmark_tasks",
 ]

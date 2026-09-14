@@ -54,7 +54,11 @@ def test_build_manual_case1_results_marks_claims_as_manual():
     assert results[0].claims
     assert all(c.metadata["manual_curation"] is True for c in results[0].claims)
     assert all(c.metadata["curation_scope"] == "case1_transdiagnostic" for c in results[0].claims)
-    assert all(c.paper_scope == ["general", "case1"] for c in results[0].claims)
+    assert all(
+        c.paper_case_study_ids == ["case1_transdiagnostic"]
+        and c.claim_case_study_ids == ["case1_transdiagnostic"]
+        for c in results[0].claims
+    )
 
 
 def test_filter_existing_manual_claim_ids_makes_rerun_noop():

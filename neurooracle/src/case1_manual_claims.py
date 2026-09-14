@@ -19,7 +19,7 @@ from typing import Optional
 from .abstract_cache import AbstractCache, default_cache_path
 from .case_targeted_extract import _resolve_data_paths
 from .claim_extractor import ExtractionResult
-from .claim_ingestion import ingest_claims
+from .claim_ingestion import ingest_claims, persist_ingestion_results
 from .schema import Claim, Evidence, PaperRef
 from .storage import load_graph, save_graph
 
@@ -675,7 +675,8 @@ def _claim_from_spec(spec: ManualClaimSpec, paper: PaperRef, ordinal: int) -> Cl
         ),
         source_paper=paper,
         raw_text=spec.raw_sentence,
-        paper_scope=["case1"],
+        paper_case_study_ids=["case1_transdiagnostic"],
+        claim_case_study_ids=["case1_transdiagnostic"],
         metadata={
             "subject_type": spec.subject_type,
             "object_type": spec.object_type,
@@ -734,22 +735,21 @@ def _existing_claim_ids(path: Path) -> set[str]:
     return ids
 
 
-def _append_manual_claims(jsonl_path: Path, results: list[ExtractionResult], label: str) -> int:
-    existing = _existing_claim_ids(jsonl_path)
-    written = 0
-    with jsonl_path.open("a", encoding="utf-8") as f:
-        for result in results:
-            for claim in result.claims:
-                if claim.id in existing:
-                    continue
-                record = claim.to_dict()
-                record["disease"] = label
-                record["year"] = result.paper.year or 0
-                record["extraction_timestamp"] = datetime.now().isoformat()
-                f.write(json.dumps(record, ensure_ascii=False) + "\n")
-                existing.add(claim.id)
-                written += 1
-    return written
+def _append_manual_claims(
+    jsonl_path: Path,
+    results: list[ExtractionResult],
+    label: str,
+    *,
+    kg,
+    ingest_summary: dict,
+) -> dict:
+    return persist_ingestion_results(
+        kg,
+        results,
+        ingest_summary,
+        jsonl_path,
+        label=label,
+    )
 
 
 def _append_manual_metadata(papers_csv: Path, results: list[ExtractionResult], label: str, cache: AbstractCache) -> int:
@@ -838,12 +838,20 @@ def run_manual_case1_claim_ingestion(
         refine_vague_predicates=False,
         keep_noise=keep_noise,
         strict_phase1=strict_phase1,
+        require_final_scope_audit=False,
     )
     after = kg.stats()
     save_graph(kg, paths["graph"])
 
     label = "manual_case1_curated"
-    claims_written = _append_manual_claims(paths["claims"], results, label)
+    persistence_summary = _append_manual_claims(
+        paths["claims"],
+        results,
+        label,
+        kg=kg,
+        ingest_summary=ingest_summary,
+    )
+    claims_written = persistence_summary["claims_written"]
     metadata_written = _append_manual_metadata(paths["papers_csv"], results, label, cache)
 
     summary = {
@@ -854,6 +862,8 @@ def run_manual_case1_claim_ingestion(
         "manual_claim_specs": sum(len(r.claims) for r in all_results),
         "new_manual_claim_specs": raw_claims,
         "claims_written": claims_written,
+        "claims_rejected": len(ingest_summary["rejected_claims"]),
+        "persistence": persistence_summary,
         "metadata_rows_written": metadata_written,
         "ingest": ingest_summary,
         "concepts_added": after["n_concepts"] - before["n_concepts"],

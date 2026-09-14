@@ -31,15 +31,34 @@ import heapq
 import itertools
 import random
 import re
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Iterable, Optional
 
 import networkx as nx
 
 from .graph_manager import KnowledgeGraph
+from .atoms import Atom
 from .schema import ConceptNode
-from .feedback_state import FeedbackState
+from .node_alias_safety import allow_substring_fallback, blocked_canonical_ids
+from .feedback_state import FeedbackState, SUPPORTED
+from .claim_semantics import (
+    ClaimEndpointAudit,
+    SemanticEndpoint,
+    audit_claim_endpoints,
+    concept_atom_roles,
+    is_specific_functional_imaging_readout,
+    looks_like_cognitive_task_or_stimulus,
+    looks_like_imaging_measurement,
+    looks_like_non_task_construct,
+    semantic_claim_pair,
+)
+from .case_study_relation_contracts import (
+    case_study_endpoint_names_allowed,
+    case_study_pair_allowed,
+    endpoint_matches_atom,
+)
 from .case1_hypothesis import (
     case1_directional_statement,
     case1_directional_title,
@@ -153,6 +172,14 @@ OPPOSING_PREDICATES = {
 # Used by compute_frequency_boost and compute_temporal_decay. Edge-level
 # weighting by study_type lives in phase4_optimize.apply_evidence_weighting.
 _REVIEW_TYPES = {"review", "narrative_review", "systematic_review"}
+
+
+def _is_review_study_type(value: object) -> bool:
+    """Return whether serialized study-type metadata is review-only."""
+    if isinstance(value, (list, tuple, set, frozenset)):
+        populated = [item for item in value if str(item or "").strip()]
+        return bool(populated) and all(_is_review_study_type(item) for item in populated)
+    return str(value or "").strip().lower() in _REVIEW_TYPES
 
 COMMON_RELATIONS = {"is_a", "part_of", "associated_with", "about", "is_associated_with"}
 
@@ -1099,35 +1126,163 @@ class HypothesisEngine:
         # Filter signature: (node_id, ConceptNode) -> bool. None / missing
         # entry = no extra filter beyond ATOM_TO_DOMAINS membership.
         self._chain_atom_filters: dict = {}
+        # Case-study hooks may pin exact claim endpoints to an atom even when
+        # canonicalisation merged the endpoint into a node whose global domain
+        # tags describe another sense of the same identifier.
+        self._chain_atom_explicit_pools: dict = {}
+        self._chain_claim_endpoint_roles: dict[tuple[str, str], set] = {}
+        self._chain_claim_first_scope: str | None = None
         # Optional case-study hooks can widen a chain atom's domain pool
         # without changing the global atom algebra (e.g. Case Study 2 lets concrete
         # CLM_CONCEPT cognitive phenotypes serve as OUTCOME anchors).
         self._chain_atom_extra_domains: dict = {}
         # Optional per-atom seed/anchor rankers. Higher score is tried first.
         self._chain_atom_rankers: dict = {}
+        # Case-study hooks may exclude graph concepts that cannot form an
+        # executable mechanism when they occur inside an atom-to-atom segment.
+        # Atom anchors themselves are unaffected.
+        self._chain_forbidden_bridge_ids: set[str] = set()
         # Optional chain-level preference for paths that contain at least one
         # edge backed directly by a Phase-2 claim. This is deliberately a
         # preference, not a hard requirement, so sparse but biologically useful
         # bridge paths can still survive as a small fallback set.
         self._chain_prefer_claim_backed_paths: bool = False
         self._chain_claimless_path_fraction: float = 0.15
+        self._chain_require_claim_backed_paths: bool = False
+        self._chain_required_claim_scope: str | None = None
+        # Task generators can be constrained to endpoints and at least one
+        # direct claim edge from one audited Case Study scope.
+        self._task_required_claim_scope: str | None = None
+        self._claim_scope_endpoint_cache: dict[str, frozenset[str]] = {}
+        self._claim_scope_endpoint_support_cache: dict[str, dict[str, int]] = {}
+        self._semantic_scope_claim_cache: dict[str, list[dict]] = {}
+        self._semantic_historical_pairs: set[tuple[str, str]] | None = None
+        self.last_post_process_stats: dict[str, int] = {}
         # Build claims index for frequency_boost: (subj, pred, obj) → [claim_meta, ...]
         self._claims_by_triple: dict[tuple[str, str, str], list[dict]] = {}
+        self._claims_by_endpoints: dict[
+            tuple[str, str], list[tuple[str, dict]]
+        ] = {}
+        self._claim_endpoint_audits: dict[str, ClaimEndpointAudit] = {}
+        claim_semantic_rejections: Counter[str] = Counter()
         for nid, node in self._index.items():
             if "claim" not in node.domain_tags:
                 continue
             meta = node.metadata
+            audit = audit_claim_endpoints(meta, self._index)
+            self._claim_endpoint_audits[nid] = audit
+            if not audit.valid:
+                claim_semantic_rejections[audit.reason] += 1
+                continue
             key = (meta.get("subject_id", ""), meta.get("predicate", ""), meta.get("object_id", ""))
             if key[0] and key[2]:
                 self._claims_by_triple.setdefault(key, []).append(meta)
+                self._claims_by_endpoints.setdefault((key[0], key[2]), []).append(
+                    (nid, meta)
+                )
+        self._semantic_edge_rejections = 0
+        if claim_semantic_rejections:
+            logger.info(
+                "claim endpoint semantic projection: %d canonical claim(s) accepted; "
+                "%d collision(s) reserved for claim-local generation (%s)",
+                len(self._claim_endpoint_audits) - sum(claim_semantic_rejections.values()),
+                sum(claim_semantic_rejections.values()),
+                dict(claim_semantic_rejections),
+            )
         # Lazy evidence-degree cache for the min_evidence_per_node walk filter.
         self._non_tree_degree: Optional[dict[str, int]] = None
         self.feedback_state: FeedbackState | None = None
+        self._dynamic_generation_enabled = False
+        self._generation_exploration_round = 0
+        self._generation_excluded_paths: frozenset[tuple[str, ...]] = frozenset()
+        self._generation_path_templates: tuple[str, ...] = ("one_mediator",)
+        self._generation_path_variants_per_endpoint = 1
+        self._generation_feedback_mutation_fraction = 0.0
+        self._generation_max_paths_per_endpoint = 2
 
     def load_feedback_state(self, path: str | Path) -> None:
         """Load supported/contradicted/execution-failed feedback for ranking."""
         self.feedback_state = FeedbackState.load(path)
         logger.info("loaded %d feedback record(s) from %s", len(self.feedback_state.records), path)
+
+    def configure_dynamic_generation(
+        self,
+        *,
+        enabled: bool,
+        exploration_round: int = 0,
+        excluded_paths: Iterable[tuple[str, ...]] = (),
+        path_templates: tuple[str, ...] = ("one_mediator", "two_mediator"),
+        path_variants_per_endpoint: int = 2,
+        feedback_mutation_fraction: float = 0.35,
+        max_paths_per_endpoint: int = 4,
+    ) -> None:
+        """Configure bounded candidate expansion for a dynamic discovery loop.
+
+        Static generation keeps the historical one-mediator behaviour. Dynamic
+        runs rotate the evidence-ranked seed core, skip paths proposed in prior
+        rounds, admit audited two-mediator claim chains, and reserve part of the
+        next proposal batch for one-factor variants of supported paths.
+        """
+
+        allowed_templates = {"one_mediator", "two_mediator"}
+        unknown = set(path_templates) - allowed_templates
+        if unknown:
+            raise ValueError(f"unknown dynamic path template(s): {sorted(unknown)}")
+        if exploration_round < 0:
+            raise ValueError("exploration_round must be non-negative")
+        if path_variants_per_endpoint < 1 or max_paths_per_endpoint < 1:
+            raise ValueError("dynamic path limits must be positive")
+        if not 0.0 <= feedback_mutation_fraction <= 1.0:
+            raise ValueError("feedback_mutation_fraction must be in [0, 1]")
+
+        self._dynamic_generation_enabled = bool(enabled)
+        self._generation_exploration_round = int(exploration_round)
+        self._generation_excluded_paths = frozenset(
+            tuple(str(node_id) for node_id in path if str(node_id or ""))
+            for path in excluded_paths
+            if path
+        )
+        self._generation_path_templates = (
+            tuple(path_templates) if enabled else ("one_mediator",)
+        )
+        self._generation_path_variants_per_endpoint = (
+            int(path_variants_per_endpoint) if enabled else 1
+        )
+        self._generation_feedback_mutation_fraction = (
+            float(feedback_mutation_fraction) if enabled else 0.0
+        )
+        self._generation_max_paths_per_endpoint = (
+            int(max_paths_per_endpoint) if enabled else 2
+        )
+
+    @staticmethod
+    def _hypothesis_path_nodes(hypothesis: Hypothesis) -> tuple[str, ...]:
+        nodes = [str(hypothesis.source_id or "")]
+        for link in hypothesis.path or []:
+            if link.from_id and nodes[-1] != str(link.from_id):
+                nodes.append(str(link.from_id))
+            if link.to_id:
+                nodes.append(str(link.to_id))
+        if len(nodes) == 1 and hypothesis.target_id:
+            nodes.append(str(hypothesis.target_id))
+        return tuple(node_id for node_id in nodes if node_id)
+
+    def _feedback_mutation_affinity(self, path_nodes: tuple[str, ...]) -> float:
+        """Return 1 for a legal one-factor variant of a supported path."""
+
+        if self.feedback_state is None or len(path_nodes) < 3:
+            return 0.0
+        affinity = 0.0
+        for record in self.feedback_state.records:
+            if record.status != SUPPORTED or len(record.path_node_ids) != len(path_nodes):
+                continue
+            differences = sum(
+                left != right
+                for left, right in zip(path_nodes, record.path_node_ids, strict=True)
+            )
+            if differences == 1:
+                affinity = max(affinity, min(1.0, float(record.weight)))
+        return affinity
 
     def _build_non_tree_degree(self) -> dict[str, int]:
         """Count incident non-tree edges per node.
@@ -1172,28 +1327,986 @@ class HypothesisEngine:
                 return False
         return True
 
-    def _path_claim_edge_count(self, raw_path: list[str]) -> int:
-        """Count edges in ``raw_path`` that carry a direct Phase-2 claim id."""
+    @staticmethod
+    def _claim_meta_scopes(claim_meta: dict) -> set[str]:
+        nested_meta = claim_meta.get("metadata") or {}
+        scopes: set[str] = set()
+        for holder in (claim_meta, nested_meta):
+            values = holder.get("claim_case_study_ids") or []
+            if isinstance(values, str):
+                values = [values]
+            scopes.update(str(value).strip() for value in values if value)
+        return scopes
+
+    def _claim_entries_for_edge(
+        self,
+        src_id: str,
+        tgt_id: str,
+        required_scope: str | None = None,
+    ) -> list[tuple[str, dict]]:
+        entries = self._claims_by_endpoints.get((src_id, tgt_id), [])
+        if required_scope is None:
+            return entries
+        return [
+            (claim_id, meta)
+            for claim_id, meta in entries
+            if required_scope in self._claim_meta_scopes(meta)
+        ]
+
+    def set_task_claim_scope(self, case_study_id: str | None) -> None:
+        self._task_required_claim_scope = str(case_study_id or "").strip() or None
+
+    @staticmethod
+    def _semantic_claim_paper_key(claim_id: str, metadata: dict) -> str:
+        paper = metadata.get("source_paper") or {}
+        if not isinstance(paper, dict):
+            paper = {}
+        return str(
+            paper.get("pmid")
+            or paper.get("doi")
+            or paper.get("title")
+            or claim_id
+        )
+
+    def _semantic_claim_records_for_scope(self, scope: str) -> list[dict]:
+        cached = self._semantic_scope_claim_cache.get(scope)
+        if cached is not None:
+            return cached
+
+        build_all_pairs = self._semantic_historical_pairs is None
+        all_pairs: set[tuple[str, str]] = set()
+        records: list[dict] = []
+        for claim_id, node in self._index.items():
+            if "claim" not in (node.domain_tags or []):
+                continue
+            metadata = node.metadata or {}
+            scopes = self._claim_meta_scopes(metadata)
+            if not build_all_pairs and scope not in scopes:
+                continue
+            if metadata.get("negated"):
+                continue
+            projected = semantic_claim_pair(metadata, self._index)
+            if projected is None:
+                continue
+            subject, obj = projected
+            pair = tuple(sorted((subject.entity_id, obj.entity_id)))
+            if build_all_pairs:
+                all_pairs.add(pair)
+            if scope not in scopes:
+                continue
+            if not case_study_pair_allowed(
+                metadata,
+                self._index,
+                projected,
+                scope,
+                include_support=True,
+            ):
+                continue
+            try:
+                confidence = float(metadata.get("confidence") or 0.5)
+            except (TypeError, ValueError):
+                confidence = 0.5
+            source_paper = metadata.get("source_paper") or {}
+            if not isinstance(source_paper, dict):
+                source_paper = {"reference": str(source_paper)}
+            records.append({
+                "claim_id": claim_id,
+                "subject": subject,
+                "object": obj,
+                "predicate": str(metadata.get("predicate") or "is_associated_with"),
+                "confidence": min(1.0, max(0.0, confidence)),
+                "raw_text": str(metadata.get("raw_text") or ""),
+                "evidence": metadata.get("evidence") or {},
+                "source_paper": dict(source_paper),
+                "paper_key": self._semantic_claim_paper_key(claim_id, metadata),
+            })
+        if build_all_pairs:
+            self._semantic_historical_pairs = all_pairs
+        self._semantic_scope_claim_cache[scope] = records
+        return records
+
+    @staticmethod
+    def _semantic_bridge_jitter(seed: int | None, *values: str) -> float:
+        payload = "\x1f".join([str(seed or 0), *values]).encode("utf-8")
+        return int.from_bytes(hashlib.sha1(payload).digest()[:8], "big") / float(
+            2**64 - 1
+        )
+
+    @staticmethod
+    def _semantic_bridge_link(
+        record: dict,
+        source,
+        target,
+    ) -> HypothesisLink:
+        original_subject = record["subject"]
+        original_object = record["object"]
+        forward = (
+            original_subject.entity_id == source.entity_id
+            and original_object.entity_id == target.entity_id
+        )
+        evidence = record.get("evidence") or {}
+        if not isinstance(evidence, dict):
+            evidence = {"description": str(evidence)}
+        return HypothesisLink(
+            from_id=source.entity_id,
+            from_name=source.name,
+            to_id=target.entity_id,
+            to_name=target.name,
+            relation_type=(
+                record["predicate"] if forward else "is_associated_with"
+            ),
+            confidence=record["confidence"],
+            claim_id=record["claim_id"],
+            raw_text=record["raw_text"],
+            evidence=dict(evidence),
+            source_paper=dict(record["source_paper"]),
+        )
+
+    def _semantic_endpoint_allowed_for_task(
+        self,
+        task,
+        endpoint,
+        *,
+        source_side: bool,
+    ) -> bool:
+        input_atoms = {atom.value for atom in task.inputs}
+        is_localization = (
+            input_atoms == {"cognitive_task"}
+            and task.output.value == "imaging_marker"
+        )
+        if not is_localization:
+            return True
+        if source_side:
+            return (
+                "cognitive_task" in endpoint.atoms
+                and looks_like_cognitive_task_or_stimulus(endpoint.name)
+                and not looks_like_imaging_measurement(endpoint.name)
+            )
+        node = self._index.get(endpoint.canonical_id)
+        domains = set(node.domain_tags or []) if node is not None else set()
+        return (
+            "imaging_marker" in endpoint.atoms
+            and (
+                is_specific_functional_imaging_readout(endpoint.name)
+                or "neuroanatomy" in domains
+            )
+        )
+
+    def _semantic_mediator_allowed_for_task(self, task, endpoint) -> bool:
+        input_atoms = {atom.value for atom in task.inputs}
+        is_localization = (
+            input_atoms == {"cognitive_task"}
+            and task.output.value == "imaging_marker"
+        )
+        if not is_localization:
+            return True
+        atoms = set(endpoint.atoms)
+        if atoms & {"disease", "outcome"}:
+            return False
+        if "imaging_marker" in atoms:
+            return True
+        node = self._index.get(endpoint.canonical_id)
+        return node is not None and "neuroanatomy" in set(node.domain_tags or [])
+
+    def _batch_generate_task_from_scoped_claims(
+        self,
+        task,
+        *,
+        max_hypotheses: int,
+        random_seed: int | None,
+    ) -> list[Hypothesis]:
+        """Generate conservative cross-paper semantic bridges.
+
+        Static runs retain the historical source-mediator-target template.
+        Dynamic runs may additionally use one extra claim-backed mediator and
+        multiple path instantiations per endpoint pair. Every template remains
+        continuous, task-contract compatible, cross-paper, and absent as a
+        direct endpoint pair from the historical graph.
+        """
+
+        scope = self._task_required_claim_scope
+        if not scope or max_hypotheses <= 0:
+            return []
+        records = self._semantic_claim_records_for_scope(scope)
+        if not records:
+            return []
+
+        input_atoms = {atom.value for atom in task.inputs}
+        output_atom = task.output.value
+        left_by_mediator: dict[str, list[tuple[dict, object, object]]] = defaultdict(list)
+        right_by_mediator: dict[str, list[tuple[dict, object, object]]] = defaultdict(list)
+
+        for record in records:
+            subject = record["subject"]
+            obj = record["object"]
+            for endpoint, other in ((subject, obj), (obj, subject)):
+                endpoint_atoms = set(endpoint.atoms)
+                if (
+                    endpoint_atoms & input_atoms
+                    and other.atoms
+                    and self._semantic_endpoint_allowed_for_task(
+                        task,
+                        endpoint,
+                        source_side=True,
+                    )
+                ):
+                    left_by_mediator[other.entity_id].append(
+                        (record, endpoint, other)
+                    )
+                if (
+                    output_atom in endpoint_atoms
+                    and other.atoms
+                    and self._semantic_endpoint_allowed_for_task(
+                        task,
+                        endpoint,
+                        source_side=False,
+                    )
+                ):
+                    right_by_mediator[other.entity_id].append(
+                        (record, other, endpoint)
+                    )
+
+        historical_pairs = self._semantic_historical_pairs or set()
+        templates = set(self._generation_path_templates)
+        variants_per_endpoint = self._generation_path_variants_per_endpoint
+        candidate_groups: dict[
+            tuple[tuple[str, str], str], list[dict[str, object]]
+        ] = defaultdict(list)
+
+        def retain_candidate(row: dict[str, object]) -> None:
+            path_nodes = tuple(str(value) for value in row["path_nodes"])
+            if path_nodes in self._generation_excluded_paths:
+                return
+            row["feedback_mutation_affinity"] = self._feedback_mutation_affinity(
+                path_nodes
+            )
+            row["score"] = float(row["score"]) + 0.16 * float(
+                row["feedback_mutation_affinity"]
+            )
+            endpoint_pair = tuple(sorted((path_nodes[0], path_nodes[-1])))
+            group_key = (endpoint_pair, str(row["path_template"]))
+            bucket = candidate_groups[group_key]
+            if any(tuple(existing["path_nodes"]) == path_nodes for existing in bucket):
+                return
+            bucket.append(row)
+            bucket.sort(
+                key=lambda candidate: (
+                    -float(candidate["score"]),
+                    tuple(candidate["path_nodes"]),
+                )
+            )
+            del bucket[variants_per_endpoint:]
+
+        shared_mediators = sorted(set(left_by_mediator) & set(right_by_mediator))
+        one_mediator_side_cap = 16 if self._dynamic_generation_enabled else 64
+        if "one_mediator" in templates:
+            mediator_iterable = shared_mediators
+        else:
+            mediator_iterable = []
+        for mediator_id in mediator_iterable:
+            left_rows = sorted(
+                left_by_mediator[mediator_id],
+                key=lambda row: (
+                    -row[0]["confidence"],
+                    row[0]["claim_id"],
+                    row[1].entity_id,
+                ),
+            )[:one_mediator_side_cap]
+            right_rows = sorted(
+                right_by_mediator[mediator_id],
+                key=lambda row: (
+                    -row[0]["confidence"],
+                    row[0]["claim_id"],
+                    row[2].entity_id,
+                ),
+            )[:one_mediator_side_cap]
+            mediator_degree = len(left_rows) + len(right_rows)
+            support = min(1.0, math.log1p(mediator_degree) / math.log(17.0))
+            specificity = 1.0 / (1.0 + math.log1p(max(0, mediator_degree - 1)))
+            for left_record, source, mediator in left_rows:
+                if not self._semantic_mediator_allowed_for_task(task, mediator):
+                    continue
+                for right_record, _right_mediator, target in right_rows:
+                    if left_record["claim_id"] == right_record["claim_id"]:
+                        continue
+                    if left_record["paper_key"] == right_record["paper_key"]:
+                        continue
+                    if source.entity_id == target.entity_id:
+                        continue
+                    endpoint_pair = tuple(sorted((source.entity_id, target.entity_id)))
+                    if endpoint_pair in historical_pairs:
+                        continue
+                    evidence = (
+                        left_record["confidence"] + right_record["confidence"]
+                    ) / 2.0
+                    directional = (
+                        int(left_record["predicate"] in DIRECTIONAL_RELATIONS)
+                        + int(right_record["predicate"] in DIRECTIONAL_RELATIONS)
+                    ) / 2.0
+                    jitter = self._semantic_bridge_jitter(
+                        random_seed,
+                        scope,
+                        source.entity_id,
+                        mediator_id,
+                        target.entity_id,
+                    )
+                    score = (
+                        0.50 * evidence
+                        + 0.18 * support
+                        + 0.12 * specificity
+                        + 0.12 * directional
+                        + 0.08 * jitter
+                    )
+                    retain_candidate({
+                        "score": score,
+                        "path_template": "one_mediator",
+                        "path_nodes": (
+                            source.entity_id,
+                            mediator_id,
+                            target.entity_id,
+                        ),
+                        "endpoints": (source, mediator, target),
+                        "records": (left_record, right_record),
+                    })
+
+        if "two_mediator" in templates:
+            bridge_rows: list[tuple[float, dict, object, object]] = []
+            for bridge_record in records:
+                subject = bridge_record["subject"]
+                obj = bridge_record["object"]
+                for first_mediator, second_mediator in ((subject, obj), (obj, subject)):
+                    if (
+                        first_mediator.entity_id == second_mediator.entity_id
+                        or first_mediator.entity_id not in left_by_mediator
+                        or second_mediator.entity_id not in right_by_mediator
+                        or not self._semantic_mediator_allowed_for_task(
+                            task, first_mediator
+                        )
+                        or not self._semantic_mediator_allowed_for_task(
+                            task, second_mediator
+                        )
+                    ):
+                        continue
+                    bridge_quality = (
+                        float(bridge_record["confidence"])
+                        + 0.05
+                        * self._semantic_bridge_jitter(
+                            random_seed,
+                            scope,
+                            first_mediator.entity_id,
+                            second_mediator.entity_id,
+                        )
+                    )
+                    bridge_rows.append(
+                        (
+                            bridge_quality,
+                            bridge_record,
+                            first_mediator,
+                            second_mediator,
+                        )
+                    )
+
+            bridge_cap = max(200, min(3000, max_hypotheses * 2))
+            bridge_rows.sort(
+                key=lambda row: (
+                    -row[0],
+                    row[1]["claim_id"],
+                    row[2].entity_id,
+                    row[3].entity_id,
+                )
+            )
+            for _, bridge_record, first_mediator, second_mediator in bridge_rows[:bridge_cap]:
+                left_rows = sorted(
+                    left_by_mediator[first_mediator.entity_id],
+                    key=lambda row: (
+                        -row[0]["confidence"],
+                        row[0]["claim_id"],
+                        row[1].entity_id,
+                    ),
+                )[:3]
+                right_rows = sorted(
+                    right_by_mediator[second_mediator.entity_id],
+                    key=lambda row: (
+                        -row[0]["confidence"],
+                        row[0]["claim_id"],
+                        row[2].entity_id,
+                    ),
+                )[:3]
+                mediator_degree = len(left_rows) + len(right_rows)
+                support = min(1.0, math.log1p(mediator_degree) / math.log(13.0))
+                for left_record, source, _ in left_rows:
+                    for right_record, _, target in right_rows:
+                        claim_ids = {
+                            left_record["claim_id"],
+                            bridge_record["claim_id"],
+                            right_record["claim_id"],
+                        }
+                        path_nodes = (
+                            source.entity_id,
+                            first_mediator.entity_id,
+                            second_mediator.entity_id,
+                            target.entity_id,
+                        )
+                        if len(claim_ids) < 3 or len(set(path_nodes)) < 4:
+                            continue
+                        paper_keys = {
+                            left_record["paper_key"],
+                            bridge_record["paper_key"],
+                            right_record["paper_key"],
+                        }
+                        if len(paper_keys) < 2 or source.entity_id == target.entity_id:
+                            continue
+                        endpoint_pair = tuple(
+                            sorted((source.entity_id, target.entity_id))
+                        )
+                        if endpoint_pair in historical_pairs:
+                            continue
+                        evidence = (
+                            left_record["confidence"]
+                            + bridge_record["confidence"]
+                            + right_record["confidence"]
+                        ) / 3.0
+                        directional = sum(
+                            record["predicate"] in DIRECTIONAL_RELATIONS
+                            for record in (left_record, bridge_record, right_record)
+                        ) / 3.0
+                        jitter = self._semantic_bridge_jitter(
+                            random_seed,
+                            scope,
+                            *path_nodes,
+                        )
+                        score = (
+                            0.52 * evidence
+                            + 0.16 * support
+                            + 0.12 * directional
+                            + 0.08 * jitter
+                            + 0.12 * (len(paper_keys) / 3.0)
+                        )
+                        retain_candidate({
+                            "score": score,
+                            "path_template": "two_mediator",
+                            "path_nodes": path_nodes,
+                            "endpoints": (
+                                source,
+                                first_mediator,
+                                second_mediator,
+                                target,
+                            ),
+                            "records": (
+                                left_record,
+                                bridge_record,
+                                right_record,
+                            ),
+                        })
+
+        ranked = sorted(
+            (
+                candidate
+                for bucket in candidate_groups.values()
+                for candidate in bucket
+            ),
+            key=lambda row: (
+                -float(row["score"]),
+                tuple(row["path_nodes"]),
+            ),
+        )
+        selected: list[dict[str, object]] = []
+        seen: set[tuple[str, ...]] = set()
+        source_counts: Counter[str] = Counter()
+        target_counts: Counter[str] = Counter()
+        mediator_counts: Counter[str] = Counter()
+
+        quota_stages = (
+            (4, 12, 24),
+            (12, 32, 64),
+            (10**9, 10**9, 10**9),
+        )
+
+        def select_from(pool: list[dict[str, object]], desired_total: int) -> None:
+            for source_limit, target_limit, mediator_limit in quota_stages:
+                for row in pool:
+                    path_nodes = tuple(str(value) for value in row["path_nodes"])
+                    if path_nodes in seen:
+                        continue
+                    mediator_ids = path_nodes[1:-1]
+                    if (
+                        source_counts[path_nodes[0]] >= source_limit
+                        or target_counts[path_nodes[-1]] >= target_limit
+                        or any(
+                            mediator_counts[mediator_id] >= mediator_limit
+                            for mediator_id in mediator_ids
+                        )
+                    ):
+                        continue
+                    seen.add(path_nodes)
+                    source_counts[path_nodes[0]] += 1
+                    target_counts[path_nodes[-1]] += 1
+                    for mediator_id in mediator_ids:
+                        mediator_counts[mediator_id] += 1
+                    selected.append(row)
+                    if len(selected) >= desired_total:
+                        return
+
+        mutation_target = min(
+            max_hypotheses,
+            int(math.ceil(max_hypotheses * self._generation_feedback_mutation_fraction)),
+        )
+        if mutation_target:
+            mutation_pool = [
+                row
+                for row in ranked
+                if float(row["feedback_mutation_affinity"]) > 0.0
+            ]
+            select_from(mutation_pool, mutation_target)
+        select_from(ranked, max_hypotheses)
+
+        generated: list[Hypothesis] = []
+        for row in selected:
+            endpoints = tuple(row["endpoints"])
+            records_used = tuple(row["records"])
+            path_nodes = tuple(str(value) for value in row["path_nodes"])
+            source = endpoints[0]
+            target = endpoints[-1]
+            mediators = endpoints[1:-1]
+            links = [
+                self._semantic_bridge_link(record, left, right)
+                for record, left, right in zip(
+                    records_used,
+                    endpoints[:-1],
+                    endpoints[1:],
+                    strict=True,
+                )
+            ]
+            digest = hashlib.sha1(
+                "\x1f".join([scope, *path_nodes]).encode("utf-8")
+            ).hexdigest()[:16]
+            paper_keys = list(
+                dict.fromkeys(record["paper_key"] for record in records_used)
+            )
+            hypothesis = Hypothesis(
+                id=f"HYP:SEMANTIC_BRIDGE:{digest}",
+                hypothesis_type="claim_bridge",
+                source_id=source.entity_id,
+                source_name=source.name,
+                target_id=target.entity_id,
+                target_name=target.name,
+                path=links,
+                confidence_score=self._compute_confidence_score(links),
+                novelty_score=1.0,
+                evidence_score=self._compute_evidence_score(links),
+                testability_score=0.6,
+                composite_score=float(row["score"]),
+                supporting_claims=list(
+                    dict.fromkeys(record["claim_id"] for record in records_used)
+                ),
+                testability_reason=(
+                    f"{len(links)} source-linked claims from independent papers "
+                    "form a continuous, task-compatible semantic bridge."
+                ),
+                metadata={
+                    "generation_mode": "scoped_semantic_claim_bridge",
+                    "semantic_projection": "claim_endpoint_semantics.v1",
+                    "claim_case_study_id": scope,
+                    "path_template": str(row["path_template"]),
+                    "path_node_ids": list(path_nodes),
+                    "feedback_mutation": bool(
+                        float(row["feedback_mutation_affinity"]) > 0.0
+                    ),
+                    "feedback_mutation_affinity": float(
+                        row["feedback_mutation_affinity"]
+                    ),
+                    "feedback_mutation_score_applied": True,
+                    "source_atoms": list(source.atoms),
+                    "target_atoms": list(target.atoms),
+                    "mediator_ids": [mediator.entity_id for mediator in mediators],
+                    "mediator_names": [mediator.name for mediator in mediators],
+                    "mediator_atoms": [list(mediator.atoms) for mediator in mediators],
+                    "cross_paper": True,
+                    "source_paper_keys": paper_keys,
+                },
+            )
+            hypothesis.explanation = self._generate_explanation(hypothesis)
+            generated.append(hypothesis)
+        return generated
+
+    def _batch_generate_multi_input_task_from_scoped_claims(
+        self,
+        task,
+        *,
+        max_hypotheses: int,
+        random_seed: int | None,
+    ) -> list[Hypothesis]:
+        """Assemble compact connected evidence graphs covering every task atom."""
+
+        scope = self._task_required_claim_scope
+        if not scope or len(task.inputs) < 2 or max_hypotheses <= 0:
+            return []
+        records = self._semantic_claim_records_for_scope(scope)
+        if not records:
+            return []
+
+        input_order = tuple(sorted(task.inputs, key=lambda atom: atom.value))
+        edges: list[tuple[dict, object, object]] = []
+        adjacency: dict[str, list[int]] = defaultdict(list)
+        endpoints: dict[str, object] = {}
+        for record in records:
+            subject = record["subject"]
+            obj = record["object"]
+            if subject.entity_id == obj.entity_id:
+                continue
+            edge_index = len(edges)
+            edges.append((record, subject, obj))
+            adjacency[subject.entity_id].append(edge_index)
+            adjacency[obj.entity_id].append(edge_index)
+            endpoints[subject.entity_id] = subject
+            endpoints[obj.entity_id] = obj
+
+        output_ids = [
+            endpoint_id
+            for endpoint_id, endpoint in endpoints.items()
+            if endpoint_matches_atom(endpoint, task.output, self._index)
+            and self._semantic_endpoint_allowed_for_task(
+                task,
+                endpoint,
+                source_side=False,
+            )
+        ]
+        output_ids.sort(key=lambda endpoint_id: (-len(adjacency[endpoint_id]), endpoint_id))
+        # Most scoped evidence components are tiny. Degree-only truncation can
+        # miss the few complete, specific mechanisms in the long tail, so scan
+        # every output for ordinary scopes and retain a high safety cap only for
+        # unusually broad corpora.
+        max_outputs = max(250, min(5000, max_hypotheses * 25))
+        max_edges = len(input_order) + 1
+        beam_width = max(48, min(160, max_hypotheses * 2))
+        candidates: dict[tuple[tuple[str, ...], str], tuple] = {}
+        for output_id in output_ids[:max_outputs]:
+            output = endpoints[output_id]
+            frontier = [(frozenset({output_id}), tuple(), tuple())]
+            for depth in range(1, max_edges + 1):
+                next_states: dict[tuple, tuple] = {}
+                for node_ids, edge_ids, bindings in frontier:
+                    used_edges = set(edge_ids)
+                    incident = {
+                        edge_index
+                        for node_id in node_ids
+                        for edge_index in adjacency.get(node_id, ())
+                        if edge_index not in used_edges
+                    }
+                    incident_rows = sorted(
+                        incident,
+                        key=lambda edge_index: (
+                            -edges[edge_index][0]["confidence"],
+                            edges[edge_index][0]["claim_id"],
+                            edge_index,
+                        ),
+                    )[:48]
+                    for edge_index in incident_rows:
+                        record, subject, obj = edges[edge_index]
+                        if subject.entity_id in node_ids and obj.entity_id not in node_ids:
+                            new_endpoint = obj
+                        elif obj.entity_id in node_ids and subject.entity_id not in node_ids:
+                            new_endpoint = subject
+                        else:
+                            continue
+                        binding_map = {Atom(atom_name): entity_id for atom_name, entity_id in bindings}
+                        unmatched = [
+                            atom
+                            for atom in input_order
+                            if atom not in binding_map
+                            and endpoint_matches_atom(new_endpoint, atom, self._index)
+                        ]
+                        binding_options: list[Atom | None] = [None, *unmatched]
+                        for matched_atom in binding_options:
+                            updated = dict(binding_map)
+                            if matched_atom is not None:
+                                if new_endpoint.entity_id in updated.values():
+                                    continue
+                                updated[matched_atom] = new_endpoint.entity_id
+                            updated_bindings = tuple(
+                                (atom.value, updated[atom])
+                                for atom in input_order
+                                if atom in updated
+                            )
+                            updated_edges = tuple(sorted((*edge_ids, edge_index)))
+                            updated_nodes = frozenset((*node_ids, new_endpoint.entity_id))
+                            records_used = [edges[index][0] for index in updated_edges]
+                            paper_keys = [record_used["paper_key"] for record_used in records_used]
+                            if len(updated) == len(input_order):
+                                input_ids = [updated[atom] for atom in input_order]
+                                if len(set(input_ids)) != len(input_ids) or len(set(paper_keys)) < 2:
+                                    continue
+                                inputs = tuple(endpoints[entity_id] for entity_id in input_ids)
+                                if not case_study_endpoint_names_allowed(scope, inputs[0], output):
+                                    continue
+                                evidence = sum(
+                                    record_used["confidence"] for record_used in records_used
+                                ) / len(records_used)
+                                paper_diversity = min(
+                                    1.0,
+                                    len(set(paper_keys)) / max(2, len(records_used)),
+                                )
+                                compactness = min(1.0, len(input_order) / len(records_used))
+                                jitter = self._semantic_bridge_jitter(
+                                    random_seed,
+                                    scope,
+                                    *sorted(input_ids),
+                                    output.entity_id,
+                                )
+                                score = (
+                                    0.58 * evidence
+                                    + 0.22 * paper_diversity
+                                    + 0.12 * compactness
+                                    + 0.08 * jitter
+                                )
+                                key = (tuple(sorted(input_ids)), output.entity_id)
+                                edge_rows = tuple(edges[index] for index in updated_edges)
+                                row = (
+                                    score,
+                                    output,
+                                    inputs,
+                                    edge_rows,
+                                    tuple(paper_keys),
+                                )
+                                current = candidates.get(key)
+                                if current is None or score > current[0]:
+                                    candidates[key] = row
+                                continue
+                            if depth >= max_edges:
+                                continue
+                            evidence = sum(
+                                record_used["confidence"] for record_used in records_used
+                            ) / len(records_used)
+                            state_quality = (
+                                len(updated),
+                                len(set(paper_keys)),
+                                evidence,
+                                -len(updated_edges),
+                            )
+                            signature = (
+                                tuple(sorted(updated_nodes)),
+                                updated_edges,
+                                updated_bindings,
+                            )
+                            current = next_states.get(signature)
+                            if current is None or state_quality > current[0]:
+                                next_states[signature] = (
+                                    state_quality,
+                                    (updated_nodes, updated_edges, updated_bindings),
+                                )
+                frontier = [
+                    value[1]
+                    for _, value in sorted(
+                        next_states.items(),
+                        key=lambda item: (item[1][0], item[0]),
+                        reverse=True,
+                    )[:beam_width]
+                ]
+                if not frontier:
+                    break
+
+        logger.info(
+            "task '%s': scoped connected-graph search used %d claims, %d outputs, "
+            "and found %d complete candidate(s)",
+            task.name,
+            len(edges),
+            len(output_ids),
+            len(candidates),
+        )
+
+        ranked = sorted(
+            candidates.values(),
+            key=lambda row: (
+                -row[0],
+                row[1].entity_id,
+                tuple(endpoint.entity_id for endpoint in row[2]),
+            ),
+        )
+        selected: list[tuple] = []
+        output_counts: Counter[str] = Counter()
+        for output_limit in (4, 12, 10**9):
+            selected_keys = {
+                (
+                    tuple(endpoint.entity_id for endpoint in row[2]),
+                    row[1].entity_id,
+                )
+                for row in selected
+            }
+            for row in ranked:
+                key = (
+                    tuple(endpoint.entity_id for endpoint in row[2]),
+                    row[1].entity_id,
+                )
+                if key in selected_keys or output_counts[row[1].entity_id] >= output_limit:
+                    continue
+                selected.append(row)
+                selected_keys.add(key)
+                output_counts[row[1].entity_id] += 1
+                if len(selected) >= max_hypotheses:
+                    break
+            if len(selected) >= max_hypotheses:
+                break
+
+        generated: list[Hypothesis] = []
+        for score, output, inputs, edge_rows, paper_keys in selected:
+            links = [
+                self._semantic_bridge_link(record, subject, obj)
+                for record, subject, obj in edge_rows
+            ]
+            digest = hashlib.sha1(
+                "\x1f".join(
+                    [
+                        scope,
+                        *sorted(endpoint.entity_id for endpoint in inputs),
+                        output.entity_id,
+                    ]
+                ).encode("utf-8")
+            ).hexdigest()[:16]
+            first_input = inputs[0]
+            hypothesis = Hypothesis(
+                id=f"HYP:MULTI_INPUT:{digest}",
+                hypothesis_type="multi_input_evidence_graph",
+                source_id=first_input.entity_id,
+                source_name=first_input.name,
+                target_id=output.entity_id,
+                target_name=output.name,
+                path=links,
+                confidence_score=self._compute_confidence_score(links),
+                novelty_score=1.0,
+                evidence_score=self._compute_evidence_score(links),
+                testability_score=0.7,
+                composite_score=score,
+                supporting_claims=list(dict.fromkeys(link.claim_id for link in links)),
+                testability_reason=(
+                    "Independent source-linked claims cover every registered task input "
+                    "and converge on one measurable output."
+                ),
+                metadata={
+                    "generation_mode": "scoped_multi_input_evidence_graph",
+                    "semantic_projection": "claim_endpoint_semantics.v1",
+                    "claim_case_study_id": scope,
+                    "task_name": task.name,
+                    "task_signature": task.signature,
+                    "task_modifier": task.modifier.value,
+                    "task_kind": "task",
+                    "source_atoms": list(first_input.atoms),
+                    "target_atoms": list(output.atoms),
+                    "input_atom_order": [atom.value for atom in input_order],
+                    "input_entity_ids": [endpoint.entity_id for endpoint in inputs],
+                    "input_entity_names": [endpoint.name for endpoint in inputs],
+                    "input_entity_atoms": [[atom.value] for atom in input_order],
+                    "cross_paper": True,
+                    "source_paper_keys": list(dict.fromkeys(paper_keys)),
+                },
+            )
+            input_text = "; ".join(
+                f"{atom.value}: {endpoint.name}"
+                for atom, endpoint in zip(input_order, inputs)
+            )
+            hypothesis.explanation = (
+                f"Joint hypothesis: {input_text} collectively predict {output.name}.\n"
+                f"Evidence graph: {len(links)} source-linked claims from "
+                f"{len(set(paper_keys))} independent papers."
+            )
+            generated.append(hypothesis)
+        return generated
+
+    def _claim_endpoint_ids_for_scope(self, required_scope: str) -> frozenset[str]:
+        cached = self._claim_scope_endpoint_cache.get(required_scope)
+        if cached is not None:
+            return cached
+        endpoint_ids: set[str] = set()
+        for (source_id, target_id), entries in self._claims_by_endpoints.items():
+            if any(
+                required_scope in self._claim_meta_scopes(meta)
+                for _claim_id, meta in entries
+            ):
+                endpoint_ids.update((source_id, target_id))
+        result = frozenset(endpoint_ids)
+        self._claim_scope_endpoint_cache[required_scope] = result
+        return result
+
+    def _claim_endpoint_support_for_scope(self, required_scope: str) -> dict[str, int]:
+        cached = self._claim_scope_endpoint_support_cache.get(required_scope)
+        if cached is not None:
+            return cached
+        support: dict[str, int] = {}
+        for (source_id, target_id), entries in self._claims_by_endpoints.items():
+            count = sum(
+                required_scope in self._claim_meta_scopes(meta)
+                for _claim_id, meta in entries
+            )
+            if count:
+                support[source_id] = support.get(source_id, 0) + count
+                support[target_id] = support.get(target_id, 0) + count
+        self._claim_scope_endpoint_support_cache[required_scope] = support
+        return support
+
+    def _path_claim_edge_count(
+        self,
+        raw_path: list[str],
+        required_scope: str | None = None,
+    ) -> int:
+        """Count path edges backed by direct claims in the requested scope.
+
+        The graph is a ``DiGraph``, so multiple claims sharing an endpoint pair
+        collapse to one displayed edge. The claim-node endpoint index preserves
+        every source-linked claim and is therefore authoritative for scoping.
+        """
         n = 0
         for i in range(len(raw_path) - 1):
             src_id, tgt_id = raw_path[i], raw_path[i + 1]
             if not self.G.has_edge(src_id, tgt_id):
                 continue
-            edge_data = self.G.edges[src_id, tgt_id]
-            if edge_data.get("metadata", {}).get("claim_id"):
+            if required_scope is None:
+                required_scope = self._chain_required_claim_scope
+            if self._claim_entries_for_edge(src_id, tgt_id, required_scope):
                 n += 1
+                continue
+            edge_data = self.G.edges[src_id, tgt_id]
+            claim_id = edge_data.get("metadata", {}).get("claim_id")
+            if not claim_id:
+                continue
+            if required_scope is not None:
+                claim_node = self._index.get(claim_id)
+                claim_meta = claim_node.metadata if claim_node is not None else {}
+                if required_scope not in self._claim_meta_scopes(claim_meta):
+                    continue
+            n += 1
         return n
 
     def _sort_chain_candidates(
         self,
         candidates: list[tuple[list[str], list[int]]],
+        next_atom=None,
     ) -> list[tuple[list[str], list[int]]]:
         """Order chain candidates, optionally preferring claim-backed paths."""
-        if not self._chain_prefer_claim_backed_paths:
+        anchor_ranker = self._chain_atom_rankers.get(next_atom)
+        if (
+            not self._chain_prefer_claim_backed_paths
+            and not self._chain_require_claim_backed_paths
+            and anchor_ranker is None
+        ):
             return candidates
+
+        def _sort_key(item):
+            path, _anchors = item
+            claim_edges = self._path_claim_edge_count(path)
+            anchor_score = (
+                anchor_ranker(path[-1], self._index.get(path[-1]))
+                if anchor_ranker is not None
+                else 0
+            )
+            return (
+                claim_edges > 0,
+                anchor_score,
+                claim_edges,
+                len(path),
+            )
+
         return sorted(
             candidates,
-            key=lambda item: (self._path_claim_edge_count(item[0]), len(item[0])),
+            key=_sort_key,
             reverse=True,
         )
 
@@ -1203,7 +2316,7 @@ class HypothesisEngine:
         max_chains: int,
     ) -> list[tuple[list[str], list[int]]]:
         """Keep mostly claim-backed chain paths with a small claimless fallback."""
-        if not self._chain_prefer_claim_backed_paths:
+        if not self._chain_prefer_claim_backed_paths and not self._chain_require_claim_backed_paths:
             return candidates[:max_chains]
 
         ordered = self._sort_chain_candidates(candidates)
@@ -1215,6 +2328,8 @@ class HypothesisEngine:
             item for item in ordered
             if self._path_claim_edge_count(item[0]) == 0
         ]
+        if self._chain_require_claim_backed_paths:
+            return claim_backed[:max_chains]
         if not claim_backed:
             return ordered[:max_chains]
 
@@ -1304,6 +2419,8 @@ class HypothesisEngine:
         metapath_min_domains: int = 2,
         prefer_longer_paths: bool = True,
         min_evidence_per_node: int = 1,
+        random_seed: int | None = None,
+        seed_diversity_fraction: float = 0.0,
     ) -> list[Hypothesis]:
         """Batch-generate hypotheses across the entire graph.
 
@@ -1335,10 +2452,25 @@ class HypothesisEngine:
                 part_of / about) edge count required at every node on the
                 path. Default 1 drops nodes that are pure ontology leaves
                 with no empirical anchor. Raise to 2+ to demand multiple
-                independent evidence edges per visited node.
+                 independent evidence edges per visited node.
+            random_seed: optional stable seed for a diverse tail of source
+                anchors. ``None`` preserves the historical deterministic order.
+            seed_diversity_fraction: fraction of each source-anchor quota drawn
+                from an evidence-weighted stochastic tail. The highest-support
+                anchors always occupy the remaining fraction.
         """
         if domain_pairs is None:
             domain_pairs = DEFAULT_DOMAIN_PAIRS
+
+        required_scope = self._task_required_claim_scope
+        scoped_endpoint_ids = (
+            self._claim_endpoint_ids_for_scope(required_scope)
+            if required_scope is not None
+            else None
+        )
+        if required_scope is not None and not scoped_endpoint_ids:
+            logger.warning("task claim scope '%s' has no claim endpoints", required_scope)
+            return []
 
         all_hypotheses: list[Hypothesis] = []
         seen_pairs: set[tuple[str, str]] = set()
@@ -1347,7 +2479,15 @@ class HypothesisEngine:
         for dom_a, dom_b in domain_pairs:
             logger.info(f"generating hypotheses: {dom_a} -> {dom_b}")
 
-            seeds_a = self._sample_domain_nodes(dom_a, max_seeds_per_domain)
+            # Scope support is a ranking prior inside _sample_domain_nodes.
+            # Keep the endpoint pool graph-wide so task evidence can bridge
+            # into previously unlabelled but atom-compatible concepts.
+            seeds_a = self._sample_domain_nodes(
+                dom_a,
+                max_seeds_per_domain,
+                random_seed=random_seed,
+                diversity_fraction=seed_diversity_fraction,
+            )
             if min_evidence_per_node > 0:
                 seeds_a = [
                     s for s in seeds_a
@@ -1380,6 +2520,11 @@ class HypothesisEngine:
                     nid for nid in reachable
                     if nid in targets_b and nid != seed_id
                 ]
+                # ``reachable`` preserves BFS order, so this keeps the closest
+                # task-valid targets while bounding scans over very broad
+                # outcome domains (notably multi-input drug-response tasks).
+                candidate_cap = 64
+                candidates = candidates[:candidate_cap]
 
                 pair_count = 0
                 for target_id in candidates:
@@ -1389,14 +2534,20 @@ class HypothesisEngine:
                     seen_pairs.add(pair_key)
 
                     # Enumerate up to N simple paths between this (seed, target).
-                    # Cap the enumerator so a high-degree pair cannot blow up
-                    # runtime: take 4x the per-pair quota then prune.
+                    # Bound both accepted and inspected paths: dense pairs can
+                    # yield many paths that fail the atom/evidence filters before
+                    # one accepted path is found.
                     raw_paths: list[list[str]] = []
                     enum_cap = max(max_paths_per_pair * 4, 8)
+                    inspect_cap = 512
+                    inspected = 0
                     try:
                         for p in nx.all_simple_paths(
                             self.G, seed_id, target_id, cutoff=max_hops
                         ):
+                            inspected += 1
+                            if inspected > inspect_cap:
+                                break
                             if len(p) - 1 < min_hops:
                                 continue
                             if not self._path_intermediates_are_atoms(p):
@@ -1405,6 +2556,13 @@ class HypothesisEngine:
                                 self._path_distinct_atom_domains(p) < metapath_min_domains):
                                 continue
                             if not self._path_meets_evidence_floor(p, min_evidence_per_node):
+                                continue
+                            if (
+                                required_scope is not None
+                                and self._path_claim_edge_count(p, required_scope) < 1
+                            ):
+                                continue
+                            if tuple(p) in self._generation_excluded_paths:
                                 continue
                             raw_paths.append(p)
                             if len(raw_paths) >= enum_cap:
@@ -1424,7 +2582,12 @@ class HypothesisEngine:
                                      or self._path_distinct_atom_domains(sp)
                                         >= metapath_min_domains)
                                 and self._path_meets_evidence_floor(
-                                    sp, min_evidence_per_node)):
+                                    sp, min_evidence_per_node)
+                                and (
+                                    required_scope is None
+                                    or self._path_claim_edge_count(sp, required_scope) >= 1
+                                )
+                                and tuple(sp) not in self._generation_excluded_paths):
                             raw_paths = [sp]
                         else:
                             continue
@@ -1491,6 +2654,8 @@ class HypothesisEngine:
         metapath_min_domains: int = 2,
         prefer_longer_paths: bool = True,
         min_evidence_per_node: int = 1,
+        random_seed: int | None = None,
+        seed_diversity_fraction: float = 0.0,
     ) -> list[Hypothesis]:
         """Generate hypotheses scoped to a canonical Task.
 
@@ -1505,17 +2670,18 @@ class HypothesisEngine:
             * paths *start* from any input-atom node and end at an output-atom
               node — the simplest behaviour, equivalent to the union of the
               corresponding domain pairs.
-            * ``require_atom_touch=True`` enforces the stricter constraint
-              that each path must visit at least one node from EVERY input
-              atom (source/target included). On sparse KGs this filter is
-              aggressive and may drop most candidates; off by default.
+            * every formal multi-input task must visit at least one node from
+              EVERY input atom (source/target included). ``require_atom_touch``
+              is retained for API compatibility but can no longer weaken this
+              registered task contract.
 
         Args:
             task: A :class:`neurooracle.src.atoms.Task` — typically one
                   pulled from ``CANONICAL_TASKS``.
             max_hops, max_paths_per_pair, max_seeds_per_domain: forwarded
                   to :meth:`batch_generate`.
-            require_atom_touch: enable strict multi-atom path constraint.
+            require_atom_touch: explicitly request the multi-atom path check;
+                  registered multi-input tasks enable it automatically.
 
         Returns:
             List of :class:`Hypothesis`, tagged with the source task in
@@ -1534,8 +2700,10 @@ class HypothesisEngine:
 
         pairs: list[tuple[str, str]] = []
         seen: set[tuple[str, str]] = set()
-        for in_dom in input_domains:
-            for out_dom in output_domains:
+        # Atom-domain maps are sets. Sorting prevents Python hash randomisation
+        # from changing the task expansion and therefore the ranked hypotheses.
+        for in_dom in sorted(input_domains):
+            for out_dom in sorted(output_domains):
                 if in_dom == out_dom:
                     continue
                 key = (in_dom, out_dom)
@@ -1567,16 +2735,69 @@ class HypothesisEngine:
             metapath_min_domains=metapath_min_domains,
             prefer_longer_paths=prefer_longer_paths,
             min_evidence_per_node=min_evidence_per_node,
+            random_seed=random_seed,
+            seed_diversity_fraction=seed_diversity_fraction,
         )
+
+        semantic_max = min(
+            5000,
+            max(
+                100,
+                max_seeds_per_domain
+                * max_paths_per_pair
+                * max(1, len(task.inputs)),
+            ),
+        )
+        semantic_generator_name = (
+            "_batch_generate_multi_input_task_from_scoped_claims"
+            if len(task.inputs) > 1
+            else "_batch_generate_task_from_scoped_claims"
+        )
+        semantic_generator = getattr(self, semantic_generator_name, None)
+        semantic_hyps = (
+            semantic_generator(
+                task,
+                max_hypotheses=semantic_max,
+                random_seed=random_seed,
+            )
+            if getattr(self, "_task_required_claim_scope", None)
+            and callable(semantic_generator)
+            else []
+        )
+        if semantic_hyps:
+            logger.info(
+                "task '%s': added %d scoped evidence hypothesis(es)",
+                task.name,
+                len(semantic_hyps),
+            )
+            hyps.extend(semantic_hyps)
 
         # tag with task provenance BEFORE post_process so the task-aware
         # _is_dataset_outcome filter can read task_name.
+        prepared: list[Hypothesis] = []
         for h in hyps:
             h.metadata = dict(h.metadata or {})
             h.metadata["task_name"] = task.name
             h.metadata["task_signature"] = task.signature
             h.metadata["task_modifier"] = task.modifier.value
             h.metadata["task_kind"] = "task"
+            path_nodes = self._hypothesis_path_nodes(h)
+            h.metadata.setdefault("path_node_ids", list(path_nodes))
+            if path_nodes in self._generation_excluded_paths:
+                continue
+            if "feedback_mutation_affinity" not in h.metadata:
+                mutation_affinity = self._feedback_mutation_affinity(path_nodes)
+                h.metadata["feedback_mutation"] = mutation_affinity > 0.0
+                h.metadata["feedback_mutation_affinity"] = mutation_affinity
+            self._apply_task_testability_floor(h, task)
+            if mutation_affinity := float(
+                h.metadata.get("feedback_mutation_affinity") or 0.0
+            ):
+                if not h.metadata.get("feedback_mutation_score_applied"):
+                    h.composite_score += 0.16 * mutation_affinity
+                    h.metadata["feedback_mutation_score_applied"] = True
+            prepared.append(h)
+        hyps = prepared
 
         # Now apply post_process with task tags in place.
         before = len(hyps)
@@ -1585,49 +2806,552 @@ class HypothesisEngine:
             f"task '{task.name}': {before} raw -> {len(hyps)} after task-aware post_process"
         )
 
-        # optional strict multi-atom touch filter
-        if require_atom_touch and len(task.inputs) > 1:
+        # Registered multi-input tasks are meaningful only when every input is
+        # represented in the proposed path.  Do not allow callers to silently
+        # downgrade this task contract.
+        strict_atom_touch = require_atom_touch or len(task.inputs) > 1
+        if strict_atom_touch and len(task.inputs) > 1:
             kept = [h for h in hyps if self._path_touches_atoms(h, task.inputs)]
             logger.info(
-                f"require_atom_touch: kept {len(kept)}/{len(hyps)} "
+                f"multi_input_atom_contract: kept {len(kept)}/{len(hyps)} "
                 f"hypotheses for task '{task.name}'"
             )
             hyps = kept
 
         return hyps
 
+    def _apply_task_testability_floor(self, h: Hypothesis, task) -> None:
+        """Correct the imaging-only legacy floor for valid formal tasks.
+
+        The generic scorer was written for NeuroClaw imaging experiments and
+        assigns 0.15 when no modality is named.  That is appropriate for an
+        unconstrained imaging hypothesis, but not for registered tasks such as
+        adverse-event prediction whose atom contract does not contain IM.  This
+        conservative floor uses only the task schema and source provenance; it
+        never reads future support or validation labels.
+        """
+
+        if h.testability_score > 0.15 or not self._task_endpoint_contract_allowed(h):
+            return
+
+        formal_atoms = set(task.inputs) | {task.output}
+        requires_imaging = Atom.IMAGING_MARKER in formal_atoms
+        floor = 0.45 if requires_imaging else 0.50
+
+        links = list(h.path or [])
+        if links and all(link.claim_id for link in links):
+            floor += 0.05
+
+        metadata = h.metadata or {}
+        paper_keys = {
+            str(value)
+            for value in metadata.get("source_paper_keys") or []
+            if value
+        }
+        for link in links:
+            paper = link.source_paper if isinstance(link.source_paper, dict) else {}
+            paper_key = paper.get("pmid") or paper.get("doi") or paper.get("title")
+            if paper_key:
+                paper_keys.add(str(paper_key))
+        if len(paper_keys) >= 2:
+            floor += 0.05
+
+        adjusted = min(0.60, floor)
+        if adjusted <= h.testability_score:
+            return
+        previous = float(h.testability_score)
+        h.testability_score = adjusted
+        h.testability_reason = (
+            f"formal task contract: {task.signature}; "
+            + (
+                "specific imaging endpoint registered"
+                if requires_imaging
+                else "imaging modality not required"
+            )
+            + ("; independent source papers" if len(paper_keys) >= 2 else "")
+        )
+        metadata["task_testability_floor"] = {
+            "previous_score": previous,
+            "adjusted_score": adjusted,
+            "requires_imaging": requires_imaging,
+            "independent_papers": len(paper_keys),
+        }
+        h.metadata = metadata
+        h.composite_score = self._composite_score(h)
+
     def _path_touches_atoms(self, h: Hypothesis, atoms) -> bool:
-        """Check whether a hypothesis path visits ≥1 node from every atom's
-        domain pool. Used by ``require_atom_touch`` filtering."""
+        """Bind every multi-input atom to a distinct node on the evidence path."""
         from .atoms import ATOM_TO_DOMAINS
 
-        needed = {a: ATOM_TO_DOMAINS[a] for a in atoms}
-        visited: set = set()
+        input_order = tuple(sorted(dict.fromkeys(atoms), key=lambda atom: atom.value))
+        needed = {atom: ATOM_TO_DOMAINS[atom] for atom in input_order}
+        metadata = h.metadata or {}
+        supplemental_roles: dict[str, set[Atom]] = defaultdict(set)
+
+        def add_roles(node_id: str, values) -> None:
+            for value in values or []:
+                try:
+                    supplemental_roles[node_id].add(Atom(str(value)))
+                except ValueError:
+                    continue
+
+        add_roles(h.source_id, metadata.get("source_atoms"))
+        add_roles(h.target_id, metadata.get("target_atoms"))
+        mediator_ids = metadata.get("mediator_ids") or []
+        mediator_atoms = metadata.get("mediator_atoms") or []
+        for node_id, values in zip(mediator_ids, mediator_atoms):
+            add_roles(str(node_id), values)
+        input_entity_ids = metadata.get("input_entity_ids") or []
+        input_entity_atoms = metadata.get("input_entity_atoms") or []
+        for node_id, values in zip(input_entity_ids, input_entity_atoms):
+            add_roles(str(node_id), values)
 
         node_ids: list[str] = []
-        if h.source_id: node_ids.append(h.source_id)
-        if h.target_id: node_ids.append(h.target_id)
+        node_names: dict[str, str] = {}
+
+        def add_node(node_id: str, node_name: str = "") -> None:
+            node_id = str(node_id or "")
+            if not node_id:
+                return
+            if node_id not in node_ids:
+                node_ids.append(node_id)
+            if node_name and node_id not in node_names:
+                node_names[node_id] = str(node_name)
+
+        add_node(h.source_id, h.source_name)
+        add_node(h.target_id, h.target_name)
         for link in (h.path or []):
             if getattr(link, "from_id", None):
-                node_ids.append(link.from_id)
+                add_node(link.from_id, getattr(link, "from_name", ""))
             if getattr(link, "to_id", None):
-                node_ids.append(link.to_id)
+                add_node(link.to_id, getattr(link, "to_name", ""))
 
-        for nid in node_ids:
+        def atom_specificity(
+            atom: Atom,
+            node_id: str,
+            node_domains: set[str],
+        ) -> int:
+            if atom is not Atom.IMAGING_MARKER:
+                return 0
+            if node_id.startswith(("IM:", "NCL_IMAGING:", "NCL_BIOMARKER:")):
+                return 0
+            if node_domains & {"imaging_feature", "connectivity", "biomarker"}:
+                return 0
+            if "neuroanatomy" in node_domains:
+                return 1
+            return 2
+
+        candidates: dict[Atom, list[tuple[int, int, int, str]]] = {
+            atom: [] for atom in input_order
+        }
+        for node_index, nid in enumerate(node_ids):
             node = self._index.get(nid)
-            if node is None:
-                continue
-            node_domains = set(node.domain_tags or [])
-            for atom, atom_doms in needed.items():
-                if atom in visited:
+            node_domains = set(node.domain_tags or []) if node is not None else set()
+            canonical_roles = set(concept_atom_roles(node))
+            explicit_roles = supplemental_roles.get(nid, set())
+            for atom, atom_domains in needed.items():
+                if atom in explicit_roles:
+                    priority = 0
+                elif atom in canonical_roles:
+                    priority = 1
+                elif atom_domains & node_domains:
+                    priority = 2
+                else:
                     continue
-                if atom_doms & node_domains:
-                    visited.add(atom)
-            if len(visited) == len(needed):
+                candidates[atom].append((
+                    priority,
+                    atom_specificity(atom, nid, node_domains),
+                    node_index,
+                    nid,
+                ))
+
+        if any(not candidates[atom] for atom in input_order):
+            return False
+
+        assignment_order = sorted(
+            input_order,
+            key=lambda atom: (len(candidates[atom]), atom.value),
+        )
+        bindings: dict[Atom, str] = {}
+        used_nodes: set[str] = set()
+
+        def assign(index: int) -> bool:
+            if index == len(assignment_order):
                 return True
-        return len(visited) == len(needed)
+            atom = assignment_order[index]
+            for _priority, _specificity, _node_index, node_id in sorted(candidates[atom]):
+                if node_id in used_nodes:
+                    continue
+                bindings[atom] = node_id
+                used_nodes.add(node_id)
+                if assign(index + 1):
+                    return True
+                used_nodes.remove(node_id)
+                bindings.pop(atom, None)
+            return False
+
+        if not assign(0):
+            return False
+
+        h.metadata = dict(metadata)
+        h.metadata["input_atom_order"] = [atom.value for atom in input_order]
+        h.metadata["input_entity_ids"] = [bindings[atom] for atom in input_order]
+        h.metadata["input_entity_names"] = [
+            node_names.get(bindings[atom])
+            or getattr(self._index.get(bindings[atom]), "preferred_name", "")
+            or bindings[atom]
+            for atom in input_order
+        ]
+        h.metadata["input_entity_atoms"] = [[atom.value] for atom in input_order]
+        h.metadata["input_binding_mode"] = "distinct_path_atom_assignment"
+        h.metadata["input_atom_contract_version"] = "distinct_nodes.v1"
+        return True
+
+    def _hypothesis_semantic_endpoint(
+        self,
+        h: Hypothesis,
+        *,
+        source_side: bool,
+    ) -> SemanticEndpoint:
+        metadata = h.metadata or {}
+        node_id = h.source_id if source_side else h.target_id
+        name = h.source_name if source_side else h.target_name
+        key = "source_atoms" if source_side else "target_atoms"
+        roles = set(concept_atom_roles(self._index.get(node_id)))
+        for value in metadata.get(key) or []:
+            try:
+                roles.add(Atom(str(value)))
+            except ValueError:
+                continue
+        return SemanticEndpoint(
+            entity_id=node_id,
+            name=name,
+            canonical_id=node_id,
+            atoms=tuple(sorted(atom.value for atom in roles)),
+            uses_canonical_id=node_id in self._index,
+            name_score=1.0,
+            role_compatible=True,
+        )
+
+    def _task_endpoint_contract_allowed(self, h: Hypothesis) -> bool:
+        """Require generated endpoints to satisfy the registered task atoms."""
+
+        task_name = str((h.metadata or {}).get("task_name") or "")
+        if not task_name:
+            return True
+        from .atoms import task_by_name
+
+        try:
+            task = task_by_name(task_name)
+        except KeyError:
+            return True
+        source = self._hypothesis_semantic_endpoint(h, source_side=True)
+        target = self._hypothesis_semantic_endpoint(h, source_side=False)
+        source_allowed = any(
+            endpoint_matches_atom(source, atom, self._index)
+            for atom in task.inputs
+        )
+        target_allowed = endpoint_matches_atom(target, task.output, self._index)
+        scope = str(
+            (h.metadata or {}).get("claim_case_study_id")
+            or (h.metadata or {}).get("case_study_id")
+            or task.name
+        )
+        return bool(
+            source_allowed
+            and target_allowed
+            and case_study_endpoint_names_allowed(scope, source, target)
+        )
 
     # ── chain-aware generation (TaskChain mediation paths) ────────────────
+
+    @staticmethod
+    def _claim_entity_id(atom, canonical_id: str, name: str) -> str:
+        digest = hashlib.sha1(
+            f"{atom.value}\x1f{canonical_id}\x1f{name}".encode("utf-8")
+        ).hexdigest()[:16]
+        return f"CLAIM_ENTITY:{digest}"
+
+    def _batch_generate_from_scoped_claims(
+        self,
+        chain,
+        max_chains: int,
+    ) -> list[Hypothesis]:
+        """Assemble an audited chain from claims belonging to one paper.
+
+        Canonical concept IDs are useful graph anchors, but historical CUI
+        collisions can merge two claim-local meanings into one global node.
+        The claim payload remains source-linked and preserves the exact entity
+        names and atom declarations, so scoped claim-chain generation treats it
+        as the authority and records the canonical IDs only as provenance.
+        """
+        scope = self._chain_claim_first_scope
+        if not scope:
+            return []
+
+        claims_by_paper: dict[str, list[tuple[str, dict]]] = {}
+        for claim_id, node in self._index.items():
+            if "claim" not in (node.domain_tags or []):
+                continue
+            meta = node.metadata or {}
+            if scope not in self._claim_meta_scopes(meta):
+                continue
+            paper = meta.get("source_paper") or {}
+            paper_key = str(
+                paper.get("pmid")
+                or paper.get("doi")
+                or paper.get("title")
+                or claim_id
+            )
+            claims_by_paper.setdefault(paper_key, []).append((claim_id, meta))
+
+        def _normalise(value: object) -> str:
+            return re.sub(r"\s+", " ", str(value or "").strip().lower())
+
+        def _entity_rows(
+            entries: list[tuple[str, dict]],
+        ) -> dict[object, list[tuple[str, str, float]]]:
+            rows = {atom: {} for atom in chain.chain}
+            for claim_id, meta in entries:
+                confidence = float(meta.get("confidence") or 0.5)
+                for side in ("subject", "object"):
+                    endpoint_id = str(meta.get(f"{side}_id") or "")
+                    endpoint_name = str(meta.get(f"{side}_name") or "").strip()
+                    if not endpoint_id or not endpoint_name:
+                        continue
+                    roles = self._chain_claim_endpoint_roles.get(
+                        (claim_id, side), set()
+                    )
+                    for atom in roles:
+                        if atom not in rows:
+                            continue
+                        key = (endpoint_id, endpoint_name)
+                        current = rows[atom].get(key, (0.0, 0))
+                        rows[atom][key] = (
+                            current[0] + confidence,
+                            current[1] + 1,
+                        )
+
+            ranked: dict[object, list[tuple[str, str, float]]] = {}
+            for atom, values in rows.items():
+                ranked[atom] = [
+                    (endpoint_id, endpoint_name, score + 0.05 * count)
+                    for (endpoint_id, endpoint_name), (score, count)
+                    in sorted(
+                        values.items(),
+                        key=lambda item: (
+                            item[1][0] + 0.05 * item[1][1],
+                            item[0][1],
+                        ),
+                        reverse=True,
+                    )[:3]
+                ]
+            return ranked
+
+        def _entry_match_score(
+            entry: tuple[str, dict],
+            left: tuple[str, str, float],
+            right: tuple[str, str, float],
+        ) -> tuple[int, float, str]:
+            claim_id, meta = entry
+            subject = (
+                str(meta.get("subject_id") or ""),
+                _normalise(meta.get("subject_name")),
+            )
+            obj = (
+                str(meta.get("object_id") or ""),
+                _normalise(meta.get("object_name")),
+            )
+            left_key = (left[0], _normalise(left[1]))
+            right_key = (right[0], _normalise(right[1]))
+            exact = (
+                (subject == left_key and obj == right_key)
+                or (subject == right_key and obj == left_key)
+            )
+            text = _normalise(
+                " ".join(
+                    [
+                        meta.get("subject_name", ""),
+                        meta.get("object_name", ""),
+                        meta.get("raw_text", ""),
+                    ]
+                )
+            )
+            left_seen = left_key[1] in text
+            right_seen = right_key[1] in text
+            level = 3 if exact else 2 if left_seen and right_seen else 1 if left_seen or right_seen else 0
+            return level, float(meta.get("confidence") or 0.5), claim_id
+
+        def _best_entry(
+            entries: list[tuple[str, dict]],
+            left: tuple[str, str, float],
+            right: tuple[str, str, float],
+        ) -> tuple[str, dict]:
+            return max(
+                entries,
+                key=lambda entry: _entry_match_score(entry, left, right),
+            )
+
+        def _link(
+            entry: tuple[str, dict],
+            from_entity: tuple[str, str, float],
+            to_entity: tuple[str, str, float],
+            from_atom,
+            to_atom,
+            fallback_relation: str,
+        ) -> HypothesisLink:
+            claim_id, meta = entry
+            subject_name = _normalise(meta.get("subject_name"))
+            object_name = _normalise(meta.get("object_name"))
+            direct = (
+                subject_name == _normalise(from_entity[1])
+                and object_name == _normalise(to_entity[1])
+            )
+            relation = (
+                str(meta.get("predicate") or fallback_relation)
+                if direct
+                else fallback_relation
+            )
+            evidence = meta.get("evidence") or {}
+            if not isinstance(evidence, dict):
+                evidence = {"description": str(evidence)}
+            source_paper = meta.get("source_paper") or {}
+            if not isinstance(source_paper, dict):
+                source_paper = {"reference": str(source_paper)}
+            return HypothesisLink(
+                from_id=self._claim_entity_id(
+                    from_atom, from_entity[0], from_entity[1]
+                ),
+                from_name=from_entity[1],
+                to_id=self._claim_entity_id(to_atom, to_entity[0], to_entity[1]),
+                to_name=to_entity[1],
+                relation_type=relation,
+                confidence=float(meta.get("confidence") or 0.5),
+                claim_id=claim_id,
+                raw_text=str(meta.get("raw_text") or ""),
+                evidence=dict(evidence),
+                source_paper=dict(source_paper),
+            )
+
+        generated: list[Hypothesis] = []
+        source_atom, mediator_atom, target_atom = chain.chain
+        for paper_key, entries in claims_by_paper.items():
+            entities = _entity_rows(entries)
+            sources = entities.get(source_atom, [])
+            mediators = entities.get(mediator_atom, [])
+            targets = entities.get(target_atom, [])
+            if not sources or not mediators or not targets:
+                continue
+
+            for source, mediator, target in itertools.product(
+                sources, mediators, targets
+            ):
+                labels = {
+                    _normalise(source[1]),
+                    _normalise(mediator[1]),
+                    _normalise(target[1]),
+                }
+                if len(labels) < 3:
+                    continue
+                gene_im_entry = _best_entry(entries, source, mediator)
+                im_outcome_entry = _best_entry(entries, mediator, target)
+                links = [
+                    _link(
+                        gene_im_entry,
+                        source,
+                        mediator,
+                        source_atom,
+                        mediator_atom,
+                        "is_associated_with",
+                    ),
+                    _link(
+                        im_outcome_entry,
+                        mediator,
+                        target,
+                        mediator_atom,
+                        target_atom,
+                        "mediates",
+                    ),
+                ]
+                supporting_claims = list(
+                    dict.fromkeys(link.claim_id for link in links if link.claim_id)
+                )
+                source_id = links[0].from_id
+                mediator_id = links[0].to_id
+                target_id = links[-1].to_id
+                digest = hashlib.sha1(
+                    "\x1f".join(
+                        [paper_key, source_id, mediator_id, target_id]
+                    ).encode("utf-8")
+                ).hexdigest()[:12]
+                confidence = self._compute_confidence_score(links)
+                novelty = self._compute_novelty_score(links)
+                evidence = self._compute_evidence_score(links)
+                testability, test_reason = self._compute_testability_score(links)
+                hypothesis = Hypothesis(
+                    id=f"HYP:CLAIM_CHAIN:{chain.name}:{digest}",
+                    hypothesis_type="claim_chain",
+                    source_id=source_id,
+                    source_name=source[1],
+                    target_id=target_id,
+                    target_name=target[1],
+                    path=links,
+                    confidence_score=confidence,
+                    novelty_score=novelty,
+                    evidence_score=evidence,
+                    testability_score=testability,
+                    supporting_claims=supporting_claims,
+                    testability_reason=test_reason,
+                    metadata={
+                        "chain_name": chain.name,
+                        "chain_signature": chain.signature,
+                        "chain_atoms": [atom.value for atom in chain.chain],
+                        "chain_modifier": chain.modifier.value,
+                        "mediator_ids": [mediator_id],
+                        "mediator_names": [mediator[1]],
+                        "task_kind": "claim_chain",
+                        "generation_mode": "scoped_claim_first",
+                        "claim_case_study_id": scope,
+                        "source_paper_key": paper_key,
+                        "canonical_entity_ids": {
+                            "source": source[0],
+                            "mediator": mediator[0],
+                            "target": target[0],
+                        },
+                    },
+                )
+                hypothesis.explanation = self._generate_explanation(hypothesis)
+                hypothesis.composite_score = self._composite_score(hypothesis)
+                generated.append(hypothesis)
+
+        best_by_names: dict[tuple[str, str, str], Hypothesis] = {}
+        for hypothesis in generated:
+            mediator_name = hypothesis.metadata["mediator_names"][0]
+            key = (
+                _normalise(hypothesis.source_name),
+                _normalise(mediator_name),
+                _normalise(hypothesis.target_name),
+            )
+            current = best_by_names.get(key)
+            if current is None or hypothesis.composite_score > current.composite_score:
+                best_by_names[key] = hypothesis
+        ranked = sorted(
+            best_by_names.values(),
+            key=lambda hypothesis: (
+                hypothesis.composite_score,
+                hypothesis.evidence_score,
+                hypothesis.id,
+            ),
+            reverse=True,
+        )
+        logger.info(
+            "chain '%s': scoped claim-first assembly produced %d unique chain(s) "
+            "from %d paper(s)",
+            chain.name,
+            len(ranked),
+            len(claims_by_paper),
+        )
+        return ranked[:max_chains]
 
     def batch_generate_for_chain(
         self,
@@ -1679,6 +3403,9 @@ class HypothesisEngine:
         if not isinstance(chain, _TaskChain):
             raise TypeError(f"expected atoms.TaskChain, got {type(chain).__name__}")
 
+        if self._chain_claim_first_scope:
+            return self._batch_generate_from_scoped_claims(chain, max_chains)
+
         atoms = chain.chain
         # Per-atom domain pools, with claim/PATH_IGNORE nodes excluded.
         atom_node_pools: list[set[str]] = []
@@ -1687,9 +3414,11 @@ class HypothesisEngine:
                 self._chain_atom_extra_domains.get(atom, frozenset())
             )
             extra_filter = self._chain_atom_filters.get(atom)
+            explicit_pool = self._chain_atom_explicit_pools.get(atom, set())
             pool = {
                 nid for nid, data in self.G.nodes(data=True)
-                if (set(data.get("domain_tags", [])) & doms)
+                if ((set(data.get("domain_tags", [])) & doms)
+                    or nid in explicit_pool)
                 and "claim" not in data.get("domain_tags", [])
                 and nid not in self._path_ignore_ids
                 and (min_evidence_per_node <= 0
@@ -1771,6 +3500,9 @@ class HypothesisEngine:
                         if node is None:
                             bad_bridge = True
                             break
+                        if n in self._chain_forbidden_bridge_ids:
+                            bad_bridge = True
+                            break
                         node_doms = set(node.domain_tags or [])
                         if "claim" in node_doms or not (node_doms & _allowed):
                             bad_bridge = True
@@ -1786,7 +3518,10 @@ class HypothesisEngine:
                     new_anchors = anchors + [len(new_path) - 1]
                     partial_candidates.append((new_path, new_anchors))
 
-                partial_candidates = self._sort_chain_candidates(partial_candidates)
+                partial_candidates = self._sort_chain_candidates(
+                    partial_candidates,
+                    next_atom=atoms[seg_idx + 1],
+                )
                 extended.extend(partial_candidates[:max_paths_per_segment])
 
                 if len(extended) >= max_chains * 4:
@@ -1810,7 +3545,6 @@ class HypothesisEngine:
         )
 
         hyps: list[Hypothesis] = []
-        _chain_counter = 0
         for path, anchors in survivors:
             links = self._enrich_path(path)
             if not links:
@@ -1828,9 +3562,11 @@ class HypothesisEngine:
                 for m in mediator_ids if m in self._index
             ]
 
-            _chain_counter += 1
+            path_digest = hashlib.sha1(
+                "\x1f".join(path).encode("utf-8")
+            ).hexdigest()[:12]
             h = Hypothesis(
-                id=f"HYP:CHAIN:{chain.name}:{_chain_counter:06d}",
+                id=f"HYP:CHAIN:{chain.name}:{path_digest}",
                 hypothesis_type="chain",
                 source_id=path[0],
                 source_name=self._index[path[0]].preferred_name,
@@ -1905,6 +3641,7 @@ class HypothesisEngine:
         """
         before = len(hypotheses)
         filtered = []
+        rejection_counts: Counter[str] = Counter()
 
         for h in hypotheses:
             # filter noisy entities. Only check CLM_CONCEPT nodes — Phase 1
@@ -1923,6 +3660,113 @@ class HypothesisEngine:
                 if link.to_id.startswith("CLM_CONCEPT") and self._is_noisy_entity(link.to_name):
                     noisy_names.append(link.to_name)
             if noisy_names:
+                rejection_counts["noisy_entity"] += 1
+                continue
+
+            if not self._task_endpoint_contract_allowed(h):
+                rejection_counts["invalid_task_endpoint_contract"] += 1
+                continue
+
+            if (
+                (h.metadata or {}).get("task_name") == "functional_localization"
+                and not self._is_valid_functional_localization_hypothesis(h)
+            ):
+                rejection_counts["invalid_functional_localization_path"] += 1
+                continue
+
+            # Scoped claim-first chains have already passed the formal
+            # case-study reaudit and use claim-local entity IDs on purpose.
+            # Graph-degree, cross-PMID bridge, and ontology-hub filters below
+            # are designed for inferred graph walks and would reject these
+            # source-linked within-paper mediation chains by construction.
+            if (h.metadata or {}).get("generation_mode") == "scoped_claim_first":
+                if (
+                    len(h.path) >= min_hops
+                    and h.source_name
+                    and h.target_name
+                    and (h.metadata or {}).get("mediator_names")
+                    and all(link.claim_id for link in h.path)
+                ):
+                    filtered.append(h)
+                    rejection_counts["accepted_scoped_claim_first"] += 1
+                else:
+                    rejection_counts["invalid_scoped_claim_first"] += 1
+                continue
+
+            if (
+                (h.metadata or {}).get("generation_mode")
+                == "scoped_multi_input_evidence_graph"
+            ):
+                metadata = h.metadata or {}
+                expected_atoms = set(metadata.get("input_atom_order") or [])
+                observed_atoms = {
+                    str(value)
+                    for values in metadata.get("input_entity_atoms") or []
+                    for value in values or []
+                }
+                input_ids = [
+                    str(value)
+                    for value in metadata.get("input_entity_ids") or []
+                    if value
+                ]
+                paper_keys = {
+                    str(value)
+                    for value in metadata.get("source_paper_keys") or []
+                    if value
+                }
+                names = [
+                    *(metadata.get("input_entity_names") or []),
+                    h.target_name,
+                ]
+                if (
+                    len(expected_atoms) >= 2
+                    and expected_atoms <= observed_atoms
+                    and len(input_ids) == len(expected_atoms)
+                    and len(set(input_ids)) == len(input_ids)
+                    and len(h.path) >= len(expected_atoms)
+                    and len(paper_keys) >= 2
+                    and all(link.claim_id for link in h.path)
+                    and all(name and not self._is_noisy_entity(name) for name in names)
+                ):
+                    filtered.append(h)
+                    rejection_counts[
+                        "accepted_scoped_multi_input_evidence_graph"
+                    ] += 1
+                else:
+                    rejection_counts[
+                        "invalid_scoped_multi_input_evidence_graph"
+                    ] += 1
+                continue
+
+            if (
+                (h.metadata or {}).get("generation_mode")
+                == "scoped_semantic_claim_bridge"
+            ):
+                paper_keys = {
+                    str(value)
+                    for value in (h.metadata or {}).get("source_paper_keys", [])
+                    if value
+                }
+                continuous = all(
+                    h.path[index].to_id == h.path[index + 1].from_id
+                    for index in range(len(h.path) - 1)
+                )
+                names = [
+                    h.source_name,
+                    h.target_name,
+                    *((h.metadata or {}).get("mediator_names") or []),
+                ]
+                if (
+                    len(h.path) >= min_hops
+                    and continuous
+                    and len(paper_keys) >= 2
+                    and all(link.claim_id for link in h.path)
+                    and all(name and not self._is_noisy_entity(name) for name in names)
+                ):
+                    filtered.append(h)
+                    rejection_counts["accepted_scoped_semantic_claim_bridge"] += 1
+                else:
+                    rejection_counts["invalid_scoped_semantic_claim_bridge"] += 1
                 continue
 
             # filter tree-only nodes: any path node whose non-tree degree
@@ -1936,16 +3780,19 @@ class HypothesisEngine:
                     path_nodes.append(link.to_id)
                 if any(self._node_non_tree_degree(nid) < min_evidence_per_node
                        for nid in path_nodes if nid):
+                    rejection_counts["tree_only_node"] += 1
                     continue
 
             # filter 1-hop (single direct edge = no discovery value)
             if len(h.path) < min_hops:
+                rejection_counts["too_short"] += 1
                 continue
 
             # filter all-vague-relations
             if filter_vague_relations:
                 relation_types = {l.relation_type for l in h.path}
                 if relation_types and relation_types <= VAGUE_RELATIONS:
+                    rejection_counts["all_vague_relations"] += 1
                     continue
 
             # filter single-PMID bridges (all hops cite the same paper = not a real bridge)
@@ -1955,25 +3802,39 @@ class HypothesisEngine:
                     pmid = link.source_paper.get("pmid", "") if isinstance(link.source_paper, dict) else ""
                     if pmid:
                         pmids.add(pmid)
-                if len(pmids) == 1:
+                has_curated_task_edge = (
+                    (h.metadata or {}).get("task_name") == "functional_localization"
+                    and any(
+                        not link.claim_id
+                        and Atom.COGNITIVE_TASK
+                        in concept_atom_roles(self._index.get(link.from_id))
+                        for link in h.path
+                    )
+                )
+                if len(pmids) == 1 and not has_curated_task_edge:
+                    rejection_counts["single_paper_bridge"] += 1
                     continue
 
             # filter non-measurable biomarkers (not testable from imaging)
             if filter_non_measurable:
                 if self._has_non_measurable_entity(h):
+                    rejection_counts["non_measurable_entity"] += 1
                     continue
 
             # filter biologically implausible paths (brain region → non-neurological target)
             if self._has_implausible_path(h):
+                rejection_counts["implausible_path"] += 1
                 continue
 
             # filter paths with weak evidence (target not mentioned in raw_text)
             if self._has_weak_evidence(h):
+                rejection_counts["weak_evidence"] += 1
                 continue
 
             # filter paths where both ends of any edge are broad hubs
             # ("Brain Diseases --causes--> Cognitive Dysfunction" is uninformative)
             if self._has_hub_to_hub_edge(h):
+                rejection_counts["hub_to_hub_edge"] += 1
                 continue
 
             # filter paths touching any vague COGAT/MeSH umbrella hub
@@ -1981,24 +3842,28 @@ class HypothesisEngine:
             # These nodes are too abstract to drive a DL experiment whether
             # they appear as source, target, or intermediate.
             if self._touches_path_ignore_node(h):
+                rejection_counts["ignored_umbrella_node"] += 1
                 continue
 
             # filter paths that transit through disease mega-hubs as
             # intermediate nodes (A → Disease → B is uninformative).
             # These nodes are still valid as source/target endpoints.
             if self._transits_intermediate_only_hub(h):
+                rejection_counts["intermediate_hub"] += 1
                 continue
 
             # (C-1) filter paths whose INTERMEDIATE node is a generic
             # phrase ("neural activity", "disease progression", "grey
             # matter", ...). Endpoints are not checked here.
             if self._has_intermediate_generic_phrase(h):
+                rejection_counts["generic_intermediate"] += 1
                 continue
 
             # (C-2) filter paths whose directional density is too thin
             # (3+ hops with < 50% directional relations = too vague to
             # be a mechanism hypothesis).
             if self._has_thin_directional_density(h):
+                rejection_counts["thin_directional_density"] += 1
                 continue
 
             # filter: target must be a dataset outcome (diagnosis/cognition/behavior/
@@ -2006,6 +3871,7 @@ class HypothesisEngine:
             # hypothesis UKB/ADNI/HCP can directly test — those are imaging features
             # used as INPUTS, not outcomes.
             if not self._is_dataset_outcome(h):
+                rejection_counts["non_dataset_outcome"] += 1
                 continue
 
             # (C-3) filter: target name is an umbrella concept ("skill",
@@ -2013,6 +3879,7 @@ class HypothesisEngine:
             # even though it passes the outcome keyword check. These
             # can't anchor a concrete DL label.
             if self._is_too_broad_target(h.target_name):
+                rejection_counts["broad_target"] += 1
                 continue
 
             # (P2) filter: source is an umbrella concept (imaging modality,
@@ -2021,37 +3888,116 @@ class HypothesisEngine:
             # entry points (task pipelines, manual paths) skip that filter
             # so we mirror the gate at post_process for defence-in-depth.
             if self._is_umbrella_source(h.source_name):
+                rejection_counts["umbrella_source"] += 1
                 continue
 
             # filter paths with no directional predicates (pure association chains)
             if len(h.path) >= 2:
                 relation_types = {l.relation_type for l in h.path}
                 if not (relation_types & DIRECTIONAL_RELATIONS):
+                    rejection_counts["no_directional_relation"] += 1
                     continue
 
             # filter paths that exceed max hop length (noise accumulation)
             if len(h.path) > max_hops_filter:
+                rejection_counts["too_long"] += 1
                 continue
 
             filtered.append(h)
 
-        # Deduplicate: for each (source, target) pair, keep top 2 by composite score
-        from collections import defaultdict
+        # Deduplicate ordinary paths by endpoint pair. Multi-input hypotheses use
+        # the complete input tuple; otherwise distinct evidence graphs collapse
+        # merely because their display source is the first registered input.
         pair_groups = defaultdict(list)
         for h in filtered:
-            key = (h.source_id, h.target_id)
+            if (h.metadata or {}).get("generation_mode") == "scoped_multi_input_evidence_graph":
+                key = (
+                    tuple((h.metadata or {}).get("input_entity_ids") or []),
+                    h.target_id,
+                )
+            else:
+                key = (h.source_id, h.target_id)
             pair_groups[key].append(h)
 
         deduplicated = []
         for key, group in pair_groups.items():
             # Sort by composite score descending
             group.sort(key=lambda x: x.composite_score, reverse=True)
-            # Keep top 2 (or 1 if only one exists)
-            deduplicated.extend(group[:2])
+            # Static generation keeps the historical top-2 rule. A dynamic
+            # loop may retain a few more legal path instantiations so later
+            # rounds can explore distinct mediators without duplicating paths.
+            deduplicated.extend(group[: self._generation_max_paths_per_endpoint])
+
+        rejection_counts["accepted_before_dedup"] = len(filtered)
+        rejection_counts["removed_by_pair_dedup"] = len(filtered) - len(deduplicated)
+        rejection_counts["accepted_final"] = len(deduplicated)
+        rejection_counts["input"] = before
+        self.last_post_process_stats = dict(rejection_counts)
 
         logger.info(f"post_process: {before} -> {len(filtered)} filtered -> {len(deduplicated)} deduplicated "
-                     f"(removed {before - len(deduplicated)} total)")
+                     f"(removed {before - len(deduplicated)} total); reasons={dict(rejection_counts)}")
         return deduplicated
+
+    def _is_valid_functional_localization_hypothesis(self, h: Hypothesis) -> bool:
+        """Keep task-to-neural paths and reject disease-mediated association chains."""
+
+        if (
+            not h.path
+            or looks_like_imaging_measurement(h.source_name)
+            or looks_like_non_task_construct(h.source_name)
+        ):
+            return False
+        mode = (h.metadata or {}).get("generation_mode")
+        source_node = self._index.get(h.source_id)
+        source_atoms = concept_atom_roles(source_node)
+        if mode == "scoped_semantic_claim_bridge":
+            if not looks_like_cognitive_task_or_stimulus(h.source_name):
+                return False
+        elif (
+            Atom.COGNITIVE_TASK not in source_atoms
+            or source_atoms & {Atom.DISEASE, Atom.OUTCOME, Atom.INDIVIDUAL_DATA}
+        ):
+            return False
+
+        target_node = self._index.get(h.target_id)
+        target_is_imaging = (
+            is_specific_functional_imaging_readout(h.target_name)
+            or (
+                target_node is not None
+                and "neuroanatomy" in set(target_node.domain_tags or [])
+            )
+        )
+        if not target_is_imaging:
+            return False
+
+        if mode == "scoped_semantic_claim_bridge":
+            mediator_ids = (h.metadata or {}).get("mediator_ids") or []
+            mediator_names = (h.metadata or {}).get("mediator_names") or []
+            if not mediator_ids or len(mediator_ids) != len(mediator_names):
+                return False
+            for mediator_id, mediator_name in zip(mediator_ids, mediator_names):
+                node = self._index.get(str(mediator_id))
+                is_neuroanatomy = bool(
+                    node is not None
+                    and "neuroanatomy" in set(node.domain_tags or [])
+                )
+                if (
+                    not is_neuroanatomy
+                    and not is_specific_functional_imaging_readout(mediator_name)
+                ):
+                    return False
+            return True
+
+        intermediate_ids = [link.to_id for link in h.path[:-1]]
+        if not intermediate_ids:
+            return False
+        for node_id in intermediate_ids:
+            atoms = concept_atom_roles(self._index.get(node_id))
+            if Atom.DISEASE in atoms or Atom.OUTCOME in atoms:
+                return False
+            if Atom.IMAGING_MARKER not in atoms:
+                return False
+        return True
 
     def _has_non_measurable_entity(self, h: Hypothesis) -> bool:
         """Check if hypothesis involves entities not measurable from brain imaging.
@@ -3941,22 +5887,31 @@ class HypothesisEngine:
         if not query:
             return None
 
-        for node in self._index.values():
+        # Retired aliases must not reappear through the substring fallback.
+        blocked_ids = blocked_canonical_ids(query)
+        nodes = self._index.values()
+        if blocked_ids:
+            nodes = [node for node in nodes if node.id not in blocked_ids]
+
+        for node in nodes:
             if node.preferred_name == query:
                 return node.id
 
         query_lower = query.lower()
-        for node in self._index.values():
+        for node in nodes:
             if node.preferred_name.lower() == query_lower:
                 return node.id
 
-        for node in self._index.values():
+        for node in nodes:
             for alias in node.aliases:
                 if alias.lower() == query_lower:
                     return node.id
 
+        if not allow_substring_fallback(query):
+            return None
+
         candidates = []
-        for node in self._index.values():
+        for node in nodes:
             name_lower = node.preferred_name.lower()
             if query_lower in name_lower or name_lower in query_lower:
                 candidates.append(node)
@@ -3976,7 +5931,15 @@ class HypothesisEngine:
 
     # ── internal helpers ───────────────────────────────────────────────
 
-    def _sample_domain_nodes(self, domain: str, max_n: int) -> list[str]:
+    def _sample_domain_nodes(
+        self,
+        domain: str,
+        max_n: int,
+        *,
+        allowed_ids: frozenset[str] | None = None,
+        random_seed: int | None = None,
+        diversity_fraction: float = 0.0,
+    ) -> list[str]:
         """Sample up to max_n non-claim nodes from a domain, preferring nodes with edges.
 
         (P2) Umbrella-source filter: drops imaging modalities, abstract
@@ -3989,6 +5952,7 @@ class HypothesisEngine:
             if domain in data.get("domain_tags", [])
             and "claim" not in data.get("domain_tags", [])
             and nid not in self._path_ignore_ids
+            and (allowed_ids is None or nid in allowed_ids)
         ]
         nodes = []
         n_umbrella_dropped = 0
@@ -4003,9 +5967,77 @@ class HypothesisEngine:
                 "domain=%s seed pool: dropped %d umbrella sources, kept %d",
                 domain, n_umbrella_dropped, len(nodes),
             )
-        # sort by degree (more connected = more useful as seed)
-        nodes.sort(key=lambda n: self.G.degree(n), reverse=True)
-        return nodes[:max_n]
+        if not 0.0 <= float(diversity_fraction) <= 1.0:
+            raise ValueError("diversity_fraction must be in [0, 1]")
+
+        scope_support = (
+            self._claim_endpoint_support_for_scope(self._task_required_claim_scope)
+            if self._task_required_claim_scope is not None
+            else {}
+        )
+        feedback_priority = (
+            {node_id: self.feedback_state.node_priority(node_id) for node_id in nodes}
+            if self.feedback_state is not None
+            else {}
+        )
+        nodes.sort(
+            key=lambda n: (
+                -feedback_priority.get(n, 0.0),
+                -scope_support.get(n, 0),
+                -self._node_non_tree_degree(n),
+                -self.G.degree(n),
+                n,
+            )
+        )
+        if max_n >= len(nodes):
+            return nodes[:max_n]
+
+        if random_seed is None or diversity_fraction <= 0.0:
+            if not self._dynamic_generation_enabled:
+                return nodes[:max_n]
+            core_n = max_n
+            random_n = 0
+        else:
+            core_n = max(
+                1,
+                min(max_n, int(math.ceil(max_n * (1.0 - diversity_fraction)))),
+            )
+            random_n = max_n - core_n
+
+        if self._dynamic_generation_enabled and self._generation_exploration_round > 0:
+            fixed_n = max(1, core_n // 2)
+            selected = nodes[:fixed_n]
+            rotating_pool = nodes[fixed_n:]
+            rotating_n = min(core_n - fixed_n, len(rotating_pool))
+            if rotating_n:
+                start = (
+                    self._generation_exploration_round * rotating_n
+                ) % len(rotating_pool)
+                selected.extend(
+                    rotating_pool[(start + offset) % len(rotating_pool)]
+                    for offset in range(rotating_n)
+                )
+        else:
+            selected = nodes[:core_n]
+
+        selected_set = set(selected)
+        tail = [node_id for node_id in nodes if node_id not in selected_set]
+        random_n = min(random_n, len(tail))
+
+        def weighted_random_key(node_id: str) -> tuple[float, str]:
+            digest = hashlib.sha256(
+                f"{random_seed}\x1f{domain}\x1f{node_id}".encode("utf-8")
+            ).digest()
+            unit = (int.from_bytes(digest[:8], "big") + 0.5) / float(2**64)
+            evidence_weight = 1.0 + math.log1p(
+                scope_support.get(node_id, 0)
+                + self._node_non_tree_degree(node_id)
+            )
+            return (-math.log(unit) / evidence_weight, node_id)
+
+        if random_n:
+            selected.extend(sorted(tail, key=weighted_random_key)[:random_n])
+        return selected
 
     def _build_hypotheses_from_paths(
         self, raw_paths: list[list[str]], hyp_type: str
@@ -4058,24 +6090,58 @@ class HypothesisEngine:
 
             claim_id = edge_data.get("metadata", {}).get("claim_id", "")
             claim_node = self._index.get(claim_id) if claim_id else None
+            if claim_id:
+                audit = self._claim_endpoint_audits.get(claim_id)
+                if audit is not None and not audit.valid:
+                    self._semantic_edge_rejections += 1
+                    return []
+
+            scoped_entries = self._claim_entries_for_edge(
+                src_id, tgt_id, self._chain_required_claim_scope
+            )
+            scoped_meta = None
+            if scoped_entries:
+                claim_id, scoped_meta = max(
+                    scoped_entries,
+                    key=lambda item: (
+                        float(item[1].get("confidence") or 0.0),
+                        item[0],
+                    ),
+                )
+                claim_node = self._index.get(claim_id)
 
             evidence = {}
             paper = {}
             raw_text = ""
 
-            if claim_node and claim_node.metadata:
+            if scoped_meta is not None:
+                meta = scoped_meta
+                evidence = meta.get("evidence", {})
+                paper = meta.get("source_paper", {})
+                raw_text = meta.get("raw_text", "")
+            elif claim_node and claim_node.metadata:
                 meta = claim_node.metadata
                 evidence = meta.get("evidence", {})
                 paper = meta.get("source_paper", {})
                 raw_text = meta.get("raw_text", "")
 
+            from_name = src_node.preferred_name if src_node else src_id
+            to_name = tgt_node.preferred_name if tgt_node else tgt_id
+            relation_type = edge_data.get("relation_type", "unknown")
+            confidence = edge_data.get("confidence", 0.5)
+            if scoped_meta is not None:
+                from_name = scoped_meta.get("subject_name") or from_name
+                to_name = scoped_meta.get("object_name") or to_name
+                relation_type = scoped_meta.get("predicate") or relation_type
+                confidence = float(scoped_meta.get("confidence") or confidence)
+
             links.append(HypothesisLink(
                 from_id=src_id,
-                from_name=src_node.preferred_name if src_node else src_id,
+                from_name=from_name,
                 to_id=tgt_id,
-                to_name=tgt_node.preferred_name if tgt_node else tgt_id,
-                relation_type=edge_data.get("relation_type", "unknown"),
-                confidence=edge_data.get("confidence", 0.5),
+                to_name=to_name,
+                relation_type=relation_type,
+                confidence=confidence,
                 claim_id=claim_id,
                 raw_text=raw_text,
                 evidence=evidence,
@@ -4118,7 +6184,7 @@ class HypothesisEngine:
             if not isinstance(evidence, dict):
                 evidence = {}
             st = evidence.get("study_type", "")
-            if st not in _REVIEW_TYPES:
+            if not _is_review_study_type(st):
                 source_paper = c.get("source_paper", {})
                 if not isinstance(source_paper, dict):
                     source_paper = {}
@@ -4143,14 +6209,22 @@ class HypothesisEngine:
         if not isinstance(evidence, dict):
             evidence = {}
         st = evidence.get("study_type", "")
-        if st in _REVIEW_TYPES:
+        if _is_review_study_type(st):
             return 1.0
         source_paper = claim_meta.get("source_paper", {})
         if not isinstance(source_paper, dict):
             source_paper = {}
-        year = source_paper.get("year", 0)
-        if not year:
+        raw_year = source_paper.get("year", 0)
+        if not raw_year:
             return 0.85  # unknown year, neutral
+        try:
+            if isinstance(raw_year, bool):
+                raise ValueError("boolean is not a publication year")
+            year = int(float(str(raw_year).strip()))
+        except (TypeError, ValueError, OverflowError):
+            return 0.85
+        if year <= 0:
+            return 0.85
         age = reference_year - year
         return max(0.7, 1.0 - 0.03 * age)
 
@@ -4261,13 +6335,12 @@ class HypothesisEngine:
         well-extracted edges score 0.6-0.8; we reserve >0.9 for paths whose
         every step has rich provenance.
         """
-        _REVIEW_TYPES = {"narrative_review", "review"}
         scores = []
         for link in path:
             evidence = link.evidence if isinstance(link.evidence, dict) else {}
             source_paper = link.source_paper if isinstance(link.source_paper, dict) else {}
-            study_type = (evidence.get("study_type") or "").lower()
-            s = 0.2 if study_type in _REVIEW_TYPES else 0.3
+            study_type = evidence.get("study_type", "")
+            s = 0.2 if _is_review_study_type(study_type) else 0.3
 
             if link.raw_text and len(link.raw_text) > 20:
                 s += 0.20
@@ -4405,13 +6478,12 @@ class HypothesisEngine:
     @staticmethod
     def _has_only_review_evidence(h: Hypothesis) -> bool:
         """True if every link in the path comes from a review/narrative_review."""
-        _REVIEW_TYPES = {"narrative_review", "review"}
         if not h.path:
             return False
         for link in h.path:
             evidence = link.evidence if isinstance(link.evidence, dict) else {}
-            study_type = (evidence.get("study_type") or "").lower()
-            if study_type and study_type not in _REVIEW_TYPES:
+            study_type = evidence.get("study_type", "")
+            if study_type and not _is_review_study_type(study_type):
                 return False
         return True
 
@@ -4516,3 +6588,6 @@ def _simple_slope(xs: list[int], ys: list[int]) -> float:
     if den == 0:
         return 0.0
     return num / den
+
+
+# Updated: 2026-08-12 02:28 HKT
