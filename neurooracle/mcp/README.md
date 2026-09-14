@@ -1,9 +1,11 @@
-# NeuroClaw Academic MCP
+# NeuroDiscovery Academic MCP
 
-Local STDIO MCP server for NeuroOracle literature discovery and collection-only
+Local STDIO MCP server for NeuroDiscovery's NeuroOracle literature discovery and collection-only
 staging. It wraps the project’s canonical Case Study registry, global paper
 identity index, Europe PMC retrieval, extraction batches, and fail-closed
 collection seals.
+
+The module path and `neuroclaw_academic_*` tool names are retained for compatibility.
 
 ## Frozen workflow
 

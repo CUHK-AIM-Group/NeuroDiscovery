@@ -1,7 +1,9 @@
 # NeuroDiscovery Desktop
 
-Electron desktop client for NeuroDiscovery. The NeuroOracle knowledge graph is
-available as a dedicated graph and hypothesis-generation feature.
+Electron desktop client for NeuroDiscovery, the closed-loop framework for
+evidence-grounded neuroimaging autoresearch. NeuroRuntime provides the execution
+backend; the graph explorer and hypothesis-generation interface retain the
+NeuroOracle name.
 
 ## macOS build
 
