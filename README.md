@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="materials/logo.png" alt="NeuroClaw Logo" width="200" />
+<img src="materials/logo.png" alt="NeuroDiscovery Logo" width="200" />
 
-# NeuroClaw: Closed-Loop Agentic AI for Executable and Reproducible Neuroimaging Research
+# NeuroDiscovery: a closed-loop framework for evidence-grounded neuroimaging autoresearch
 
 <p align="center">
   <img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" />
@@ -17,7 +17,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-86-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
-[![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroClaw/)
+[![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroDiscovery/)
 [![NeuroOracle](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroOracle-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/NeuroOracle)
 
 [中文版 README](README_zh.md)
@@ -33,15 +33,15 @@
 
 ## 📖 Overview
 
-**NeuroClaw** is a research assistant for executable and reproducible neuroimaging research. Its core strength is **neuroimaging dataset and model adaptation**: turning raw scans into usable inputs quickly, and enabling medical practitioners to run deep learning models with minimal setup.
+**NeuroDiscovery** is a closed-loop framework for evidence-grounded neuroimaging autoresearch. It comprises a **neuroscience knowledge graph**, a **hypothesis generator** and **NeuroRuntime**, an agent-based execution platform.
 
-Neuroimaging datasets demand specialized preprocessing, and preprocessing quality directly determines model validity. Many workflows assume curated datasets, while MedicalClaw provides limited automation for open-source model execution (primarily large projects like TimesFM and AlphaFold), leaving users to spend significant time on environment configuration.
+The graph combines curated resources with source-linked literature evidence, preserving provenance, publication dates and evidence polarity. The generator constructs testable cross-domain hypotheses compatible with available data and analysis methods. NeuroRuntime tests selected hypotheses reproducibly on raw neuroimaging data; supported, contradicted and inconclusive outcomes guide subsequent research, separately from execution failures.
 
-NeuroClaw prioritizes **data processing** and **model configuration/execution**. It ships with independent GUI and CLI interfaces for day-to-day use, and can also be installed as a reusable skill library inside agent projects such as OpenClaw, Hermes, and Claude Code.
+NeuroRuntime retains the project's strengths in **neuroimaging dataset and model adaptation**, **data processing** and **model configuration/execution**. It ships with independent GUI and CLI interfaces for day-to-day use, and can also be installed as a reusable skill library inside agent projects such as OpenClaw, Hermes, and Claude Code.
 
 ### NeuroDiscovery and research materials
 
-**NeuroDiscovery** is our closed-loop framework for evidence-grounded neuroimaging autoresearch. It combines a neuroscience knowledge graph, a hypothesis generator and **NeuroRuntime**, the execution platform. This repository hosts the NeuroClaw application and related public resources. Existing directory and interface names, including `neurooracle/` and `neurobench/`, are retained for compatibility.
+This repository hosts **NeuroDiscovery** (formerly **NeuroClaw**) and related public resources. Existing directory and interface names, including `neurooracle/`, `neurobench/`, `neuroclaw_environment.json`, the `neuroclaw` host-agent skill and `neuroclaw_academic_*` MCP tools, are retained for compatibility.
 
 Public materials have separate versions:
 
@@ -58,6 +58,7 @@ The linked [NeuroClaw technical report](https://arxiv.org/abs/2604.24696) descri
 
 ## 🚀 Updates
 
+- **[2026.09.14]**: The project is now named **NeuroDiscovery**. Documentation follows the manuscript's three-component framework, with **NeuroRuntime** as the execution platform; existing interfaces and historical release names are retained.
 - **[2026.06.20]**: NeuroClaw now provides Windows and macOS desktop clients, while Linux remains supported through the repository and command-line/web workflows.
 - **[2026.05.23]**: NeuroBench now covers both data processing and model training/evaluation.
 - **[2026.05.20]**: 7 atoms × 15 canonical tasks + 4 mediation chains in `neurooracle.atoms`.
@@ -65,7 +66,7 @@ The linked [NeuroClaw technical report](https://arxiv.org/abs/2604.24696) descri
 - **[2026.05.06]**: Added 19 dataset and modality skills with companion scripts; all 86 skills enforce unified metadata (`layer`, `skill_type`, `dependencies`); skill_loader DAG validation ensures dependency graph correctness.
 - **[2026.04.28]**: Our technical report is now available on arXiv: https://arxiv.org/abs/2604.24696
 - **[2026.04.22]**: v1.0 released. Stable release with improvements and full documentation.
-- **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroClaw/
+- **[2026.04.17]**: Our project homepage is now live. Welcome to visit: https://cuhk-aim-group.github.io/NeuroDiscovery/
 - **[2026.04.08]**: NeuroBench released for multi-agent neuroimaging workflow evaluation.
 - **[2026.04.02]**: v0.1 released with complete NeuroClaw framework and core functionality.
 
@@ -73,12 +74,12 @@ The linked [NeuroClaw technical report](https://arxiv.org/abs/2604.24696) descri
 ## ✨ Key Features
 
 <div align="center">
-  <img src="materials/framework.png" alt="NeuroClaw Framework Overview" style="width: 95%; max-width: 100%;" />
+  <img src="materials/framework.png" alt="NeuroDiscovery Workflow Overview" style="width: 95%; max-width: 100%;" />
 </div>
 
 ### 🔄 Data-Aware Orchestration
 - **Dataset-Context Planning**: Organize capabilities around dataset structure, metadata, and workflow stage instead of simply "which tool to call"
-- **Automatic Skill Recommendation**: Users specify the target dataset, and NeuroClaw recommends relevant skills and executable workflows
+- **Automatic Skill Recommendation**: Users specify the target dataset, and NeuroRuntime recommends relevant skills and executable workflows
 - **Preprocessing Constraint Awareness**: Dataset-specific modality availability and preprocessing requirements are considered during orchestration
 
 #### Supported Dataset Overview
@@ -134,14 +135,14 @@ Access is not equivalent to anonymous download. See the [verified access matrix]
 
 ### 🧠 End-to-End Research Coverage
 - **Literature Review**: arXiv search, PubMed retrieval, academic resource integration
-- **Experiment Design**: Scientific literature analysis, methodology evaluation, research proposal generation
+- **Experiment Design**: Evidence-grounded hypothesis generation, scientific literature analysis and methodology evaluation
 - **Data Processing**: Multi-format conversion (DICOM ↔ NIfTI), automated preprocessing pipelines
 - **Model Execution**: Run published research models, deep learning framework integration
 - **Result Visualization**: Scientific data visualization, statistical chart generation
 - **Paper Writing**: Auto-generated drafts, format standardization
 
 ### 🤝 Flexible Integration
-- **NeuroClaw works as a standalone research assistant** with its own GUI and CLI, so researchers can use it directly without depending on another host project.
+- **NeuroDiscovery provides standalone GUI and CLI workflows through NeuroRuntime**, so researchers can use it directly without depending on another host project.
 - `skills/`, `materials/`, `USER.md`, and `SOUL.md` can also be installed as a reusable skill library in existing agent systems such as OpenClaw, Hermes, and Claude Code.
 - The bundled `core/` engine provides an integrated agent loop, skill loader, and tool runtime for standalone deployments.
 - Non-neuroscience connectors (WhatsApp, Telegram, Slack, calendar, e-commerce, SaaS auth)
@@ -154,7 +155,7 @@ Access is not equivalent to anonymous download. See the [verified access matrix]
 
 ### Option 1. Desktop Client (recommended)
 
-Download the latest Windows or macOS client from the [GitHub Releases page](https://github.com/CUHK-AIM-Group/NeuroClaw/releases).
+Download the latest Windows or macOS client from the [GitHub Releases page](https://github.com/CUHK-AIM-Group/NeuroDiscovery/releases). Existing release assets retain their original NeuroClaw filenames.
 
 - **Windows:** use `NeuroClaw Setup 0.2.1.exe` for normal installation. The portable `.exe` is also available, but may take longer to start because it extracts the app first.
 - **macOS:** use the `.dmg` or `.zip` build from the release assets.
@@ -168,8 +169,8 @@ Linux remains supported through the source repository, command-line workflow, an
 Requirements: Python >= 3.10 and Git. Conda/Mamba, CUDA/GPU tools, FSL, FreeSurfer, and dcm2niix are optional depending on the workflows you want to run.
 
 ```bash
-git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/setup.py
 python core/agent/main.py --web
 ```
@@ -187,11 +188,11 @@ Settings are saved to `neuroclaw_environment.json`. API keys can be passed at ru
 
 ### Option 3. Install as a Host-Agent Skill
 
-Use this path if you want Codex, Claude Code, Cursor, or another coding agent to call NeuroClaw as a neuroimaging skill library.
+Use this path if you want Codex, Claude Code, Cursor, or another coding agent to use NeuroDiscovery's neuroimaging skill library.
 
 ```bash
-git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/install_agent_integration.py --target codex
 ```
 
@@ -204,10 +205,10 @@ Common targets:
 | Cursor | `python installer/install_agent_integration.py --target cursor --scope project` |
 | Multiple agents | `python installer/install_agent_integration.py --target all` |
 
-After installation, ask the host agent to **use NeuroClaw** or **enter NeuroClaw mode** for neuroimaging, NeuroOracle, NeuroBench, and autoresearch tasks.
+The installed host-agent skill retains its compatibility name, `neuroclaw`. After installation, ask the host agent to **use NeuroClaw** or **enter NeuroClaw mode** for neuroimaging, NeuroOracle, NeuroBench, and autoresearch tasks.
 
 <div align="center">
-  <img src="materials/index.png" alt="NeuroClaw Feature Overview" style="width: 80%; max-width: 100%;" />
+  <img src="materials/index.png" alt="NeuroDiscovery Feature Overview" style="width: 80%; max-width: 100%;" />
 </div>
 
 > Benchmark output files under `materials/benchmark_results/` are historical run artifacts. See their [coverage and scoring notes](materials/benchmark_results/README.md) before comparing them with a newer task registry.
@@ -248,7 +249,7 @@ To run the paired skill comparison in CLI mode:
 python core/agent/main.py --benchmark --benchmark-compare-skills
 ```
 
-In CLI benchmark mode, NeuroClaw will ask for:
+In CLI benchmark mode, NeuroRuntime will ask for:
 - the benchmark directory path
 - the benchmark model name
 
@@ -267,11 +268,11 @@ The benchmark reports include the solution thinking, skills used, skill-call cou
 ## 📁 Project Structure
 
 ```
-NeuroClaw/
+NeuroDiscovery/
 ├── README.md / README_zh.md        # Project documentation
 ├── USER.md / SOUL.md               # User preferences and agent behavior guidelines
 │
-├── core/                           # Standalone NeuroClaw engine
+├── core/                           # NeuroRuntime execution platform
 │   ├── agent/                      # CLI/Web agent entry points
 │   ├── web/                        # FastAPI Web UI
 │   ├── skill_loader/               # Reads skills/*/SKILL.md
@@ -320,7 +321,7 @@ NeuroClaw/
 | `overleaf-skill` | Overleaf sync and collaborative manuscript operations | ✅ |
 | `academic-research-hub` | Multi-source academic search and paper retrieval | ✅ |
 | `bids-organizer` | Base skill for organizing raw data into BIDS structure | ✅ |
-| `beautiful-log` | Export clean User/NeuroClaw dialogue into beautiful HTML logs | ✅ |
+| `beautiful-log` | Export clean User/NeuroDiscovery dialogue into beautiful HTML logs | ✅ |
 | `knowledge-graph-builder` | Build domain knowledge graphs from literature and databases | ✅ |
 | `skill-updater` | Skill updater and management utilities | ✅ |
 
@@ -333,7 +334,7 @@ NeuroClaw/
 | `paper-writing` | Generates hierarchical manuscript drafts from IDEA/METHOD/EXPERIMENT | ✅ |
 
 ### Subagent Layer
-Subagent in NeuroClaw includes four categories: **tool**, **model**, **dataset**, and **modality**.
+Subagent skills in NeuroRuntime include four categories: **tool**, **model**, **dataset**, and **modality**.
 
 #### Tool
 | Skill | Function | Status |

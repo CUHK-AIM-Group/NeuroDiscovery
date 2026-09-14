@@ -1,6 +1,6 @@
 # Benchmark result artifacts
 
-This directory contains selected historical NeuroClaw benchmark results. The [current task registry](../../neurobench/task_atlas.json) contains **500 task definitions**, but each result file covers the task set evaluated in its own run.
+This directory contains selected historical benchmark results from NeuroClaw, now named **NeuroDiscovery**. Archived results retain their original project and model labels. The [current task registry](../../neurobench/task_atlas.json) contains **500 task definitions**, but each result file covers the task set evaluated in its own run.
 
 ## Available evaluation
 

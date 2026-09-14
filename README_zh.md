@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="materials/logo.png" alt="NeuroClaw Logo" width="200" />
+<img src="materials/logo.png" alt="NeuroDiscovery Logo" width="200" />
 
-# NeuroClaw：面向可执行与可复现神经影像研究的闭环智能体 AI
+# NeuroDiscovery：基于证据的神经影像自动科研闭环框架
 
 <p align="center">
   <img src="docs/assets/logos/cuhk.png" alt="CUHK logo" height="50" />
@@ -17,7 +17,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-86-purple)](skills)
 [![arXiv](https://img.shields.io/badge/arXiv-2604.24696-b31b1b)](https://arxiv.org/abs/2604.24696)
-[![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroClaw/)
+[![Homepage](https://img.shields.io/badge/Project-Homepage-orange)](https://cuhk-aim-group.github.io/NeuroDiscovery/)
 [![NeuroOracle](https://img.shields.io/badge/%F0%9F%A7%A0%20NeuroOracle-Live%20Demo-blue)](https://huggingface.co/spaces/zxcvb20001/NeuroOracle)
 
 [English README](README.md)
@@ -33,15 +33,15 @@
 
 ## 📖 概述
 
-**NeuroClaw** 是一个面向可执行、可复现神经影像研究的 Research Assistant。其核心优势在于 **神经影像数据集与模型适配**：将原始扫描快速转化为可用输入，并使临床与研究人员以最小配置成本运行深度学习模型。
+**NeuroDiscovery** 是一个基于证据的神经影像自动科研闭环框架，由**神经科学知识图谱**、**假设生成器**和基于智能体的执行平台 **NeuroRuntime** 组成。
 
-神经影像数据集需要专业的预处理，而预处理质量直接决定模型有效性。许多流程假设数据已被严格整理，而 MedicalClaw 对开源模型执行的自动化支持有限（主要集中在 TimesFM 和 AlphaFold 等大型项目），导致用户需投入大量时间在环境配置上。
+知识图谱整合经过整理的资源与可追溯到来源的文献证据，保留来源、发表时间及证据的支持或反驳方向。假设生成器构建与可用数据和分析方法相容、可检验的跨领域假设。NeuroRuntime 在原始神经影像数据上开展可复现的检验；支持、反驳及结论不明确的科学结果用于指导后续研究，并与执行失败分开记录。
 
-NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独立可用的 GUI 和 CLI 工具，也可以作为技能库集成到 OpenClaw、Hermes、Claude Code 等 agent 项目中。
+NeuroRuntime 保留项目在 **神经影像数据集与模型适配**、**数据处理**及**模型配置/执行**方面的优势。它既提供独立可用的 GUI 和 CLI 工具，也可以作为技能库集成到 OpenClaw、Hermes、Claude Code 等 agent 项目中。
 
 ### NeuroDiscovery 与研究材料
 
-**NeuroDiscovery** 是面向神经影像自动科研的闭环框架，由神经科学知识图谱、假设生成器和执行平台 **NeuroRuntime** 组成。本仓库提供 NeuroClaw 应用及相关公开资源。为保持兼容，`neurooracle/`、`neurobench/` 等已有目录和接口名称继续保留。
+本仓库提供 **NeuroDiscovery**（原名 **NeuroClaw**）及相关公开资源。为保持兼容，`neurooracle/`、`neurobench/`、`neuroclaw_environment.json`、宿主 agent 的 `neuroclaw` 技能及 `neuroclaw_academic_*` MCP 工具等已有目录和接口名称继续保留。
 
 不同公开材料分别管理版本：
 
@@ -56,6 +56,7 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 
 ## 🚀 更新日志
 
+- **[2026.09.14]**：项目现已更名为 **NeuroDiscovery**。文档与论文的三组件框架保持一致，**NeuroRuntime** 为执行平台；已有接口及历史发布名称继续保留。
 - **[2026.06.20]**：NeuroClaw 现已提供 Windows 和 macOS 桌面客户端；Linux 仍可通过仓库源码、命令行和 Web 工作流使用。
 - **[2026.05.23]**：NeuroBench 现已覆盖数据处理与模型运行。
 - **[2026.05.20]**：`neurooracle.atoms` 形式化 7 原子 × 15 标准任务 + 4 条中介链
@@ -63,7 +64,7 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 - **[2026.05.06]**：新增 19 个数据集和模态技能及配套脚本；全部 86 个技能统一元数据格式（`layer`、`skill_type`、`dependencies`）；skill_loader DAG 验证确保依赖图无环。
 - **[2026.04.28]**：我们的技术报告已上线 arXiv：https://arxiv.org/abs/2604.24696
 - **[2026.04.22]**：v1.0 发布，稳定版发布，包含改进与完整文档。
-- **[2026.04.17]**：项目首页已上线，欢迎访问：https://cuhk-aim-group.github.io/NeuroClaw/
+- **[2026.04.17]**：项目首页已上线，欢迎访问：https://cuhk-aim-group.github.io/NeuroDiscovery/
 - **[2026.04.08]**：NeuroBench 发布，用于 multi-agent 神经影像工作流评估。
 - **[2026.04.02]**：v0.1 发布，NeuroClaw 框架和核心功能完成。
 
@@ -71,12 +72,12 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 ## ✨ 核心特性
 
 <div align="center">
-  <img src="materials/framework.png" alt="NeuroClaw 框架概览" style="width: 95%; max-width: 100%;" />
+  <img src="materials/framework.png" alt="NeuroDiscovery 工作流概览" style="width: 95%; max-width: 100%;" />
 </div>
 
 ### 🔄 数据感知编排
 - **数据集上下文规划**：围绕数据集结构、元数据和工作流阶段来组织能力，而不是简单围绕“调用哪个工具”
-- **自动技能推荐**：用户指定目标数据集后，NeuroClaw 会推荐相关技能并生成可执行工作流
+- **自动技能推荐**：用户指定目标数据集后，NeuroRuntime 会推荐相关技能并生成可执行工作流
 - **预处理约束感知**：在编排过程中考虑特定数据集的模态可用性和预处理要求
 
 #### 适配的数据集概况
@@ -132,14 +133,14 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 
 ### 🧠 端到端科研覆盖
 - **文献检索**：arXiv 搜索、PubMed 获取、学术资源整合
-- **实验设计**：文献分析、方法学评估、研究方案生成
+- **实验设计**：基于证据的假设生成、文献分析与方法学评估
 - **数据处理**：多格式转换（DICOM ↔ NIfTI）、自动化预处理流水线
 - **模型执行**：运行已发表模型，深度学习框架集成
 - **结果可视化**：科学数据可视化、统计图表生成
 - **论文写作**：自动草稿生成、格式标准化
 
 ### 🤝 灵活集成
-- **NeuroClaw 可作为独立 Research Assistant 使用**，自带 GUI 和 CLI，无需依赖其他宿主项目即可直接运行。
+- **NeuroDiscovery 通过 NeuroRuntime 提供独立的 GUI 和 CLI 工作流**，无需依赖其他宿主项目即可直接运行。
 - `skills/`、`materials/`、`USER.md`、`SOUL.md` 也可以作为技能库安装到 OpenClaw、Hermes、Claude Code 等现有 agent 系统中。
 - 内置 `core/` 引擎为独立部署提供完整的对话循环、技能加载器和工具运行时。
 - 非神经科学连接器（WhatsApp、Telegram、Slack、日历、电商、SaaS 鉴权）
@@ -152,7 +153,7 @@ NeuroClaw 强调 **数据处理** 与 **模型配置/执行**。它既提供独�
 
 ### 方式一：桌面客户端（推荐）
 
-从 [GitHub Releases](https://github.com/CUHK-AIM-Group/NeuroClaw/releases) 下载最新的 Windows 或 macOS 客户端。
+从 [GitHub Releases](https://github.com/CUHK-AIM-Group/NeuroDiscovery/releases) 下载最新的 Windows 或 macOS 客户端。已有安装包保留原来的 NeuroClaw 文件名。
 
 - **Windows：** 推荐使用 `NeuroClaw Setup 0.2.1.exe` 正常安装。Portable `.exe` 也可使用，但由于需要先解压应用，启动可能更慢。
 - **macOS：** 使用 release assets 中的 `.dmg` 或 `.zip` 构建。
@@ -166,8 +167,8 @@ Linux 仍可通过源码仓库、命令行工作流和 Web 界面使用。
 需要 Python >= 3.10 和 Git。Conda/Mamba、CUDA/GPU 工具、FSL、FreeSurfer 和 dcm2niix 是否需要取决于具体工作流。
 
 ```bash
-git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/setup.py
 python core/agent/main.py --web
 ```
@@ -185,11 +186,11 @@ python core/agent/main.py --web --port 8080 --host 0.0.0.0
 
 ### 方式三：作为宿主 Agent 技能安装
 
-如果你希望 Codex、Claude Code、Cursor 或其他 coding agent 将 NeuroClaw 作为神经影像技能库调用，使用这种方式。
+如果你希望 Codex、Claude Code、Cursor 或其他 coding agent 调用 NeuroDiscovery 的神经影像技能库，使用这种方式。
 
 ```bash
-git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/install_agent_integration.py --target codex
 ```
 
@@ -202,10 +203,10 @@ python installer/install_agent_integration.py --target codex
 | Cursor | `python installer/install_agent_integration.py --target cursor --scope project` |
 | 多个 agent | `python installer/install_agent_integration.py --target all` |
 
-安装后，可以让宿主 agent **use NeuroClaw** 或 **enter NeuroClaw mode** 来处理 neuroimaging、NeuroOracle、NeuroBench 和 autoresearch 任务。
+安装后的宿主 agent 技能保留兼容名称 `neuroclaw`。可以让宿主 agent **use NeuroClaw** 或 **enter NeuroClaw mode** 来处理 neuroimaging、NeuroOracle、NeuroBench 和 autoresearch 任务。
 
 <div align="center">
-  <img src="materials/index.png" alt="NeuroClaw 功能概览" style="width: 80%; max-width: 100%;" />
+  <img src="materials/index.png" alt="NeuroDiscovery 功能概览" style="width: 80%; max-width: 100%;" />
 </div>
 
 ### Benchmark 测试
@@ -246,7 +247,7 @@ python core/agent/main.py --benchmark
 python core/agent/main.py --benchmark --benchmark-compare-skills
 ```
 
-在命令行 benchmark 模式下，NeuroClaw 会先询问：
+在命令行 benchmark 模式下，NeuroRuntime 会先询问：
 - benchmark 目录路径
 - benchmark 模型名
 
@@ -265,11 +266,11 @@ python core/agent/main.py --benchmark --benchmark-compare-skills
 ## 📁 项目结构
 
 ```
-NeuroClaw/
+NeuroDiscovery/
 ├── README.md / README_zh.md        # 项目说明文档
 ├── USER.md / SOUL.md               # 用户偏好与 agent 行为准则
 │
-├── core/                           # 独立 NeuroClaw 引擎
+├── core/                           # NeuroRuntime 执行平台
 │   ├── agent/                      # CLI/Web agent 入口
 │   ├── web/                        # FastAPI Web UI
 │   ├── skill_loader/               # 读取 skills/*/SKILL.md
@@ -318,7 +319,7 @@ NeuroClaw/
 | `overleaf-skill` | Overleaf 同步与协作写作操作 | ✅ |
 | `academic-research-hub` | 多来源学术检索与论文获取 | ✅ |
 | `bids-organizer` | 原始数据组织为 BIDS 结构 | ✅ |
-| `beautiful-log` | 将 User/NeuroClaw 直接对话导出为美观 HTML 日志 | ✅ |
+| `beautiful-log` | 将 User/NeuroDiscovery 直接对话导出为美观 HTML 日志 | ✅ |
 | `knowledge-graph-builder` | 从文献和数据库构建领域知识图谱 | ✅ |
 | `skill-updater` | 技能更新与管理工具 | ✅ |
 
@@ -331,7 +332,7 @@ NeuroClaw/
 | `paper-writing` | 从 IDEA/METHOD/EXPERIMENT 生成分层稿件 | ✅ |
 
 ### 子智能体层
-NeuroClaw 的子智能体包括四类：**tool**、**model**、**dataset**、**modality**。
+NeuroRuntime 的子智能体技能包括四类：**tool**、**model**、**dataset**、**modality**。
 
 #### Tool
 | Skill | 功能 | 状态 |

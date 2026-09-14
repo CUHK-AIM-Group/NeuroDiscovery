@@ -1,8 +1,10 @@
 # Neuroimaging execution tasks
 
-This directory contains **500 neuroimaging execution tasks**, numbered **T01–T500**, for evaluating workflow planning, tool use, data processing and model execution. The NeuroDiscovery manuscript describes this collection as the 500 neuroimaging execution tasks. **NeuroBench** remains the name used by the existing NeuroClaw benchmark interface and directory.
+This directory contains **500 neuroimaging execution tasks**, numbered **T01–T500**, for evaluating workflow planning, tool use, data processing and model execution. The NeuroDiscovery manuscript uses this collection to evaluate **NeuroRuntime**, its execution platform. **NeuroBench** remains the name used by the existing NeuroDiscovery benchmark interface and directory.
 
 The complete mapping of task directories to categories is in [`task_atlas.json`](task_atlas.json). Task definitions specify the inputs, outputs and checks needed to evaluate a workflow. Evaluation outputs are versioned separately from the task registry.
+
+These execution tasks are distinct from the manuscript's nine scientific autoresearch tasks and its temporal evaluation of hypothesis generation (hindcasting).
 
 ## Task registry (T01–T500)
 
@@ -38,7 +40,7 @@ In practice, `task.md` is the instruction file for evaluation. It defines:
 
 ## Benchmark Usage
 
-You can run NeuroClaw benchmark tasks in two ways:
+You can run NeuroDiscovery's execution-task benchmark through NeuroRuntime in two ways:
 
 NeuroBench accepts the following benchmark configurations:
 - `with-skills`: the agent may use loaded skills from `skills/`
@@ -74,7 +76,7 @@ Paired skill comparison in CLI mode:
 python core/agent/main.py --benchmark --benchmark-compare-skills
 ```
 
-In CLI benchmark mode, NeuroClaw will ask for:
+In CLI benchmark mode, NeuroRuntime will ask for:
 - the benchmark directory path
 - the model name to evaluate
 
