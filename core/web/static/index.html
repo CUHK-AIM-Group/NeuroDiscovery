@@ -3560,7 +3560,11 @@
       </section>
 
       <section class="workspace-page embedded-study-page" id="expert-study-page" hidden>
-        <iframe class="embedded-study-frame" id="expert-study-frame" title="Expert Study"></iframe>
+        <iframe class="embedded-study-frame" id="expert-study-frame" title="Human Evaluation 1"></iframe>
+      </section>
+
+      <section class="workspace-page embedded-study-page" id="hypothesis-ranking-page" hidden>
+        <iframe class="embedded-study-frame" id="hypothesis-ranking-frame" title="Human Evaluation 2"></iframe>
       </section>
 
       <section class="workspace-page embedded-study-page" id="study-results-page" hidden>
@@ -3586,7 +3590,7 @@
             </div>
             <section class="settings-reset-zone" id="settings-reset-zone" aria-labelledby="settings-reset-title" hidden>
               <h2 id="settings-reset-title">Reset application</h2>
-              <p id="settings-reset-desc">Clear desktop configuration, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.</p>
+              <p id="settings-reset-desc">Clear desktop configuration, chats, project history, usage records, recovery copies, Human Evaluation progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.</p>
               <button class="settings-reset-button" id="settings-reset-btn" type="button">Reset and restart</button>
             </section>
           </div>
@@ -3668,13 +3672,13 @@
         <button class="case-study-language-option" type="button" data-case-study-language="Simplified Chinese" aria-pressed="false">Chinese</button>
       </div>
       <p class="case-study-welcome-kicker" id="case-study-welcome-kicker">Case study edition</p>
-      <h2 class="case-study-welcome-title" id="case-study-welcome-title">Welcome to the Expert Study</h2>
+      <h2 class="case-study-welcome-title" id="case-study-welcome-title">Welcome to Human Evaluation</h2>
       <p class="case-study-welcome-lead" id="case-study-welcome-lead">Complete six ten-minute sessions. Each session prepares 20 blinded comparisons across three difficulty levels; answer as many as you can. External validation outcomes remain hidden.</p>
     </header>
-    <ol class="case-study-steps" aria-label="Expert Study workflow" id="case-study-steps">
+    <ol class="case-study-steps" aria-label="Human Evaluation workflow" id="case-study-steps">
       <li class="case-study-step">
         <span class="case-study-step-title" id="case-study-step-open-title">Open the study</span>
-        <span class="case-study-step-copy" id="case-study-step-open-copy">From the NeuroDiscovery menu, choose Expert Study and enter the study password supplied by the organizer.</span>
+        <span class="case-study-step-copy" id="case-study-step-open-copy">From the NeuroDiscovery menu, choose Human Evaluation 1 and enter the study password supplied by the organizer.</span>
       </li>
       <li class="case-study-step">
         <span class="case-study-step-title" id="case-study-step-name-title">Identify yourself</span>
@@ -3711,7 +3715,7 @@
     </aside>
     <footer class="case-study-welcome-actions">
       <button class="case-study-welcome-action" id="case-study-welcome-later" type="button">I’ll do this later</button>
-      <button class="case-study-welcome-action primary" id="case-study-welcome-open" type="button">Open Expert Study</button>
+      <button class="case-study-welcome-action primary" id="case-study-welcome-open" type="button">Open Human Evaluation 1</button>
     </footer>
   </section>
 </div>
@@ -3831,6 +3835,8 @@
   const neurooracleFrameEl = document.getElementById('neurooracle-frame');
   const expertStudyPageEl = document.getElementById('expert-study-page');
   const expertStudyFrameEl = document.getElementById('expert-study-frame');
+  const hypothesisRankingPageEl = document.getElementById('hypothesis-ranking-page');
+  const hypothesisRankingFrameEl = document.getElementById('hypothesis-ranking-frame');
   const studyResultsPageEl = document.getElementById('study-results-page');
   const studyResultsFrameEl = document.getElementById('study-results-frame');
   const avatarPickerOverlayEl = document.getElementById('avatar-picker-overlay');
@@ -4041,7 +4047,8 @@
     },
   ];
 
-  const STUDY_VIEW_NAMES = ['expert-study', 'study-results'];
+  const HUMAN_EVALUATION_ENABLED = true;
+  const STUDY_VIEW_NAMES = ['expert-study', 'hypothesis-ranking', 'study-results'];
   const state = {
     sessions: [],
     projects: [],
@@ -4108,6 +4115,7 @@
     neurooracleFrameLoaded: false,
     neurooracleFrameKey: '',
     expertStudyFrameKey: '',
+    hypothesisRankingFrameKey: '',
     studyResultsFrameKey: '',
     studyReturnView: 'chat',
     lastDesktopMenuAction: { action: '', at: 0 },
@@ -4177,19 +4185,19 @@
 
   const CASE_STUDY_WELCOME_COPY = {
     kicker: ['Case study edition', 'Case Study 专用版'],
-    title: ['Welcome to the Expert Study', '欢迎参加专家研究'],
+    title: ['Welcome to Human Evaluation', '欢迎参加 Human Evaluation'],
     lead: [
       'Complete six ten-minute sessions. Each session prepares 20 blinded comparisons across three difficulty levels; answer as many as you can. External validation outcomes remain hidden, while your choices and active decision time are recorded.',
       '请完成 6 次、每次 10 分钟的会话。每次会话准备 20 道覆盖三个难度等级的盲法比较题，请尽可能多地作答；外部验证结果保持隐藏，并记录您的选择和有效判断时间。',
     ],
-    workflow: ['Expert Study workflow', '专家研究操作流程'],
+    workflow: ['Human Evaluation workflow', 'Human Evaluation 操作流程'],
     languageLabel: ['Display language', '界面语言'],
     english: ['English', '英文'],
     chinese: ['Chinese', '中文'],
     openTitle: ['Open the study', '打开研究'],
     openCopy: [
-      'From the NeuroDiscovery menu, choose Expert Study and enter the study password supplied by the organizer.',
-      '在顶部 NeuroDiscovery 菜单中选择“专家研究”，然后输入研究组织者提供的密码。',
+      'From the NeuroDiscovery menu, choose Human Evaluation 1 and enter the study password supplied by the organizer.',
+      '在顶部 NeuroDiscovery 菜单中选择“Human Evaluation 1（专家研究）”，然后输入研究组织者提供的密码。',
     ],
     nameTitle: ['Identify yourself', '填写姓名或 ID'],
     nameCopy: [
@@ -4238,7 +4246,7 @@
       '如果中途有事需要离开，请先点击“暂停”。暂停期间不会计入有效答题时间。',
     ],
     later: ['I’ll do this later', '稍后再做'],
-    open: ['Open Expert Study', '打开专家研究'],
+    open: ['Open Human Evaluation 1', '打开 Human Evaluation 1'],
   };
 
   function syncCaseStudyWelcomeLanguage() {
@@ -4326,11 +4334,12 @@
   }
 
   function showCaseStudyWelcomeIfNeeded() {
-    if (!caseStudyWelcomeEl || caseStudyWelcomeWasSeen()) return;
-    syncCaseStudyWelcomeLanguage();
-    caseStudyWelcomeEl.hidden = false;
-    caseStudyWelcomeEl.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => caseStudyWelcomeOpenEl?.focus());
+    // Study participation is opt-in through the client menu, never a startup
+    // prompt (including fresh installs without the historical seen marker).
+    if (caseStudyWelcomeEl) {
+      caseStudyWelcomeEl.hidden = true;
+      caseStudyWelcomeEl.setAttribute('aria-hidden', 'true');
+    }
   }
 
   function dismissCaseStudyWelcome(openStudy = false) {
@@ -4382,7 +4391,8 @@
     'Check local graph': '检查本地图谱',
     'NeuroOracle sections': 'NeuroOracle 功能区',
     'Graph Explorer': '图谱浏览器',
-    'Expert Study': '专家研究',
+    'Human Evaluation 1': 'Human Evaluation 1（专家研究）',
+    'Human Evaluation 2': 'Human Evaluation 2（扩展）',
     'Study Results': '研究结果',
     'Checking local graph...': '正在检查本地图谱...',
     'Local graph is ready.': '本地图谱已就绪。',
@@ -4449,7 +4459,7 @@
     'Save settings': '保存设置',
     'Restart now': '立即重启',
     'Reset application': '重置应用',
-    'Clear desktop configuration, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.': '清除桌面配置、对话、项目历史、用量记录、恢复副本、Expert Study 进度、本地记忆、日志和缓存，然后重启。不会删除项目文件夹和研究数据。',
+    'Clear desktop configuration, chats, project history, usage records, recovery copies, Human Evaluation progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.': '清除桌面配置、对话、项目历史、用量记录、恢复副本、Expert Study 进度、本地记忆、日志和缓存，然后重启。不会删除项目文件夹和研究数据。',
     'Reset and restart': '重置并重启',
     'Restart is only available in the desktop app.': '重启功能仅在桌面应用中可用。',
     'Restarting NeuroDiscovery...': '正在重启 NeuroDiscovery...',
@@ -4785,9 +4795,10 @@
     setText('#neurooracle-refresh-btn', 'Check local graph');
     const graphFrame = document.getElementById('neurooracle-frame');
     if (graphFrame) graphFrame.title = tr('NeuroOracle graph viewer');
-    if (expertStudyFrameEl) expertStudyFrameEl.title = tr('Expert Study');
+    if (expertStudyFrameEl) expertStudyFrameEl.title = tr('Human Evaluation 1');
+    if (hypothesisRankingFrameEl) hypothesisRankingFrameEl.title = tr('Human Evaluation 2');
     if (studyResultsFrameEl) studyResultsFrameEl.title = tr('Study Results');
-    if (refreshStudyWorkspace && (state.activeView === 'expert-study' || state.activeView === 'study-results')) {
+    if (refreshStudyWorkspace && (state.activeView === 'expert-study' || state.activeView === 'hypothesis-ranking' || state.activeView === 'study-results')) {
       openStudyWorkspace(state.activeView);
     }
     setText('#search-page .page-eyebrow', 'Workspace Search');
@@ -4803,7 +4814,7 @@
     setText('#settings-save-btn', 'Save settings');
     setText('#settings-restart-btn', 'Restart now');
     setText('#settings-reset-title', 'Reset application');
-    setText('#settings-reset-desc', 'Clear desktop configuration, chats, project history, usage records, recovery copies, Expert Study progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.');
+    setText('#settings-reset-desc', 'Clear desktop configuration, chats, project history, usage records, recovery copies, Human Evaluation progress, local memory, logs, and caches, then restart. Project folders and research data are not deleted.');
     setText('#settings-reset-btn', 'Reset and restart');
     const settingsSidebar = document.querySelector('.settings-sidebar');
     if (settingsSidebar) settingsSidebar.setAttribute('aria-label', tr('Settings navigation'));
@@ -6095,6 +6106,7 @@
   function syncStudyTextScaleFrames() {
     syncStudyTextScale(neurooracleFrameEl);
     syncStudyTextScale(expertStudyFrameEl);
+    syncStudyTextScale(hypothesisRankingFrameEl);
     syncStudyTextScale(studyResultsFrameEl);
   }
 
@@ -6104,7 +6116,7 @@
       { type: 'neurodiscovery:theme', theme: state.theme },
       window.location.origin,
     );
-    if (frame === neurooracleFrameEl) frame.contentWindow.postMessage(
+    if (frame === neurooracleFrameEl || frame === expertStudyFrameEl || frame === hypothesisRankingFrameEl) frame.contentWindow.postMessage(
       { type: 'neurodiscovery:appearance', theme: state.theme, language: currentUiLanguage(), scale: state.textScale },
       window.location.origin,
     );
@@ -6113,6 +6125,7 @@
   function syncEmbeddedThemeFrames() {
     syncEmbeddedTheme(neurooracleFrameEl);
     syncEmbeddedTheme(expertStudyFrameEl);
+    syncEmbeddedTheme(hypothesisRankingFrameEl);
     syncEmbeddedTheme(studyResultsFrameEl);
   }
 
@@ -8490,7 +8503,7 @@
   function updateHeaderContext() {
     const label = document.getElementById('header-view-name');
     if (!label) return;
-    const names = {neurooracle:'NeuroOracle', skills:tr('Skills'), search:tr('Search'), settings:tr('Settings'), 'expert-study':tr('Expert Study'), 'study-results':tr('Study Results')};
+    const names = {neurooracle:'NeuroOracle', skills:tr('Skills'), search:tr('Search'), settings:tr('Settings'), 'expert-study':tr('Human Evaluation 1'), 'hypothesis-ranking':tr('Human Evaluation 2'), 'study-results':tr('Study Results')};
     label.textContent = names[state.activeView] || 'NeuroRuntime';
   }
 
@@ -8513,7 +8526,8 @@
   }
 
   function setActiveView(view, opts = {}) {
-    const nextView = ['skills', 'search', 'settings', 'neurooracle', 'expert-study', 'study-results'].includes(view) ? view : 'chat';
+    if (!HUMAN_EVALUATION_ENABLED && STUDY_VIEW_NAMES.includes(view)) return;
+    const nextView = ['skills', 'search', 'settings', 'neurooracle', 'expert-study', 'hypothesis-ranking', 'study-results'].includes(view) ? view : 'chat';
     const previousView = state.activeView;
     const wasStudyView = STUDY_VIEW_NAMES.includes(previousView);
     const enteringStudyView = STUDY_VIEW_NAMES.includes(nextView);
@@ -8521,7 +8535,11 @@
       state.studyReturnView = previousView;
     }
     if (wasStudyView && previousView !== nextView) {
-      resetStudyWorkspace(previousView);
+      // Keep an in-progress discovery form alive while it saves or the user
+      // visits another client page. Historical results retain their old route.
+      if (previousView === 'expert-study') {
+        expertStudyFrameEl?.contentWindow?.postMessage({type:'neurodiscovery:study-visibility',visible:false}, window.location.origin);
+      } else resetStudyWorkspace(previousView);
     }
     state.activeView = nextView;
     if (opts.focus !== false && window.matchMedia('(max-width: 780px)').matches) {
@@ -8539,6 +8557,7 @@
     if (skillsPageEl) skillsPageEl.hidden = state.activeView !== 'skills';
     if (neurooraclePageEl) neurooraclePageEl.hidden = state.activeView !== 'neurooracle';
     if (expertStudyPageEl) expertStudyPageEl.hidden = state.activeView !== 'expert-study';
+    if (hypothesisRankingPageEl) hypothesisRankingPageEl.hidden = state.activeView !== 'hypothesis-ranking';
     if (studyResultsPageEl) studyResultsPageEl.hidden = state.activeView !== 'study-results';
     if (searchPageEl) searchPageEl.hidden = state.activeView !== 'search';
     if (settingsPageEl) settingsPageEl.hidden = state.activeView !== 'settings';
@@ -8555,7 +8574,7 @@
     } else if (state.activeView === 'neurooracle') {
       chatPanelEl.classList.remove('is-empty');
       ensureNeuroOracleReady({ askDownload: opts.askDownload !== false, open: true });
-    } else if (state.activeView === 'expert-study' || state.activeView === 'study-results') {
+    } else if (state.activeView === 'expert-study' || state.activeView === 'hypothesis-ranking' || state.activeView === 'study-results') {
       chatPanelEl.classList.remove('is-empty');
       openStudyWorkspace(state.activeView);
     } else if (state.activeView === 'settings') {
@@ -8779,16 +8798,20 @@
   function openStudyWorkspace(view) {
     const language = currentUiLanguage();
     const isResults = view === 'study-results';
-    const frame = isResults ? studyResultsFrameEl : expertStudyFrameEl;
+    const isRanking = view === 'hypothesis-ranking';
+    const frame = isResults ? studyResultsFrameEl : (isRanking ? hypothesisRankingFrameEl : expertStudyFrameEl);
     if (!frame) return;
-    const keyName = isResults ? 'studyResultsFrameKey' : 'expertStudyFrameKey';
-    const frameKey = `${view}:${language}:${state.theme}`;
+    const keyName = isResults ? 'studyResultsFrameKey' : (isRanking ? 'hypothesisRankingFrameKey' : 'expertStudyFrameKey');
+    // The complete-output questionnaire switches display language in place.
+    // Never reload its iframe for language/theme changes or menu re-entry.
+    const frameKey = isResults ? `${view}:${language}:${state.theme}` : (isRanking ? `${view}:${language}:${state.theme}` : `${view}:discovery-single-round`);
     if (state[keyName] === frameKey) {
       syncStudyTextScale(frame);
       syncEmbeddedTheme(frame);
+      if (!isResults && !isRanking) frame.contentWindow?.postMessage({type:'neurodiscovery:study-visibility',visible:true}, window.location.origin);
       return;
     }
-    const route = isResults ? '/study?view=results&embedded=1' : '/study?embedded=1';
+    const route = isResults ? '/study?view=results&embedded=1' : (isRanking ? '/study?embedded=1' : '/discovery-study?embedded=1');
     const separator = route.includes('?') ? '&' : '?';
     frame.addEventListener('load', () => {
       syncStudyTextScale(frame);
@@ -8800,8 +8823,9 @@
 
   function resetStudyWorkspace(view) {
     const isResults = view === 'study-results';
-    const frame = isResults ? studyResultsFrameEl : expertStudyFrameEl;
-    const keyName = isResults ? 'studyResultsFrameKey' : 'expertStudyFrameKey';
+    const isRanking = view === 'hypothesis-ranking';
+    const frame = isResults ? studyResultsFrameEl : (isRanking ? hypothesisRankingFrameEl : expertStudyFrameEl);
+    const keyName = isResults ? 'studyResultsFrameKey' : (isRanking ? 'hypothesisRankingFrameKey' : 'expertStudyFrameKey');
     if (frame) frame.src = 'about:blank';
     state[keyName] = '';
   }
@@ -8835,14 +8859,16 @@
       });
     }
 
-    sidebarToggleBtn.addEventListener('click', () => {
-      if (window.matchMedia('(max-width: 780px)').matches) {
-        state.mobileSidebarOpen = !state.mobileSidebarOpen;
-      } else {
-        state.sidebarCollapsed = !state.sidebarCollapsed;
-      }
-      applySidebarCollapsed();
-    });
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.addEventListener('click', () => {
+        if (window.matchMedia('(max-width: 780px)').matches) {
+          state.mobileSidebarOpen = !state.mobileSidebarOpen;
+        } else {
+          state.sidebarCollapsed = !state.sidebarCollapsed;
+        }
+        applySidebarCollapsed();
+      });
+    }
     const closeMobileSidebar = () => {
       state.mobileSidebarOpen = false;
       applySidebarCollapsed(false);
@@ -8887,6 +8913,10 @@
         setActiveView('expert-study');
         return;
       }
+      if (normalized === 'open-hypothesis-ranking') {
+        setActiveView('hypothesis-ranking');
+        return;
+      }
       if (normalized === 'open-study-results') {
         setActiveView('study-results');
         return;
@@ -8900,7 +8930,7 @@
       window.neuroclawDesktop.onMenuAction(handleDesktopMenuAction);
     }
     const desktopMenu = document.getElementById('desktop-menu-btn');
-    if (desktopMenu && window.neuroclawDesktop?.showApplicationMenu && window.neuroclawDesktop.platform !== 'darwin') {
+    if (desktopMenu && window.neuroclawDesktop?.titleBarOverlay === true && window.neuroclawDesktop?.showApplicationMenu && window.neuroclawDesktop.platform !== 'darwin') {
       desktopMenu.hidden = false;
       desktopMenu.addEventListener('click', () => window.neuroclawDesktop.showApplicationMenu().catch(() => {}));
     }
@@ -8910,15 +8940,22 @@
       if (event.origin !== window.location.origin || payload?.type !== 'neurodiscovery:close-study-workspace') return;
       const trustedSource = (
         event.source === expertStudyFrameEl?.contentWindow ||
+        event.source === hypothesisRankingFrameEl?.contentWindow ||
         event.source === studyResultsFrameEl?.contentWindow
       );
-      if (trustedSource) closeStudyWorkspace();
+      if (trustedSource) {
+        if (payload.discarded === true && event.source === expertStudyFrameEl?.contentWindow) {
+          resetStudyWorkspace('expert-study');
+        }
+        closeStudyWorkspace();
+      }
     });
     window.addEventListener('message', (event) => {
       const payload = event.data && typeof event.data === 'object' ? event.data : null;
       if (event.origin !== window.location.origin || payload?.type !== 'neurodiscovery:set-study-language') return;
       const trustedSource = (
         event.source === expertStudyFrameEl?.contentWindow ||
+        event.source === hypothesisRankingFrameEl?.contentWindow ||
         event.source === studyResultsFrameEl?.contentWindow
       );
       if (!trustedSource) return;
@@ -10207,7 +10244,7 @@
     }
   });
 
-  refreshCheckpointsBtn.addEventListener('click', loadCheckpoints);
+  if (refreshCheckpointsBtn) refreshCheckpointsBtn.addEventListener('click', loadCheckpoints);
 
   function showSuccess(message) {
     const banner = document.getElementById('error-banner');
@@ -10262,7 +10299,7 @@
     renderPendingFiles();
     loadSkills();
     loadEnv();
-    loadDesktopSettings().finally(showCaseStudyWelcomeIfNeeded);
+    loadDesktopSettings();
     loadCheckpoints();
     state.sessions.filter(s=>s.pendingRequest).forEach(s=>void resumeWorkbenchRequest(s));
     document.addEventListener('visibilitychange',()=>{if(document.hidden)void workbenchHistory.flush();});

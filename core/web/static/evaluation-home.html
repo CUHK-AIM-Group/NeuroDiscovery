@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Human Evaluation</title>
+  <link rel="stylesheet" href="/static/evaluation-home.css">
+  <script defer src="/static/evaluation-home.js"></script>
+</head>
+<body>
+  <main id="home">
+    <span class="label">NEURODISCOVERY · HUMAN EVALUATION</span>
+    <h1>专家评审 / Expert evaluation</h1>
+    <p>仅用于阅读研究材料、填写评审及导出结果。无需模型密钥或图谱下载。</p>
+    <p>Review study materials, save your judgments, and export results. No model key or graph download is needed.</p>
+    <div class="cards">
+      <button data-study="discovery-study"><strong>Human Evaluation 1</strong><span>完整科研发现评审<br>Research discovery assessment</span></button>
+      <button data-study="study"><strong>Human Evaluation 2</strong><span>假设两两比较与排序<br>Pairwise hypothesis ranking</span></button>
+    </div>
+    <p class="note">两项评审请使用相同名字/代号；在评审页保存或导出。评审专用版与完整版独立保存记录，不自动迁移旧答案。<br>Use the same name/code in both evaluations. Save or export inside each study. Records are separate from the full application.</p>
+  </main>
+  <iframe id="study-frame" title="Human evaluation workspace" hidden></iframe>
+</body>
+</html>

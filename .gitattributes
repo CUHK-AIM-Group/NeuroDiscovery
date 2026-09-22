@@ -3,3 +3,8 @@
 # These policy files are byte-hashed by sealed claim membership records.
 neurooracle/src/CASE_STUDY_MEMBERSHIP_RUBRIC_V2.md -text
 neurooracle/data/case_study_reaudit/full_graph_v3/RUBRIC.md -text
+desktop/evaluation-materials/*.json -text
+desktop/evaluation-materials/manifest.json text eol=lf
+neurooracle/data/user_study/case1_tcp_expert_study_v3.json -text
+neurooracle/data/user_study/case1_tcp_expert_study_v3_reference_notes_v4.json -text
+neurooracle/data/user_study/case1_tcp_expert_pair_assignments_v4.json -text

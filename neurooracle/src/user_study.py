@@ -26,6 +26,7 @@ DEFAULT_MAX_PAIRS = 100
 MAX_CURATED_PAIRS = 2000
 DEFAULT_SESSION_ACTIVE_SECONDS = 600
 CONDITIONS = {"manual", "assisted", "generator"}
+EXPERIENCE_OPTIONS = {"0-2", "3-5", "6-10", "10+"}
 RESULT_STATUSES = {"confirmed", "not_confirmed", "inconclusive", "execution_failed"}
 SCORE_FIELDS = {
     "confidence_score",
@@ -414,17 +415,168 @@ def build_progressive_pair_schedule(
     return selected
 
 
-def _curated_pair_schedule(
-    payload: Any,
+PAIR_ASSIGNMENTS_NAME = "case1_tcp_expert_pair_assignments_v4.json"
+PAIR_ASSIGNMENTS_FALLBACK = "case1_tcp_expert_pair_assignments_v3.json"
+PAIR_ASSIGNMENTS_LEGACY = "case1_tcp_expert_pair_assignments_v2.json"
+PAIR_ASSIGNMENTS_LEGACY_1 = "case1_tcp_expert_pair_assignments_v1.json"
+REFERENCE_NOTES_NAMES = (
+    "_reference_notes_v4.json",
+    "_reference_notes_v3.json",
+    "_reference_notes_v2.json",
+    "_reference_notes_v1.json",
+)
+PREVIEW_ALL = "ALL"
+
+
+def reference_notes_path(source: Path, name: str | None = None) -> Path:
+    return Path(source).resolve().with_name(Path(source).stem + (name or REFERENCE_NOTES_NAMES[0]))
+
+
+def _reference_key(paper: dict[str, Any]) -> str:
+    return str(paper.get("pmid") or paper.get("doi") or paper.get("title") or "").strip().lower()
+
+
+def load_reference_notes(source: Path, manifest_hash: str) -> dict[str, Any] | None:
+    """Optional per-reference notes sidecar, bound to the exact candidate bank.
+
+    A missing sidecar simply disables enrichment; a sidecar bound to another
+    bank hash is a packaging error and raises, mirroring load_pair_assignments.
+    The newest versioned sidecar wins; older versions stay for rollback.
+    """
+    candidate = next(
+        (path for path in (reference_notes_path(source, name) for name in REFERENCE_NOTES_NAMES) if path.is_file()),
+        None,
+    )
+    if candidate is None:
+        return None
+    notes = json.loads(candidate.read_text(encoding="utf-8-sig"))
+    expected = str(notes.get("bank_sha256") or "")
+    if expected and expected != manifest_hash:
+        raise ValueError("The reference-notes file is not bound to this exact candidate bank.")
+    return notes
+
+
+def apply_reference_notes(candidates: list[dict[str, Any]], notes: dict[str, Any] | None) -> int:
+    """Fill missing abstract / cohort / p-value fields from the sidecar.
+
+    Existing bank fields always win; enrichment only fills gaps and never
+    touches excerpts, curated relevance text, or scores.
+    """
+    references = (notes or {}).get("references") or {}
+    if not references:
+        return 0
+    enriched = 0
+    for candidate in candidates:
+        literature = candidate.get("literature")
+        if not isinstance(literature, list):
+            continue
+        for paper in literature:
+            if not isinstance(paper, dict):
+                continue
+            note = references.get(_reference_key(paper))
+            if not note:
+                continue
+            changed = False
+            if not str(paper.get("abstract") or "").strip() and note.get("abstract"):
+                paper["abstract"] = note["abstract"]
+                paper["abstract_source"] = note.get("abstract_source") or "reference_notes_v1"
+                paper["abstract_verified"] = bool(note.get("abstract_verified", True))
+                changed = True
+            note_credibility = note.get("credibility") if isinstance(note.get("credibility"), dict) else {}
+            if note_credibility:
+                credibility = paper.get("credibility") if isinstance(paper.get("credibility"), dict) else None
+                if credibility is None:
+                    credibility = {}
+                for field in ("cohort", "p_values", "citation_count"):
+                    existing = credibility.get(field)
+                    if note_credibility.get(field) and not (isinstance(existing, dict) and existing):
+                        credibility[field] = note_credibility[field]
+                        changed = True
+                jif_note = note_credibility.get("journal_impact_factor")
+                if isinstance(jif_note, dict) and jif_note:
+                    existing_jif = credibility.get("journal_impact_factor")
+                    has_value = (
+                        isinstance(existing_jif, dict)
+                        and existing_jif.get("value") is not None
+                    )
+                    if not has_value:
+                        credibility["journal_impact_factor"] = jif_note
+                        changed = True
+                if credibility:
+                    paper["credibility"] = credibility
+            if changed:
+                enriched += 1
+    return enriched
+
+
+def load_pair_assignments(source: Path, manifest_hash: str) -> dict[str, Any] | None:
+    """Optional expert pair-share table, bound to the exact candidate bank.
+
+    The newest versioned table wins; older versions stay on disk for rollback.
+    A table naming another bank is ignored so other banks keep working; a table
+    naming this bank but failing hash or content checks is a packaging error
+    and raises.
+    """
+    base = Path(source).resolve().parent
+    for candidate in (base / name for name in (PAIR_ASSIGNMENTS_NAME, PAIR_ASSIGNMENTS_FALLBACK, PAIR_ASSIGNMENTS_LEGACY, PAIR_ASSIGNMENTS_LEGACY_1)):
+        if not candidate.is_file():
+            continue
+        table = json.loads(candidate.read_text(encoding="utf-8"))
+        if table.get("candidate_manifest_sha256") is None:
+            continue
+        if table["candidate_manifest_sha256"] != manifest_hash:
+            if table.get("candidate_bank") == Path(source).name:
+                raise ValueError("The pair-assignment table is not bound to this exact candidate bank.")
+            continue
+        if table.get("version") not in {1, 2, 3}:
+            raise ValueError("The pair-assignment table version is unsupported.")
+        experts = table.get("experts") or {}
+        if sorted(experts) != [f"P{index:02d}" for index in range(1, 11)]:
+            raise ValueError("The pair-assignment table must deal to exactly P01–P10.")
+        for expert, dealt in experts.items():
+            if not dealt or len(dealt) != len(set(dealt)):
+                raise ValueError(f"Assignment {expert} contains duplicated pairs.")
+        if table["version"] == 3:
+            validate_prebalanced_pair_table(table)
+        return table
+    return None
+
+
+def validate_prebalanced_pair_table(table: dict[str, Any]) -> None:
+    """Fail closed if an ordered sidecar loses coverage or position balance."""
+    if table.get("order_policy") != "prebalanced-position-thirds-v1":
+        raise ValueError("Unsupported prebalanced pair-order policy.")
+    bands: dict[str, list[int]] = {}
+    if set(table.get("sessions", {})) != set(table["experts"]):
+        raise ValueError("Prebalanced sessions must match all experts.")
+    for expert, dealt in table["experts"].items():
+        rounds = table["sessions"][expert]
+        if len(dealt) != 72 or set(rounds) != {str(n) for n in range(1, 7)}:
+            raise ValueError("Prebalanced assignments require six sessions of twelve pairs.")
+        flattened = []
+        for pairs in rounds.values():
+            if len(pairs) != 12 or len(set(pairs)) != 12:
+                raise ValueError("Prebalanced session contains missing or repeated pairs.")
+            flattened.extend(pairs)
+            for index, pair in enumerate(pairs):
+                bands.setdefault(pair, []).append(index // 4)
+        if len(set(flattened)) != 72 or set(flattened) != set(dealt):
+            raise ValueError("Prebalanced session membership differs from expert assignments.")
+    if len(bands) != 240 or any(sorted(value) != [0, 1, 2] for value in bands.values()):
+        raise ValueError("Every pair must appear once in each of the three position bands.")
+    if table.get("coverage") != {pair: 3 for pair in bands}:
+        raise ValueError("Prebalanced coverage declaration is inconsistent.")
+
+
+def _curated_pair_schedule(    payload: Any,
     candidates: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Validate and return an approved schedule embedded in a bank."""
-    if not isinstance(payload, dict):
-        return []
     curation = payload.get("curation")
     if not isinstance(curation, dict) or curation.get("status") not in {
         "manually_reviewed",
         "external_validation_curated",
+        "internal_validation_v8",
     }:
         return []
     raw_schedule = payload.get("pair_schedule")
@@ -433,7 +585,7 @@ def _curated_pair_schedule(
 
     by_id = {str(item["id"]): item for item in candidates}
     allow_same_disease_external_pairs = (
-        curation.get("status") == "external_validation_curated"
+        curation.get("status") in {"external_validation_curated", "internal_validation_v8"}
         and payload.get("case_study") == "case1_tcp_external_validation"
     )
 
@@ -641,6 +793,18 @@ class UserStudyService:
             conn.execute(
                 "ALTER TABLE sessions ADD COLUMN completion_reason TEXT NOT NULL DEFAULT ''"
             )
+        if "participant_experience" not in session_columns:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN participant_experience TEXT NOT NULL DEFAULT ''"
+            )
+        if "participant_consent" not in session_columns:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN participant_consent INTEGER NOT NULL DEFAULT 0"
+            )
+        if "assignment_id" not in session_columns:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN assignment_id TEXT NOT NULL DEFAULT ''"
+            )
 
     def _init_db(self) -> None:
         with self._connect() as conn:
@@ -682,18 +846,39 @@ class UserStudyService:
         case_study: str = "case1_transdiagnostic",
         random_seed: int = 0,
         graph_path: Path | str | None = None,
+        experience: str = "",
+        consent: bool = False,
+        assignment_id: str = "",
     ) -> dict[str, Any]:
         study_id = study_id.strip()
         participant_id = participant_id.strip()
         condition = condition.strip().lower()
+        experience = experience.strip()
         if not study_id or not participant_id:
             raise ValueError("study_id and participant_id are required")
         if condition not in CONDITIONS:
             raise ValueError(f"Unsupported condition: {condition}")
+        if experience and experience not in EXPERIENCE_OPTIONS:
+            raise ValueError(f"Unsupported experience range: {experience}")
         candidates, manifest_hash, source, curated_pairs = self.load_candidates(candidate_path)
+        apply_reference_notes(candidates, load_reference_notes(source, manifest_hash))
+        protocol = self.load_study_protocol(source)
         protocol = self.load_study_protocol(source)
         required_sessions = int(protocol["required_sessions"])
         target_active_seconds = float(protocol["active_seconds_per_session"])
+        pair_assignments = load_pair_assignments(source, manifest_hash)
+        assignment = assignment_id.strip().upper()
+        assigned_pairs: list[dict[str, Any]] | None = None
+        share_sessions: dict[str, list[str]] | None = None
+        if assignment and assignment != PREVIEW_ALL:
+            if not pair_assignments or assignment not in pair_assignments["experts"]:
+                raise ValueError("未知的分配编号，请按入口列表选择。")
+            wanted = set(pair_assignments["experts"][assignment])
+            assigned_pairs = [pair for pair in curated_pairs if str(pair.get("pair_id") or "") in wanted]
+            curated_pairs = assigned_pairs
+            share_sessions = (pair_assignments.get("sessions") or {}).get(assignment)
+            required_sessions = int(pair_assignments.get("sessions_per_expert") or 1)
+        assignment = assignment or PREVIEW_ALL
         if protocol["same_questions_for_all_participants"]:
             random_seed = int(protocol["shared_random_seed"])
         graph_source = Path(graph_path).expanduser().resolve() if graph_path else None
@@ -729,17 +914,39 @@ class UserStudyService:
         if condition == "generator":
             session_pairs: list[dict[str, Any]] = []
         elif required_sessions > 1 and curated_pairs:
-            session_pairs = [
-                pair
-                for pair in curated_pairs
-                if int(pair.get("session_number") or 0) == session_number
-            ]
-            if not session_pairs:
+            if share_sessions:
+                # Versioned share tables pin the exact per-session composition.
+                ordered_ids = share_sessions.get(str(session_number)) or []
+                if pair_assignments.get("version") == 3:
+                    pairs_by_id = {str(pair.get("pair_id") or ""): pair for pair in curated_pairs}
+                    if any(pair_id not in pairs_by_id for pair_id in ordered_ids):
+                        raise ValueError("Ordered session references a missing comparison.")
+                    session_pairs = [pairs_by_id[pair_id] for pair_id in ordered_ids]
+                else:
+                    wanted_session = set(ordered_ids)
+                    session_pairs = [
+                        pair for pair in curated_pairs if str(pair.get("pair_id") or "") in wanted_session
+                    ]
+            elif assigned_pairs is not None:
+                # Assigned shares carry no per-share session numbers; split by
+                # position so each expert session mixes all difficulty tiers.
                 session_pairs = [
                     pair
                     for index, pair in enumerate(curated_pairs)
                     if index % required_sessions == session_number - 1
                 ]
+            else:
+                session_pairs = [
+                    pair
+                    for pair in curated_pairs
+                    if int(pair.get("session_number") or 0) == session_number
+                ]
+                if not session_pairs:
+                    session_pairs = [
+                        pair
+                        for index, pair in enumerate(curated_pairs)
+                        if index % required_sessions == session_number - 1
+                    ]
         else:
             session_pairs = curated_pairs
         session_id = str(uuid.uuid4())
@@ -753,8 +960,9 @@ class UserStudyService:
                     candidate_source, candidate_manifest_hash, graph_source, graph_snapshot_hash,
                     random_seed, protocol_version, status, started_at, submitted_at,
                     active_seconds, wall_seconds, session_number, required_sessions,
-                    target_active_seconds, completion_reason, final_ranking_json, pair_schedule_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    target_active_seconds, completion_reason, final_ranking_json, pair_schedule_json,
+                    participant_experience, participant_consent, assignment_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     session_id,
                     study_id,
@@ -778,6 +986,9 @@ class UserStudyService:
                     "generator_baseline" if ranking else "",
                     _json(ranking) if ranking else None,
                     _json(session_pairs),
+                    experience,
+                    1 if consent else 0,
+                    assignment,
                 ),
             )
             conn.executemany(
@@ -796,6 +1007,9 @@ class UserStudyService:
                             "session_number": session_number,
                             "required_sessions": required_sessions,
                             "target_active_seconds": target_active_seconds,
+                            "assignment_id": assignment,
+                            "assignment_table_version": pair_assignments.get("version") if share_sessions else None,
+                            "pair_order_policy": pair_assignments.get("order_policy", "") if share_sessions else "",
                         }
                     ),
                     started_at,

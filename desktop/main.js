@@ -6,11 +6,16 @@ const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 
-const APP_NAME = 'NeuroDiscovery';
-const LEGACY_USER_DATA_NAME = 'NeuroClaw';
+const DEMO_BUILD = require('./package.json').distribution === 'demo';
+const APP_NAME = DEMO_BUILD ? 'NeuroDiscovery Demo' : 'NeuroDiscovery';
+const LEGACY_USER_DATA_NAME = DEMO_BUILD ? 'NeuroDiscovery-Demo' : 'NeuroClaw';
 const APP_OPENED_AT_MS = Date.now();
 const STARTUP_TIMEOUT_MS = 90_000;
 const BUNDLED_RUNTIME_VERSION = '1.0.0';
+// Keep the displayed application version stable while allowing a bundled
+// runtime correction to use a fresh cache directory. Existing user caches are
+// retained for rollback and are never deleted by this migration.
+const BUNDLED_RUNTIME_CACHE_KEY = DEMO_BUILD ? '1.0.0-demo-20260922' : '1.0.0-study-v22';
 const WINDOWS_RESERVED_FOLDER_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
 
 // Keep existing desktop settings, logs, and bundled runtime after the product
@@ -291,7 +296,7 @@ function packagedRuntimeSourceRoot() {
 }
 
 function userRuntimeRoot() {
-  return path.join(app.getPath('userData'), 'bundled-runtime', BUNDLED_RUNTIME_VERSION);
+  return path.join(app.getPath('userData'), 'bundled-runtime', BUNDLED_RUNTIME_CACHE_KEY);
 }
 
 function bundledPythonCandidates(runtimeRoot = userRuntimeRoot()) {
@@ -363,9 +368,9 @@ function bundledRuntimeMarkerValue() {
       .update(fs.readFileSync(manifestPath))
       .digest('hex')
       .slice(0, 16);
-    return `${BUNDLED_RUNTIME_VERSION}:${digest}`;
+    return `${BUNDLED_RUNTIME_CACHE_KEY}:${digest}`;
   } catch (_err) {
-    return BUNDLED_RUNTIME_VERSION;
+    return BUNDLED_RUNTIME_CACHE_KEY;
   }
 }
 
@@ -383,7 +388,7 @@ function bundledRuntimeReady(runtimeRoot = userRuntimeRoot()) {
 function copyDirectoryFresh(source, target) {
   fs.rmSync(target, { recursive: true, force: true });
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.cpSync(source, target, { recursive: true });
+  fs.cpSync(source, target, { recursive: true, verbatimSymlinks: true });
 }
 
 function runBundledCondaUnpack(runtimeRoot) {
@@ -430,7 +435,7 @@ function ensureBundledRuntime() {
   const expectedMarker = bundledRuntimeMarkerValue();
   const currentVersion = fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8').trim() : '';
   if (!bundledRuntimeReady(runtimeRoot) || currentVersion !== expectedMarker) {
-    log(`Preparing bundled runtime ${BUNDLED_RUNTIME_VERSION} at ${runtimeRoot}`);
+    log(`Preparing bundled runtime ${BUNDLED_RUNTIME_CACHE_KEY} at ${runtimeRoot}`);
     fs.rmSync(runtimeRoot, { recursive: true, force: true });
     fs.mkdirSync(runtimeRoot, { recursive: true });
     copyDirectoryFresh(path.join(sourceRoot, 'python'), path.join(runtimeRoot, 'python'));
@@ -597,16 +602,10 @@ function detectLocalPythons() {
 
 function normalizePackagedRuntimeConfig(config) {
   if (!app.isPackaged) return config;
-  const localPythonExe = String(config.localPythonExe || '').trim().replace(/^"|"$/g, '');
-  if (config.runtimeMode === 'python' && localPythonExe && fs.existsSync(localPythonExe)) {
-    return {
-      ...config,
-      runtimeMode: 'python',
-      pythonExe: localPythonExe,
-      condaExe: '',
-      repoRoot: bundledBackendRoot(),
-    };
-  }
+  // A packaged client must always use the runtime shipped with this build.
+  // Older desktop-config.json files can contain a development `python` mode;
+  // preserving that mode would skip ensureBundledRuntime() and leave the
+  // bundled backend path absent on a fresh machine.
   return {
     ...config,
     runtimeMode: 'bundled',
@@ -953,10 +952,47 @@ function requestStatusCode(url, pathname, timeoutMs = 1500) {
   });
 }
 
-async function requestDesktopCompatible(url) {
+function requestMultiTopicStudy(url, timeoutMs = 1500) {
+  return new Promise((resolve) => {
+    const req = http.get(`${url}/api/studies/discovery/config`, { timeout: timeoutMs }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); resolve(false); return; }
+      let body = '';
+      res.on('data', chunk => {
+        body += chunk;
+        if (body.length > 2_000_000) { req.destroy(); resolve(false); }
+      });
+      res.on('end', () => {
+        try {
+          const payload = JSON.parse(body);
+          resolve(payload.meta?.material_layout === 'multitopic'
+            && payload.meta?.content_revision === 'readable-case-narrative-v1'
+            && payload.meta?.context_revision === 'study-scale-and-reference-context-v1'
+            && payload.meta?.next_research_revision === 'source-linked-next-research-v1'
+            && payload.meta?.lineage_detail_revision === 'specific-hypothesis-lineage-v1'
+      && payload.meta?.related_literature_revision === 'five-reviewed-references-v1'
+      && payload.meta?.questionnaire_revision === 'five-capabilities-runtime-process-v1'
+      && payload.meta?.runtime_process_revision === 'record-bound-runtime-process-v1'
+            && payload.evaluation_workflow_revision === 'unified-evaluation-export-v1'
+            && payload.assignments?.allocation_revision === 'he1-topic40-success-led-v7'
+            && payload.experimental_results_revision === 'visible-results-v3'
+            && Boolean(payload.scoring?.applicable_items_by_card));
+        } catch { resolve(false); }
+      });
+      res.on('error', () => resolve(false));
+    });
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve(false));
+  });
+}
+
+async function requestDesktopCompatible(url, requireMultiTopicStudy = false) {
   if (!(await requestHealth(url))) return false;
+  if (DEMO_BUILD) {
+    return await requestStatusCode(url, '/api/distribution/demo') === 200;
+  }
   const graphStatus = await requestStatusCode(url, '/api/neurooracle/graph/status');
-  return graphStatus >= 200 && graphStatus < 500 && graphStatus !== 404;
+  if (!(graphStatus >= 200 && graphStatus < 500 && graphStatus !== 404)) return false;
+  return !requireMultiTopicStudy || await requestMultiTopicStudy(url);
 }
 
 async function findBackendPort(config) {
@@ -1029,7 +1065,7 @@ async function ensureBackend() {
   applyDesktopLlmConfig(config);
   backendUrl = `http://${config.host}:${config.port}`;
 
-  if (await requestDesktopCompatible(backendUrl)) {
+  if (await requestDesktopCompatible(backendUrl, config.runtimeMode === 'bundled')) {
     const isDesktopManagedBackend = Boolean(backendProcess && !backendProcess.killed);
     log(`Reusing ${isDesktopManagedBackend ? 'desktop-managed' : 'existing'} NeuroRuntime backend at ${backendUrl}`);
     backendStartedByDesktop = isDesktopManagedBackend;
@@ -1037,7 +1073,7 @@ async function ensureBackend() {
     return { url: backendUrl, reused: true };
   }
   if (await requestHealth(backendUrl)) {
-    log(`Existing backend at ${backendUrl} is missing desktop APIs; starting a compatible backend on another port`);
+    log(`Existing backend at ${backendUrl} has an older desktop API or study revision; starting the bundled backend on another port`);
   }
 
   const selectedPort = await findBackendPort(config);
@@ -1284,15 +1320,15 @@ function settingsMenuItem(accelerator = null) {
 
 function expertStudyMenuItem() {
   return {
-    label: desktopText('Expert Study', '专家研究'),
+    label: desktopText('Human Evaluation 1', 'Human Evaluation 1（专家研究）'),
     click: () => sendMenuAction('open-expert-study'),
   };
 }
 
-function studyResultsMenuItem() {
+function hypothesisRankingMenuItem() {
   return {
-    label: desktopText('Study Results', '研究结果'),
-    click: () => sendMenuAction('open-study-results'),
+    label: desktopText('Human Evaluation 2', 'Human Evaluation 2（扩展）'),
+    click: () => sendMenuAction('open-hypothesis-ranking'),
   };
 }
 
@@ -1329,8 +1365,7 @@ function setApplicationMenu() {
         { type: 'separator' },
         settingsMenuItem('Cmd+,'),
         { type: 'separator' },
-        expertStudyMenuItem(),
-        studyResultsMenuItem(),
+        ...(DEMO_BUILD ? [] : [expertStudyMenuItem(), hypothesisRankingMenuItem()]),
         { type: 'separator' },
         { label: desktopText('Services', '服务'), role: 'services' },
         { type: 'separator' },
@@ -1343,8 +1378,7 @@ function setApplicationMenu() {
     : [
         newChatMenuItem(),
         { type: 'separator' },
-        expertStudyMenuItem(),
-        studyResultsMenuItem(),
+        ...(DEMO_BUILD ? [] : [expertStudyMenuItem(), hypothesisRankingMenuItem()]),
         { type: 'separator' },
         settingsMenuItem(),
         { type: 'separator' },
