@@ -1,5 +1,11 @@
 node_modules/
 dist/
+dist-evaluation/
+dist-demo/
+dist-demo-initial-internal/
+dist-mac-arm64*/
+runtime-demo/
+runtime-evaluation/
 runtime/*
 !runtime/.gitignore
 builder-debug.yml

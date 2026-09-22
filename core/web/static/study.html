@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-study-ui="legacy">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Expert Study</title>
+  <title>Human Evaluation 2</title>
   <style>
     :root {
       color-scheme: light;
@@ -48,7 +48,7 @@
       padding: 0 18px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.94);
     }
     .brand { display: flex; align-items: center; min-width: 270px; }
-    .brand strong { font-size: 17px; letter-spacing: -.02em; }
+    .brand strong { font-size: 15px; letter-spacing: -.02em; }
     .tabs { display: flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: #f6f8fa; }
     body.embedded-route .tabs { display: none; }
     .tab { border: 0; background: transparent; border-radius: 6px; padding: 7px 12px; cursor: pointer; color: var(--muted); }
@@ -60,7 +60,7 @@
     }
     .study-language-option {
       min-width: 48px; min-height: 28px; border: 0; border-radius: 6px; padding: 4px 9px;
-      background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 750;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 750;
       transition: background .16s ease, color .16s ease, box-shadow .16s ease;
     }
     .study-language-option:hover { color: var(--ink); }
@@ -71,7 +71,7 @@
     .study-close {
       display: inline-flex; align-items: center; gap: 7px; min-height: 34px; border: 1px solid var(--line);
       border-radius: 9px; background: #fff; color: var(--muted); padding: 7px 10px; cursor: pointer;
-      font-size: 11px; font-weight: 700; transition: border-color .16s ease, color .16s ease, background .16s ease;
+      font-size: 12px; font-weight: 700; transition: border-color .16s ease, color .16s ease, background .16s ease;
     }
     .study-close svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
     .study-close:hover { border-color: #9ba7b3; background: #f7f9fa; color: var(--ink); }
@@ -88,75 +88,20 @@
     .auth-card { width: min(430px, 100%); border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: var(--shadow); padding: 34px; }
     .auth-symbol { width: 48px; height: 48px; margin-bottom: 22px; display: grid; place-items: center; border-radius: 14px; background: var(--ink); color: white; }
     .auth-symbol svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    .auth-card h1 { margin: 10px 0 9px; font-size: 26px; letter-spacing: -.03em; }
+    .auth-card h1 { margin: 10px 0 9px; font-size: 24px; letter-spacing: -.03em; }
     .auth-card > p { margin-bottom: 23px; color: var(--muted); font-size: 13px; line-height: 1.55; }
     .auth-form { display: grid; gap: 12px; }
-
-    body.study-intro-open { overflow: hidden; }
-    .study-intro-layer {
-      position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 28px;
-      background: rgba(23,35,58,.34); backdrop-filter: blur(6px);
-    }
-    .study-intro-dialog {
-      width: min(780px, 100%); max-height: calc(100vh - 56px); overflow: auto;
-      border: 1px solid rgba(199,209,218,.92); border-radius: 18px; background: var(--paper);
-      box-shadow: 0 28px 80px rgba(23,35,58,.24);
-    }
-    .study-intro-head { position: relative; padding: 30px 190px 24px 32px; border-bottom: 1px solid var(--line); background: linear-gradient(145deg,#fff 0%,#f6fafb 100%); }
-    .study-intro-head > .study-language-switch { position: absolute; top: 26px; right: 32px; }
-    .study-intro-head h1 { margin: 9px 0 9px; font-size: 29px; line-height: 1.14; letter-spacing: -.035em; }
-    .study-intro-head > p { max-width: 660px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.58; }
-    .study-intro-difficulty { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 22px; }
-    .intro-tier {
-      --intro-tier: var(--cyan); display: flex; align-items: baseline; gap: 7px; min-height: 48px;
-      border: 1px solid var(--line); border-top: 4px solid var(--intro-tier); border-radius: 9px;
-      background: rgba(255,255,255,.8); padding: 9px 11px;
-    }
-    .intro-tier.medium { --intro-tier: var(--medium); }
-    .intro-tier.hard { --intro-tier: var(--exclude); }
-    .intro-tier strong { font: 800 19px/1 "SFMono-Regular", Consolas, monospace; color: var(--ink); }
-    .intro-tier span { color: var(--muted); font-size: 11px; font-weight: 700; }
-    .study-intro-content { display: grid; grid-template-columns: .72fr 1.28fr; gap: 30px; padding: 26px 32px 28px; }
-    .study-intro-section h2 { margin: 0 0 8px; font-size: 14px; letter-spacing: -.015em; }
-    .study-intro-section > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.58; }
-    .study-intro-note { margin-top: 17px; border-left: 3px solid var(--cyan); background: #f1f8f9; padding: 10px 12px; }
-    .study-intro-note strong { display: block; margin-bottom: 3px; font-size: 11px; }
-    .study-intro-note span { color: #526474; font-size: 10.5px; line-height: 1.48; }
-    .study-intro-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: intro-step; }
-    .study-intro-steps li { position: relative; min-height: 34px; padding-left: 43px; counter-increment: intro-step; }
-    .study-intro-steps li::before {
-      content: counter(intro-step); position: absolute; left: 0; top: 0; width: 28px; height: 28px;
-      display: grid; place-items: center; border: 1px solid #cdd4f4; border-radius: 50%;
-      background: #f2f3ff; color: #4f5dcc; font: 800 11px/1 "SFMono-Regular", Consolas, monospace;
-    }
-    .study-intro-steps strong { display: block; margin-bottom: 2px; font-size: 12px; }
-    .study-intro-steps span { display: block; color: var(--muted); font-size: 10.5px; line-height: 1.48; }
-    .study-intro-foot {
-      display: flex; align-items: center; gap: 18px; padding: 16px 32px;
-      border-top: 1px solid var(--line); background: #fafcfd;
-    }
-    .study-intro-shortcuts { margin: 0; color: var(--muted); font-size: 10.5px; line-height: 1.45; }
-    .study-intro-actions { margin-left: auto; display: flex; gap: 8px; flex: 0 0 auto; }
-    .study-intro-actions button { min-width: 126px; min-height: 38px; }
-    @media (max-width: 760px) {
-      .study-intro-head { padding-right: 32px; }
-      .study-intro-head > .study-language-switch { position: static; width: max-content; margin: 0 0 18px auto; }
-      .study-intro-content { grid-template-columns: 1fr; gap: 22px; }
-      .study-intro-foot { align-items: stretch; flex-direction: column; }
-      .study-intro-actions { margin-left: 0; }
-      .study-intro-actions button { flex: 1; }
-    }
 
     .setup { align-items: stretch; justify-content: center; overflow: auto; padding: 44px; }
     .setup-card { width: min(840px, 100%); margin: auto; display: grid; grid-template-columns: 1.05fr .95fr; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
     .setup-intro { padding: 38px; border-right: 1px solid var(--line); background: #f9fbfc; }
-    .eyebrow { color: var(--cyan); font-size: 11px; letter-spacing: .13em; font-weight: 750; text-transform: uppercase; }
+    .eyebrow { color: var(--cyan); font-size: 12px; letter-spacing: .13em; font-weight: 750; text-transform: uppercase; }
     h1, h2, h3, p { margin-top: 0; }
-    .setup-intro h1 { font-size: 31px; line-height: 1.1; letter-spacing: -.035em; margin: 15px 0 13px; }
+    .setup-intro h1 { font-size: 24px; line-height: 1.1; letter-spacing: -.035em; margin: 15px 0 13px; }
     .setup-intro p { color: var(--muted); line-height: 1.6; font-size: 14px; }
     .protocol { margin-top: 28px; display: grid; gap: 14px; }
     .protocol-row { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
-    .protocol-num { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #edf1ff; color: var(--indigo); font-weight: 700; font-size: 11px; }
+    .protocol-num { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #edf1ff; color: var(--indigo); font-weight: 700; font-size: 12px; }
     .protocol-row strong { display: block; font-size: 13px; margin-bottom: 3px; }
     .protocol-row span { color: var(--muted); font-size: 12px; line-height: 1.45; }
     .setup-form { padding: 34px; display: grid; align-content: center; gap: 15px; }
@@ -173,12 +118,17 @@
     input, select { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; color: var(--ink); padding: 10px 11px; outline: none; }
     input:focus, select:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(88,102,216,.12); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .setup-advanced { display: block; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+    .setup-advanced summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+    .setup-advanced[open] summary { margin-bottom: 12px; }
+    .setup-advanced label { margin-bottom: 12px; }
+    .setup-advanced label:last-child { margin-bottom: 0; }
     .primary, .secondary, .ghost { border-radius: 8px; padding: 9px 13px; cursor: pointer; }
     .primary { border: 1px solid var(--ink); background: var(--ink); color: #fff; font-weight: 650; }
     .secondary { border: 1px solid var(--line-strong); background: var(--paper); }
     .ghost { border: 0; background: transparent; color: var(--muted); }
     .primary:hover { background: #24334f; }
-    .form-note, .error { font-size: 11px; line-height: 1.45; color: var(--muted); }
+    .form-note, .error { font-size: 12px; line-height: 1.45; color: var(--muted); }
     .error { color: var(--exclude); min-height: 16px; }
 
     .workbench { flex-direction: row; }
@@ -194,14 +144,14 @@
     body.study-strip-resizing, body.study-strip-resizing * { cursor: col-resize !important; user-select: none; }
     .study-session-meta { display: grid; gap: 6px; padding: 1px 2px 16px; border-bottom: 1px solid var(--line); }
     .study-session-meta strong { font: 800 18px/1.1 "SFMono-Regular", Consolas, monospace; letter-spacing: .02em; }
-    .study-session-meta span { color: var(--muted); font-size: 10.5px; line-height: 1.45; }
+    .study-session-meta span { color: var(--muted); font-size: 12px; line-height: 1.45; }
     .study-progress-block { display: grid; gap: 8px; padding: 17px 2px; }
     .study-strip .progress-track { width: 100%; height: 6px; background: #e2e7eb; border-radius: 5px; overflow: hidden; }
     .study-strip .progress-track span { display: block; height: 100%; background: var(--cyan); width: 0; transition: width .2s ease; }
-    #progress-text { color: var(--muted); font: 750 11px/1.2 "SFMono-Regular", Consolas, monospace; }
+    #progress-text { color: var(--muted); font: 750 12px/1.2 "SFMono-Regular", Consolas, monospace; }
     .study-question-meta { display: grid; gap: 9px; padding: 0 2px 17px; border-bottom: 1px solid var(--line); }
     .study-question-line { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
-    .study-question-meta p { margin: 0; color: var(--muted); font-size: 10.5px; line-height: 1.5; }
+    .study-question-meta p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
     .strip-actions { margin-top: auto; display: flex; align-items: stretch; flex-direction: column; gap: 7px; }
     .study-strip .directory-trigger { width: 100%; min-height: 54px; align-items: flex-start; flex-direction: column; gap: 6px; padding: 8px 9px; }
     .study-strip .directory-trigger > span { display: inline; }
@@ -218,17 +168,17 @@
     .candidate-panel { border-right: 1px solid var(--line); display: flex; flex-direction: column; }
     .panel-head { flex: 0 0 auto; padding: 15px 15px 11px; border-bottom: 1px solid var(--line); }
     .panel-head h2 { font-size: 14px; margin: 0 0 4px; }
-    .panel-head p { color: var(--muted); font-size: 11px; margin: 0; }
+    .panel-head p { color: var(--muted); font-size: 12px; margin: 0; }
     .filter-row { display: flex; gap: 6px; margin-top: 11px; }
     .filter-row input { padding: 7px 9px; font-size: 12px; }
-    .mini-select { width: 92px; padding: 7px; font-size: 11px; }
+    .mini-select { width: 92px; padding: 7px; font-size: 12px; }
     .candidate-list { overflow: auto; flex: 1; padding: 7px; }
     .candidate { width: 100%; border: 1px solid transparent; border-radius: 8px; background: transparent; padding: 10px; text-align: left; cursor: pointer; display: grid; grid-template-columns: 28px 1fr; gap: 8px; margin-bottom: 2px; }
     .candidate:hover { background: #f6f8fa; }
     .candidate.selected { border-color: #aeb8e9; background: #f4f5ff; }
-    .candidate-index { color: var(--muted); font-size: 10px; padding-top: 2px; }
+    .candidate-index { color: var(--muted); font-size: 12px; padding-top: 2px; }
     .candidate-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 1.4; font-weight: 620; }
-    .candidate-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .candidate-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: var(--muted); font-size: 12px; }
     .bucket-dot { width: 7px; height: 7px; border-radius: 50%; background: #c7ced5; }
     .bucket-dot.high { background: var(--high); } .bucket-dot.medium { background: var(--medium); }
     .bucket-dot.low { background: var(--low); } .bucket-dot.exclude { background: var(--exclude); }
@@ -236,49 +186,49 @@
     .graph-panel { min-width: 0; position: relative; display: flex; flex-direction: column; background: #f7f9fb; }
     .graph-head { height: 48px; display: flex; align-items: center; padding: 0 14px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.85); }
     .graph-head strong { font-size: 12px; }
-    .graph-legend { margin-left: auto; display: flex; gap: 12px; font-size: 10px; color: var(--muted); }
+    .graph-legend { margin-left: auto; display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
     .legend-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
     .graph-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; }
     #evidence-graph { width: 100%; height: 100%; display: block; }
     .graph-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 12px; pointer-events: none; }
-    .graph-caption { position: absolute; left: 14px; bottom: 13px; max-width: 62%; padding: 8px 10px; background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .graph-caption { position: absolute; left: 14px; bottom: 13px; max-width: 62%; padding: 8px 10px; background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 12px; line-height: 1.4; }
     .edge-line { stroke: #84a5ad; stroke-width: 2; opacity: .88; }
     .edge-line.active { stroke: var(--cyan); filter: drop-shadow(0 1px 2px rgba(45,135,156,.18)); }
     .edge-badge { fill: #f7fbfc; stroke: #bdd4da; stroke-width: 1; }
-    .edge-label { fill: #456b74; font-size: 10px; font-weight: 700; text-anchor: middle; }
+    .edge-label { fill: #456b74; font-size: 12px; font-weight: 700; text-anchor: middle; }
     .node-card { fill: #fff; stroke: #aeb7ea; stroke-width: 1.7; filter: drop-shadow(0 4px 8px rgba(23,35,58,.06)); }
     .node-card.target { fill: #f1fafb; stroke: #75aebc; }
     .node-accent { fill: var(--indigo); }
     .node-accent.target { fill: var(--cyan); }
-    .node-kicker { fill: #7a8798; font-size: 8px; font-weight: 800; letter-spacing: 1.15px; }
-    .node-label { fill: var(--ink); font-size: 11px; font-weight: 680; }
+    .node-kicker { fill: #7a8798; font-size: 12px; font-weight: 800; letter-spacing: 1.15px; }
+    .node-label { fill: var(--ink); font-size: 12px; font-weight: 680; }
 
     .detail-panel { border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: auto; }
     .detail { padding: 17px; }
-    .detail-id { color: var(--muted); font-size: 10px; margin-bottom: 8px; overflow-wrap: anywhere; }
+    .detail-id { color: var(--muted); font-size: 12px; margin-bottom: 8px; overflow-wrap: anywhere; }
     .detail h2 { font-size: 18px; line-height: 1.3; letter-spacing: -.015em; margin-bottom: 10px; }
     .detail-summary { color: #4e5d72; line-height: 1.55; font-size: 12px; }
-    .assisted-score { display: none; border-left: 3px solid var(--indigo); background: #f1f2ff; padding: 9px 11px; margin: 11px 0; color: #4552b8; font-size: 11px; }
+    .assisted-score { display: none; border-left: 3px solid var(--indigo); background: #f1f2ff; padding: 9px 11px; margin: 11px 0; color: #4552b8; font-size: 12px; }
     .assisted .assisted-score { display: block; }
-    .section-label { margin: 18px 0 8px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .section-label { margin: 18px 0 8px; color: var(--muted); font-size: 12px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
     .evidence-list { display: grid; gap: 7px; }
-    .evidence-item { border: 1px solid var(--line); border-radius: 7px; padding: 9px; font-size: 11px; line-height: 1.45; }
+    .evidence-item { border: 1px solid var(--line); border-radius: 7px; padding: 9px; font-size: 12px; line-height: 1.45; }
     .evidence-item strong { display: block; margin-bottom: 3px; }
     .evidence-item span { color: var(--muted); }
     .rank-dock { position: sticky; bottom: 0; margin-top: auto; border-top: 1px solid var(--line); background: rgba(255,255,255,.97); padding: 13px 15px 15px; }
-    .rank-title { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .rank-title { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
     .bucket-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .bucket-btn { position: relative; border: 1px solid var(--line-strong); background: #fff; border-radius: 7px; padding: 9px; cursor: pointer; text-align: left; font-size: 11px; transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease; }
+    .bucket-btn { position: relative; border: 1px solid var(--line-strong); background: #fff; border-radius: 7px; padding: 9px; cursor: pointer; text-align: left; font-size: 12px; transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease; }
     .bucket-btn:hover { transform: translateY(-1px); border-color: #8f9aa7; }
     .bucket-btn span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
     .bucket-btn[data-bucket=high] span { background: var(--high); } .bucket-btn[data-bucket=medium] span { background: var(--medium); }
     .bucket-btn[data-bucket=low] span { background: var(--low); } .bucket-btn[data-bucket=exclude] span { background: var(--exclude); }
     .bucket-btn.active { border-color: currentColor; background: #f8fafb; box-shadow: inset 0 0 0 1px currentColor; }
     .bucket-btn.just-rated { animation: rating-confirm .42s ease; }
-    .bucket-btn.just-rated::after { content: '✓'; position: absolute; right: 8px; top: 7px; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--ink); font-size: 11px; font-weight: 800; }
+    .bucket-btn.just-rated::after { content: '✓'; position: absolute; right: 8px; top: 7px; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--ink); font-size: 12px; font-weight: 800; }
     .bucket-btn.just-rated .key { opacity: 0; }
     @keyframes rating-confirm { 0% { transform: scale(.97); } 48% { transform: scale(1.025); } 100% { transform: scale(1); } }
-    .rating-feedback { min-height: 30px; margin-top: 8px; border-radius: 7px; padding: 7px 9px; color: var(--muted); background: #f5f7f8; font-size: 10px; line-height: 1.45; }
+    .rating-feedback { min-height: 30px; margin-top: 8px; border-radius: 7px; padding: 7px 9px; color: var(--muted); background: #f5f7f8; font-size: 12px; line-height: 1.45; }
     .rating-feedback.confirmed { color: #176b59; background: #edf8f4; }
     .rating-feedback.refine-needed { color: #6d5618; background: #fff8e7; }
     .key { float: right; color: #98a2ae; font-family: Consolas, monospace; }
@@ -288,8 +238,8 @@
     .pair-overlay { position: absolute; inset: 48px 0 0; z-index: 4; display: none; background: rgba(243,246,248,.97); padding: 24px; overflow: auto; }
     .pair-overlay.active { display: grid; place-items: center; }
     .pair-card { width: min(780px, 100%); background: white; border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 12px; padding: 22px; }
-    .pair-progress { color: var(--muted); font-size: 11px; }
-    .pair-card h2 { margin: 8px 0 18px; font-size: 19px; }
+    .pair-progress { color: var(--muted); font-size: 12px; }
+    .pair-card h2 { margin: 8px 0 18px; font-size: 18px; }
     .pair-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .pair-choice { min-height: 170px; border: 1px solid var(--line-strong); border-radius: 9px; background: white; padding: 15px; text-align: left; cursor: pointer; }
     .pair-choice:hover { border-color: var(--indigo); background: #f7f7ff; }
@@ -297,19 +247,19 @@
     .pair-choice.not-chosen { opacity: .48; }
     .pair-choice b { display: block; color: var(--indigo); margin-bottom: 10px; }
     .pair-choice strong { display: block; font-size: 14px; line-height: 1.4; }
-    .pair-choice p { color: var(--muted); font-size: 11px; line-height: 1.45; margin: 9px 0 0; }
+    .pair-choice p { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 9px 0 0; }
 
     .legacy-workspace { display: none; }
     .duel-workspace { flex: 1; min-height: 0; display: flex; overflow: hidden; padding: 18px 22px 24px; background: #f3f6f8; }
     .duel-shell { width: min(1320px, 100%); height: 100%; min-height: 0; margin: 0 auto; display: flex; flex-direction: column; overflow: hidden; }
-    .duel-stage { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; border: 1px solid var(--line); border-radius: 999px; background: #fff; padding: 6px 9px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .04em; white-space: nowrap; }
+    .duel-stage { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; border: 1px solid var(--line); border-radius: 999px; background: #fff; padding: 6px 9px; color: var(--muted); font-size: 12px; font-weight: 750; letter-spacing: .04em; white-space: nowrap; }
     .duel-stage::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); }
     .duel-stage.medium::before { background: var(--medium); }
     .duel-stage.hard::before { background: var(--exclude); }
-    .duel-distance { color: var(--muted); font-size: 10px; white-space: nowrap; }
-    .directory-trigger { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; color: var(--ink); padding: 6px 9px; cursor: pointer; font-size: 10.5px; font-weight: 720; }
+    .duel-distance { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .directory-trigger { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; color: var(--ink); padding: 6px 9px; cursor: pointer; font-size: 12px; font-weight: 720; }
     .directory-trigger:hover, .directory-trigger[aria-expanded=true] { border-color: #8f9ae0; background: #f7f7ff; color: #4352c3; }
-    .directory-trigger b { min-width: 46px; border-left: 1px solid var(--line); padding-left: 8px; color: var(--muted); font: 700 9.5px/1.2 Consolas, monospace; }
+    .directory-trigger b { min-width: 46px; border-left: 1px solid var(--line); padding-left: 8px; color: var(--muted); font: 700 12px/1.2 Consolas, monospace; }
     .question-directory-scrim { position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(23,35,58,.18); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
     .question-directory-scrim.open { opacity: 1; pointer-events: auto; }
     .question-directory { position: fixed; z-index: 41; top: 0; left: 0; bottom: 0; width: min(var(--question-directory-width, 430px), calc(100vw - 24px)); display: flex; flex-direction: column; background: #fbfcfd; border-right: 1px solid var(--line); box-shadow: 18px 0 50px rgba(23,35,58,.14); transform: translateX(-104%); transition: transform .2s ease; }
@@ -321,14 +271,14 @@
     body.directory-resizing { cursor: col-resize; user-select: none; }
     .directory-head { display: flex; align-items: flex-start; gap: 12px; padding: 19px 20px 15px; border-bottom: 1px solid var(--line); background: #fff; }
     .directory-head h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
-    .directory-head p { margin: 5px 0 0; color: var(--muted); font-size: 10.5px; line-height: 1.45; }
+    .directory-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .directory-close { margin-left: auto; width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
     .directory-close:hover { border-color: var(--line-strong); color: var(--ink); }
     .directory-summary { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: #f7f9fa; }
-    .directory-summary strong { font-size: 21px; letter-spacing: -.025em; }
-    .directory-summary span { color: var(--muted); font-size: 10.5px; }
+    .directory-summary strong { font-size: 18px; letter-spacing: -.025em; }
+    .directory-summary span { color: var(--muted); font-size: 12px; }
     .directory-legend { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .directory-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 10.5px; }
+    .directory-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 12px; }
     .legend-box { width: 16px; height: 16px; border: 2px solid #8793a2; border-radius: 5px; background: #fff; }
     .legend-box.answered { border-color: #526172; background: #526172; }
     .legend-box.undecided { border-color: #8793a2; background: repeating-linear-gradient(135deg,#fff 0 3px,#dfe4e9 3px 6px); }
@@ -337,7 +287,7 @@
     .directory-group-head { display: flex; align-items: center; margin-bottom: 9px; }
     .directory-group-head h3 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 12px; }
     .directory-group-head h3::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tier); }
-    .directory-group-head span { margin-left: auto; color: var(--muted); font: 700 9.5px/1.2 Consolas, monospace; }
+    .directory-group-head span { margin-left: auto; color: var(--muted); font: 700 12px/1.2 Consolas, monospace; }
     .directory-group.easy, .question-index.easy { --tier: #2d879c; }
     .directory-group.medium, .question-index.medium { --tier: #a87519; }
     .directory-group.hard, .question-index.hard { --tier: #a94f60; }
@@ -352,37 +302,37 @@
     .directory-foot { padding: 12px 20px 16px; border-top: 1px solid var(--line); background: #fff; }
     .directory-foot button { width: 100%; }
     .duel-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 54px minmax(0,1fr); align-items: stretch; overflow: hidden; }
-    .duel-vs { display: grid; place-items: center; color: #8b96a5; font: 700 11px/1 Consolas, monospace; }
+    .duel-vs { display: grid; place-items: center; color: #8b96a5; font: 700 12px/1 Consolas, monospace; }
     .hypothesis-card { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: #fff; box-shadow: 0 8px 24px rgba(23,35,58,.055); transition: transform .18s ease, border-color .18s ease, opacity .18s ease; }
     .hypothesis-card.chosen { transform: translateY(-3px); border-color: var(--indigo); box-shadow: 0 10px 26px rgba(88,102,216,.14); }
     .hypothesis-card.not-chosen { opacity: .48; }
     .hypothesis-card-head { flex: 0 0 auto; padding: 13px 15px 11px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg,#fff,#fbfcfd); }
-    .hypothesis-label { color: var(--indigo); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
-    .hypothesis-card h2 { margin: 7px 0 9px; font-size: 16px; line-height: 1.4; letter-spacing: -.012em; }
+    .hypothesis-label { color: var(--indigo); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+    .hypothesis-card h2 { margin: 7px 0 9px; font-size: 15px; line-height: 1.4; letter-spacing: -.012em; }
     .hypothesis-summary { margin: 0; color: #596878; font-size: 13px; line-height: 1.58; }
-    .hypothesis-technical { margin-top: 8px; color: #718091; font-size: 9.5px; line-height: 1.4; }
+    .hypothesis-technical { margin-top: 8px; color: #718091; font-size: 12px; line-height: 1.4; }
     .hypothesis-technical summary { width: fit-content; cursor: pointer; font-weight: 720; }
     .hypothesis-technical p { margin: 5px 0 0; overflow-wrap: anywhere; }
-    .hypothesis-context { margin-top: 6px; color: #718091; font-size: 9.5px; line-height: 1.4; }
+    .hypothesis-context { margin-top: 6px; color: #718091; font-size: 12px; line-height: 1.4; }
     .hypothesis-context > summary { width: fit-content; border-radius: 5px; color: #5f7080; cursor: pointer; font-weight: 760; }
     .hypothesis-context > summary:hover, .hypothesis-context[open] > summary { color: var(--indigo); }
     .hypothesis-context-body { display: grid; gap: 7px; margin-top: 7px; }
     .hypothesis-original { border-left: 3px solid #aeb7c0; border-radius: 0 7px 7px 0; background: #f6f8fa; padding: 7px 9px; }
     .hypothesis-original p { margin: 0; color: #657586; overflow-wrap: anywhere; }
-    .hypothesis-terms { display: grid; gap: 5px; margin-top: 9px; border-left: 3px solid #8aa8b4; border-radius: 0 7px 7px 0; background: #f1f6f7; padding: 8px 10px; color: #4d5d69; font-size: 11px; line-height: 1.45; }
-    .hypothesis-terms-title { color: #416d7b; font-size: 10px; font-weight: 820; letter-spacing: .07em; text-transform: uppercase; }
+    .hypothesis-terms { display: grid; gap: 5px; margin-top: 9px; border-left: 3px solid #8aa8b4; border-radius: 0 7px 7px 0; background: #f1f6f7; padding: 8px 10px; color: #4d5d69; font-size: 12px; line-height: 1.45; }
+    .hypothesis-terms-title { color: #416d7b; font-size: 12px; font-weight: 820; letter-spacing: .07em; text-transform: uppercase; }
     .hypothesis-term strong { color: #354957; font-weight: 800; }
     .chain-strip { flex: 0 0 auto; display: flex; align-items: center; gap: 7px; padding: 13px 18px; border-bottom: 1px solid var(--line); overflow: hidden; }
     .chain-node { min-width: 0; max-width: 42%; border: 1px solid #dce2e8; border-radius: 7px; background: #f8fafb; padding: 7px 9px; font-size: 12px; font-weight: 680; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chain-arrow { color: #7f8c9b; font-size: 13px; }
     .literature { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 11px 9px 10px 15px; }
-    .literature-title { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 7px 7px 0; color: #667587; font-size: 10.5px; font-weight: 780; letter-spacing: .065em; text-transform: uppercase; }
+    .literature-title { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 7px 7px 0; color: #667587; font-size: 12px; font-weight: 780; letter-spacing: .065em; text-transform: uppercase; }
     .literature-title-tools { display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; min-width: 0; }
-    .paper-position { color: #7a8795; font: 720 9.5px/1.2 Consolas,monospace; letter-spacing: 0; text-transform: none; white-space: nowrap; }
-    .paper-view-toggle { border: 1px solid #d6dde7; border-radius: 6px; background: #fff; color: #596a7b; padding: 4px 7px; cursor: pointer; font: inherit; font-size: 9.5px; font-weight: 720; line-height: 1.2; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+    .paper-position { color: #7a8795; font: 720 12px/1.2 Consolas,monospace; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+    .paper-view-toggle { border: 1px solid #d6dde7; border-radius: 6px; background: #fff; color: #596a7b; padding: 4px 7px; cursor: pointer; font: inherit; font-size: 12px; font-weight: 720; line-height: 1.2; letter-spacing: 0; text-transform: none; white-space: nowrap; }
     .paper-view-toggle:hover { border-color: #9ba7e6; background: #f8f8ff; color: #4352c3; }
     .paper-index { flex: 0 0 auto; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 6px; margin: 0 7px 8px 0; }
-    .paper-index-btn { position: relative; min-width: 0; min-height: 31px; border: 1px solid #d8dfe8; border-radius: 7px; background: #fff; color: #657485; cursor: pointer; font: 780 10.5px/1 Consolas,monospace; transition: border-color .14s ease, background .14s ease, color .14s ease, transform .14s ease; }
+    .paper-index-btn { position: relative; min-width: 0; min-height: 31px; border: 1px solid #d8dfe8; border-radius: 7px; background: #fff; color: #657485; cursor: pointer; font: 780 12px/1 Consolas,monospace; transition: border-color .14s ease, background .14s ease, color .14s ease, transform .14s ease; }
     .paper-index-btn::after { content: ''; position: absolute; left: 7px; right: 7px; bottom: 4px; height: 2px; border-radius: 99px; background: #c9d0d9; }
     .paper-index-btn:hover { z-index: 1; border-color: #8f9ae0; color: #4352c3; transform: translateY(-1px); }
     .paper-index-btn.active { border-color: var(--indigo); background: #eef0ff; color: #3e4dc2; box-shadow: inset 0 0 0 1px rgba(88,102,216,.12); }
@@ -402,28 +352,29 @@
     .paper-item:hover { border-color: #aab4e9; border-left-color: var(--indigo); background: #fbfbff; box-shadow: 0 6px 16px rgba(45,59,123,.08); }
     .paper-title { display: block; color: var(--ink); font-size: 13px; font-weight: 760; line-height: 1.48; }
     .paper-control:focus-visible { outline: 3px solid rgba(88,102,216,.24); outline-offset: 2px; border-radius: 5px; }
-    .paper-meta { margin-top: 5px; color: #687789; font-size: 11px; line-height: 1.45; }
-    .paper-quick-meta { display: flex; flex-wrap: wrap; gap: 3px 8px; margin-top: 7px; color: #687789; font-size: 10px; line-height: 1.4; }
+    .paper-meta { margin-top: 5px; color: #687789; font-size: 12px; line-height: 1.45; }
+    .paper-quick-meta { display: flex; flex-wrap: wrap; gap: 3px 8px; margin-top: 7px; color: #687789; font-size: 12px; line-height: 1.4; }
     .paper-quick-meta span { display: inline-flex; align-items: center; min-width: 0; }
     .paper-quick-meta span + span::before { content: "·"; margin-right: 8px; color: #a0abb7; }
     .paper-relations { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; margin-top: 10px; }
+    .paper-auto-note { margin-top: 8px; color: #7b8796; font-size: 12px; line-height: 1.5; }
     .paper-relation { --relation-color: #697789; min-width: 0; border: 1px solid color-mix(in srgb,var(--relation-color) 26%,#fff); border-radius: 7px; background: color-mix(in srgb,var(--relation-color) 7%,#fff); padding: 6px 7px; }
     .paper-relation.exact { --relation-color: #2e755e; }
     .paper-relation.related { --relation-color: #9a6a27; }
     .paper-relation.opposite { --relation-color: #a34d5d; }
-    .paper-relation-key { display: block; color: #7a8794; font-size: 8.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .paper-relation-value { display: block; margin-top: 2px; color: var(--relation-color); font-size: 10.5px; font-weight: 820; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .paper-relation-key { display: block; color: #7a8794; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .paper-relation-value { display: block; margin-top: 2px; color: var(--relation-color); font-size: 12px; font-weight: 820; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .paper-credibility { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin-top: 9px; }
     .paper-credibility-item { min-width: 0; border: 1px solid #dde4ee; border-radius: 7px; background: #fff; padding: 7px 8px; }
-    .paper-credibility-label { display: block; margin-bottom: 3px; color: #788697; font-size: 9px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
-    .paper-credibility-value { display: block; color: #344355; font-size: 10.5px; font-weight: 680; line-height: 1.4; overflow-wrap: anywhere; }
+    .paper-credibility-label { display: block; margin-bottom: 3px; color: #788697; font-size: 12px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
+    .paper-credibility-value { display: block; color: #344355; font-size: 12px; font-weight: 680; line-height: 1.4; overflow-wrap: anywhere; }
     .paper-credibility-value a { color: #4352c3; text-decoration: none; }
     .paper-credibility-value a:hover { text-decoration: underline; }
-    .paper-metric-note { margin-top: 6px; color: #7b8796; font-size: 9px; line-height: 1.4; }
-    .paper-relevance { display: grid; gap: 1px; margin-top: 9px; border: 1px solid #dbe4ea; border-radius: 8px; background: #f7fafb; overflow: hidden; color: #445366; font-size: 11.5px; line-height: 1.52; }
+    .paper-metric-note { margin-top: 6px; color: #7b8796; font-size: 12px; line-height: 1.4; }
+    .paper-relevance { display: grid; gap: 1px; margin-top: 9px; border: 1px solid #dbe4ea; border-radius: 8px; background: #f7fafb; overflow: hidden; color: #445366; font-size: 12px; line-height: 1.52; }
     .paper-evidence-row { display: grid; grid-template-columns: 98px minmax(0,1fr); gap: 10px; padding: 8px 10px; background: #f2f6f8; }
     .paper-evidence-row + .paper-evidence-row { border-top: 1px solid #dfe7eb; }
-    .paper-evidence-row strong { color: #526677; font-size: 9.5px; font-weight: 850; letter-spacing: .045em; text-transform: uppercase; }
+    .paper-evidence-row strong { color: #526677; font-size: 12px; font-weight: 850; letter-spacing: .045em; text-transform: uppercase; }
     .paper-evidence-row span { min-width: 0; overflow-wrap: anywhere; }
     .paper-evidence-row.verdict { background: #edf5f5; }
     .paper-evidence-row.verdict strong { color: #337586; }
@@ -432,30 +383,30 @@
     .paper-support-score.low { --score-color: #9a6a27; }
     .paper-support-score.high { --score-color: #32705b; }
     .paper-score-badge { display: grid; place-items: center; min-height: 42px; border: 1px solid color-mix(in srgb,var(--score-color) 42%,#fff); border-radius: 8px; background: color-mix(in srgb,var(--score-color) 10%,#fff); color: var(--score-color); }
-    .paper-score-badge b { font: 850 19px/1 Consolas,monospace; letter-spacing: -.05em; }
-    .paper-score-badge small { margin-top: -3px; font: 750 8.5px/1 Consolas,monospace; }
+    .paper-score-badge b { font: 850 18px/1 Consolas,monospace; letter-spacing: -.05em; }
+    .paper-score-badge small { margin-top: -3px; font: 750 12px/1 Consolas,monospace; }
     .paper-score-copy { min-width: 0; }
-    .paper-score-label { display: block; color: #2f4652; font-size: 11.5px; font-weight: 820; line-height: 1.35; }
-    .paper-score-components { display: block; margin-top: 2px; color: #667889; font-size: 9px; line-height: 1.35; }
-    .paper-score-reason { grid-column: 1 / -1; margin: 0; color: #445967; font-size: 10.5px; font-weight: 660; line-height: 1.45; }
-    .paper-score-note { grid-column: 1 / -1; color: #7a8794; font-size: 8.5px; line-height: 1.3; }
+    .paper-score-label { display: block; color: #2f4652; font-size: 12px; font-weight: 820; line-height: 1.35; }
+    .paper-score-components { display: block; margin-top: 2px; color: #667889; font-size: 12px; line-height: 1.35; }
+    .paper-score-reason { grid-column: 1 / -1; margin: 0; color: #445967; font-size: 12px; font-weight: 660; line-height: 1.45; }
+    .paper-score-note { grid-column: 1 / -1; color: #7a8794; font-size: 12px; line-height: 1.3; }
     .paper-details { margin-top: 8px; border-top: 1px solid #dde4ee; padding-top: 7px; }
-    .paper-details > summary { width: max-content; color: #5d6d7d; cursor: pointer; font-size: 10px; font-weight: 760; list-style-position: inside; }
+    .paper-details > summary { width: max-content; color: #5d6d7d; cursor: pointer; font-size: 12px; font-weight: 760; list-style-position: inside; }
     .paper-details[open] > summary { color: var(--indigo); }
     .paper-details-content { margin-top: 8px; }
     .paper-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 9px; }
-    .paper-control { display: inline-flex; align-items: center; gap: 5px; min-height: 29px; border: 1px solid #d5dcec; border-radius: 7px; background: #fff; color: #536172; padding: 5px 8px; font: inherit; font-size: 10.5px; font-weight: 700; line-height: 1.2; text-decoration: none; cursor: pointer; }
+    .paper-control { display: inline-flex; align-items: center; gap: 5px; min-height: 29px; border: 1px solid #d5dcec; border-radius: 7px; background: #fff; color: #536172; padding: 5px 8px; font: inherit; font-size: 12px; font-weight: 700; line-height: 1.2; text-decoration: none; cursor: pointer; }
     .paper-control:hover { border-color: #9ba7e6; color: #4352c3; background: #f8f8ff; }
     .paper-control.primary { border-color: #c8cff3; color: #4352c3; }
     .paper-control .arrow { font-size: 13px; line-height: 1; }
     .paper-excerpt { margin-top: 10px; border-top: 1px solid #e2e6f1; padding: 10px 3px 1px 12px; color: #445366; }
-    .paper-excerpt::before { content: '“'; float: left; margin: -4px 0 0 -12px; color: #8f9ae0; font: 700 21px/1 Georgia, serif; }
-    .paper-excerpt-label { margin-bottom: 5px; color: #697789; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    .paper-excerpt p { margin: 0 0 6px; font-size: 11.5px; line-height: 1.58; }
+    .paper-excerpt::before { content: '“'; float: left; margin: -4px 0 0 -12px; color: #8f9ae0; font: 700 18px/1 Georgia, serif; }
+    .paper-excerpt-label { margin-bottom: 5px; color: #697789; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .paper-excerpt p { margin: 0 0 6px; font-size: 12px; line-height: 1.58; }
     .paper-abstract { margin-top: 9px; border-top: 1px solid #e2e6f1; padding-top: 8px; }
-    .paper-abstract summary { width: fit-content; color: #4b59c7; font-size: 10.5px; font-weight: 750; cursor: pointer; }
+    .paper-abstract summary { width: fit-content; color: #4b59c7; font-size: 12px; font-weight: 750; cursor: pointer; }
     .paper-abstract p { max-height: 180px; margin-top: 8px; overflow: auto; color: #526174; }
-    .paper-empty { border: 1px dashed var(--line-strong); border-radius: 7px; padding: 10px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .paper-empty { border: 1px dashed var(--line-strong); border-radius: 7px; padding: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .duel-actions { position: relative; z-index: 6; flex: 0 0 auto; display: grid; grid-template-columns: 1fr minmax(185px,.62fr) 1fr; gap: 10px; margin-top: 14px; }
     .duel-action { min-height: 44px; border: 1px solid var(--line-strong); border-radius: 9px; background: #fff; color: var(--ink); cursor: pointer; font-weight: 700; }
     .duel-action:hover { border-color: var(--indigo); background: #f7f7ff; }
@@ -468,21 +419,27 @@
     .undecided-menu[hidden] { display: none; }
     .undecided-option { width: 100%; border: 0; border-radius: 7px; background: transparent; padding: 9px 10px; color: var(--ink); cursor: pointer; text-align: left; }
     .undecided-option:hover { background: #eef4f6; }
-    .undecided-option strong { display: block; font-size: 11.5px; }
-    .undecided-option span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .undecided-option strong { display: block; font-size: 12px; }
+    .undecided-option span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.4; }
     .duel-complete { display: none; flex: 1; place-items: center; }
     .duel-complete.active { display: grid; }
     .duel-complete-card { width: min(520px,100%); border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: var(--shadow); padding: 28px; text-align: center; }
-    .duel-complete-card h2 { margin: 10px 0 8px; font-size: 23px; }
+    .duel-complete-card h2 { margin: 10px 0 8px; font-size: 18px; }
     .duel-complete-card p { color: var(--muted); font-size: 12px; line-height: 1.55; }
     .duel-complete-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
     .duel-complete-actions button { min-height: 42px; }
-    .export-status { min-height: 18px; margin-top: 10px; color: var(--muted); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+    .export-status { min-height: 18px; margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+    .study-close-dialog { width: min(460px, calc(100% - 40px)); border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); box-shadow: var(--shadow); padding: 24px 26px; }
+    .study-close-dialog::backdrop { background: rgb(10 20 16 / 38%); backdrop-filter: blur(3px); }
+    .study-close-dialog h2 { margin: 0 0 8px; font-size: 18px; }
+    .study-close-dialog p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .study-close-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .study-close-actions button { min-height: 42px; }
     .export-status.error { color: #a8444f; }
     @media (max-height: 820px) {
       .duel-workspace { padding: 10px 14px 12px; }
       .hypothesis-card-head { padding: 10px 12px 8px; }
-      .hypothesis-card h2 { margin: 5px 0 6px; font-size: 14.5px; line-height: 1.34; }
+      .hypothesis-card h2 { margin: 5px 0 6px; font-size: 14px; line-height: 1.34; }
       .hypothesis-context { margin-top: 5px; }
       .literature { padding-top: 8px; }
       .duel-actions { margin-top: 8px; }
@@ -490,33 +447,33 @@
     }
     @media (max-width: 980px) { .duel-grid { grid-template-columns: 1fr; gap: 10px; overflow-y: auto; } .duel-vs { min-height: 24px; } .duel-actions { grid-template-columns: 1fr; } .directory-trigger span { display: none; } }
     @media (max-width: 720px) { .paper-credibility { grid-template-columns: 1fr; } .paper-relations { grid-template-columns: repeat(2,minmax(0,1fr)); } .paper-evidence-row { grid-template-columns: 1fr; gap: 3px; } }
-    @media (prefers-reduced-motion: reduce) { .question-directory, .question-directory-scrim, .question-index, .study-intro-layer { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .question-directory, .question-directory-scrim, .question-index { transition: none; } }
 
     .results { overflow: auto; padding: 24px; display: none; }
     .results.active { display: block; }
     .results-shell { width: min(1180px, 100%); margin: 0 auto; }
     .results-head { display: flex; align-items: end; gap: 20px; margin-bottom: 18px; }
-    .results-head h1 { font-size: 25px; letter-spacing: -.025em; margin: 6px 0 0; }
+    .results-head h1 { font-size: 24px; letter-spacing: -.025em; margin: 6px 0 0; }
     .results-tools { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: end; gap: 8px; }
     .results-tools label { width: 210px; }
     .results-tools .export-status { flex-basis: 100%; margin-top: 0; text-align: right; }
     .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .metric { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-    .metric small { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
-    .metric strong { display: block; margin-top: 8px; font-size: 24px; letter-spacing: -.03em; }
+    .metric small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .metric strong { display: block; margin-top: 8px; font-size: 18px; letter-spacing: -.03em; }
     .analysis { margin-top: 12px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; }
     .analysis-card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
     .analysis-card h2 { font-size: 14px; margin-bottom: 3px; }
-    .analysis-card > p { color: var(--muted); font-size: 11px; }
+    .analysis-card > p { color: var(--muted); font-size: 12px; }
     #curve-chart { width: 100%; height: 280px; display: block; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: right; }
     th:first-child, td:first-child { text-align: left; }
     th { color: var(--muted); font-weight: 650; }
     .import-row { display: flex; gap: 7px; margin-top: 14px; }
-    .import-row input { font-size: 11px; padding: 8px; }
+    .import-row input { font-size: 12px; padding: 8px; }
     .empty-results { color: var(--muted); text-align: center; padding: 70px 20px; }
-    html[data-theme="dark"] :is(.topbar,.study-close,.tab.active,.auth-card,.study-intro-dialog,.setup-card,.panel,.rank-dock,.bucket-btn,.pair-card,.pair-choice,.duel-stage,.directory-trigger,.directory-head,.directory-close,.directory-foot,.hypothesis-card,.paper-control,.paper-view-toggle,.paper-index-btn,.duel-action,.duel-complete-card,.metric,.analysis-card,.undecided-menu) {
+    html[data-theme="dark"] :is(.topbar,.study-close,.tab.active,.auth-card,.setup-card,.panel,.rank-dock,.bucket-btn,.pair-card,.pair-choice,.duel-stage,.directory-trigger,.directory-head,.directory-close,.directory-foot,.hypothesis-card,.paper-control,.paper-view-toggle,.paper-index-btn,.duel-action,.duel-complete-card,.metric,.analysis-card,.undecided-menu) {
       background: var(--paper);
     }
     html[data-theme="dark"] :is(.tabs,.auth,.setup-intro,.study-strip,.graph-panel,.graph-head,.rating-feedback,.duel-workspace,.question-directory,.directory-summary,.chain-node,.duel-action.unsure) {
@@ -527,23 +484,14 @@
       color: var(--ink);
       border-color: var(--line-strong);
     }
-    html[data-theme="dark"] .study-intro-layer { background: rgba(2,7,12,.72); }
-    html[data-theme="dark"] .study-intro-head {
-      background: linear-gradient(145deg,#1d2734 0%,#151e29 100%);
-    }
-    html[data-theme="dark"] .intro-tier { background: rgba(29,39,52,.9); }
-    html[data-theme="dark"] .study-intro-note,
     html[data-theme="dark"] .resume-card { background: #152a31; border-color: #315966; }
-    html[data-theme="dark"] .study-intro-note span,
     html[data-theme="dark"] .detail-summary,
     html[data-theme="dark"] .hypothesis-summary,
     html[data-theme="dark"] .paper-meta,
     html[data-theme="dark"] .paper-relevance,
     html[data-theme="dark"] .paper-excerpt,
     html[data-theme="dark"] .paper-abstract p { color: var(--muted); }
-    html[data-theme="dark"] .protocol-num,
-    html[data-theme="dark"] .study-intro-steps li::before { background: #252d54; color: #aab4ff; border-color: #414d87; }
-    html[data-theme="dark"] .study-intro-foot { background: #111923; }
+    html[data-theme="dark"] .protocol-num { background: #252d54; color: #aab4ff; border-color: #414d87; }
     html[data-theme="dark"] .study-strip .progress-track { background: #2a394a; }
     html[data-theme="dark"] :is(.candidate:hover,.candidate.selected,.bucket-btn.active,.pair-choice:hover,.pair-choice.chosen,.directory-trigger:hover,.directory-trigger[aria-expanded=true],.paper-item:hover,.duel-action:hover) {
       background: #252d45;
@@ -609,73 +557,35 @@
     html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #415267; }
     @media (max-width: 1120px) { .workspace { grid-template-columns: 270px minmax(330px,1fr) 340px; } }
   </style>
+  <link rel="stylesheet" href="/static/workspace-tokens.css">
+  <link rel="stylesheet" href="/static/study-workspace.css">
+  <script src="/static/study-workspace.js"></script>
+  <script src="/static/evaluation-export.js"></script>
 </head>
 <body>
   <main class="app" id="app">
     <header class="topbar">
-      <div class="brand"><strong data-i18n="expertStudy">Expert Study</strong></div>
+      <div class="brand"><strong data-i18n="expertStudy">Expert Study (Extension)</strong></div>
+      <span class="study-context" data-i18n="expertStudy">Expert Study (Extension)</span>
       <nav class="tabs">
         <button class="tab active" data-view="setup" data-i18n="workbench">Ranking workbench</button>
         <button class="tab" data-view="results" data-i18n="studyResults">Study results</button>
       </nav>
       <div class="top-meta"><span id="session-label" class="mono"></span><span id="recording" class="recording" data-i18n="notRecording">Not recording</span><span id="timer" class="mono">00:10:00</span></div>
+      <div class="evaluation-actions" id="evaluation-actions" hidden><button class="secondary" id="save-progress" type="button" data-i18n="saveProgress">Save progress</button><button class="secondary" id="export-progress" type="button" data-i18n="exportProgress">Export results</button><button class="secondary" id="save-exit" type="button" data-i18n="saveExit">Save and exit</button></div>
       <div class="study-language-switch" role="group" data-i18n-aria-label="languageSwitcher" aria-label="Display language">
-        <button class="study-language-option" type="button" data-study-language="en" data-i18n="languageEnglish" aria-pressed="true">English</button>
         <button class="study-language-option" type="button" data-study-language="zh" data-i18n="languageChinese" aria-pressed="false">Chinese</button>
+        <button class="study-language-option" type="button" data-study-language="en" data-i18n="languageEnglish" aria-pressed="true">English</button>
       </div>
-      <button class="study-close" id="close-study-btn" type="button" data-i18n-aria-label="closeStudyLabel" aria-label="Close study workspace"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg><span data-i18n="closeStudy">Close</span></button>
+      <button class="study-close" id="close-study-btn" type="button" data-i18n-aria-label="closeStudyLabel" aria-label="Close study workspace"><span aria-hidden="true">←</span> <span data-i18n="closeStudy">Back to workbench</span></button>
     </header>
-
-    <div class="study-intro-layer" id="study-intro" hidden>
-      <section class="study-intro-dialog" role="dialog" aria-modal="true" aria-labelledby="study-intro-title" aria-describedby="study-intro-lead">
-        <header class="study-intro-head">
-          <div class="study-language-switch" role="group" data-i18n-aria-label="languageSwitcher" aria-label="Display language">
-            <button class="study-language-option" type="button" data-study-language="en" data-i18n="languageEnglish" aria-pressed="true">English</button>
-            <button class="study-language-option" type="button" data-study-language="zh" data-i18n="languageChinese" aria-pressed="false">Chinese</button>
-          </div>
-          <div class="eyebrow" data-i18n="introEyebrow">Expert Study guide</div>
-          <h1 id="study-intro-title" data-i18n="introTitle">Before you begin</h1>
-          <p id="study-intro-lead" data-i18n="introLead">Complete six ten-minute sessions. Each session prepares 30 blinded brain-imaging comparisons; answer as many as you can.</p>
-          <div class="study-intro-difficulty" aria-hidden="true">
-            <div class="intro-tier easy"><strong>6</strong><span data-i18n="introSessions">sessions</span></div>
-            <div class="intro-tier medium"><strong>10</strong><span data-i18n="introMinutes">active minutes each</span></div>
-            <div class="intro-tier hard"><strong>3</strong><span data-i18n="introTiers">difficulty levels</span></div>
-          </div>
-        </header>
-        <div class="study-intro-content">
-          <section class="study-intro-section">
-            <h2 data-i18n="introTaskTitle">Your task</h2>
-            <p data-i18n="introTaskDesc">Use the plain-language hypothesis facts and standardized evidence cards to predict which candidate is more likely to replicate. You do not need specialist clinical knowledge.</p>
-            <div class="study-intro-note"><strong data-i18n="introRecordedTitle">What is recorded</strong><span data-i18n="introRecordedDesc">The result file includes your answers, active decision time, answer changes, question difficulty, and study metadata.</span></div>
-          </section>
-          <section class="study-intro-section">
-            <h2 data-i18n="introHowTitle">How to complete the study</h2>
-            <ol class="study-intro-steps">
-              <li><strong data-i18n="introSetupTitle">Check the session setup</strong><span data-i18n="introSetupDesc">Confirm your name or ID and whether generator scores are shown. You can switch English or Chinese at any time.</span></li>
-              <li><strong data-i18n="introReviewTitle">Review both evidence cards</strong><span data-i18n="introReviewDesc">Start with the highlighted difference. Use the 1–5 literature tabs or View all. The 1–10 value rates evidence support, not replication probability; expand details or source text when needed.</span></li>
-              <li><strong data-i18n="introChooseTitle">Choose one answer</strong><span data-i18n="introChooseDesc">Select the side more likely to replicate. If you cannot choose, record whether evidence is insufficient or the question is outside your expertise.</span></li>
-              <li><strong data-i18n="introDirectoryTitle">Use the question directory</strong><span data-i18n="introDirectoryDesc">Open it with D to jump between questions, check answer status and difficulty, or revise an answer. Drag its edge to resize it.</span></li>
-              <li><strong data-i18n="introNavigateTitle">Pause or continue later</strong><span data-i18n="introNavigateDesc">Only active study time counts. Pause before stepping away. Closing the study, app, or computer preserves unfinished work; reopen to continue or delete it and restart.</span></li>
-              <li><strong data-i18n="introExportTitle">Complete and export six sessions</strong><span data-i18n="introExportDesc">Each session ends automatically after ten active minutes. Export its JSON result file and send it to the organizer, then start the next session.</span></li>
-            </ol>
-          </section>
-        </div>
-        <footer class="study-intro-foot">
-          <p class="study-intro-shortcuts" data-i18n="introShortcuts">Shortcuts: 1 left · 2 choose a cannot-judge reason · 3 right · D question directory · Left / Right Arrow changes the focused paper</p>
-          <div class="study-intro-actions">
-            <button class="secondary" id="study-intro-never" type="button" data-i18n="introDontShow">Don't show again</button>
-            <button class="primary" id="study-intro-acknowledge" type="button" data-i18n="introGotIt">Got it</button>
-          </div>
-        </footer>
-      </section>
-    </div>
 
     <section class="view auth active" id="auth-view">
       <div class="auth-card">
         <div class="auth-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2.5"/></svg></div>
         <div class="eyebrow" data-i18n="restrictedStudy">Restricted study workspace</div>
-        <h1 data-i18n="unlockStudy">Unlock User Study</h1>
-        <p data-i18n="unlockDesc">Enter the study password to access expert ranking sessions and study results.</p>
+        <h1 data-i18n="unlockStudy">Unlock Expert Study (Extension)</h1>
+        <p data-i18n="unlockDesc">Enter the study password to access the extended expert-review sessions.</p>
         <form class="auth-form" id="auth-form">
           <label><span data-i18n="studyPassword">Study password</span><input id="study-password" type="password" autocomplete="current-password" required autofocus></label>
           <button class="primary" id="unlock-btn" type="submit" data-i18n="unlock">Unlock study</button>
@@ -687,22 +597,28 @@
     <section class="view setup" id="setup-view">
       <div class="setup-card">
         <div class="setup-intro">
-          <div class="eyebrow" data-i18n="caseStudyOne">Case Study 1 · Expert protocol</div>
+          <div class="eyebrow" data-i18n="caseStudyOne">Human Evaluation 2 · HYPOTHESIS RANKING</div>
           <h1 data-i18n="caseTitle">Rank hypotheses for external validation</h1>
-          <p data-i18n="caseIntro">Compare blinded TCP hypotheses using prior literature; held-out external validation outcomes remain hidden.</p>
+          <p class="fixed-time-note" data-i18n="fixedTimeInstruction">Within the fixed time, answer as many comparisons as you can while making considered judgments.</p>
+          <p data-i18n="introSystem">NeuroDiscovery is an automated research system: it proposes testable hypotheses on a neuroimaging knowledge graph and validates them in real data experiments.</p>
+          <p data-i18n="introWhy">Automated scores cannot replace expert judgment—whether the system's priority order agrees with experts requires your independent answers.</p>
+          <p data-i18n="caseIntro">Compare blinded hypotheses proposed by the system using prior literature; internal validation outcomes remain hidden during labeling.</p>
           <div class="protocol">
-            <div class="protocol-row"><span class="protocol-num">1</span><div><strong data-i18n="triageTitle">Six timed sessions</strong><span data-i18n="triageDesc">Each session prepares 20 comparisons and lasts ten active minutes. Answer as many as possible and pause whenever you are interrupted.</span></div></div>
+            <div class="protocol-row"><span class="protocol-num">1</span><div><strong id="triage-title" data-i18n="triageTitle">Six timed sessions</strong><span id="triage-desc" data-i18n="triageDesc">Each session prepares 20 comparisons and lasts ten active minutes. Answer as many as possible and pause whenever you are interrupted.</span></div></div>
             <div class="protocol-row"><span class="protocol-num">2</span><div><strong data-i18n="refineTitle">Three difficulty levels</strong><span data-i18n="refineDesc">Questions range from straightforward to challenging. Judge every pair using your own clinical and scientific experience.</span></div></div>
             <div class="protocol-row"><span class="protocol-num">3</span><div><strong data-i18n="submitTitle">Independent judgment</strong><span data-i18n="submitDesc">Choose the hypothesis you consider more plausible. Select “Cannot judge” whenever the available evidence is insufficient.</span></div></div>
           </div>
         </div>
         <form class="setup-form" id="setup-form">
-          <label><span data-i18n="studyId">Study ID</span><input id="study-id" value="case1-tcp-external-validation-v1" required></label>
+          <label><span data-i18n="participantId">Name / code</span><input id="participant-id" data-i18n-placeholder="participantPlaceholder" placeholder="e.g. Zhang San or P023" autocomplete="off" required></label>
           <div class="form-row">
-            <label><span data-i18n="participantId">Name / ID</span><input id="participant-id" data-i18n-placeholder="participantPlaceholder" placeholder="Name or expert-001" autocomplete="off" required></label>
-            <label><span data-i18n="condition">Show generator scores</span><select id="condition"><option value="manual" data-i18n="manual">No</option><option value="assisted" data-i18n="assisted">Yes</option></select></label>
+            <label><span data-i18n="experienceYears">Relevant research experience</span><select id="participant-experience" required><option value="" data-i18n="experiencePlaceholder">Please select</option><option value="0-2" data-i18n="exp02">0–2 years</option><option value="3-5" data-i18n="exp35">3–5 years</option><option value="6-10" data-i18n="exp610">6–10 years</option><option value="10+" data-i18n="exp10plus">Over 10 years</option></select></label>
+            <label id="assignment-row" hidden><span data-i18n="assignmentLabel">Assignment</span><select id="assignment"></select></label>
           </div>
-          <label><span data-i18n="candidateFile">Candidate hypothesis JSON</span><input id="candidate-path" list="candidate-sources" required><datalist id="candidate-sources"></datalist></label>
+          <details class="setup-advanced"><summary data-i18n="advancedSettings">Advanced settings</summary>
+            <label><span data-i18n="studyId">Study ID</span><input id="study-id" value="case1-tcp-external-validation-v1" required></label>
+            <label><span data-i18n="candidateFile">Candidate hypothesis JSON</span><input id="candidate-path" list="candidate-sources" required><datalist id="candidate-sources"></datalist></label>
+          </details>
           <div class="resume-card" id="resume-card" hidden>
             <strong data-i18n="unfinishedSession">Unfinished session found</strong>
             <p id="resume-summary"></p>
@@ -712,6 +628,7 @@
             </div>
           </div>
           <button class="primary" id="start-btn" type="submit" data-i18n="startStudy">Start ranking session</button>
+          <button class="secondary" id="export-saved" type="button" data-i18n="exportProgress">Export results</button>
           <div class="form-note" id="storage-note"></div><div class="error" id="setup-error"></div>
         </form>
       </div>
@@ -723,14 +640,16 @@
         <div class="study-session-meta"><strong id="participant-label"></strong><span id="session-progress-label"></span><span id="condition-label"></span></div>
         <div class="study-progress-block"><div class="progress-track"><span id="progress-fill"></span></div><span id="progress-text"></span></div>
         <div class="study-question-meta" id="study-question-meta"><div class="study-question-line"><span class="duel-stage" id="duel-stage"></span><span class="duel-distance mono" id="duel-distance"></span></div><p data-i18n="comparePrompt">Review the hypotheses and their strongest supporting literature.</p></div>
-        <div class="strip-actions"><button class="directory-trigger" id="question-directory-btn" type="button" aria-expanded="false" aria-controls="question-directory"><span data-i18n="questionDirectory">Question directory</span><b id="directory-trigger-count">0 answered</b></button><button class="ghost" id="pause-btn" data-i18n="pause">Pause</button><button class="ghost" id="end-btn" data-i18n="endSession">End session</button></div>
+        <p class="fixed-time-note" data-i18n="fixedTimeShort">Answer as many as possible within the fixed time.</p>
+        <div class="strip-actions"><button class="directory-trigger" id="question-directory-btn" type="button" aria-expanded="false" aria-controls="question-directory"><span data-i18n="questionDirectory">Question directory</span><b id="directory-trigger-count">0 answered</b></button><button class="ghost" id="pause-btn" data-i18n="pause">Pause</button></div>
+        <div id="progress-save-status" class="export-status" role="status" aria-live="polite"></div>
       </aside>
       <div class="duel-workspace">
         <div class="duel-shell" id="duel-active">
           <div class="duel-grid"><article class="hypothesis-card" id="duel-left"></article><div class="duel-vs">VS</div><article class="hypothesis-card" id="duel-right"></article></div>
           <div class="duel-actions"><button class="duel-action" id="choose-left"><span data-i18n="leftBetter">Left is more likely to replicate</span><i class="key">1</i></button><div class="unsure-wrap"><button class="duel-action unsure" id="choose-unsure" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="undecided-menu"><span id="choose-unsure-label" data-i18n="cannotJudge">Cannot judge</span><i class="key">2</i></button><div class="undecided-menu" id="undecided-menu" role="menu" hidden><button class="undecided-option" type="button" role="menuitem" data-undecided-reason="evidence_insufficient"><strong data-i18n="evidenceInsufficient">Evidence is insufficient or balanced</strong><span data-i18n="evidenceInsufficientHint">The displayed evidence does not support a defensible choice.</span></button><button class="undecided-option" type="button" role="menuitem" data-undecided-reason="outside_expertise"><strong data-i18n="outsideExpertise">Outside my expertise</strong><span data-i18n="outsideExpertiseHint">I cannot interpret the required clinical or imaging concepts reliably.</span></button></div></div><button class="duel-action" id="choose-right"><span data-i18n="rightBetter">Right is more likely to replicate</span><i class="key">3</i></button></div>
         </div>
-        <div class="duel-complete" id="duel-complete"><div class="duel-complete-card"><div class="eyebrow" data-i18n="comparisonComplete">Session complete</div><h2 data-i18n="rankingReady">Ten active minutes completed</h2><p id="duel-summary"></p><div class="duel-complete-actions"><button class="secondary" id="export-results" type="button" data-i18n="exportResults">Export result file</button><button class="primary" id="duel-submit" data-action="next" data-i18n="nextSession">Start next session</button></div><div class="export-status" id="export-status" role="status" aria-live="polite"></div></div></div>
+        <div class="duel-complete" id="duel-complete"><div class="duel-complete-card"><div class="eyebrow" data-i18n="comparisonComplete">Session complete</div><h2 data-i18n="rankingReady">Ten active minutes completed</h2><p id="duel-summary"></p><p data-i18n="handoffInstruction">When both evaluations are finished, export one JSON file and send it to the researcher. Use the same name/code in both evaluations.</p><div class="duel-complete-actions"><button class="secondary" id="export-results" type="button" data-i18n="exportResults">Export and send to the researcher</button><button class="primary" id="duel-submit" data-action="next" data-i18n="nextSession">Start next session</button></div><div class="export-status" id="export-status" role="status" aria-live="polite"></div></div></div>
       </div>
       <div class="workspace legacy-workspace" aria-hidden="true">
         <aside class="panel candidate-panel">
@@ -761,6 +680,14 @@
       </div>
     </section>
   </main>
+  <dialog id="study-close-dialog" class="study-close-dialog">
+    <h2 data-i18n="closeDialogTitle">Return to the workbench?</h2>
+    <p data-i18n="closeDialogDesc">This session is not finished. You can save your answers and continue later in this client, or discard what you have entered.</p>
+    <div class="study-close-actions">
+      <button class="danger-outline" id="close-discard-btn" type="button" data-i18n="closeDiscard">Discard my answers</button>
+      <button class="primary" id="close-save-btn" type="button" data-i18n="closeSave">Save and continue later</button>
+    </div>
+  </dialog>
   <script>
   (() => {
     const params = new URLSearchParams(location.search);
@@ -775,7 +702,7 @@
     }
     applyHostTheme(params.get('theme'));
     function applyHostTextScale(rawScale) {
-      const numeric = Number(rawScale);
+      const numeric = rawScale === null || rawScale === '' ? 1 : Number(rawScale);
       const scale = Number.isFinite(numeric) ? Math.min(1.5, Math.max(.8, Math.round(numeric * 10) / 10)) : 1.1;
       const app = document.querySelector('.app');
       if (!app) return;
@@ -792,17 +719,26 @@
       if(payload?.type==='neurodiscovery:theme')applyHostTheme(payload.theme);
     });
     const strings = {
-      expertStudy:['Expert Study','专家研究'], workbench:['Ranking workbench','排序工作台'], studyResults:['Study results','研究结果'], closeStudy:['Close','关闭'], closeStudyLabel:['Close study workspace','关闭研究页面'], resizeStudyStrip:['Resize study sidebar','调整研究侧栏宽度'],
+      saveProgress:['Save progress','保存进度'], exportProgress:['Export results','导出结果'], saveExit:['Save and exit','保存并退出'],
+      progressSaved:['Progress saved','进度已保存'], progressSaving:['Saving progress…','正在保存进度…'], progressSaveFailed:['Save failed. Your answers remain on this page; please retry.','保存失败，答案仍保留在当前页面，请重试。'],
+      fixedTimeInstruction:['Within the fixed time, answer as many comparisons as you can while making considered judgments.','请在固定时间内，在认真判断的基础上尽可能完成更多题目。'],
+      fixedTimeShort:['Answer as many as possible within the fixed time.','固定时间内，尽可能完成更多题目。'],
+      handoffInstruction:['When both evaluations are finished, export one JSON file and send it to the researcher. Use the same name/code in both evaluations.','两项评估完成后，导出一个 JSON 文件发给研究者。两项评估请使用相同的名字/代号。'],
+      completeOutputReview:['Expert Study · Complete research output review','专家研究 · 完整科研成果评审'],
+      expertStudy:['Human Evaluation 2','Human Evaluation 2'], workbench:['Expert review','专家评审'], studyResults:['Study results','研究结果'], closeStudy:['Back to workbench','返回工作台'], closeStudyLabel:['Close study workspace','关闭研究页面'], resizeStudyStrip:['Resize study sidebar','调整研究侧栏宽度'],
+      closeDialogTitle:['Return to the workbench?','返回工作台？'], closeDialogDesc:['This session is not finished. You can save your answers and continue later in this client, or discard what you have entered.','本次会话尚未完成。可以保存已填写的内容、下次在本客户端继续，或放弃本次填写的内容。'], closeDiscard:['Discard my answers','放弃填写内容'], closeSave:['Save and continue later','保存，下次继续'],
       languageSwitcher:['Display language','界面语言'], languageEnglish:['English','英文'], languageChinese:['Chinese','中文'],
-      restrictedStudy:['Restricted study workspace','受限研究工作区'], unlockStudy:['Unlock User Study','解锁 User Study'], unlockDesc:['Enter the study password to access expert ranking sessions and study results.','请输入研究密码，以访问专家排序会话和研究结果。'], studyPassword:['Study password','研究密码'], unlock:['Unlock study','解锁研究'], incorrectPassword:['Incorrect study password.','研究密码错误。'],
-      notRecording:['Not recording','未记录'], caseStudyOne:['Case Study 1 · Expert protocol','案例研究 1 · 专家实验协议'],
-      caseTitle:['Rank TCP hypotheses for external validation','为外部验证排序 TCP 假设'], caseIntro:['Each screen shows two blinded TCP hypotheses and prior literature. Choose which is more likely to replicate in an independent dataset, or mark the pair as undecidable. External validation outcomes remain hidden.','每次展示两个来自 TCP 的盲法假设及既往文献。请选择哪个更可能在独立数据集中复现，或标记为无法判断；外部验证结果在标注期间保持隐藏。'],
+      restrictedStudy:['Restricted study workspace','受限研究工作区'], unlockStudy:['Unlock Human Evaluation 2','解锁 Human Evaluation 2'], unlockDesc:['Enter the study password to access Human Evaluation 2.','请输入研究密码，以访问 Human Evaluation 2。'], studyPassword:['Study password','研究密码'], unlock:['Unlock study','解锁研究'], incorrectPassword:['Incorrect study password.','研究密码错误。'],
+      notRecording:['Not recording','未记录'], caseStudyOne:['Human Evaluation 2 · HYPOTHESIS RANKING','Human Evaluation 2 · 假设排序'],
+      caseTitle:['Rank system-proposed hypotheses','为系统提出的假设排序'], caseIntro:['Each screen shows two blinded system-proposed hypotheses with prior literature. The study holds 240 comparison pairs over 480 system-proposed hypotheses. Choose which side is more likely to show a real difference, or mark the pair as undecidable. Internal validation outcomes remain hidden during labeling. We compare the system ranking with the expert ranking.','每次展示两个系统提出的盲法假设及既往文献。本次研究包含 240 道配对比较（480 个系统提出的假设）。请选择哪一侧更可能在真实数据中存在差异，或标记为无法判断；内部验证结果在标注期间保持隐藏。我们会比较系统排序与专家排序的一致性。'],
+      introSystem:['NeuroDiscovery is an automated research system: it proposes testable hypotheses on a neuroimaging knowledge graph and validates them in real data experiments.','NeuroDiscovery 是一个自动研究系统：它在神经影像知识图谱上自动提出可检验的假设，并用真实数据完成实验验证。'],
+      introWhy:['Automated scores cannot replace expert judgment about priorities—whether the system ranking agrees with experts requires your independent answers.','自动打分无法替代领域专家对优先级的判断——系统的排序与专家是否一致，需要你们独立作答来检验。'],
       triageTitle:['Six timed sessions','六次定时会话'], triageDesc:['Each session prepares 20 comparisons and lasts ten active minutes. Answer as many as possible and pause whenever you are interrupted.','每次会话准备 20 道比较题，并持续 10 分钟有效作答时间；请尽可能多地完成比较，中途有事时请按“暂停”。'],
       refineTitle:['Three difficulty levels','三个难度等级'], refineDesc:['Questions range from straightforward to challenging. Use the standardized evidence cards; no specialist clinical knowledge is assumed.','题目从较容易判断逐步过渡到更具挑战的比较；请使用标准化证据卡片作答，不要求掌握专科临床知识。'],
       submitTitle:['Independent judgment','独立判断'], submitDesc:['Choose which hypothesis is more likely to replicate. If no defensible choice is possible, record whether the evidence is insufficient or the question is outside your expertise.','请选择哪个假设更可能复现；如果无法作出有依据的选择，请注明是证据不足还是超出专业范围。'],
-      studyId:['Study ID','研究 ID'], participantId:['Name / ID','姓名 / ID'], participantPlaceholder:['Name or an ID you choose','填写姓名或自定义 ID'], condition:['Show generator scores','显示生成器打分'], manual:['No','否'], assisted:['Yes','是'],
+      studyId:['Study ID','研究 ID'], participantId:['Name / code','名字/代号'], participantPlaceholder:['e.g. Zhang San or P023','例如：张三 或 P023'], experienceYears:['Relevant research experience','相关研究年限'], experiencePlaceholder:['Please select','请选择'], assignmentLabel:['Assignment','分配编号'], exp02:['0–2 years','0–2 年'], exp35:['3–5 years','3–5 年'], exp610:['6–10 years','6–10 年'], exp10plus:['Over 10 years','10 年以上'], advancedSettings:['Advanced settings','高级设置'], condition:['Show generator scores','显示生成器打分'], manual:['No','否'], assisted:['Yes','是'],
       candidateFile:['Candidate hypothesis JSON','候选假设 JSON'], startStudy:['Start ranking session','开始排序会话'], unfinishedSession:['Unfinished session found','发现未完成的会话'], continueSession:['Continue previous session','继续上次会话'], restartSession:['Delete progress and restart','删除进度并重新开始'], confirmRestartSession:['Delete all saved answers and timing records for session {session}, then restart it from the beginning? Completed sessions will not be affected.','确定删除第 {session} 次会话已保存的全部答案和计时记录，并从头重新开始吗？已完成的会话不会受到影响。'], deletingSession:['Deleting unfinished progress…','正在删除未完成进度…'], restartFailed:['Could not delete and restart the unfinished session: {error}','无法删除并重新开始未完成会话：{error}'], resumeSummary:['Session {session} · {participant} · {answered} answered · saved {time}','第 {session} 次会话 · {participant} · 已回答 {answered} 题 · 保存于 {time}'], resumeFailed:['Could not restore the previous session: {error}','无法恢复上次会话：{error}'],
-      pause:['Pause','暂停'], resume:['Resume','继续'], endSession:['End session','结束会话'], sessionOf:['Session {current} of {total}','第 {current} / {total} 次会话'], timeRemaining:['{time} remaining','剩余 {time}'], answeredCount:['{count} answered','已回答 {count} 题'], candidatePool:['Candidate pool','候选假设池'], candidateHint:['Select a hypothesis to inspect its evidence path.','选择假设以检查其证据路径。'], searchCandidates:['Search candidates','搜索候选假设'], all:['All','全部'], unranked:['Unranked','未判断'],
+      pause:['Pause timer','暂停计时'], resume:['Resume timer','继续计时'], endSession:['End session','结束会话'], sessionOf:['Session {current} of {total}','第 {current} / {total} 次会话'], timeRemaining:['{time} remaining','剩余 {time}'], answeredCount:['{count} answered','已回答 {count} 题'], candidatePool:['Candidate pool','候选假设池'], candidateHint:['Select a hypothesis to inspect its evidence path.','选择假设以检查证据路径。'], searchCandidates:['Search candidates','搜索候选假设'], all:['All','全部'], unranked:['Unranked','未判断'],
       evidenceGraph:['Evidence graph','证据图谱'], sourceConcept:['Source concept','来源概念'], targetFeature:['Target feature','目标特征'], selectCandidate:['Select a candidate to inspect its evidence path.','选择候选假设以检查证据路径。'],
       whichPriority:['Which hypothesis is more likely to replicate externally?','哪个假设更可能在外部数据中复现？'], skipComparison:['Skip comparison','跳过本次比较'], finishRefinement:['Finish refinement','完成精排'], noCandidate:['No candidate selected','尚未选择候选假设'], priorityTier:['Priority tier','优先级'], shortcuts:['Shortcuts 1–4','快捷键 1–4'], high:['High','高'], medium:['Medium','中'], low:['Low','低'], exclude:['Exclude','排除'], refineRanking:['Refine within tiers','同档精排'], submitRanking:['Submit ranking','提交排序'],
       tierGuidance:['Choose a tier. A short same-tier refinement will create the final order.','先选择优先级；随后通过少量同档比较生成最终顺序。'], tierRecorded:['Recorded as {tier}. Opening the next unranked hypothesis…','已记录为“{tier}”，正在打开下一个未判断假设…'], triageComplete:['Initial triage complete. Refine same-tier ties before submitting.','初筛已完成。请先完成同档精排，再提交最终顺序。'], refinementComplete:['Refinement complete. The final order is ready to submit.','精排已完成，可以提交最终顺序。'],
@@ -810,29 +746,24 @@
       easyPair:['Easy','容易'], mediumPair:['Medium','中等'], hardPair:['Hard','困难'], structuralDistance:['Structural distance','结构距离'],
       questionDirectory:['Question directory','题目目录'], directoryHint:['Jump to any question. Drag the right edge to resize. Previous answers remain editable.','快速跳转到任意题目；拖动右侧边缘可调整宽度，已回答的题目仍可修改。'], closeDirectory:['Close question directory','关闭题目目录'], resizeDirectory:['Resize question directory','调整题目目录宽度'], answered:['Answered','已回答'], unanswered:['Unanswered','未回答'], nextUnanswered:['Go to next unanswered','跳转到下一道未回答题目'], easyDifficulty:['Easy','容易'], mediumDifficulty:['Medium','中等'], hardDifficulty:['Hard','困难'], leftSelected:['Left selected','已选择左侧'], rightSelected:['Right selected','已选择右侧'], currentQuestion:['Current question','当前题目'],
       hypothesisA:['Hypothesis A','假设 A'], hypothesisB:['Hypothesis B','假设 B'], relevantLiterature:['Relevant literature','相关参考文献'], paperNavigator:['Literature navigator','文献导航'], paperPosition:['Paper {current} of {total}','第 {current} / {total} 篇'], viewAllPapers:['View all','查看全部'], viewOnePaper:['One at a time','逐篇阅读'], whyRelevant:['Why it is relevant','关联原因'], reportedEvidence:['Reported evidence','已报告证据'], studyFinding:['What the study found','研究发现'], hypothesisMatch:['Match to this hypothesis','与本假设的对应'], evidenceBottomLine:['Evidence support','证据支持度'], evidenceFit:['Evidence fit','证据匹配'], studyCredibilityScore:['Study credibility','研究可信度'], supportScoreNotProbability:['Evidence-support score, not a replication probability.','证据支持度评分，不是复现概率。'], relationToHypothesis:['Relationship to the hypothesis','与假设的关系'], diseaseRelation:['Disease','疾病'], regionRelation:['Brain region','脑区'], measureRelation:['Measure','指标'], directionRelation:['Direction','方向'], relationExact:['Same','相同'], relationRelated:['Related','相近'], relationUnmatched:['Not matched','未匹配'], relationSameDirection:['Same','一致'], relationOppositeDirection:['Opposite','相反'], relationUnknown:['Not reported','未报告'], studyDetails:['Study details','研究详情'], scoreBasis:['Detailed rating basis','详细评分依据'], openPaper:['Open paper','打开论文'], findPapers:['Search title on Google Scholar','在 Google Scholar 检索标题'], showRelevantText:['Show relevant text','展开相关原文'], hideRelevantText:['Hide relevant text','收起相关原文'], sourceExcerpt:['Most relevant source text','与假设最相关的原文'], paperAbstract:['Abstract','摘要'], noPaperDetails:['No titled bibliographic record is available for this hypothesis.','此假设暂无带标题的参考文献记录。'],
-      publicationYear:['Year','发表年份'], journalName:['Journal','期刊'], journalImpactFactor:['Current journal JIF','期刊当前 JIF'], cohortSize:['Cohort','队列规模'], relevantPValue:['Relevant p-value','相关 p 值'], publicationStatus:['Publication status','发表状态'], peerReviewed:['Peer reviewed','同行评议'], preprint:['Preprint','预印本'], publishedPreprint:['Preprint with published version','已有正式版本的预印本'], repositoryCopy:['Repository copy of peer-reviewed paper','同行评议论文的机构库副本'], bookChapter:['Peer-reviewed book chapter','同行评议书籍章节'], metricNotVerified:['Not verified from a primary source','未从一手来源核实'], metricNotAvailable:['Not available','暂无'], metricNotApplicable:['Not applicable','不适用'], pValueNotReported:['Not reported for the selected evidence','所选证据未报告'], pValueElsewhere:['Other p-values appear in the abstract, but none directly correspond to the selected evidence','摘要另有 p 值，但没有与所选证据直接对应的 p 值'], jifCaveat:['JIF is a journal-level citation metric, not a quality score for this individual paper.','JIF 是期刊层面的引文指标，不代表这篇论文自身的质量。'],
+      publicationYear:['Year','发表年份'], journalName:['Journal','期刊'], journalImpactFactor:['Current journal JIF','期刊当前 JIF'], cohortSize:['Cohort','队列规模'], citationCount:['Citations','引用量'], publicationStatus:['Publication status','发表状态'], peerReviewed:['Peer reviewed','同行评议'], preprint:['Preprint','预印本'], publishedPreprint:['Preprint with published version','已有正式版本的预印本'], repositoryCopy:['Repository copy of peer-reviewed paper','同行评议论文的机构库副本'], bookChapter:['Peer-reviewed book chapter','同行评议书籍章节'], metricNotVerified:['Not verified from a primary source','未从一手来源核实'], metricNotAvailable:['Not available','暂无'], metricNotApplicable:['Not applicable','不适用'], jifCaveat:['JIF is a journal-level citation metric, not a quality score for this individual paper.','JIF 是期刊层面的引文指标，不代表这篇论文自身的质量。'],
       terminology:['Plain-language terminology','通俗术语说明'], diseaseTerm:['Condition','疾病/人群'], brainRegionTerm:['Brain region','脑区'], imagingMeasureTerm:['Imaging measure','影像指标'], originalStatement:['Original structured hypothesis','原始结构化假设'],
-      comparisonComplete:['Session complete','会话完成'], rankingReady:['Ten active minutes completed','已完成 10 分钟有效作答'], exportResults:['Export result file','导出结果文件'], exportSaved:['Saved to {path}','已保存到 {path}'], exportCanceled:['Export canceled.','已取消导出。'], exportFailed:['Could not export results: {error}','无法导出结果：{error}'], nextSession:['Start next session','开始下一次会话'], allSessionsComplete:['All six sessions are complete','六次会话均已完成'], retrySave:['Retry saving session','重试保存会话'], comparisonSummary:['{answered} answered · {unsure} cannot judge · session {current} of {required}','已回答 {answered} 题 · 无法判断 {unsure} 题 · 第 {current} / {required} 次会话'], comparisonSaved:['This timed session and its decision times were saved.','本次定时会话及其决策时间已保存。'],
+      comparisonComplete:['Session complete','会话完成'], rankingReady:['Ten active minutes completed','已完成 10 分钟有效作答'], exportResults:['Export and send to the researcher','导出并交给研究者'], exportSaved:['Saved to {path}','已保存到 {path}'], exportCanceled:['Export canceled.','已取消导出。'], exportFailed:['Could not export results: {error}','无法导出结果：{error}'], nextSession:['Start next session','开始下一次会话'], allSessionsComplete:['All six sessions are complete','六次会话均已完成'], retrySave:['Retry saving session','重试保存会话'], comparisonSummary:['{answered} answered · {unsure} cannot judge · session {current} of {required}','已回答 {answered} 题 · 无法判断 {unsure} 题 · 第 {current} / {required} 次会话'], comparisonSaved:['This timed session and its decision times were saved.','本次定时会话及其决策时间已保存。'],
       caseAnalysis:['Case Study 1 · Analysis','案例研究 1 · 分析'], loadResults:['Load results','加载结果'], loadPrompt:['Load a study to compare ranking time and discovery efficiency.','加载研究以比较排序时间与发现效率。'],
       activeTime:['Active time','有效时间'], ranked:['ranked','已判断'], graphEvidence:['Graph evidence','图谱证据'], noEvidence:['No structured path evidence is available for this candidate.','此候选假设没有可用的结构化路径证据。'],
       generatorSignal:['Generator signal','生成器信号'], compositeScore:['Composite score','综合分数'], evidenceItems:['Evidence items','证据条目'], hypothesisType:['Hypothesis type','假设类型'],
       sessionComplete:['Ranking submitted. The immutable candidate snapshot and event history were saved.','排序已提交。不可变候选快照及交互历史已经保存。'], confirmEnd:['End this session without submitting a ranking?','不提交排序并结束当前会话吗？'], mustRank:['Classify every candidate before submitting.','提交前需要判断所有候选假设。'],
       rankingSaving:['Ranking time saved','排序节省时间'], completedSessions:['Completed sessions','已完成会话'], runtimeResults:['Runtime results','运行结果'], manualMean:['Scores hidden mean','不显示分数平均用时'], assistedMean:['Scores shown mean','显示分数平均用时'], discoveryCurve:['Confirmed-hypothesis discovery time','证实假设发现时间'], discoveryDesc:['Cumulative NeuroRuntime time required to reach each share of all confirmed hypotheses.','发现全部证实假设中各比例所需的 NeuroRuntime 累计时间。'],
-      fraction:['Confirmed share','证实比例'], manualTime:['Scores hidden','不显示分数'], assistedTime:['Scores shown','显示分数'], importRuntime:['Import NeuroRuntime JSON','导入 NeuroRuntime JSON'], import:['Import','导入'], seconds:['s','秒'], noData:['No completed sessions yet.','暂无已完成的会话。'],
-      introEyebrow:['Expert Study guide','Expert Study 操作说明'], introTitle:['Before you begin','开始前请阅读'], introLead:['Complete six ten-minute sessions. Each session prepares 20 blinded TCP brain-imaging comparisons; answer as many as you can. The held-out external validation outcomes remain hidden.','专家组需要完成 6 次会话，每次为 10 分钟有效作答时间并准备 20 道来自 TCP 的盲法脑影像假设比较题；请按自己的速度尽可能多地作答，保留的外部验证结果不会显示。'],
-      introSessions:['sessions','次会话'], introMinutes:['active minutes each','分钟有效时间 / 次'], introTiers:['difficulty levels','难度等级'],
-      introTaskTitle:['Your task','需要完成的任务'], introTaskDesc:['Use the plain-language hypothesis facts and standardized evidence cards to predict which candidate is more likely to replicate. You do not need specialist clinical knowledge.','请使用通俗假设信息和标准化证据卡片，预测哪个候选更可能复现；不要求掌握专科临床知识。'],
-      introRecordedTitle:['What is recorded','记录内容'], introRecordedDesc:['The result file includes your answers, active decision time, answer changes, question difficulty, and study metadata.','结果文件会包含答案、有效决策时间、答案修改次数、题目难度和研究元数据。'],
-      introHowTitle:['How to complete the study','操作说明'], introSetupTitle:['Check the session setup','确认会话设置'], introSetupDesc:['Confirm your name or ID and whether generator scores are shown. You can switch English or Chinese at any time.','确认姓名或 ID，以及是否显示生成器评分；会话中可随时切换中英文。'], introReviewTitle:['Review both evidence cards','审阅两侧证据卡片'], introReviewDesc:['Start with the highlighted difference. Use the 1–5 literature tabs or View all. The 1–10 value rates evidence support, not replication probability; expand details or source text when needed.','先查看高亮显示的关键差异，并使用 1–5 文献标签逐篇阅读或“查看全部”。1–10 分表示证据支持度，不是复现概率；需要时再展开详情或相关原文。'],
-      introChooseTitle:['Choose one answer','选择一个答案'], introChooseDesc:['Select the side more likely to replicate. If you cannot choose, record whether evidence is insufficient or the question is outside your expertise.','选择更可能复现的一侧；如果无法选择，请注明证据不足或超出专业范围。'],
-      introDirectoryTitle:['Use the question directory','使用题目目录'], introDirectoryDesc:['Open it with D to jump between questions, check answer status and difficulty, or revise an answer. Drag its edge to resize it.','按 D 打开题目目录，可跳转题目、查看作答状态与难度或修改答案；拖动目录边缘可调整宽度。'],
-      introNavigateTitle:['Pause or continue later','暂停或稍后续做'], introNavigateDesc:['Only active study time counts. Pause before stepping away. Closing the study, app, or computer preserves unfinished work; reopen to continue or delete it and restart.','只累计有效作答时间；离开前请先暂停。关闭研究页面、应用或电脑都会保留未完成进度；再次打开后可继续，或删除记录后重做。'],
-      introExportTitle:['Complete and export six sessions','完成并导出六次会话'], introExportDesc:['Each session ends automatically after ten active minutes. Export its JSON result file and send it to the organizer, then start the next session.','每次会话在累计 10 分钟有效时间后自动结束。请导出该次会话的 JSON 结果文件并发送给组织者，然后开始下一次会话。'],
-      introShortcuts:['Shortcuts: 1 left · 2 choose a cannot-judge reason · 3 right · D question directory · Left / Right Arrow changes the focused paper','快捷键：1 左侧 · 2 选择无法判断原因 · 3 右侧 · D 题目目录 · 焦点位于文献编号时用左右方向键切换'], introDontShow:["Don't show again",'不再提示'], introGotIt:['Got it','我已知晓']
+      fraction:['Confirmed share','证实比例'], manualTime:['Scores hidden','不显示分数'], assistedTime:['Scores shown','显示分数'], importRuntime:['Import NeuroRuntime JSON','导入 NeuroRuntime JSON'], import:['Import','导入'], seconds:['s','秒'], noData:['No completed sessions yet.','暂无已完成的会话。']
     };
     const t = key => (strings[key] || [key,key])[lang === 'zh' ? 1 : 0];
     function applyLocalizedStaticText() {
       document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+      ['progress-save-status','export-status','results-export-status'].forEach(id=>{
+        const el=document.getElementById(id);if(!el)return;
+        const key=Object.keys(strings).find(key=>strings[key].includes(el.textContent));
+        if(key)el.textContent=t(key);
+      });
       document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t(el.dataset.i18nPlaceholder));
       document.querySelectorAll('[data-i18n-aria-label]').forEach(el => el.setAttribute('aria-label',t(el.dataset.i18nAriaLabel)));
       document.querySelectorAll('[data-study-language]').forEach(button => {
@@ -840,13 +771,32 @@
         button.classList.toggle('active',active);
         button.setAttribute('aria-pressed',String(active));
       });
+      if (typeof applyProtocolCopy==='function' && state.config) applyProtocolCopy();
+    }
+
+    function applyProtocolCopy() {
+      // Session counts and pair counts follow the chosen assignment share.
+      const id=$('assignment')?.value||'';
+      const assigned=id&&id!=='ALL';
+      const zh=lang==='zh';
+      const opt=(state.config?.pair_assignments?.options||[]).find(o=>o.id===id);
+      const protocol=state.config?.session_protocol||{};
+      const pool=Number(protocol.pair_pool_per_session||20)*Number(protocol.required_sessions||6);
+      const poolPerSession=Math.round(pool/Number(protocol.required_sessions||6));
+      const n=opt?.pair_count||72;
+      const perSession=Math.round(n/6);
+      const title=$('triage-title'),desc=$('triage-desc');
+      if(title)title.textContent=zh?'六次定时会话':'Six timed sessions';
+      if(desc)desc.textContent=assigned
+        ?(zh?`本次分配共 ${n} 道比较题，每次会话 ${perSession} 道、持续 10 分钟有效作答时间；请尽可能多地完成比较，中途有事时请按“暂停”。`:`Your assigned ${n} comparisons: ${perSession} per session in ten active minutes each. Answer as many as possible and pause whenever you are interrupted.`)
+        :(zh?`每次会话准备 ${poolPerSession} 道比较题，并持续 10 分钟有效作答时间；请尽可能多地完成比较，中途有事时请按“暂停”。`:`Each session prepares ${poolPerSession} comparisons and lasts ten active minutes. Answer as many as possible and pause whenever you are interrupted.`);
     }
 
     const $ = id => document.getElementById(id);
     if (params.get('embedded') === '1') document.body.classList.add('embedded-route');
     const requestedView = params.get('view') === 'results' ? 'results' : 'setup';
-    const INTRO_DISMISS_KEY = 'neurodiscovery.expert-study.intro-dismissed.v1';
     const STUDY_DRAFT_KEY = 'neurodiscovery.expert-study.active-session.v1';
+    const PARTICIPANT_CODE_KEY = 'neurodiscovery.expert-study.participant-code.v1';
     function studyTokenStorage() {
       try {
         if(params.get('embedded')==='1'&&window.parent!==window&&window.parent.location.origin===window.location.origin){
@@ -859,7 +809,7 @@
     const tokenStorage = studyTokenStorage();
     let savedStudyToken='';
     try { savedStudyToken=tokenStorage.getItem(STUDY_TOKEN_KEY)||''; } catch (_error) {}
-    const state = { authToken:savedStudyToken, authenticated:Boolean(savedStudyToken), pendingView:requestedView, introOpen:false, introPresented:false, introReturnFocus:null, session:null, resumableSession:null, candidates:[], selectedId:null, selectedAt:0, buckets:{}, wins:{}, pairs:[], pairIndex:0, pairBusy:false, pairwiseActive:false, comparisonPairs:[], comparisonIndex:0, ratings:{}, pairResults:[], questionStats:{}, pairStartedAt:0, pairOpenedAt:0, duelBusy:false, directoryOpen:false, directoryReturnFocus:null, eventQueue:[], startedAt:0, completedAt:0, activeMs:0, activeSince:0, openMs:0, openSince:0, paused:false, refined:false, flushTimer:null, advanceTimer:null, exportBusy:false, timeLimitReached:false, submitting:false, completionReason:'', lastDraftPersistAt:0, resultsLoaded:false, expandedExcerpts:{}, paperReaders:{} };
+    const state = { authToken:savedStudyToken, authenticated:Boolean(savedStudyToken), pendingView:requestedView, session:null, resumableSession:null, candidates:[], selectedId:null, selectedAt:0, buckets:{}, wins:{}, pairs:[], pairIndex:0, pairBusy:false, pairwiseActive:false, comparisonPairs:[], comparisonIndex:0, ratings:{}, pairResults:[], questionStats:{}, pairStartedAt:0, pairOpenedAt:0, duelBusy:false, directoryOpen:false, directoryReturnFocus:null, eventQueue:[], startedAt:0, completedAt:0, activeMs:0, activeSince:0, openMs:0, openSince:0, paused:false, refined:false, flushTimer:null, advanceTimer:null, exportBusy:false, timeLimitReached:false, submitting:false, completionReason:'', lastDraftPersistAt:0, resultsLoaded:false, expandedExcerpts:{}, paperReaders:{} };
     const views = { auth:$('auth-view'), setup:$('setup-view'), workbench:$('workbench-view'), results:$('results-view') };
 
     function refreshLocalizedSessionUi() {
@@ -905,51 +855,49 @@
     document.querySelectorAll('[data-study-language]').forEach(button=>button.addEventListener('click',()=>setStudyLanguage(button.dataset.studyLanguage)));
     applyLocalizedStaticText();
 
-    function studyIntroDismissed() {
-      try { return localStorage.getItem(INTRO_DISMISS_KEY) === '1'; }
-      catch (_error) { return false; }
+    function studyCloseChoice() {
+      return new Promise(resolve=>{
+        const modal=$('study-close-dialog');
+        const finish=value=>{if(modal.open)modal.close();resolve(value);};
+        $('close-discard-btn').onclick=()=>finish('discard');
+        $('close-save-btn').onclick=()=>finish('save');
+        modal.oncancel=event=>{event.preventDefault();finish('stay');};
+        modal.showModal();
+      });
     }
-    function showStudyIntroIfNeeded() {
-      if (!state.authenticated || state.introOpen || state.introPresented || studyIntroDismissed()) return;
-      state.introPresented=true;state.introOpen=true;state.introReturnFocus=document.activeElement;
-      document.querySelectorAll('.topbar,.view').forEach(el=>{el.inert=true;el.setAttribute('aria-hidden','true');});
-      $('study-intro').hidden=false;document.body.classList.add('study-intro-open');
-      requestAnimationFrame(()=>$('study-intro-acknowledge').focus());
-    }
-    function closeStudyIntro(dontShowAgain=false) {
-      if (dontShowAgain) {
-        try { localStorage.setItem(INTRO_DISMISS_KEY,'1'); } catch (_error) {}
+    async function requestStudyClose(saveDirect=false) {
+      const finishClose=()=>{
+        if(params.get('embedded')==='1'&&window.parent!==window){
+          window.parent.postMessage({type:'neurodiscovery:close-study-workspace'},window.location.origin);
+          return;
+        }
+        if(window.history.length>1)window.history.back();else window.location.assign('/');
+      };
+      const active=state.session&&state.session.status==='active';
+      if(!active){
+        if(state.session){try{await saveRankingProgress();}catch(_error){return;}}
+        finishClose();return;
       }
-      state.introOpen=false;$('study-intro').hidden=true;document.body.classList.remove('study-intro-open');
-      document.querySelectorAll('.topbar,.view').forEach(el=>{el.inert=false;el.removeAttribute('aria-hidden');});
-      const previous=state.introReturnFocus;state.introReturnFocus=null;
-      if(previous?.isConnected&&previous.offsetParent!==null)previous.focus();else $('participant-id').focus();
-    }
-    $('study-intro-never').addEventListener('click',()=>closeStudyIntro(true));
-    $('study-intro-acknowledge').addEventListener('click',()=>closeStudyIntro(false));
-    $('study-intro').addEventListener('keydown',event=>{
-      if(event.key==='Escape'){event.preventDefault();closeStudyIntro(false);return;}
-      if(event.key!=='Tab')return;
-      const controls=[...$('study-intro').querySelectorAll('button:not([disabled])')],first=controls[0],last=controls[controls.length-1];
-      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
-      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
-    });
-    function requestStudyClose() {
-      if(state.session){syncActive();syncStudyOpen();logEvent('study_workspace_closed',null,{view:requestedView});persistStudyDraft();void flushEvents();}
-      if(params.get('embedded')==='1'&&window.parent!==window){
-        window.parent.postMessage({type:'neurodiscovery:close-study-workspace'},window.location.origin);
-        return;
+      const choice=saveDirect?'save':await studyCloseChoice();
+      if(choice==='stay')return;
+      syncActive();syncStudyOpen();logEvent('study_workspace_closed',null,{view:requestedView,close_choice:choice});
+      if(choice==='discard'){
+        try{await flushEvents(true);await api(`/api/studies/sessions/${encodeURIComponent(state.session.session_id)}`,{method:'DELETE'});EvaluationExport.forget('ranking',state.session.session_id);}
+        catch(err){alert(err.message);return;}
+        clearStudyDraft();state.eventQueue=[];state.session=null;finishClose();return;
       }
-      if(window.history.length>1)window.history.back();else window.location.assign('/');
+      state.paused=true;state.activeSince=0;$('pause-btn').textContent=t('resume');
+      try{await saveRankingProgress();finishClose();}catch(_error){/* Keep unsaved answers on screen. */}
     }
-    $('close-study-btn').addEventListener('click',requestStudyClose);
+    $('close-study-btn').addEventListener('click',()=>{void requestStudyClose();});
 
     function showView(name) {
+      if (name === 'results' && state.config?.evaluation_only) name='setup';
       if (name !== 'auth' && !state.authenticated) { state.pendingView=name; name='auth'; }
       Object.entries(views).forEach(([key,el]) => el.classList.toggle('active', key === name));
+      $('evaluation-actions').hidden=name!=='workbench';
       document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.view === (name === 'workbench' ? 'setup' : name)));
       if (name === 'results') $('results-study-id').value = $('study-id').value || 'case1-user-study';
-      if (name === 'setup') showStudyIntroIfNeeded();
     }
     document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view === 'setup' && state.session ? 'workbench' : btn.dataset.view)));
 
@@ -1009,15 +957,41 @@
     }, 500);
     ['visibilitychange','focus','blur'].forEach(name => window.addEventListener(name, syncActive));
     function logEvent(type, hypothesisId=null, payload={}) {
-      state.eventQueue.push({type,hypothesis_id:hypothesisId,elapsed_ms:state.activeMs+(state.activeSince ? performance.now()-state.activeSince : 0),payload});
+      state.eventQueue.push({type,hypothesis_id:hypothesisId,elapsed_ms:state.activeMs+(state.activeSince ? performance.now()-state.activeSince : 0),payload:{...payload,_event_id:crypto.randomUUID()}});
       if (state.eventQueue.length >= 10) flushEvents();
     }
-    async function flushEvents() {
-      if (!state.session || !state.eventQueue.length) return;
-      const events=state.eventQueue.splice(0);
-      try { await api(`/api/studies/sessions/${state.session.session_id}/events`, {method:'POST',body:JSON.stringify({events})}); }
-      catch (_) { state.eventQueue.unshift(...events); }
+    let eventFlush=null,inFlightEvents=[];
+    async function flushEvents(strict=false) {
+      if(!state.session)return true;
+      if(!eventFlush)eventFlush=(async()=>{
+        const sessionId=state.session.session_id;
+        while(state.eventQueue.length){
+          const events=state.eventQueue.splice(0);inFlightEvents=events;
+          try{const result=await api(`/api/studies/sessions/${sessionId}/events`,{method:'POST',body:JSON.stringify({events})});if(result.accepted!==events.length)throw new Error('Incomplete event save.');}
+          catch(error){state.eventQueue.unshift(...events);throw error;}
+          finally{inFlightEvents=[];}
+        }
+      })().finally(()=>{eventFlush=null;});
+      try{await eventFlush;return true;}catch(error){if(strict)throw error;return false;}
     }
+    let progressSave=null;
+    async function saveRankingProgress() {
+      if(!state.session)return;
+      if(progressSave)return progressSave;
+      progressSave=(async()=>{
+        setExportStatus(t('progressSaving'));syncActive();persistStudyDraft();
+        if(state.session.status!=='completed')logEvent('evaluation_checkpoint',null,{
+          active_ms:Math.round(activeElapsedMs()),open_ms:Math.round(currentStudyOpenMs()),language:lang,
+          question_stats:JSON.parse(JSON.stringify(state.questionStats)),
+        });
+        persistStudyDraft();await flushEvents(true);
+        EvaluationExport.remember('ranking',state.session.participant_id,{id:state.session.session_id});
+        setExportStatus(t('progressSaved'));
+      })().catch(error=>{setExportStatus(t('progressSaveFailed'),true);throw error;}).finally(()=>{progressSave=null;});
+      return progressSave;
+    }
+    $('save-progress').addEventListener('click',()=>{void saveRankingProgress().catch(()=>{});});
+    $('save-exit').addEventListener('click',()=>{void requestStudyClose(true);});
     function readStudyDraft() {
       try {
         const draft=JSON.parse(localStorage.getItem(STUDY_DRAFT_KEY)||'null');
@@ -1039,6 +1013,7 @@
           comparison_index:state.comparisonIndex,
           paused:state.paused,
           completion_reason:state.completionReason,
+          pending_events:[...inFlightEvents,...state.eventQueue],
         }));
       } catch (_error) {}
     }
@@ -1047,8 +1022,9 @@
       state.resumableSession=null;$('resume-card').hidden=true;$('start-btn').disabled=false;
     }
     function recoveryFromEvents(session) {
-      const results=new Map(),questionStats={},events=Array.isArray(session.events)?session.events:[];let activeMs=0;
+      const results=new Map(),questionStats={},events=Array.isArray(session.events)?session.events:[],seen=new Set();let activeMs=0;
       events.forEach(event=>{
+        const eventId=event.payload?._event_id;if(eventId&&seen.has(eventId))return;if(eventId)seen.add(eventId);
         activeMs=Math.max(activeMs,Number(event.client_elapsed_ms)||0);
         if(event.event_type!=='pairwise_choice'||!event.payload||typeof event.payload!=='object')return;
         const payload=event.payload,pairId=String(payload.pair_id||'');if(!pairId)return;
@@ -1085,7 +1061,17 @@
           startedAt:Number(draft.started_at)||Number(session.started_at)*1000||Date.now(),
           paused:Boolean(draft.paused),
           savedAt:draft.saved_at||new Date().toISOString(),
+          pendingEvents:Array.isArray(draft.pending_events)?draft.pending_events:[],
         };
+        // Older clients saved local answers without pending network events.
+        // Recover a missing final choice with its recorded timing, not an invented history.
+        if(useDraft)for(const result of draftResults){
+          const server=serverRecovery.pairResults.find(item=>item.pair_id===result.pair_id);
+          if(server?.choice===result.choice&&server?.undecided_reason===result.undecided_reason)continue;
+          if(recovery.pendingEvents.some(event=>event.type==='pairwise_choice'&&event.payload?.pair_id===result.pair_id))continue;
+          recovery.pendingEvents.push({type:'pairwise_choice',elapsed_ms:recovery.activeMs,payload:{...result,
+            recovered_from_local_draft:true,_event_id:`recovered-${session.session_id}-${result.pair_id}-${result.last_answered_at||draft.saved_at}`}});
+        }
         state.resumableSession={session,recovery};
         renderResumeSummary();
         $('resume-card').hidden=false;
@@ -1113,28 +1099,43 @@
     async function loadConfig() {
       try {
         const config=await api('/api/studies/config'); state.config=config;
+        if(config.evaluation_only){document.querySelector('[data-view="results"]').hidden=true;$('results-view').hidden=true;document.querySelector('.setup-advanced').hidden=true;}
         $('candidate-sources').innerHTML=(config.suggested_candidate_sources||[]).map(path=>`<option value="${escapeHtml(path)}"></option>`).join('');
         if (config.suggested_candidate_sources?.length) $('candidate-path').value=config.suggested_candidate_sources[0];
         if (String(config.study_id||'').trim()) {
           $('study-id').value=String(config.study_id).trim();
           $('results-study-id').value=String(config.study_id).trim();
         }
-        if (!$('participant-id').value.trim() && String(config.default_participant_id||'').trim()) {
-          $('participant-id').value=String(config.default_participant_id).trim();
+        // The participant name/code is shared with the Expert Study entry. On
+        // first use it defaults to this machine's account name.
+        if (!$('participant-id').value.trim()) {
+          let shared=''; try{shared=localStorage.getItem(PARTICIPANT_CODE_KEY)||'';}catch(_e){}
+          const fallback=String(config.default_participant_id||'').trim();
+          if (shared || fallback) $('participant-id').value=shared || fallback;
         }
+        // The organizer preview (ALL) is intentionally not offered to participants.
+        const assignmentRow=$('assignment-row'),assignmentSelect=$('assignment'),pairOptions=(config.pair_assignments?.options||[]).filter(o=>o.id!=='ALL');
+        if (pairOptions.length) {
+          assignmentSelect.innerHTML=`<option value="">${t('experiencePlaceholder')}</option>`+pairOptions.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(`${o.id} · ${o.pair_count} ${lang==='zh'?'道':'pairs'}`)}</option>`).join('');
+          assignmentSelect.required=true; assignmentRow.hidden=false;
+          assignmentSelect.onchange=()=>applyProtocolCopy();
+        } else { assignmentSelect.required=false; assignmentRow.hidden=true; }
+        applyProtocolCopy();
         $('storage-note').textContent=(lang==='zh'?'研究数据目录：':'Study data root: ')+config.study_root;
         await loadResumableSession();
         return true;
       } catch (err) { if(err.status!==401)$('setup-error').textContent=err.message;return false; }
     }
-    async function createFreshSession(previousSession=null) {
+    async function createFreshSession() {
       return api('/api/studies/sessions',{method:'POST',body:JSON.stringify({
-        study_id:previousSession?.study_id||$('study-id').value.trim(),
-        participant_id:previousSession?.participant_id||$('participant-id').value.trim(),
-        condition:previousSession?.condition||$('condition').value,
-        candidate_path:previousSession?.candidate_source||$('candidate-path').value.trim(),
+        study_id:$('study-id').value.trim(),
+        participant_id:$('participant-id').value.trim(),
+        experience:$('participant-experience').value,
+        condition:'manual',
+        assignment_id:$('assignment').value,
+        candidate_path:$('candidate-path').value.trim(),
         random_seed:0,
-        case_study:previousSession?.case_study||state.config?.case_study||'case1_tcp_external_validation'
+        case_study:state.config?.case_study||'case1_tcp_external_validation'
       })});
     }
     $('setup-form').addEventListener('submit', async event => {
@@ -1155,10 +1156,18 @@
       $('setup-error').textContent=t('deletingSession');
       try{
         await api(`/api/studies/sessions/${encodeURIComponent(previousSession.session_id)}`,{method:'DELETE'});
+        EvaluationExport.forget('ranking',previousSession.session_id);
         clearStudyDraft();
-        const session=await createFreshSession(previousSession);
+        // Stay on the setup form: the participant must re-enter name/code,
+        // experience years and assignment before a new session starts.
+        state.resumableSession=null;
+        $('resume-card').hidden=true;
         $('setup-error').textContent='';
-        beginSession(session);
+        $('start-btn').disabled=false;
+        $('assignment').value='';
+        $('participant-experience').value='';
+        applyProtocolCopy();
+        $('participant-id').focus();
       }catch(err){
         $('setup-error').textContent=t('restartFailed').replace('{error}',err.message||String(err));
         continueButton.disabled=false;restartButton.disabled=false;
@@ -1168,7 +1177,10 @@
     function beginSession(session,recovery=null) {
       if(state.advanceTimer)clearTimeout(state.advanceTimer);
       if(state.flushTimer)clearInterval(state.flushTimer);
+      try{localStorage.setItem(PARTICIPANT_CODE_KEY,session.participant_id||'');}catch(_e){}
+      try{EvaluationExport.remember('ranking',session.participant_id,{id:session.session_id});}catch(error){setExportStatus(error.message,true);}
       state.session=session; state.candidates=session.candidates||[]; state.startedAt=recovery?.startedAt||Date.now(); state.completedAt=0;state.activeMs=Math.min(recovery?.activeMs||0,Math.max(60,Number(session.target_active_seconds)||600)*1000);state.openMs=recovery?.openMs||0;state.openSince=Date.now(); state.paused=Boolean(recovery?.paused);state.activeSince=state.paused?0:performance.now();state.buckets={};state.wins={};state.pairs=[];state.pairIndex=0;state.pairBusy=false;state.refined=false;state.advanceTimer=null;state.pairwiseActive=true;state.comparisonPairs=session.pairs||[];state.comparisonIndex=0;state.ratings={};state.pairResults=recovery?.pairResults||[];state.questionStats=recovery?.questionStats||{};state.pairStartedAt=0;state.pairOpenedAt=0;state.duelBusy=false;state.directoryOpen=false;state.exportBusy=false;state.timeLimitReached=false;state.submitting=false;state.completionReason='';state.lastDraftPersistAt=Date.now();state.expandedExcerpts={};state.paperReaders={};state.candidates.forEach(item=>{state.ratings[item.id]=1000;state.wins[item.id]=0;});
+      state.eventQueue=recovery?.pendingEvents||[];
       recomputePairwiseRatings();const next=nextUnansweredIndex(0);state.comparisonIndex=next<0?state.comparisonPairs.length:next;
       $('app').classList.toggle('assisted',session.condition==='assisted'); $('recording').classList.toggle('live',!state.paused); $('recording').textContent=state.paused?t('notRecording'):(lang==='zh'?'正在记录':'Recording');$('pause-btn').textContent=state.paused?t('resume'):t('pause');
       const sessionProgress=t('sessionOf').replace('{current}',session.session_number||1).replace('{total}',session.required_sessions||1);
@@ -1379,16 +1391,18 @@
           abstract:String(paper.abstract||'').replace(/\s+/g,' ').trim(),
           hasCuratedEvidence,
           evidenceSelection:paper.evidence_selection&&typeof paper.evidence_selection==='object'?paper.evidence_selection:{},
+          kgMatchFacets:paper.kg_match_facets&&typeof paper.kg_match_facets==='object'?paper.kg_match_facets:null,
           credibility:{
             publicationYear:credibility.publication_year??paper.year??null,
             journal:String(credibility.journal||paper.journal||'').trim(),
             publicationStatus:String(credibility.publication_status||'peer_reviewed').trim(),
             impactFactor:credibility.journal_impact_factor&&typeof credibility.journal_impact_factor==='object'?credibility.journal_impact_factor:{},
             cohort:credibility.cohort&&typeof credibility.cohort==='object'?credibility.cohort:{},
-            pValues:credibility.p_values&&typeof credibility.p_values==='object'?credibility.p_values:{},
+            citationCount:credibility.citation_count&&typeof credibility.citation_count==='object'?credibility.citation_count:{},
           },
           relevanceReasonZh:String(paper.relevance_reason_zh||'').trim(),
           relevanceReasonEn:String(paper.relevance_reason_en||'').trim(),
+          manualRelevanceStatus:String(paper.manual_relevance_status||'').trim(),
           relevanceAssessment:paper.relevance_assessment&&typeof paper.relevance_assessment==='object'?paper.relevance_assessment:{},
           supportScore:{
             value:Number(supportScore.value),
@@ -1430,7 +1444,7 @@
       catch(_err) { return ''; }
     }
     function paperCredibilityHtml(paper) {
-      const credibility=paper.credibility||{},impact=credibility.impactFactor||{},cohort=credibility.cohort||{},pValues=credibility.pValues||{};
+      const credibility=paper.credibility||{},impact=credibility.impactFactor||{},cohort=credibility.cohort||{},citation=credibility.citationCount||{};
       const year=credibility.publicationYear??'—',journal=credibility.journal||'—';
       const cohortText=String(lang==='zh'?(cohort.display_zh||cohort.display||''):(cohort.display_en||cohort.display||'')).trim()||t('metricNotAvailable');
       const impactSource=safeHttpUrl(impact.source_url),impactStatus=String(impact.status||'unverified');
@@ -1441,20 +1455,21 @@
       else if(impactStatus==='not_available')impactText=t('metricNotAvailable');
       else impactText=t('metricNotVerified');
       const impactValue=impactSource?`<a href="${escapeHtml(impactSource)}" target="_blank" rel="noopener noreferrer">${escapeHtml(impactText)} ↗</a>`:escapeHtml(impactText);
-      let pValueText;
-      if(pValues.status==='reported_for_selected_evidence'&&pValues.display)pValueText=String(pValues.display);
-      else if(pValues.status==='reported_elsewhere_in_abstract')pValueText=t('pValueElsewhere');
-      else pValueText=t('pValueNotReported');
+      const citationSource=safeHttpUrl(citation.source_url);
+      let citationText;
+      if(Number.isFinite(Number(citation.count)))citationText=`${Number(citation.count).toLocaleString()}${citationSource?` · ${t('citationSource')}`:''}`;
+      else citationText=t('metricNotAvailable');
+      const citationValue=citationSource?`<a href="${escapeHtml(citationSource)}" target="_blank" rel="noopener noreferrer">${escapeHtml(citationText)} ↗</a>`:escapeHtml(citationText);
       const item=(label,value)=>`<div class="paper-credibility-item"><span class="paper-credibility-label">${escapeHtml(label)}</span><span class="paper-credibility-value">${value}</span></div>`;
-      return `<div class="paper-credibility">${item(t('publicationYear'),escapeHtml(year))}${item(t('journalName'),escapeHtml(journal))}${item(t('journalImpactFactor'),impactValue)}${item(t('cohortSize'),escapeHtml(cohortText))}${item(t('relevantPValue'),escapeHtml(pValueText))}${item(t('publicationStatus'),escapeHtml(publicationStatusLabel(credibility.publicationStatus)))}</div><div class="paper-metric-note">${escapeHtml(t('jifCaveat'))}</div>`;
+      return `<div class="paper-credibility">${item(t('publicationYear'),escapeHtml(year))}${item(t('journalName'),escapeHtml(journal))}${item(t('journalImpactFactor'),impactValue)}${item(t('cohortSize'),escapeHtml(cohortText))}${item(t('citationCount'),citationValue)}${item(t('publicationStatus'),escapeHtml(publicationStatusLabel(credibility.publicationStatus)))}</div><div class="paper-metric-note">${escapeHtml(t('jifCaveat'))}</div>`;
     }
     function paperQuickMetaHtml(paper) {
-      const credibility=paper.credibility||{},impact=credibility.impactFactor||{},cohort=credibility.cohort||{},pValues=credibility.pValues||{};
+      const credibility=paper.credibility||{},impact=credibility.impactFactor||{},cohort=credibility.cohort||{},citation=credibility.citationCount||{};
       const year=credibility.publicationYear??'—',journal=credibility.journal||'—';
       const cohortText=Number.isFinite(Number(cohort.n_total))&&Number(cohort.n_total)>0?`N=${Number(cohort.n_total).toLocaleString()}`:'N=—';
       const impactText=impact.value!=null&&Number.isFinite(Number(impact.value))?`JIF ${Number(impact.value).toFixed(1)}`:'JIF —';
-      const pValueText=pValues.status==='reported_for_selected_evidence'&&pValues.display?String(pValues.display):'p —';
-      return `<div class="paper-quick-meta">${[year,journal,impactText,cohortText,pValueText].map(value=>`<span>${escapeHtml(value)}</span>`).join('')}</div>`;
+      const citationText=Number.isFinite(Number(citation.count))?`${lang==='zh'?'引用':'Cited'} ${Number(citation.count).toLocaleString()}`:`${lang==='zh'?'引用':'Cited'} —`;
+      return `<div class="paper-quick-meta">${[year,journal,impactText,cohortText,citationText].map(value=>`<span>${escapeHtml(value)}</span>`).join('')}</div>`;
     }
     const DISEASE_EVIDENCE_ALIASES = {
       'mild cognitive impairment':['mild cognitive impairment','mci','amnestic mild cognitive impairment'],
@@ -1673,7 +1688,42 @@
     function relationLabel(kind) {
       return t(kind==='exact'?'relationExact':kind==='related'?'relationRelated':kind==='none'?'relationUnmatched':kind==='same'?'relationSameDirection':kind==='opposite'?'relationOppositeDirection':'relationUnknown');
     }
+    function paperReportedResultKind(item,paper) {
+      const facets=paper.kgMatchFacets&&typeof paper.kgMatchFacets==='object'?paper.kgMatchFacets:null;
+      return facets?facets.direction:detectPaperDirection(paper,candidateChain(item));
+    }
+    function paperReportedResult(item,paper) {
+      const result=paperReportedResultKind(item,paper);
+      const labels={increase:['Increase','升高'],decrease:['Decrease','降低'],'no-difference':['No significant difference','无显著差异'],mixed:['Mixed findings','混合结果'],association:['Association','相关性']};
+      return labels[result]?.[lang==='zh'?1:0]||t('relationUnknown');
+    }
+    function paperReportedResultTone(item,paper) {
+      const result=paperReportedResultKind(item,paper),direction=candidateDirection(item);
+      if(!['increase','decrease'].includes(result))return 'unmatched';
+      if(direction==='difference'||direction===result)return 'exact';
+      return ['increase','decrease'].includes(direction)?'opposite':'unmatched';
+    }
+    function paperResultLabel() {
+      return lang==='zh'?'文献结果':'Reported finding';
+    }
     function paperRelationAnalysis(item,paper) {
+      const reportedResult=paperReportedResult(item,paper),reportedResultTone=paperReportedResultTone(item,paper);
+      const facets=paper.kgMatchFacets&&typeof paper.kgMatchFacets==='object'?paper.kgMatchFacets:null;
+      if(facets){
+        const diseaseRelation=facets.disease==='matched'?'exact':'none';
+        const regionRelation=facets.region==='matched'?'exact':facets.region==='related'?'related':facets.region==='unknown'?'unknown':'none';
+        const featureRelation=facets.measure==='matched'?'exact':'none';
+        const hypothesisDirection=candidateDirection(item);
+        const directionRelation=['increase','decrease'].includes(facets.direction)&&['increase','decrease'].includes(hypothesisDirection)?(facets.direction===hypothesisDirection?'same':'opposite'):'unknown';
+        const relationText=(label,kind)=>`${label}${lang==='zh'?'：':': '}${relationLabel(kind)}`;
+        const summary=[
+          relationText(t('diseaseRelation'),diseaseRelation),
+          relationText(t('regionRelation'),regionRelation),
+          relationText(t('measureRelation'),featureRelation),
+          `${paperResultLabel()}${lang==='zh'?'：':': '}${reportedResult}`,
+        ].join(lang==='zh'?'；':'; ')+(lang==='zh'?'。':'.');
+        return {diseaseRelation,regionRelation,featureRelation,directionRelation,reportedResult,reportedResultTone,summary};
+      }
       const chain=candidateChain(item),paperText=[paper.title,paper.abstract,...(paper.excerpts||[])].filter(Boolean).join(' ');
       const assessment=paper.relevanceAssessment||{},assessmentText=[assessment.specific_support_en,assessment.specific_support_zh,assessment.evidence_strength_en,assessment.evidence_strength_zh].filter(Boolean).join(' ');
       const diseaseRelation=paperDiseaseRelation(chain,paperText);
@@ -1693,13 +1743,14 @@
         relationText(t('diseaseRelation'),diseaseRelation),
         relationText(t('regionRelation'),regionRelation),
         relationText(t('measureRelation'),featureRelation),
-        relationText(t('directionRelation'),directionRelation),
+        `${paperResultLabel()}${lang==='zh'?'：':': '}${reportedResult}`,
       ].join(lang==='zh'?'；':'; ')+(lang==='zh'?'。':'.');
-      return {diseaseRelation,regionRelation,featureRelation,directionRelation,summary};
+      return {diseaseRelation,regionRelation,featureRelation,directionRelation,reportedResult,reportedResultTone,summary};
     }
     function paperRelationHtml(analysis) {
       const chip=(label,kind)=>`<span class="paper-relation ${kind==='same'?'exact':kind==='none'||kind==='unknown'?'unmatched':kind}"><span class="paper-relation-key">${escapeHtml(label)}</span><span class="paper-relation-value">${escapeHtml(relationLabel(kind))}</span></span>`;
-      return `<div class="paper-relations" role="group" aria-label="${escapeHtml(t('relationToHypothesis'))}">${chip(t('diseaseRelation'),analysis.diseaseRelation)}${chip(t('regionRelation'),analysis.regionRelation)}${chip(t('measureRelation'),analysis.featureRelation)}${chip(t('directionRelation'),analysis.directionRelation)}</div>`;
+      const result=`<span class="paper-relation ${analysis.reportedResultTone}"><span class="paper-relation-key">${escapeHtml(paperResultLabel())}</span><span class="paper-relation-value">${escapeHtml(analysis.reportedResult)}</span></span>`;
+      return `<div class="paper-relations" role="group" aria-label="${escapeHtml(t('relationToHypothesis'))}">${chip(t('diseaseRelation'),analysis.diseaseRelation)}${chip(t('regionRelation'),analysis.regionRelation)}${chip(t('measureRelation'),analysis.featureRelation)}${result}</div>`;
     }
     function evidenceDirectionPhrase(direction,measureLabel) {
       if(lang==='zh'){
@@ -1750,7 +1801,10 @@
     }
     function paperRelevanceReason(item,paper) {
       const curated=String(lang==='zh'?(paper.relevanceReasonZh||''):(paper.relevanceReasonEn||'')).trim();
-      if(curated)return curated;
+      // Auto-matched (not manually reviewed) references keep their disclosure
+      // only as a caveat note; the relation text is computed from the record.
+      const autoMatched=String(paper.manualRelevanceStatus||'').trim().toLowerCase()==='auto_kg_match';
+      if(curated&&!autoMatched)return curated;
       const chain=candidateChain(item),evidenceText=[paper.title,paper.abstract,...(paper.excerpts||[])].filter(Boolean).join(' ');
       const disease=compactDiseaseEvidenceLabel(chain.diseaseText),region=compactRegionEvidenceLabel(chain.region),feature=compactFeatureEvidenceLabel(chain.feature);
       const diseaseRelation=paperDiseaseRelation(chain,evidenceText),paperDirection=detectPaperDirection(paper,chain),hypothesisDirection=candidateDirection(item);
@@ -1771,7 +1825,7 @@
       const oppositeDirection=(paperDirection==='decrease'||paperDirection==='increase')&&(hypothesisDirection==='decrease'||hypothesisDirection==='increase')&&paperDirection!==hypothesisDirection;
       const studyTopic=lang==='zh'
         ?`本文研究的是：${finding.replace(/^该论文/,'该研究').replace(/。$/,'')}；论文主题为“${short(paper.title,110)}”。`
-        :`This paper studies: ${finding.replace(/^The paper\s*/,'').replace(/\.$/,'')}; its stated topic is “${short(paper.title,110)}.”`;
+        :`What this paper studied: ${finding.replace(/\.$/,'')}; its stated topic is “${short(paper.title,110)}.”`;
       let similarity;
       if(matched.length){
         const matchText=joinRelevanceElements(matched),missingText=joinRelevanceElements(missing);
@@ -1865,7 +1919,7 @@
       const components=[Number.isFinite(fitScore)?`${t('evidenceFit')} ${fitScore}/${fitMax}`:'',Number.isFinite(credibilityScore)?`${t('studyCredibilityScore')} ${credibilityScore}/${credibilityMax}`:''].filter(Boolean).join(' · ');
       const scoreBasis=[components,fitBasis,credibilityBasis].filter(Boolean).join(lang==='zh'?'；':' ');
       const row=(label,value)=>`<div class="paper-evidence-row"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`;
-      return `<details class="paper-details"><summary>${escapeHtml(t('studyDetails'))}</summary><div class="paper-details-content">${paper.meta?`<div class="paper-meta">${escapeHtml(paper.meta)}</div>`:''}${paperCredibilityHtml(paper)}<div class="paper-relevance">${row(t('studyFinding'),summary.studied)}${row(t('hypothesisMatch'),summary.match)}${row(t('scoreBasis'),scoreBasis||summary.bottomLine)}</div></div></details>`;
+      return `<details class="paper-details" open><summary>${escapeHtml(t('studyDetails'))}</summary><div class="paper-details-content">${paper.meta?`<div class="paper-meta">${escapeHtml(paper.meta)}</div>`:''}${paperCredibilityHtml(paper)}<div class="paper-relevance">${row(t('studyFinding'),summary.studied)}${row(t('hypothesisMatch'),summary.match)}${row(t('scoreBasis'),scoreBasis||summary.bottomLine)}</div></div></details>`;
     }
     function sourceSentences(paper) {
       const source=[...(paper.excerpts||[]),paper.abstract].map(value=>String(value||'').replace(/\s+/g,' ').trim()).filter(Boolean),seen=new Set(),sentences=[];
@@ -1934,7 +1988,10 @@
       const primaryLink=paper.directUrl?`<a class="paper-control primary" href="${escapeHtml(paper.directUrl)}" target="_blank" rel="noopener noreferrer" data-paper-link-kind="record" data-hypothesis-id="${escapeHtml(item.id)}" data-paper-title="${escapeHtml(paper.title)}">${t('openPaper')} <span class="arrow" aria-hidden="true">↗</span></a>`:`<a class="paper-control primary" href="${escapeHtml(paper.scholarUrl)}" target="_blank" rel="noopener noreferrer" data-paper-link-kind="scholar" data-hypothesis-id="${escapeHtml(item.id)}" data-paper-title="${escapeHtml(paper.title)}">${t('findPapers')} <span class="arrow" aria-hidden="true">↗</span></a>`;
       const abstractPanel=paper.abstract?`<details class="paper-abstract"><summary>${t('paperAbstract')}</summary><p>${escapeHtml(paper.abstract)}</p></details>`:'';
       const excerptPanel=relevantSentences.length?`<div class="paper-excerpt" id="${escapeHtml(excerptId)}"${excerptExpanded?'':' hidden'}><div class="paper-excerpt-label">${t('sourceExcerpt')}</div>${relevantSentences.map(text=>`<p>${escapeHtml(text)}</p>`).join('')}${abstractPanel}</div>`:'';
-      return `<article class="paper-item" data-paper-card-index="${index}"><div class="paper-title">${escapeHtml(paper.title)}</div>${paperQuickMetaHtml(paper)}${paperEvidenceHtml(item,paper)}<div class="paper-actions">${primaryLink}${excerptButton}</div>${paperStudyDetailsHtml(item,paper)}${excerptPanel}</article>`;
+      const autoNote=String(paper.manualRelevanceStatus||'').trim().toLowerCase()==='auto_kg_match'
+        ?String(lang==='zh'?(paper.relevanceReasonZh||''):(paper.relevanceReasonEn||'')).trim():'';
+      const autoNoteHtml=autoNote?`<div class="paper-auto-note">${escapeHtml(autoNote)}</div>`:'';
+      return `<article class="paper-item" data-paper-card-index="${index}"><div class="paper-title">${escapeHtml(paper.title)}</div>${paperQuickMetaHtml(paper)}${paperEvidenceHtml(item,paper)}${autoNoteHtml}<div class="paper-actions">${primaryLink}${excerptButton}</div>${paperStudyDetailsHtml(item,paper)}${excerptPanel}</article>`;
     }
     function hypothesisCard(item,label) {
       const chain=candidateChain(item),papers=literatureItems(item),safeId=String(item.id||'hypothesis').replace(/[^a-z0-9_-]+/gi,'-'),reader=paperReaderState(item,papers.length);
@@ -2138,12 +2195,13 @@
       const ranking=pairwiseFinalRanking();
       logEvent(reason==='time_limit'?'session_time_limit_reached':'session_pair_pool_exhausted',null,{completion_reason:reason,answered:state.pairResults.length,pair_pool_size:state.comparisonPairs.length,target_active_seconds:target/1000});
       logEvent('ranking_derived',null,{method:'pairwise_elo_v2_timeboxed',comparisons:state.pairResults.length,undecided:state.pairResults.filter(item=>item.choice==='undecided').length,ratings:state.ratings,ranking});
-      persistStudyDraft();await flushEvents();$('duel-submit').disabled=true;
+      persistStudyDraft();$('duel-submit').disabled=true;
       try{
+        await saveRankingProgress();
         const completed=await api(`/api/studies/sessions/${state.session.session_id}/submit`,{method:'POST',body:JSON.stringify({ranking,buckets:{},active_seconds:Math.min(state.activeMs,target)/1000,wall_seconds:currentStudyOpenMs()/1000,completion_reason:reason})});
         state.session={...state.session,...completed};clearInterval(state.flushTimer);state.pairwiseActive=false;clearStudyDraft();$('results-study-id').value=state.session.study_id;$('export-results-after-submit').hidden=false;
         const current=Number(state.session.session_number)||1,required=Number(state.session.required_sessions)||1;
-        $('duel-submit').dataset.action=current<required?'next':'results';$('duel-submit').textContent=current<required?t('nextSession'):t('allSessionsComplete');$('duel-submit').disabled=false;setExportStatus(t('comparisonSaved'));
+        $('duel-submit').dataset.action=current<required?'next':'exit';$('duel-submit').textContent=current<required?t('nextSession'):t('saveExit');$('duel-submit').disabled=false;setExportStatus(t('comparisonSaved'));
       }catch(err){
         state.session.status='active';$('duel-submit').dataset.action='retry';$('duel-submit').textContent=t('retrySave');$('duel-submit').disabled=false;setExportStatus(err.message||String(err),true);
       }finally{state.submitting=false;}
@@ -2201,12 +2259,16 @@
     }
     function buildStudyExportPayload() {
       syncActive();
-      const exportedAt=Date.now(),completedAt=state.completedAt||exportedAt,totalStudyOpenMs=Math.round(currentStudyOpenMs()),activeAnsweringMs=Math.round(state.activeMs),resultMap=new Map(state.pairResults.map(item=>[item.pair_id,item])),difficultyCounts=state.comparisonPairs.reduce((out,pair)=>{out[pair.difficulty]=(out[pair.difficulty]||0)+1;return out;},{}),answerCounts=state.pairResults.reduce((out,result)=>{out[result.choice]=(out[result.choice]||0)+1;return out;},{left:0,right:0,undecided:0});
+      const exportedAt=Date.now(),completedAt=state.session.status==='completed'?(state.completedAt||Number(state.session.submitted_at)*1000):null,totalStudyOpenMs=Math.round(currentStudyOpenMs()),activeAnsweringMs=Math.round(state.activeMs),resultMap=new Map(state.pairResults.map(item=>[item.pair_id,item])),difficultyCounts=state.comparisonPairs.reduce((out,pair)=>{out[pair.difficulty]=(out[pair.difficulty]||0)+1;return out;},{}),answerCounts=state.pairResults.reduce((out,result)=>{out[result.choice]=(out[result.choice]||0)+1;return out;},{left:0,right:0,undecided:0});
       const cannotJudgeReasons=state.pairResults.filter(result=>result.choice==='undecided').reduce((out,result)=>{const reason=result.undecided_reason||'unspecified';out[reason]=(out[reason]||0)+1;return out;},{evidence_insufficient:0,outside_expertise:0,unspecified:0});
       return {
-        schema_version:'neurodiscovery-expert-study-results-v1',
-        study_metadata:{study_id:state.session.study_id,case_study:state.session.case_study,session_id:state.session.session_id,session_number:Number(state.session.session_number)||1,required_sessions:Number(state.session.required_sessions)||1,protocol_version:state.session.protocol_version,completion_basis:'active_time',completion_reason:state.session.completion_reason||state.completionReason||'',participant_name_or_id:state.session.participant_id,condition:state.session.condition,generator_scores_visible:state.session.condition==='assisted',random_seed:Number(state.session.random_seed),candidate_source:state.session.candidate_source,candidate_manifest_hash:state.session.candidate_manifest_hash,graph_source:state.session.graph_source||'',graph_snapshot_hash:state.session.graph_snapshot_hash||'',available_pair_pool_size:state.comparisonPairs.length,presented_question_count:Object.values(state.questionStats).filter(item=>item?.first_presented_at).length,answered_question_count:state.pairResults.length,difficulty_counts:difficultyCounts,language:lang,client_version:window.neuroclawDesktop?.version||window.parent?.neuroclawDesktop?.version||null},
-        timing:{session_created_at:toIsoDateTime(state.session.started_at),client_started_at:new Date(state.startedAt).toISOString(),completed_at:new Date(completedAt).toISOString(),exported_at:new Date(exportedAt).toISOString(),target_active_time:formatDurationMs(sessionTargetMs()),target_active_time_ms:sessionTargetMs(),total_study_open_time:formatDurationMs(totalStudyOpenMs),total_study_open_time_ms:totalStudyOpenMs,active_answering_time:formatDurationMs(activeAnsweringMs),active_answering_time_ms:activeAnsweringMs},
+        schema_version:'neurodiscovery-expert-study-results-v2',
+        exported_at:new Date(exportedAt).toISOString(),
+        study:{study_id:state.session.study_id,case_study:state.session.case_study,protocol_version:state.session.protocol_version},
+        participant:{id:state.session.participant_id,experience_years:state.session.participant_experience||'',consent:state.session.participant_consent?true:null},
+        session:{session_id:state.session.session_id,session_number:Number(state.session.session_number)||1,required_sessions:Number(state.session.required_sessions)||1,completion_basis:'active_time',completion_reason:state.session.completion_reason||state.completionReason||'',condition:state.session.condition,generator_scores_visible:state.session.condition==='assisted',random_seed:Number(state.session.random_seed),candidate_source:state.session.candidate_source,candidate_manifest_hash:state.session.candidate_manifest_hash,graph_source:state.session.graph_source||'',graph_snapshot_hash:state.session.graph_snapshot_hash||'',available_pair_pool_size:state.comparisonPairs.length,presented_question_count:Object.values(state.questionStats).filter(item=>item?.first_presented_at).length,answered_question_count:state.pairResults.length,difficulty_counts:difficultyCounts,language:lang,client_version:window.neuroclawDesktop?.version||window.parent?.neuroclawDesktop?.version||null},
+
+        timing:{session_created_at:toIsoDateTime(state.session.started_at),client_started_at:new Date(state.startedAt).toISOString(),completed_at:completedAt?new Date(completedAt).toISOString():null,exported_at:new Date(exportedAt).toISOString(),target_active_time:formatDurationMs(sessionTargetMs()),target_active_time_ms:sessionTargetMs(),total_study_open_time:formatDurationMs(totalStudyOpenMs),total_study_open_time_ms:totalStudyOpenMs,active_answering_time:formatDurationMs(activeAnsweringMs),active_answering_time_ms:activeAnsweringMs},
         summary:{answered:state.pairResults.length,left_selected:answerCounts.left,right_selected:answerCounts.right,cannot_judge:answerCounts.undecided,cannot_judge_reasons:cannotJudgeReasons,total_modifications:Object.values(state.questionStats).reduce((sum,item)=>sum+Number(item.modification_count||0),0)},
         final_ranking:pairwiseFinalRanking(),
         questions:state.comparisonPairs.map((pair,index)=>{
@@ -2224,30 +2286,26 @@
       return `NeuroDiscovery-user-study-${participant}-${stamp}.json`;
     }
     function setExportStatus(message,error=false) {
-      ['export-status','results-export-status'].forEach(id=>{const el=$(id);if(!el)return;el.textContent=message;el.className=`export-status${error?' error':''}`;});
+      ['progress-save-status','export-status','results-export-status'].forEach(id=>{const el=$(id);if(!el)return;el.textContent=message;el.className=`export-status${error?' error':''}`;});
     }
     async function exportStudyResults() {
-      if(state.exportBusy||!state.session)return;
-      state.exportBusy=true;$('export-results').disabled=true;$('export-results-after-submit').disabled=true;setExportStatus('');
-      const defaultFileName=exportFileName(),payload=buildStudyExportPayload();
+      if(state.exportBusy)return;
+      const wasPaused=state.paused;syncActive();state.paused=true;state.activeSince=0;$('pause-btn').textContent=t('resume');
+      state.exportBusy=true;['export-saved','export-progress','export-results','export-results-after-submit'].forEach(id=>$(id).disabled=true);setExportStatus('');
       try{
-        const bridge=desktopBridge();
-        if(bridge?.exportUserStudyResults){
-          const result=await bridge.exportUserStudyResults({defaultFileName,payload});
-          if(result?.error)throw new Error(result.error);
-          if(result?.canceled){setExportStatus(t('exportCanceled'));}
-          else{setExportStatus(t('exportSaved').replace('{path}',result.path||defaultFileName));logEvent('results_exported',null,{format:'json',native:true});}
-        }else{
-          const blob=new Blob([`${JSON.stringify(payload,null,2)}\n`],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=defaultFileName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);setExportStatus(t('exportSaved').replace('{path}',defaultFileName));logEvent('results_exported',null,{format:'json',native:false});
-        }
-      }catch(err){setExportStatus(t('exportFailed').replace('{error}',err.message||String(err)),true);}
-      finally{state.exportBusy=false;$('export-results').disabled=false;$('export-results-after-submit').disabled=false;}
+        await saveRankingProgress();
+        const result=await EvaluationExport.exportResults({code:state.session?.participant_id||$('participant-id').value.trim(),token:state.authToken,language:lang,rankingStudyId:state.config?.study_id});
+        setExportStatus(result?.canceled?t('exportCanceled'):result.downloadRequested?(lang==='zh'?'已请求下载，请将 JSON 文件交给研究者。':'Download requested. Send the JSON file to the researcher.'):t('exportSaved').replace('{path}',result.path));
+      }catch(err){const message=t('exportFailed').replace('{error}',err.message||String(err));setExportStatus(message,true);$('setup-error').textContent=message;}
+      finally{state.exportBusy=false;if(!wasPaused&&!state.timeLimitReached){state.paused=false;syncActive();$('pause-btn').textContent=t('pause');}['export-saved','export-progress','export-results','export-results-after-submit'].forEach(id=>$(id).disabled=false);}
     }
+    $('export-saved').addEventListener('click',exportStudyResults);
+    $('export-progress').addEventListener('click',exportStudyResults);
     $('export-results').addEventListener('click',exportStudyResults);$('export-results-after-submit').addEventListener('click',exportStudyResults);
     $('duel-submit').addEventListener('click',async()=>{
       const action=$('duel-submit').dataset.action||'next';
       if(action==='retry'){await completeTimedSession(state.completionReason||'time_limit');return;}
-      if(action==='results'){showView('results');await loadResults();return;}
+      if(action==='exit'){await requestStudyClose(true);return;}
       state.session=null;state.pairwiseActive=false;state.timeLimitReached=false;state.submitting=false;state.activeSince=0;state.openSince=0;state.paused=false;$('pause-btn').disabled=false;$('session-label').textContent='';$('timer').textContent=fmtTime((state.config?.session_protocol?.active_seconds_per_session||600));$('recording').classList.remove('live');$('recording').textContent=t('notRecording');showView('setup');await loadConfig();
     });
     window.addEventListener('keydown',event=>{if(!state.pairwiseActive||['INPUT','SELECT'].includes(document.activeElement.tagName))return;if(event.key==='Escape'&&!$('undecided-menu').hidden){setUndecidedMenu(false);$('choose-unsure').focus();return;}if(event.key==='Escape'&&state.directoryOpen){setDirectoryOpen(false);return;}if(event.key.toLowerCase()==='d'){setDirectoryOpen(!state.directoryOpen);return;}if(state.paused||state.directoryOpen)return;const map={'1':'left','2':'undecided','3':'right'};if(map[event.key])answerDuel(map[event.key]);});
@@ -2329,7 +2387,6 @@
     function finalRanking(){const order={high:0,medium:1,low:2,exclude:3};return [...state.candidates].sort((a,b)=>(order[state.buckets[a.id]]-order[state.buckets[b.id]])-0 || (state.wins[b.id]||0)-(state.wins[a.id]||0) || state.candidates.indexOf(a)-state.candidates.indexOf(b)).map(item=>item.id);}
     $('submit-btn').addEventListener('click',async()=>{if(Object.keys(state.buckets).length!==state.candidates.length){alert(t('mustRank'));return;}if(!state.refined){setRatingFeedback(t('triageComplete'),'refine-needed');return;}syncActive();syncStudyOpen();const ranking=finalRanking();logEvent('ranking_derived',null,{method:'tier_then_pairwise_wins_then_seeded_display',comparisons_completed:state.pairIndex,ranking});await flushEvents();$('submit-btn').disabled=true;try{await api(`/api/studies/sessions/${state.session.session_id}/submit`,{method:'POST',body:JSON.stringify({ranking,buckets:state.buckets,active_seconds:state.activeMs/1000,wall_seconds:currentStudyOpenMs()/1000})});clearInterval(state.flushTimer);state.activeSince=0;clearStudyDraft();$('recording').classList.remove('live');$('recording').textContent=t('notRecording');alert(t('sessionComplete'));$('results-study-id').value=state.session.study_id;showView('results');await loadResults();}catch(err){alert(err.message);$('submit-btn').disabled=false;}});
     $('pause-btn').addEventListener('click',()=>{syncActive();state.paused=!state.paused;$('pause-btn').textContent=state.paused?t('resume'):t('pause');$('recording').classList.toggle('live',!state.paused);logEvent(state.paused?'session_paused':'session_resumed');syncActive();persistStudyDraft();void flushEvents();});
-    $('end-btn').addEventListener('click',()=>{if(confirm(t('confirmEnd'))){flushEvents();clearInterval(state.flushTimer);setDirectoryOpen(false,false);clearStudyDraft();state.session=null;state.pairwiseActive=false;state.activeSince=0;state.openSince=0;$('participant-id').value='';$('recording').classList.remove('live');$('session-label').textContent='';showView('setup');}});
 
     function linePath(points,x,y){return points.filter(p=>p.experiment_seconds!=null).map((p,i,arr)=>`${i?'L':'M'} ${x(p.fraction)} ${y(p.experiment_seconds)}`).join(' ');}
     function renderChart(curves) {
@@ -2342,7 +2399,8 @@
     async function loadResults(){const studyId=$('results-study-id').value.trim();if(!studyId)return;const content=$('results-content');content.innerHTML=`<div class="empty-results">${lang==='zh'?'正在加载…':'Loading…'}</div>`;try{const data=await api(`/api/studies/results?study_id=${encodeURIComponent(studyId)}`),sessionCount=data.sessions.filter(session=>session.status==='completed'&&['manual','assisted'].includes(session.condition)).length,manual=data.ranking_time.manual?.mean_active_seconds,assisted=data.ranking_time.assisted?.mean_active_seconds,saving=data.ranking_time_saving_percent,normalized=data.duration_basis==='normalized_candidate_test_unit',costLabel=normalized?(lang==='zh'?'外部验证数量':'External validations'):t('discoveryCurve'),costDesc=normalized?(lang==='zh'?'达到各比例外部验证阳性假设所需检查的候选假设数量。':'Number of candidate hypotheses tested to reach each share of externally validated hypotheses.'):t('discoveryDesc'),fmtCost=value=>normalized?(value==null?'—':`${Math.round(value)} ${lang==='zh'?'次验证':'validations'}`):fmtTime(value);content.innerHTML=`<div class="result-grid"><div class="metric"><small>${t('rankingSaving')}</small><strong>${saving==null?'—':saving.toFixed(1)+'%'}</strong></div><div class="metric"><small>${t('completedSessions')}</small><strong>${sessionCount}</strong></div><div class="metric"><small>${t('runtimeResults')}</small><strong>${data.execution_results}</strong></div></div><div class="analysis"><section class="analysis-card"><h2>${costLabel}</h2><p>${costDesc}</p><svg id="curve-chart" viewBox="0 0 680 280"></svg></section><section class="analysis-card"><h2>${t('activeTime')}</h2><p>${t('manualMean')}: ${fmtTime(manual)} · ${t('assistedMean')}: ${fmtTime(assisted)}</p><table><thead><tr><th>${t('fraction')}</th><th>${t('manualTime')}</th><th>${t('assistedTime')}</th></tr></thead><tbody>${Array.from({length:10},(_,i)=>{const q=(i+1)/10,get=condition=>data.curves[condition]?.[i]?.experiment_seconds;return `<tr><td>${Math.round(q*100)}%</td><td>${fmtCost(get('manual'))}</td><td>${fmtCost(get('assisted'))}</td></tr>`}).join('')}</tbody></table><div class="import-row"><input id="runtime-path" placeholder="${t('importRuntime')}"><button class="secondary" id="import-runtime">${t('import')}</button></div><div class="error" id="import-error"></div></section></div>`;state.resultsLoaded=true;renderChart(data.curves);$('import-runtime').addEventListener('click',async()=>{try{const result=await api('/api/studies/execution-results/import',{method:'POST',body:JSON.stringify({study_id:studyId,path:$('runtime-path').value.trim()})});$('import-error').textContent=`${result.imported} ${lang==='zh'?'条结果已导入':'results imported'}`;await loadResults();}catch(err){$('import-error').textContent=err.message;}});}catch(err){content.innerHTML=`<div class="empty-results">${escapeHtml(err.message)}</div>`;}}
     $('load-results').addEventListener('click',loadResults);
     async function bootstrapAuth(){
-      if(!state.authToken){showView('auth');return;}
+      // Password-free by default: attempt the config directly; the 401 handler
+      // in api() falls back to the auth view when the server requires a token.
       state.authenticated=true;
       const loaded=await loadConfig();
       if(loaded)showView(requestedView);

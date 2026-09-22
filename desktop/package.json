@@ -17,8 +17,12 @@
     "dist:win:skip-runtime": "npm run patch:portable:win && electron-builder --win nsis portable zip",
     "dist:mac": "npm run prepare:runtime:mac && electron-builder --mac dmg zip",
     "dist:mac:skip-runtime": "electron-builder --mac dmg zip",
-    "dist:mac:arm64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --arm64",
-    "dist:mac:x64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --x64"
+    "dist:mac:arm64": "python3 scripts/build-mac-arm64.py --variant full",
+    "dist:mac:x64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --x64",
+    "dist:mac:arm64:full": "python3 scripts/build-mac-arm64.py --variant full",
+    "dist:mac:arm64:evaluation": "python3 scripts/build-mac-arm64.py --variant evaluation",
+    "dist:mac:arm64:demo": "python3 scripts/build-mac-arm64.py --variant demo",
+    "dist:mac:arm64:all": "python3 scripts/build-mac-arm64.py --variant all"
   },
   "devDependencies": {
     "electron": "^39.2.7",

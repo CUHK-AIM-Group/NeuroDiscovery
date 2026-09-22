@@ -694,12 +694,14 @@ def create_app() -> Any:
         REPO_ROOT / "core" / "skill_loader" / "loader.py",
     )
     SkillLoader = _loader_mod.SkillLoader
-    _study_mod = _import_from_path(
-        "neurodiscovery_user_study",
-        REPO_ROOT / "neurooracle" / "src" / "user_study.py",
-    )
-    UserStudyService = _study_mod.UserStudyService
-    USER_STUDY_PROTOCOL_VERSION = _study_mod.PROTOCOL_VERSION
+    demo_build = (REPO_ROOT / "DEMO_DISTRIBUTION.json").is_file()
+    if not demo_build:
+        _study_mod = _import_from_path(
+            "neurodiscovery_user_study",
+            REPO_ROOT / "neurooracle" / "src" / "user_study.py",
+        )
+        UserStudyService = _study_mod.UserStudyService
+        USER_STUDY_PROTOCOL_VERSION = _study_mod.PROTOCOL_VERSION
 
     def _load_offline_skill_summaries() -> dict[str, dict[str, str]]:
         try:
@@ -886,10 +888,10 @@ def create_app() -> Any:
     from core.web.claim_layer_v5 import AcceptedClaimLayer
     accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))
     app.state.accepted_claim_evidence = accepted_evidence
-    study_service = UserStudyService()
+    study_service = None if demo_build else UserStudyService()
     study_password = (
         os.environ.get("NEUROORACLE_STUDY_PASSWORD")
-        or os.environ.get("NEURODISCOVERY_STUDY_PASSWORD", "123456")
+        or os.environ.get("NEURODISCOVERY_STUDY_PASSWORD", "")
     )
     # Tokens intentionally live only in this local backend process. The desktop
     # renderer keeps one token for its window lifetime, and closing the client
@@ -897,8 +899,19 @@ def create_app() -> Any:
     # credentials to disk.
     study_tokens: set[str] = set()
 
+    # Independent complete-output pilot; leaves the original ranking study intact.
+    if not demo_build:
+        from core.web.discovery_study import register_discovery_routes
+        register_discovery_routes(app, ranking_service=study_service)
+
     @app.middleware("http")
     async def protect_study_api(request: Request, call_next: Any) -> Any:
+        if demo_build:
+            route_path = request.url.path.rstrip("/")
+            if route_path in {"/study", "/discovery-study", "/api/studies", "/materials"} or route_path.startswith(("/api/studies/", "/materials/", "/static/study", "/static/discovery-study")):
+                return JSONResponse({"detail": "Not Found"}, status_code=404)
+        if not study_password:
+            return await call_next(request)
         path = request.url.path.rstrip("/")
         if path.startswith("/api/studies") and path != "/api/studies/auth" and request.method != "OPTIONS":
             token = request.headers.get("X-NeuroOracle-Study-Token", "")
@@ -907,11 +920,25 @@ def create_app() -> Any:
         return await call_next(request)
 
     # ── Static files ────────────────────────────────────────────────────────────
+    class RevalidatingStaticFiles(StaticFiles):  # type: ignore[valid-type]
+        """Always revalidate static assets (ETag/Last-Modified keep it cheap).
+
+        Without an explicit Cache-Control, Chromium applies heuristic caching
+        and may keep serving stale JS/CSS after an update: the desktop shell
+        cache-busts the iframe document but not its subresources.
+        """
+
+        async def get_response(self, path: str, scope: Any) -> Any:
+            response = await super().get_response(path, scope)
+            if getattr(response, "status_code", None) == 200:
+                response.headers.setdefault("Cache-Control", "no-cache")
+            return response
+
     if STATIC_DIR.exists():
-        app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+        app.mount("/static", RevalidatingStaticFiles(directory=str(STATIC_DIR)), name="static")
     materials_dir = REPO_ROOT / "materials"
-    if materials_dir.exists():
-        app.mount("/materials", StaticFiles(directory=str(materials_dir)), name="materials")
+    if materials_dir.exists() and not demo_build:
+        app.mount("/materials", RevalidatingStaticFiles(directory=str(materials_dir)), name="materials")
 
     # ── HTTP endpoints ──────────────────────────────────────────────────────────
 
@@ -2594,7 +2621,11 @@ def create_app() -> Any:
         return JSONResponse({"error": str(exc)}, status_code=status)
 
     @app.post("/api/studies/auth")
-    async def authenticate_study(payload: dict = Body(...)) -> Any:
+    async def authenticate_study(payload: dict = Body(default={})) -> Any:
+        if not study_password:
+            token = secrets.token_urlsafe(32)
+            study_tokens.add(token)
+            return {"token": token, "lifetime": "client_process"}
         candidate = str(payload.get("password") or "")
         if not secrets.compare_digest(candidate, study_password):
             return JSONResponse({"error": "Incorrect study password"}, status_code=401)
@@ -2605,7 +2636,21 @@ def create_app() -> Any:
     @app.get("/api/studies/config")
     async def study_config() -> Any:
         case_root = REPO_ROOT / "neurooracle" / "data" / "cs_runs" / "case1_transdiagnostic"
-        expert_subset = (
+        expert_subset_v3 = (
+            REPO_ROOT
+            / "neurooracle"
+            / "data"
+            / "user_study"
+            / "case1_tcp_expert_study_v3.json"
+        )
+        expert_subset_v2 = (
+            REPO_ROOT
+            / "neurooracle"
+            / "data"
+            / "user_study"
+            / "case1_tcp_expert_study_v2.json"
+        )
+        expert_subset_v1 = (
             REPO_ROOT
             / "neurooracle"
             / "data"
@@ -2613,8 +2658,9 @@ def create_app() -> Any:
             / "case1_tcp_external_expert_study_v1.json"
         )
         candidates: list[Path] = []
-        if expert_subset.exists():
-            candidates.append(expert_subset)
+        for subset in (expert_subset_v3, expert_subset_v2, expert_subset_v1):
+            if subset.exists():
+                candidates.append(subset)
         if case_root.exists():
             candidates.extend(
                 sorted(
@@ -2633,6 +2679,21 @@ def create_app() -> Any:
                 "active_seconds_per_session": 600,
             }
         )
+        pair_assignments = None
+        if candidates:
+            try:
+                _, manifest_hash, bank_source, curated_pairs = study_service.load_candidates(candidates[0])
+                pair_table = _study_mod.load_pair_assignments(bank_source, manifest_hash)
+                if pair_table:
+                    pair_assignments = {
+                        "version": pair_table["version"],
+                        "rule_zh": pair_table["rule_zh"],
+                        "options": [{"id": "ALL", "pair_count": len(curated_pairs)}] + [
+                            {"id": expert, "pair_count": len(pairs)}
+                            for expert, pairs in pair_table["experts"].items()],
+                    }
+            except Exception:
+                pair_assignments = None
         return {
             "protocol_version": USER_STUDY_PROTOCOL_VERSION,
             "study_id": "case1-tcp-external-validation-v1",
@@ -2652,6 +2713,7 @@ def create_app() -> Any:
             "graph_path": str(graph_path) if graph_path.exists() else "",
             "study_root": str(study_service.root),
             "session_protocol": session_protocol,
+            **({"pair_assignments": pair_assignments} if pair_assignments else {}),
         }
 
     @app.post("/api/studies/sessions")
@@ -2667,6 +2729,9 @@ def create_app() -> Any:
                 ),
                 random_seed=int(payload["random_seed"]) if payload.get("random_seed") not in (None, "") else 0,
                 graph_path=str(payload.get("graph_path") or "") or None,
+                experience=str(payload.get("experience") or ""),
+                consent=payload.get("consent") is True,
+                assignment_id=str(payload.get("assignment_id") or ""),
             )
         except Exception as exc:
             return _study_error(exc)
@@ -3972,6 +4037,17 @@ def create_app() -> Any:
             "truncated_by": result["truncated_by"],
             "expansions": result["expansions"],
         }
+
+    if demo_build:
+        app.router.routes[:] = [
+            route for route in app.router.routes
+            if not getattr(route, "path", "").startswith("/api/studies")
+            and getattr(route, "path", "") not in {"/study", "/discovery-study"}
+        ]
+
+        @app.get("/api/distribution/demo")
+        async def demo_distribution() -> Any:
+            return {"distribution": "demo", "human_evaluation": False}
 
     return app
 

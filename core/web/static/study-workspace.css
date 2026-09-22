@@ -1,0 +1,367 @@
+/* Shared client treatment for both study generations; no questionnaire rules. */
+html[data-study-ui][data-theme] {
+  --ink: var(--text); --muted: var(--text-muted); --line: var(--border);
+  --line-strong: var(--border); --white: var(--surface-elev); --paper: var(--bg);
+  --teal: var(--accent-strong); --tint: var(--accent-wash);
+  --indigo: var(--accent); --cyan: var(--accent); --shadow: var(--shadow-soft);
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html[data-study-ui][data-theme="dark"] { color-scheme: dark; }
+html[data-study-ui] body { color: var(--text); background: var(--bg); }
+html[data-study-ui] :is(button, input, select, textarea) { font-family: inherit; }
+html[data-study-ui] :is(input, select, textarea) { background: var(--surface-elev); color: var(--text); border-color: var(--border); }
+html[data-study-ui] :is(button, input, select, textarea, summary, a):focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px; box-shadow: none;
+}
+html[data-study-ui] :is(button, a, input, summary) { -webkit-app-region: no-drag; }
+html[data-study-ui][data-theme] :is(.secondary, .study-close) {
+  background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+  border-radius: 7px; box-shadow: none;
+}
+html[data-study-ui] :is(.secondary, .study-close):hover { background: var(--surface-soft); color: var(--text); }
+html[data-study-ui] :is(.topbar, .sessionbar, .review-footer) { background: var(--bg); backdrop-filter: none; }
+html[data-study-ui] :is(.language-switch, .study-language-switch) {
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface); padding: 2px; gap: 2px;
+}
+html[data-study-ui] :is(.language-switch button, .study-language-option) {
+  border: 0; border-radius: 6px; background: transparent; color: var(--text-muted);
+  padding: 4px 9px; min-height: 26px; min-width: 0; font-size: 12px; font-weight: 500;
+}
+html[data-study-ui] :is(.language-switch button[aria-pressed="true"], .study-language-option.active) {
+  color: var(--text); background: var(--surface-elev); box-shadow: var(--shadow-card);
+}
+html[data-study-ui] dialog {
+  color: var(--text); background: var(--surface-elev); border: 1px solid var(--border);
+  max-width: calc(100vw - 32px);
+  border-radius: 14px; padding: 24px; box-shadow: var(--shadow-soft); max-height: calc(100dvh - 40px); overflow: auto;
+}
+html[data-study-ui] dialog::backdrop { background: rgb(10 20 16 / 38%); backdrop-filter: blur(3px); }
+html[data-study-ui] .toast { background: var(--surface-elev); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-soft); }
+html[data-study-ui] * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* Discovery entry and evidence: the same typography and flat surfaces as chat. */
+html[data-study-ui="discovery"] body { font-size: calc(14px * var(--study-text-scale, 1)); line-height: 1.65; }
+html[data-study-ui="discovery"] .topbar { height: auto; min-height: 52px; padding: 6px 18px; gap: 12px; flex-wrap: wrap; }
+html[data-study-ui="discovery"] button { border-radius: 7px; font-size: inherit; padding: 7px 12px; font-weight: 500; }
+html[data-study-ui="discovery"] button:not(.secondary):not([data-discovery-language]):not(.nav-card) {
+  background: var(--accent-strong); border-color: var(--accent-strong); color: var(--surface-elev);
+}
+html[data-study-ui="discovery"][data-theme="dark"] button:not(.secondary):not([data-discovery-language]):not(.nav-card) { color: var(--bg); }
+html[data-study-ui="discovery"] h1 { font-size: calc(24px * var(--study-text-scale, 1)); font-weight: 550; line-height: 1.35; letter-spacing: -.035em; }
+html[data-study-ui="discovery"] h2 { font-size: calc(18px * var(--study-text-scale, 1)); font-weight: 600; line-height: 1.5; }
+html[data-study-ui="discovery"] h3 { font-size: calc(15px * var(--study-text-scale, 1)); }
+html[data-study-ui="discovery"] :is(.tiny, .tag, .q-help, .metric-note, .sub, .reference blockquote) { font-size: calc(12px * var(--study-text-scale, 1)); }
+html[data-study-ui="discovery"] .pill { font-size: calc(12px * var(--study-text-scale, 1)); }
+html[data-study-ui="discovery"] :is(.lead, .instruction, .hypothesis p, legend, label.choice, .reference p, .common-item p, .block p, .notes-label, textarea) { font-size: inherit; }
+html[data-study-ui="discovery"] :is(table, .sessionbar p, .progress, .nav-card small) { font-size: calc(12px * var(--study-text-scale, 1)); }
+html[data-study-ui="discovery"] :is(.panel, .hypothesis, details, .notice, .result-figures > div) { box-shadow: none; }
+html[data-study-ui="discovery"] .panel { background: var(--bg); border-color: var(--border); }
+html[data-study-ui="discovery"] :is(.hypothesis, .notice) { background: var(--accent-wash); border-color: var(--border); color: var(--text); }
+html[data-study-ui="discovery"] .hypothesis { border-left: 2px solid var(--accent); padding: 14px 16px; border-radius: 0 7px 7px 0; }
+html[data-study-ui="discovery"] :is(.metric-note, .common-item, .result-figures > div, .score-summary, .locked-answers) { background: var(--surface); color: var(--text); border-color: var(--border); }
+html[data-study-ui="discovery"] :is(.pill, .tag, .question-number, .flow span) { background: var(--accent-wash); color: var(--accent-strong); border-color: var(--border); }
+html[data-study-ui="discovery"] :is(.choice, .choice.unable) { background: transparent; color: var(--text); border-color: var(--border); border-radius: 7px; padding: 9px 11px; }
+html[data-study-ui="discovery"] .choice:hover { background: var(--surface); }
+html[data-study-ui="discovery"] .choice:has(input:checked) { background: var(--accent-wash); border-color: var(--accent); }
+html[data-study-ui="discovery"] .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+html[data-study-ui="discovery"] :is(input[type="radio"], input[type="checkbox"], progress) { accent-color: var(--accent); }
+html[data-study-ui="discovery"] :is(th, td, .block, details, fieldset, .restore) { border-color: var(--border); }
+html[data-study-ui="discovery"] th { background: var(--surface); color: var(--text); }
+html[data-study-ui="discovery"] .welcome { max-width: 1204px; margin: 36px auto; gap: 0; padding: 0 32px; align-items: start; }
+html[data-study-ui="discovery"] .intro { padding: 10px 40px 10px 0; border-right: 1px solid var(--border); }
+html[data-study-ui="discovery"] .intro :is(h1, p, .flow) { max-width: 620px; }
+html[data-study-ui="discovery"] .intro .eyebrow { color: var(--accent-strong); letter-spacing: .13em; text-transform: uppercase; margin: 0; }
+html[data-study-ui="discovery"] .intro h1 { margin: 14px 0 18px; }
+html[data-study-ui="discovery"] .flow { margin: 24px 0; gap: 16px; }
+html[data-study-ui="discovery"] .flow > div { grid-template-columns: 30px 1fr; column-gap: 10px; align-items: start; }
+html[data-study-ui="discovery"] .flow span { border-radius: 8px; width: 30px; height: 30px; font-size: 12px; }
+html[data-study-ui="discovery"] .setup { border: 0; border-radius: 0; padding: 12px 0 12px 36px; display: grid; gap: 16px; align-content: start; }
+html[data-study-ui="discovery"] :is(#setup-form, #auth-form) { display: grid; gap: 16px; align-content: start; }
+html[data-study-ui="discovery"] .hypothesis .sig { margin: 10px 0 0; font-weight: 400; font-size: .87em; line-height: 1.75; }
+html[data-study-ui="discovery"] .setup h2 { margin: 0 0 20px; }
+html[data-study-ui="discovery"] .setup label { font-size: 12px; }
+html[data-study-ui="discovery"] .setup :is(input:not([type="checkbox"]), select) { min-height: 40px; padding: 10px 11px; border-radius: 7px; }
+html[data-study-ui="discovery"] .welcome button { padding: 9px 13px; font-weight: 650; }
+html[data-study-ui="discovery"] .intro p { line-height: 1.6; }
+html[data-study-ui="discovery"] .intro .flow p { line-height: 1.45; }
+html[data-study-ui="discovery"] .setup #pack-note { margin-bottom: 0; }
+html[data-study-ui="discovery"] .translation-note { font-size: calc(12px * var(--study-text-scale, 1)); background: var(--surface); color: var(--text-muted); border-color: var(--border); padding: 6px 20px; margin: 0; }
+.study-context, .study-toolbar-title { display: none; }
+.study-session-info { position: relative; margin: 0; padding: 0; border: 0; min-width: 0; }
+.study-session-info summary { color: var(--text); font-weight: 500; font-size: calc(12px * var(--study-text-scale, 1)); white-space: nowrap; }
+.study-session-popover { position: absolute; top: calc(100% + 16px); left: 0; z-index: 30; width: min(360px, calc(100vw - 36px)); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-elev); box-shadow: var(--shadow-soft); }
+.study-session-popover p { font-size: calc(12px * var(--study-text-scale, 1)); margin: 8px 0 0; }
+html[data-study-ui="discovery"] .session-actions { gap: 6px; flex-wrap: wrap; }
+html[data-study-ui="discovery"] body:has(#workspace[hidden]) :is(.study-session-info, .session-actions),
+html[data-study-ui="discovery"] body:has(#workspace:not([hidden])) .study-toolbar-title { display: none; }
+
+/* Embedded focus mode: one compact toolbar, then edge-to-edge working panes. */
+html[data-embedded="true"][data-study-ui] .topbar {
+  height: auto; min-height: 44px; flex: 0 0 auto; gap: 12px; padding: 6px 18px;
+  border-bottom: 1px solid var(--border); position: static; box-shadow: none; flex-wrap: wrap;
+}
+html[data-embedded="true"][data-study-ui] .topbar > .brand { display: none; }
+html[data-embedded="true"][data-study-ui="discovery"] .topbar { min-height: 52px; justify-content: flex-start; }
+html[data-embedded="true"][data-study-ui="discovery"] :is(body, #app, #workspace) { min-height: 0; min-width: 0; }
+html[data-embedded="true"][data-study-ui="discovery"] body { height: 100dvh; margin: 0; overflow: hidden; display: flex; flex-direction: column; }
+html[data-embedded="true"][data-study-ui="discovery"] #app { flex: 1; overflow: auto; }
+html[data-embedded="true"][data-study-ui="discovery"] #app:has(#workspace:not([hidden])) { overflow: hidden; }
+html[data-embedded="true"][data-study-ui="discovery"] .topbar-actions { display: contents; }
+html[data-embedded="true"][data-study-ui="discovery"] #version-label { display: none; }
+html[data-embedded="true"][data-study-ui="discovery"] .study-toolbar-title { display: inline; flex: 0 0 auto; font-size: calc(12px * var(--study-text-scale, 1)); color: var(--text-muted); }
+html[data-embedded="true"][data-study-ui="discovery"] .language-switch { margin-left: auto; }
+html[data-embedded="true"][data-study-ui="discovery"] .session-actions { margin-left: auto; }
+html[data-embedded="true"][data-study-ui="discovery"] body:has(#workspace:not([hidden])) .language-switch { margin-left: 0; }
+html[data-embedded="true"][data-study-ui="discovery"] #close-study { order: -1; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; border-color: transparent; padding: 7px 10px; font-weight: 700; }
+html[data-embedded="true"][data-study-ui="discovery"] #workspace { height: 100%; display: flex; flex-direction: column; }
+html[data-embedded="true"][data-study-ui="discovery"] .review-grid {
+  flex: 1; min-height: 0; max-width: none; margin: 0; padding: 0; gap: 0; position: relative;
+  grid-template-columns: var(--sidebar-w, 164px) minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr); align-items: stretch; overflow: hidden;
+}
+html[data-embedded="true"][data-study-ui="discovery"] .sidebar-resizer { left: calc(var(--sidebar-w, 164px) - 8px); }
+html[data-embedded="true"][data-study-ui="discovery"] .sidebar { position: static; max-height: none; min-height: 0; padding: 16px 12px; overflow: auto; background: var(--surface); border-right: 1px solid var(--border); grid-row: auto; }
+html[data-embedded="true"][data-study-ui="discovery"] .nav-card { padding: 8px 10px; margin: 4px 0; background: transparent; color: var(--text-muted); border: 1px solid transparent; border-radius: 7px; }
+html[data-embedded="true"][data-study-ui="discovery"] .nav-card:hover { background: var(--surface-soft); }
+html[data-embedded="true"][data-study-ui="discovery"] .nav-card.active { background: var(--surface-elev); border-color: var(--border); color: var(--accent-strong); box-shadow: var(--shadow-card); }
+html[data-embedded="true"][data-study-ui="discovery"] .steps { margin-bottom: 12px; }
+html[data-embedded="true"][data-study-ui="discovery"] .step { font-size: calc(12px * var(--study-text-scale, 1)); color: var(--text-muted); }
+html[data-embedded="true"][data-study-ui="discovery"] .step.active { color: var(--accent-strong); }
+html[data-embedded="true"][data-study-ui="discovery"] .step b { background: var(--accent-wash); color: var(--accent-strong); }
+html[data-embedded="true"][data-study-ui="discovery"] :is(.evidence, .questions) {
+  min-height: 0; height: 100%; max-height: 100%; grid-column: auto;
+  padding: 22px 24px 36px; border: 0; border-radius: 0;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-gutter: stable; scroll-padding-top: 20px; touch-action: pan-y;
+}
+html[data-embedded="true"][data-study-ui="discovery"] .questions { border-left: 1px solid var(--border); }
+html[data-embedded="true"][data-study-ui="discovery"] .material-heading { margin-bottom: 18px; }
+html[data-embedded="true"][data-study-ui="discovery"] .material-heading p { font-size: calc(12px * var(--study-text-scale, 1)); color: var(--text-muted); }
+html[data-embedded="true"][data-study-ui="discovery"] .review-footer { position: static; flex: 0 0 auto; border-top: 1px solid var(--border); padding: 10px 20px; gap: 12px; font-size: calc(12px * var(--study-text-scale, 1)); }
+html[data-embedded="true"][data-study-ui="discovery"] .footer-actions { flex-wrap: wrap; }
+
+/* Historical results stay on their own protocol, but use the client surfaces. */
+html[data-study-ui="legacy"][data-theme] :is(.auth, .setup, .results, .results-head, .study-strip, .duel-workspace, .directory-head, .directory-summary, .question-directory) { background: var(--bg); }
+html[data-study-ui="legacy"][data-theme] :is(.auth-card, .metric, .analysis-card, .study-intro-dialog) { background: var(--surface-elev); border-color: var(--border); box-shadow: none; border-radius: 10px; }
+html[data-study-ui="legacy"][data-theme] :is(.study-intro-head, .study-intro-foot, .duel-stage, .directory-trigger, .tabs) { background: var(--surface); border-color: var(--border); }
+html[data-study-ui="legacy"][data-theme] :is(.primary, .auth-symbol) { background: var(--accent-strong); color: var(--surface-elev); border-color: var(--accent-strong); }
+html[data-study-ui="legacy"][data-theme="dark"] :is(.primary, .auth-symbol) { color: var(--bg); }
+html[data-study-ui="legacy"][data-embedded="true"] .study-close { order: -1; border-color: transparent; }
+html[data-study-ui="legacy"][data-study-view="results"] .top-meta { visibility: hidden; }
+html[data-study-ui="legacy"][data-embedded="true"] .app { min-width: 0 !important; }
+
+/* Expert Study (Extension): keep the ranking protocol, but use the same
+   restrained, flat visual language as the complete-output Expert Study. */
+html[data-study-ui="legacy"] body { font-size: calc(14px * var(--study-text-scale, 1)); line-height: 1.65; }
+html[data-study-ui="legacy"] .app { min-width: 0; background: var(--bg); color: var(--text); }
+html[data-study-ui="legacy"] .topbar {
+  height: 52px; flex-basis: 52px; min-height: 52px; padding: 6px 18px; gap: 12px;
+  background: var(--bg); border-color: var(--border); box-shadow: none;
+}
+html[data-study-ui="legacy"] .brand { min-width: 0; }
+html[data-study-ui="legacy"] .brand strong { font-size: calc(14px * var(--study-text-scale, 1)); font-weight: 600; letter-spacing: -.02em; }
+html[data-study-ui="legacy"] :is(.tabs, .study-language-switch) { background: var(--surface); border-color: var(--border); border-radius: 8px; }
+html[data-study-ui="legacy"] .tab { color: var(--text-muted); border-radius: 6px; font-size: calc(12px * var(--study-text-scale, 1)); font-weight: 500; }
+html[data-study-ui="legacy"] .tab.active { background: var(--surface-elev); color: var(--text); box-shadow: var(--shadow-card); }
+html[data-study-ui="legacy"] .top-meta { color: var(--text-muted); gap: 10px; font-size: calc(12px * var(--study-text-scale, 1)); }
+html[data-study-ui="legacy"] .study-context { color: var(--text-muted); font-size: calc(12px * var(--study-text-scale, 1)); }
+html[data-embedded="true"][data-study-ui="legacy"] .study-context { display: inline; flex: 0 0 auto; }
+
+html[data-study-ui="legacy"] :is(.auth, .setup) { background: var(--bg); }
+html[data-study-ui="legacy"] .auth-card { border: 1px solid var(--border); border-radius: 14px; padding: 30px; box-shadow: none; }
+html[data-study-ui="legacy"] .auth-symbol { width: 42px; height: 42px; border-radius: 10px; }
+html[data-study-ui="legacy"] .auth-card h1 { font-size: calc(24px * var(--study-text-scale, 1)); font-weight: 550; }
+html[data-study-ui="legacy"] .setup { padding: 36px 32px; }
+html[data-study-ui="legacy"] .setup-card {
+  width: min(1140px, 100%); grid-template-columns: 1.15fr 1fr; align-items: start;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible;
+  margin: 0 auto;
+}
+html[data-study-ui="legacy"] .setup-intro { padding: 10px 40px 10px 0; border-right: 1px solid var(--border); background: transparent; }
+html[data-study-ui="legacy"] .setup-intro :is(h1, p, .protocol) { max-width: 620px; }
+html[data-study-ui="legacy"] .setup-intro h1 { margin: 14px 0 18px; font-size: calc(24px * var(--study-text-scale, 1)); font-weight: 550; line-height: 1.35; }
+html[data-study-ui="legacy"] .setup-intro p { color: var(--text-muted); font-size: inherit; }
+html[data-study-ui="legacy"] .setup-form { padding: 12px 0 12px 36px; align-content: start; gap: 16px; }
+html[data-study-ui="legacy"] .protocol { margin-top: 24px; gap: 16px; }
+html[data-study-ui="legacy"] .protocol-row { grid-template-columns: 30px 1fr; }
+html[data-study-ui="legacy"] .protocol-num {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--accent-wash);
+  color: var(--accent-strong); font-size: 12px;
+}
+html[data-study-ui="legacy"] :is(input:not([type="checkbox"]), select) { min-height: 40px; border-color: var(--border); border-radius: 7px; background: var(--surface-elev); }
+html[data-study-ui="legacy"] :is(.primary, .secondary, .ghost, .danger-outline) { border-radius: 7px; box-shadow: none; }
+html[data-study-ui="legacy"] .primary { background: var(--accent-strong); border-color: var(--accent-strong); }
+html[data-study-ui="legacy"] .primary:hover { filter: brightness(.94); }
+html[data-study-ui="legacy"] .secondary { background: transparent; border-color: var(--border); color: var(--text); }
+html[data-study-ui="legacy"] .resume-card { background: var(--accent-wash); border-color: var(--border); box-shadow: none; }
+
+html[data-study-ui="legacy"] .study-intro-layer { background: rgb(10 20 16 / 38%); backdrop-filter: blur(3px); }
+html[data-study-ui="legacy"] .study-intro-dialog { border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-soft); }
+html[data-study-ui="legacy"] .study-intro-head { background: var(--surface-elev); border-color: var(--border); }
+html[data-study-ui="legacy"] .study-intro-head h1 { font-weight: 550; }
+html[data-study-ui="legacy"] :is(.intro-tier, .study-intro-note) { background: var(--surface); border-color: var(--border); box-shadow: none; }
+html[data-study-ui="legacy"] .study-intro-steps li::before { border-radius: 8px; background: var(--accent-wash); border-color: var(--border); color: var(--accent-strong); }
+
+html[data-study-ui="legacy"] .workbench { background: var(--bg); }
+html[data-study-ui="legacy"] .study-strip {
+  background: var(--surface); border-color: var(--border); padding: 16px 12px;
+  color: var(--text); box-shadow: none;
+}
+html[data-study-ui="legacy"] .study-strip :is(.directory-trigger, .ghost) { background: transparent; border-color: transparent; color: var(--text-muted); }
+html[data-study-ui="legacy"] .study-strip :is(.directory-trigger, .ghost):hover { background: var(--surface-elev); border-color: var(--border); color: var(--text); }
+html[data-study-ui="legacy"] .duel-workspace { padding: 0; background: var(--bg); }
+html[data-study-ui="legacy"] .duel-shell { width: 100%; max-width: none; }
+html[data-study-ui="legacy"] .duel-grid { gap: 0; grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr); background: var(--border); }
+html[data-study-ui="legacy"] .hypothesis-card { border: 0; border-radius: 0; box-shadow: none; background: var(--bg); }
+html[data-study-ui="legacy"] .duel-vs { background: var(--surface); border-inline: 1px solid var(--border); color: var(--text-muted); }
+html[data-study-ui="legacy"] :is(.hypothesis-technical, .hypothesis-original, .chain-strip, .literature, .duel-actions) { border-color: var(--border); }
+html[data-study-ui="legacy"] :is(.paper-card, .paper-relevance, .paper-score-badge, .paper-details, .undecided-menu) {
+  background: var(--surface); border-color: var(--border); border-radius: 8px; box-shadow: none;
+}
+html[data-study-ui="legacy"] .duel-actions { background: var(--bg); }
+html[data-study-ui="legacy"] .duel-action { border-color: var(--border); border-radius: 8px; background: var(--surface); color: var(--text); box-shadow: none; }
+html[data-study-ui="legacy"] .duel-action:hover { border-color: var(--accent); background: var(--accent-wash); }
+html[data-study-ui="legacy"] .question-directory { background: var(--bg); border-color: var(--border); box-shadow: var(--shadow-soft); }
+
+@media (max-width: 1120px) {
+  html[data-embedded="true"][data-study-ui="discovery"] .review-grid { grid-template-columns: var(--sidebar-w, 138px) minmax(0, 1fr) minmax(0, 1fr); }
+  html[data-embedded="true"][data-study-ui="discovery"] :is(.evidence, .questions) { padding: 18px 16px 30px; }
+}
+
+@media (max-width: 820px) {
+  html[data-study-ui="legacy"] .setup-card { grid-template-columns: 1fr; }
+  html[data-study-ui="legacy"] .setup-intro { border-right: 0; border-bottom: 1px solid var(--border); padding: 10px 0 22px; }
+  html[data-study-ui="legacy"] .setup-form { padding: 22px 0 0; }
+  html[data-embedded="true"][data-study-ui="discovery"] #app:has(#workspace:not([hidden])) { overflow: auto; }
+  html[data-embedded="true"][data-study-ui="discovery"] #workspace { height: auto; min-height: 100%; }
+  html[data-embedded="true"][data-study-ui="discovery"] .topbar { flex-wrap: wrap; }
+  html[data-embedded="true"][data-study-ui="discovery"] .session-actions { margin-left: 0; order: 2; flex-basis: 100%; }
+  html[data-embedded="true"][data-study-ui="discovery"] .study-session-info { margin-left: auto; }
+  html[data-embedded="true"][data-study-ui="discovery"] .study-session-popover { left: auto; right: 0; }
+  html[data-embedded="true"][data-study-ui="discovery"] .review-grid { display: flex; flex-direction: column; overflow: visible; }
+  html[data-embedded="true"][data-study-ui="discovery"] .sidebar-resizer { display: none; }
+  html[data-embedded="true"][data-study-ui="discovery"] .review-grid > * { width: 100%; min-width: 0; }
+  html[data-embedded="true"][data-study-ui="discovery"] .sidebar { overflow: visible; border-right: 0; border-bottom: 1px solid var(--border); padding: 12px 18px; }
+  html[data-embedded="true"][data-study-ui="discovery"] #cards-nav { display: flex; gap: 5px; overflow-x: auto; }
+  html[data-embedded="true"][data-study-ui="discovery"] .nav-card { min-width: 112px; flex-shrink: 0; }
+  html[data-embedded="true"][data-study-ui="discovery"] :is(.evidence, .questions) { overflow: visible; padding: 22px 18px; }
+  html[data-embedded="true"][data-study-ui="discovery"] .questions { border-left: 0; border-top: 1px solid var(--border); }
+  html[data-embedded="true"][data-study-ui="discovery"] .review-footer { position: sticky; bottom: 0; flex-wrap: wrap; padding: 10px 16px; }
+  html[data-study-ui="discovery"] .welcome { display: block; margin: 36px auto; }
+  html[data-study-ui="discovery"] .intro { border-right: 0; border-bottom: 1px solid var(--border); padding: 10px 0 22px; }
+  html[data-study-ui="discovery"] .setup { padding: 22px 0 0; }
+  html[data-study-ui="discovery"] dialog { width: calc(100% - 32px); padding: 20px; }
+  html[data-study-ui="legacy"] .results-head { flex-wrap: wrap; }
+  html[data-study-ui="legacy"] .results-tools { margin-left: 0; justify-content: flex-start; }
+  html[data-study-ui="legacy"] :is(.result-grid, .analysis) { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  html[data-embedded="true"][data-study-ui="discovery"] .study-toolbar-title { display: none; }
+  html[data-embedded="true"][data-study-ui] .topbar { gap: 8px; padding: 6px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-study-ui] *, html[data-study-ui] *::before { scroll-behavior: auto !important; transition: none !important; }
+}
+
+/* The same answer-workspace actions in both evaluations. No changes to scrolling. */
+html[data-study-ui] .evaluation-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+html[data-study-ui] .evaluation-actions[hidden] { display: none; }
+html[data-study-ui][data-theme] .evaluation-actions button { min-height: 30px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; font: inherit; font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 600; white-space: nowrap; cursor: pointer; color: var(--text); background: var(--surface-elev); }
+html[data-study-ui][data-theme] .evaluation-actions button:hover { background: var(--surface-soft); }
+html[data-study-ui] .evaluation-actions button:disabled { opacity: .5; cursor: wait; }
+html[data-study-ui] .fixed-time-note { font-size: 13px; line-height: 1.65; color: var(--muted, #52626d); }
+html[data-study-ui] .setup-intro .fixed-time-note { font-weight: 650; color: var(--text, #24343e); }
+html[data-study-ui] .evaluation-export-dialog { width: min(520px, calc(100% - 40px)); max-height: 85vh; overflow: auto; border: 1px solid var(--border); border-radius: 14px; padding: 24px; background: var(--surface-elev); color: var(--text); }
+html[data-study-ui] .evaluation-export-dialog h2 { font-size: 18px; margin: 0 0 16px; }
+html[data-study-ui] .evaluation-export-dialog p { font-size: 14px; line-height: 1.7; }
+html[data-study-ui] .evaluation-export-summary { white-space: pre-line; padding: 14px; border-radius: 10px; background: var(--surface-soft, #f1f5f5); }
+html[data-study-ui] .evaluation-export-dialog .evaluation-actions { justify-content: flex-end; margin-top: 20px; }
+html[data-study-ui][data-theme] .evaluation-export-dialog .primary { background: var(--accent-strong); color: var(--surface-elev); border-color: var(--accent-strong); }
+@media (max-width: 1100px) {
+  html[data-study-ui="legacy"] .topbar { flex-wrap: wrap; height: auto; min-height: 52px; }
+  html[data-study-ui="legacy"] .top-meta #recording { display: none; }
+}
+
+html[data-study-ui][data-theme] body { font-family: inherit; }
+html[data-study-ui][data-theme] :is(.language-switch button, .study-language-option) {
+  padding: 4px 9px; min-height: 26px; border-radius: 6px;
+  font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 500;
+}
+html[data-study-ui][data-theme] :is(#close-study, .study-close) {
+  font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; border-radius: 7px;
+  min-height: 34px; padding: 7px 10px; font-weight: 700;
+}
+html[data-study-ui][data-theme] :is(.intro, .setup-intro) .eyebrow {
+  font-size: calc(12px * var(--study-text-scale, 1)); color: var(--accent-strong);
+}
+html[data-study-ui][data-theme] .setup-intro h1 { letter-spacing: -.035em; }
+html[data-study-ui][data-theme] :is(.intro > p, .setup-intro > p) { line-height: 1.6; }
+html[data-study-ui][data-theme] :is(.flow strong, .protocol-row strong) {
+  font-size: calc(13px * var(--study-text-scale, 1)); line-height: 1.5;
+}
+html[data-study-ui][data-theme] :is(.flow p, .protocol-row span) {
+  font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.45;
+}
+html[data-study-ui][data-theme] :is(.flow span, .protocol-num) {
+  font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 750;
+}
+html[data-study-ui][data-theme] :is(.setup, .auth) label {
+  min-width: 0; font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 400;
+}
+html[data-study-ui][data-theme] :is(.setup, .auth) :is(input, select) {
+  min-width: 0; width: 100%; min-height: 40px; padding: 10px 11px; border-radius: 7px;
+  font-size: calc(14px * var(--study-text-scale, 1)); line-height: 1.5;
+}
+html[data-study-ui][data-theme] :is(input, select, textarea):focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+html[data-study-ui][data-theme] :is(.setup, .auth) button {
+  min-height: 40px; padding: 9px 13px; font-size: calc(14px * var(--study-text-scale, 1));
+  line-height: 1.5; font-weight: 650; border-radius: 7px;
+}
+html[data-study-ui][data-theme] :is(.restore, .setup-advanced) {
+  border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; background: transparent;
+}
+html[data-study-ui][data-theme] :is(.restore, .setup-advanced) summary {
+  font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 400; color: var(--text-muted);
+}
+html[data-study-ui][data-theme] :is(.notice, .resume-card) strong { font-size: calc(14px * var(--study-text-scale, 1)); }
+html[data-study-ui][data-theme] :is(.notice, .resume-card) p { font-size: calc(12px * var(--study-text-scale, 1)); line-height: 1.5; }
+html[data-study-ui][data-theme] button:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+html[data-study-ui][data-theme] :is(.secondary, .study-close, .language-switch button, .study-language-option):hover {
+  background: var(--surface-soft); color: var(--text); filter: none;
+}
+html[data-study-ui][data-theme="dark"] :is(.primary, .evaluation-export-dialog .primary) { color: var(--bg); }
+html[data-study-ui][data-theme] :is(.primary, #start, #close-save):hover { background: var(--accent-strong); filter: brightness(.94); }
+html[data-study-ui][data-theme] :is(#confirm-dialog, #close-dialog, .study-close-dialog) { width: min(520px, calc(100% - 40px)); padding: 24px; }
+html[data-study-ui][data-theme] :is(#confirm-dialog, #close-dialog, .study-close-dialog, .evaluation-export-dialog) h2 {
+  margin: 0 0 12px; font-size: calc(18px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 600;
+}
+html[data-study-ui][data-theme] :is(#confirm-dialog, #close-dialog, .study-close-dialog, .evaluation-export-dialog) p {
+  margin: 0 0 14px; font-size: calc(14px * var(--study-text-scale, 1)); line-height: 1.6; color: var(--text-muted);
+}
+html[data-study-ui][data-theme] :is(#confirm-dialog .footer-actions, #close-dialog .footer-actions, .study-close-actions) {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px;
+}
+html[data-study-ui][data-theme] :is(#confirm-dialog, #close-dialog, .study-close-dialog) button {
+  min-height: 42px; padding: 9px 13px; font-size: calc(14px * var(--study-text-scale, 1)); line-height: 1.5; font-weight: 650;
+}
+html[data-study-ui][data-theme] :is(#close-discard, .danger-outline) {
+  background: transparent; border: 1px solid #b24d57; color: #a23b46;
+}
+html[data-study-ui][data-theme="dark"] :is(#close-discard, .danger-outline) { border-color: #d98a93; color: #f0aab2; }
+html[data-study-ui][data-theme] :is(#close-discard, .danger-outline):hover { background: var(--surface-soft); filter: none; }
+@media (max-width: 820px) {
+  html[data-study-ui][data-theme] :is(#confirm-dialog, #close-dialog, .study-close-dialog, .evaluation-export-dialog) { width: min(520px, calc(100vw - 32px)); padding: 20px; }
+  html[data-study-ui] .evaluation-actions { flex-wrap: wrap; min-width: 0; }
+  html[data-study-ui="legacy"] .topbar > .evaluation-actions { order: 2; flex-basis: 100%; }
+}
+@media (max-width: 480px) {
+  html[data-embedded="true"][data-study-ui="legacy"] .study-context { display: none; }
+  html[data-study-ui="discovery"] .welcome { padding: 0 18px; margin: 24px auto; }
+  html[data-study-ui="legacy"] .setup { padding: 24px 18px; }
+  html[data-study-ui] .form-row { grid-template-columns: minmax(0, 1fr); }
+  html[data-study-ui][data-theme] :is(#confirm-dialog .footer-actions, #close-dialog .footer-actions, .study-close-actions) { grid-template-columns: minmax(0, 1fr); }
+  html[data-study-ui] .evaluation-export-dialog .evaluation-actions button { white-space: normal; }
+}

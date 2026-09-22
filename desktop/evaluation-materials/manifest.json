@@ -1,0 +1,11 @@
+{
+  "pack_id": "neurodiscovery-multitopic-20260922-v16-desktop-v1",
+  "participant_fields_unchanged": true,
+  "files": {
+    "cs1_discovery_pilot_v16_desktop_v1.json": "49151fcb9e5fb330f48afa47398e001397ce704bb7fcda9ce9b950e605cc4164",
+    "cs1_discovery_en_v15.json": "42fdd13aaacf0f3687a42be05d2cc76dd84d800e9a5cc08f361cda8330438302",
+    "cs1_discovery_assignments_v12.json": "8486f9a2ab68b0645defd0dfddcdb92e2b4fb6e02143b09347a89c385c771c86",
+    "cs1_discovery_reference_notes_v11.json": "f2ffd5581ad5fde1d0d9639b22cca94f334b369907ee52cfbec6f98375d78052",
+    "cs1_discovery_significance_v11.json": "666a3cdb5322e415a17c17641550903b3b95634139baaa9d8fac00d20fc10dbb"
+  }
+}

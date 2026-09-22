@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-study-ui="discovery">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>完整科研成果评审 · Human Evaluation 1</title>
+  <link rel="stylesheet" href="/static/discovery-study.css">
+  <link rel="stylesheet" href="/static/workspace-tokens.css">
+  <link rel="stylesheet" href="/static/study-workspace.css">
+  <script src="/static/study-workspace.js"></script>
+  <script src="/static/evaluation-export.js"></script>
+  <script src="/static/discovery-study-i18n.js" defer></script>
+  <script src="/static/discovery-study.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/discovery-study"><span class="brand-mark">D</span> Discovery <span class="muted">/ Expert review</span></a>
+    <span class="study-toolbar-title">Human Evaluation 1</span>
+    <details class="study-session-info"><summary><span id="stage-title"></span></summary><div class="study-session-popover"><div class="eyebrow" id="session-code"></div><p id="stage-help"></p><button class="secondary" id="resume-code">保存继续码</button></div></details>
+    <div class="topbar-actions">
+      <div class="session-actions evaluation-actions"><button class="secondary" id="save-progress">保存进度</button><button class="secondary" id="export">导出结果</button><button class="secondary" id="pause">保存并退出</button></div>
+      <span class="pill" id="version-label">v1.0.0</span>
+      <div class="language-switch" role="group" aria-label="Language / 语言"><button type="button" data-discovery-language="zh" aria-pressed="true">中文</button><button type="button" data-discovery-language="en" aria-pressed="false">English</button></div>
+      <button type="button" class="secondary" id="close-study" hidden><span aria-hidden="true">←</span> 返回工作台</button>
+    </div>
+  </header>
+  <p id="translation-note" class="translation-note" hidden>英文为显示译文；数值及论文所录原句保持原样，可随时切回中文。</p>
+  <main id="app">
+    <section class="welcome" id="welcome">
+      <div class="intro"><div class="eyebrow">Human Evaluation 1 · COMPLETE RESEARCH OUTPUT</div>
+        <h1>从假设，到结果。<br>评价一项研究带来了什么。</h1>
+        <p class="lead">NeuroDiscovery 是一个自动研究系统：它在神经影像知识图谱上自动提出可检验的假设，用真实数据完成内部与外部实验验证，并把假设、依据、方法和结果整理成可评审的研究材料。</p>
+        <p class="lead">自动指标无法替代领域专家对科学价值与可信度的判断——系统眼中的好成果，是否经得起专家的独立评审，需要你来判断。</p>
+        <p class="lead" id="intro-lead">审阅分配给你的研究材料，评价系统从提出假设到形成研究成果的六项能力，无需撰写长篇评审。</p>
+        <div class="flow" id="intro-flow"><div><span>01</span><strong>阅读一个完整案例</strong><p>假设、依据、方法、内外部结果和反馈同页展示。</p></div><div><span>02</span><strong>完成本例六项评分</strong><p>评分区保留当前假设，可随时对照材料。</p></div><div><span>03</span><strong>继续下一个案例</strong><p>一轮完成分配的案例，不再分两轮往返。</p></div></div>
+      </div>
+      <div class="setup">
+        <form id="auth-form" hidden><p>当前入口使用原有研究访问密码。</p><label>访问密码<input id="password" type="password" autocomplete="current-password" required></label><button type="submit">解锁入口</button></form>
+        <div id="resume-banner" class="notice" hidden><strong>此浏览器有已保存的会话</strong><p id="resume-description"></p><div class="resume-actions"><button type="button" id="resume">继续评审</button><button class="secondary" id="separate">开始独立的新会话</button></div></div>
+        <form id="setup-form">
+          <label>名字/代号<input name="code" placeholder="例如：张三 或 P023" pattern="[A-Za-z0-9_.·\-一-鿿 ]{2,40}" maxlength="40" autocomplete="off" required></label>
+          <div class="form-row">
+            <label>相关研究年限<select name="experience" required><option value="">请选择</option><option value="0-2">0–2 年</option><option value="3-5">3–5 年</option><option value="6-10">6–10 年</option><option value="10+">10 年以上</option></select></label>
+            <label id="assignment-row" hidden>分配编号<select name="assignment_id" id="assignment"></select></label>
+          </div>
+          <button id="start" type="submit">开始评审 <span aria-hidden="true">→</span></button>
+        </form>
+        <details class="restore"><summary>用另存的继续码恢复</summary><p>继续码相当于本次会话的钥匙，请勿公开。</p><label>继续码<input id="restore-code" autocomplete="off" type="password"></label><button type="button" class="secondary" id="restore">恢复会话</button></details>
+        <p class="tiny" id="pack-note">正在连接本机评审服务…</p>
+        <button class="secondary" id="export-saved" type="button">导出结果</button>
+      </div>
+    </section>
+    <section id="workspace" hidden>
+      <div class="review-grid"><div class="sidebar-resizer" id="sidebar-resizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="调整目录栏宽度" title="拖动调整目录栏宽度"></div><aside class="sidebar"><div class="steps" id="steps"></div><nav aria-label="评审材料" id="cards-nav"></nav><div class="progress"><span id="progress-text"></span><progress id="progress-bar" max="100" value="0"></progress></div><p class="tiny" id="order-note">十份材料顺序随机。没有标准答案。</p></aside>
+        <article class="evidence panel" id="material"></article>
+        <section class="questions panel" aria-label="独立判断"><div id="question-head"></div><form id="ratings-form"></form><div id="question-bottom"></div></section>
+      </div>
+      <footer class="review-footer"><div id="save-status" role="status" aria-live="polite">已保存</div><div class="footer-actions"><button class="secondary" id="previous">上一份</button><button class="secondary" id="next">下一份</button><button id="advance"></button><button id="export-complete" hidden>导出并交给研究者</button></div></footer>
+    </section>
+  </main>
+  <div class="toast" id="message" role="alert" hidden></div>
+  <dialog id="confirm-dialog"><h2 id="dialog-title"></h2><p id="dialog-text"></p><div class="footer-actions"><button class="secondary" id="dialog-cancel">取消</button><button id="dialog-ok">确认</button></div></dialog>
+  <dialog id="close-dialog"><h2>返回工作台？</h2><p>本次评审尚未完成。可以保存已填写的内容、下次在本客户端继续，或放弃本次填写的内容。</p><div class="footer-actions"><button class="secondary" id="close-discard">放弃填写内容</button><button id="close-save">保存，下次继续</button></div></dialog>
+  <noscript><p>此问卷需 JavaScript；所有数据保存于本机服务。</p></noscript>
+</body>
+</html>
