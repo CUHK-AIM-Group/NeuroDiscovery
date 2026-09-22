@@ -9,7 +9,17 @@
   "scripts": {
     "dev": "electron .",
     "start": "electron .",
+    "dev:evaluation": "electron evaluation-main.js",
+    "dist:evaluation:browser": "runtime\\python\\python.exe scripts/package-evaluation-browser.py",
+    "dist:evaluation:webview": "runtime\\python\\python.exe scripts/package-evaluation-webview.py",
+    "prepare:evaluation:win": "runtime\\python\\python.exe scripts/stage-evaluation-runtime.py",
+    "prepare:evaluation:win:resume": "runtime\\python\\python.exe scripts/stage-evaluation-runtime.py --resume",
+    "pack:evaluation": "electron-builder --config electron-builder.evaluation.json --dir",
+    "dist:evaluation:win": "npm run prepare:evaluation:win && electron-builder --config electron-builder.evaluation.json --win nsis portable zip",
+    "dist:evaluation:win:skip-runtime": "electron-builder --config electron-builder.evaluation.json --win nsis portable zip",
     "pack": "electron-builder --dir",
+    "prepare:demo:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-demo-runtime.ps1",
+    "dist:demo:win": "npm run prepare:demo:win && npm run patch:portable:win && electron-builder --config electron-builder.demo.json --win portable zip --x64",
     "patch:portable:win": "node scripts/patch-portable-progress.js",
     "prepare:runtime:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-bundled-runtime.ps1",
     "prepare:runtime:mac": "bash scripts/prepare-bundled-runtime-mac.sh",
@@ -18,11 +28,11 @@
     "dist:mac": "npm run prepare:runtime:mac && electron-builder --mac dmg zip",
     "dist:mac:skip-runtime": "electron-builder --mac dmg zip",
     "dist:mac:arm64": "python3 scripts/build-mac-arm64.py --variant full",
-    "dist:mac:x64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --x64",
     "dist:mac:arm64:full": "python3 scripts/build-mac-arm64.py --variant full",
     "dist:mac:arm64:evaluation": "python3 scripts/build-mac-arm64.py --variant evaluation",
     "dist:mac:arm64:demo": "python3 scripts/build-mac-arm64.py --variant demo",
-    "dist:mac:arm64:all": "python3 scripts/build-mac-arm64.py --variant all"
+    "dist:mac:arm64:all": "python3 scripts/build-mac-arm64.py --variant all",
+    "dist:mac:x64": "npm run prepare:runtime:mac && electron-builder --mac dmg zip --x64"
   },
   "devDependencies": {
     "electron": "^39.2.7",

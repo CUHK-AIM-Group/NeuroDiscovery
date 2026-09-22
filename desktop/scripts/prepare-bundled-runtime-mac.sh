@@ -187,6 +187,7 @@ stage_backend_dir() {
     --exclude='logs' \
     --exclude='output' \
     --exclude='materials' \
+    --exclude='study_materials' \
     --exclude='.venv' \
     --exclude='venv' \
     --exclude='*.pyc' \
@@ -261,12 +262,27 @@ if [ "$SKIP_BACKEND" -eq 0 ]; then
   copy_root_file_if_exists "pyproject.toml"
   copy_optimized_logo_if_exists
 
+  # The extension study bank and its expert pair-share table ship next to the
+  # backend, mirroring prepare-bundled-runtime.ps1.
+  STUDY_SUBSET_SOURCE="$REPO_ROOT/neurooracle/data/user_study/case1_tcp_external_expert_study_v1.json"
+  if [ -f "$STUDY_SUBSET_SOURCE" ]; then
+    mkdir -p "$BACKEND_TARGET/neurooracle/data/user_study"
+    cp "$STUDY_SUBSET_SOURCE" "$BACKEND_TARGET/neurooracle/data/user_study/case1_tcp_external_expert_study_v1.json"
+    for name in case1_tcp_expert_pair_assignments_v1.json case1_tcp_expert_study_v2.json case1_tcp_expert_pair_assignments_v2.json case1_tcp_expert_pair_assignments_v3.json; do
+      EXTRA_SOURCE="$REPO_ROOT/neurooracle/data/user_study/$name"
+      if [ -f "$EXTRA_SOURCE" ]; then
+        cp "$EXTRA_SOURCE" "$BACKEND_TARGET/neurooracle/data/user_study/$name"
+      fi
+    done
+  fi
+
   # Preserve the exact import-time policy bytes without copying graph/run data.
   POLICY_RELATIVE_PATH="neurooracle/data/case_study_reaudit/full_graph_v3/RUBRIC.md"
   assert_file "$REPO_ROOT/$POLICY_RELATIVE_PATH" "Required NeuroOracle policy asset is missing"
   mkdir -p "$(dirname "$BACKEND_TARGET/$POLICY_RELATIVE_PATH")"
   cp "$REPO_ROOT/$POLICY_RELATIVE_PATH" "$BACKEND_TARGET/$POLICY_RELATIVE_PATH"
   "$PYTHON_EXE" "$SCRIPT_DIR/stage-runtime-helpers.py" --source "$REPO_ROOT" --backend "$BACKEND_TARGET"
+  "$PYTHON_EXE" "$SCRIPT_DIR/stage-discovery-study.py" --source "$REPO_ROOT" --backend "$BACKEND_TARGET"
 
   cat > "$BACKEND_TARGET/neuroclaw_environment.json" <<'JSON'
 {

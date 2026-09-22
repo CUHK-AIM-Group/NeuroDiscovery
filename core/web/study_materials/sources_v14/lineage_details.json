@@ -1,0 +1,1889 @@
+{
+  "schema": "he1-lineage-detail-evidence-v1",
+  "sources": {
+    "core/web/study_materials/cs1_discovery_pilot_v13.json": "70c015ee0c101eab73f1c3aa4da531532113b10f20e1edc31f44f2c0e141eb4d",
+    "core/web/study_materials/sources_v13/next_research.json": "bd216df0fb73cd1e15195578d59389909b8e5607da9c954db460d8ae050d3dc7",
+    "core/web/study_materials/sources_v6/r7/feedback_lineage.json": "59cb63a2f658ee01352bc82393075b0ddf63c2dee6bef61dd16e3531e0e5d981",
+    "core/web/study_materials/sources_v6/r7/candidate_index.json": "40964c8ba056a2cc44615857030f48a177e24baff50a25a2a6b168bc2f74f19d",
+    "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json": "3cdaf2a2fc6aeeb9d9b56fb2213a987034b77ee49acb9aa0f2418c373ca82468",
+    "core/web/study_materials/sources_v6/old_r1/candidate_index.json": "a16ff8cc00d87dcf2c1d6eeafb2d0ad4ae3ea8e55f7d8f061d2f7ad309ce1b74"
+  },
+  "prior": {
+    "packet-01": {
+      "kind": "explicit_parent",
+      "parent_hypothesis_id": "5accc8b6193819b952dd",
+      "child_hypothesis_id": "883a01a4ed23487912f8",
+      "parent": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.02082739968357967,
+            "residual_RMS": 0.16139115373631022,
+            "standardized_beta": -0.12904920252078145
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.028554837815626545,
+            "residual_RMS": 0.17132387764752838,
+            "standardized_beta": -0.16667167593751048
+          }
+        },
+        "direction": -1,
+        "eligible_for_prospective_ranking": false,
+        "endpoint": "ROI_to_network:139:SalVentAttn",
+        "evidence_ids": [
+          "CLM:c2f787e29e6f3f86",
+          "CLM:2c4d27356dac",
+          "CLM:CASE1MAN:20631176:4148"
+        ],
+        "evidence_transfer_limit_zh": "E085为动态FC、E014为同伦指标、E046为n=27单研究且仅精神分裂，均非边级静态r；E019示SZ额顶连接增高，方向异质；转移至混合TCP不确定。",
+        "explanation_is_not_an_executable_filter": true,
+        "feedback_action_zh": "采纳方法学与统计评审：端点改为未覆盖的139:SalVentAttn以拓宽主题，证据改用E085/E014/E046，并补注动态FC、同伦与单研究局限。",
+        "feedback_parent": "a93e510d550e22416d7f",
+        "hypothesis_id": "5accc8b6193819b952dd",
+        "hypothesis_zh": "ROI_to_network:139:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+        "joint_direction_stability": 0.509765625,
+        "model_evidence_ids": [
+          "E085",
+          "E014",
+          "E046"
+        ],
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "occurrences": [
+          {
+            "origin_slot": 2,
+            "round": 4,
+            "seed": 0
+          }
+        ],
+        "origin_slot": 2,
+        "population_scope": "TCP_all_predeclared_cases_vs_controls",
+        "rationale_zh": "跨诊断动态FC研究示突显与额顶网络连接降低（E085），突显网络同伦连接降低（E014），精神分裂整体连接强度减弱（E046），故该控制-突显边在病例中降低。",
+        "resampling_replicates": 512,
+        "score": null,
+        "spec": {
+          "kind": "ROI_to_network",
+          "network": "SalVentAttn",
+          "roi": 139
+        }
+      },
+      "child": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.06994131714328061,
+            "residual_RMS": 0.12673014999519472,
+            "standardized_beta": -0.5518916938544822
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.07727501727234065,
+            "residual_RMS": 0.12482497570413392,
+            "standardized_beta": -0.6190669522380006
+          }
+        },
+        "direction": -1,
+        "eligible_for_prospective_ranking": true,
+        "endpoint": "ROI_to_network:312:SalVentAttn",
+        "evidence_ids": [
+          "CLM:c2f787e29e6f3f86",
+          "CLM:2c4d27356dac",
+          "CLM:CASE1MAN:29897593:7553"
+        ],
+        "evidence_transfer_limit_zh": "E085为动态FC、E014为同伦、E051为距离依赖，均非静态边级r；E051同时报告长程连接增高，方向异质；父节点5accc8b6联合稳定性0.51、成分beta近零。",
+        "explanation_is_not_an_executable_filter": true,
+        "feedback_action_zh": "采纳三方评审：补记E046→E051替换（E051为距离依赖指标），转移限制补注父节点0.51稳定性与近零beta，说明-1先验支持有限。",
+        "feedback_parent": "5accc8b6193819b952dd",
+        "hypothesis_id": "883a01a4ed23487912f8",
+        "hypothesis_zh": "ROI_to_network:312:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+        "joint_direction_stability": 0.951171875,
+        "model_evidence_ids": [
+          "E085",
+          "E014",
+          "E051"
+        ],
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "occurrences": [
+          {
+            "origin_slot": 5,
+            "round": 11,
+            "seed": 0
+          }
+        ],
+        "origin_slot": 5,
+        "population_scope": "TCP_all_predeclared_cases_vs_controls",
+        "rationale_zh": "跨诊断动态FC示突显网络降低(E085)，突显网络同伦降低(E014)，患者短程连接降低(E051)，故该突显网络内边降低。",
+        "resampling_replicates": 512,
+        "score": 0.5249438572404939,
+        "spec": {
+          "kind": "ROI_to_network",
+          "network": "SalVentAttn",
+          "roi": 312
+        }
+      },
+      "parent_parcel": {
+        "name": "7Networks_LH_Cont_PFCl_5",
+        "network": "Cont",
+        "roi": 139
+      },
+      "child_parcel": {
+        "name": "7Networks_RH_SalVentAttn_Med_2",
+        "network": "SalVentAttn",
+        "roi": 312
+      },
+      "feedback_as_sent": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.02082739968357967,
+            "residual_RMS": 0.16139115373631022,
+            "standardized_beta": -0.12904920252078145
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.028554837815626545,
+            "residual_RMS": 0.17132387764752838,
+            "standardized_beta": -0.16667167593751048
+          }
+        },
+        "eligible_for_prospective_ranking": false,
+        "joint_direction_stability": 0.509765625,
+        "resampling_replicates": 512,
+        "score": null
+      },
+      "lineage": {
+        "child_hypothesis_id": "883a01a4ed23487912f8",
+        "feedback_values_and_temporal_order_verified": true,
+        "link_is_not_proof_of_causal_necessity_or_external_success": true,
+        "original_feedback_action_zh": "采纳三方评审：补记E046→E051替换（E051为距离依赖指标），转移限制补注父节点0.51稳定性与近零beta，说明-1先验支持有限。",
+        "parent_hypothesis_id": "5accc8b6193819b952dd",
+        "parent_in_pre_generation_context": [
+          {
+            "record": {
+              "direction": -1,
+              "endpoint": "ROI_to_network:139:SalVentAttn",
+              "evidence_ids": [
+                "E085",
+                "E014",
+                "E046"
+              ],
+              "evidence_transfer_limit_zh": "E085为动态FC、E014为同伦指标、E046为n=27单研究且仅精神分裂，均非边级静态r；E019示SZ额顶连接增高，方向异质；转移至混合TCP不确定。",
+              "explanation_is_not_an_executable_filter": true,
+              "feedback": {
+                "P_values_produced": false,
+                "calibrated_confidence_interval": false,
+                "components": {
+                  "bipolar": {
+                    "beta": -0.02082739968357967,
+                    "residual_RMS": 0.16139115373631022,
+                    "standardized_beta": -0.12904920252078145
+                  },
+                  "psychosis_SZ_SZA": {
+                    "beta": -0.028554837815626545,
+                    "residual_RMS": 0.17132387764752838,
+                    "standardized_beta": -0.16667167593751048
+                  }
+                },
+                "eligible_for_prospective_ranking": false,
+                "joint_direction_stability": 0.509765625,
+                "resampling_replicates": 512,
+                "score": null
+              },
+              "feedback_action_zh": "采纳方法学与统计评审：端点改为未覆盖的139:SalVentAttn以拓宽主题，证据改用E085/E014/E046，并补注动态FC、同伦与单研究局限。",
+              "feedback_parent": "a93e510d550e22416d7f",
+              "hypothesis_id": "5accc8b6193819b952dd",
+              "hypothesis_zh": "ROI_to_network:139:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+              "named": [
+                "bipolar",
+                "psychosis_SZ_SZA"
+              ],
+              "origin_slot": 2,
+              "population_scope": "TCP_all_predeclared_cases_vs_controls",
+              "rationale_zh": "跨诊断动态FC研究示突显与额顶网络连接降低（E085），突显网络同伦连接降低（E014），精神分裂整体连接强度减弱（E046），故该控制-突显边在病例中降低。",
+              "round": 4,
+              "seed": 0,
+              "spec": {
+                "kind": "ROI_to_network",
+                "network": "SalVentAttn",
+                "roi": 139
+              }
+            },
+            "source": {
+              "json_pointer": "/context/previous_feedback/33",
+              "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_expansion2_flash_20260916_v1r7\\s0\\r11\\context.json"
+            }
+          }
+        ],
+        "parent_prior_same_seed_TCP_records": [
+          {
+            "record": {
+              "direction": -1,
+              "endpoint": "ROI_to_network:139:SalVentAttn",
+              "evidence_ids": [
+                "CLM:c2f787e29e6f3f86",
+                "CLM:2c4d27356dac",
+                "CLM:CASE1MAN:20631176:4148"
+              ],
+              "evidence_transfer_limit_zh": "E085为动态FC、E014为同伦指标、E046为n=27单研究且仅精神分裂，均非边级静态r；E019示SZ额顶连接增高，方向异质；转移至混合TCP不确定。",
+              "explanation_is_not_an_executable_filter": true,
+              "feedback": {
+                "P_values_produced": false,
+                "calibrated_confidence_interval": false,
+                "components": {
+                  "bipolar": {
+                    "beta": -0.02082739968357967,
+                    "residual_RMS": 0.16139115373631022,
+                    "standardized_beta": -0.12904920252078145
+                  },
+                  "psychosis_SZ_SZA": {
+                    "beta": -0.028554837815626545,
+                    "residual_RMS": 0.17132387764752838,
+                    "standardized_beta": -0.16667167593751048
+                  }
+                },
+                "eligible_for_prospective_ranking": false,
+                "joint_direction_stability": 0.509765625,
+                "resampling_replicates": 512,
+                "score": null
+              },
+              "feedback_action_zh": "采纳方法学与统计评审：端点改为未覆盖的139:SalVentAttn以拓宽主题，证据改用E085/E014/E046，并补注动态FC、同伦与单研究局限。",
+              "feedback_parent": "a93e510d550e22416d7f",
+              "hypothesis_id": "5accc8b6193819b952dd",
+              "hypothesis_zh": "ROI_to_network:139:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+              "model_evidence_ids": [
+                "E085",
+                "E014",
+                "E046"
+              ],
+              "named": [
+                "bipolar",
+                "psychosis_SZ_SZA"
+              ],
+              "origin_slot": 2,
+              "population_scope": "TCP_all_predeclared_cases_vs_controls",
+              "rationale_zh": "跨诊断动态FC研究示突显与额顶网络连接降低（E085），突显网络同伦连接降低（E014），精神分裂整体连接强度减弱（E046），故该控制-突显边在病例中降低。",
+              "round": 4,
+              "seed": 0,
+              "spec": {
+                "kind": "ROI_to_network",
+                "network": "SalVentAttn",
+                "roi": 139
+              }
+            },
+            "source": {
+              "json_pointer": "/records/33",
+              "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_expansion2_flash_20260916_v1r7\\all_results.json"
+            }
+          }
+        ],
+        "proposal_event_id": "F2_s0_r11_slot5"
+      },
+      "lineage_pointer": {
+        "path": "core/web/study_materials/sources_v6/r7/feedback_lineage.json",
+        "json_pointer": "/84"
+      },
+      "parent_pointer": {
+        "path": "core/web/study_materials/sources_v6/r7/candidate_index.json",
+        "json_pointer": "/33"
+      },
+      "child_pointer": {
+        "path": "core/web/study_materials/sources_v6/r7/candidate_index.json",
+        "json_pointer": "/92"
+      }
+    },
+    "packet-02": {
+      "kind": "explicit_parent",
+      "parent_hypothesis_id": "1956499df923d233e353",
+      "child_hypothesis_id": "e3b5ea76fb92c756d9e3",
+      "parent": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.07072910576451859,
+            "residual_RMS": 0.12673386548781782,
+            "standardized_beta": -0.5580916000018745
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.07698219838332447,
+            "residual_RMS": 0.11964708420438602,
+            "standardized_beta": -0.6434105677980446
+          }
+        },
+        "direction": -1,
+        "eligible_for_prospective_ranking": true,
+        "endpoint": "network_pair:DorsAttn:SomMot",
+        "evidence_ids": [
+          "CLM:49e51579a03f82dc3e653a786e75dd3f",
+          "CLM:bdc6dca29e16d9434a80e48a89bfcb8d",
+          "CLM:case3_manual_39806317_001"
+        ],
+        "evidence_transfer_limit_zh": "局部结构与跨网均值不等价；E097无方向，本端点无统一N、效应量、P值、校准CI；诊断缩减属适应性选择，未校正多重性。",
+        "explanation_is_not_an_executable_filter": true,
+        "feedback_action_zh": "无新TCP结果；承接父项b2aae1e076345da38355低向反馈，将范围缩为双诊断并仅作反馈后探索；不作确证并披露多重性。",
+        "feedback_parent": "b2aae1e076345da38355",
+        "hypothesis_id": "1956499df923d233e353",
+        "hypothesis_zh": "network_pair:DorsAttn:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+        "joint_direction_stability": 0.970703125,
+        "model_evidence_ids": [
+          "E019",
+          "E084",
+          "E097"
+        ],
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "occurrences": [
+          {
+            "origin_slot": 2,
+            "round": 5,
+            "seed": 1
+          },
+          {
+            "origin_slot": 3,
+            "round": 2,
+            "seed": 2
+          }
+        ],
+        "origin_slot": 2,
+        "population_scope": "TCP_all_predeclared_cases_vs_controls",
+        "rationale_zh": "E019/E084仅为小脑或FEF/丘脑局部线索，E097无方向；DorsAttn–SomMot低向是反馈后待检编码。",
+        "resampling_replicates": 512,
+        "score": 0.5417412601580696,
+        "spec": {
+          "kind": "network_pair",
+          "network_a": "SomMot",
+          "network_b": "DorsAttn"
+        }
+      },
+      "child": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.09376206115492287,
+            "residual_RMS": 0.13257838845188988,
+            "standardized_beta": -0.7072197984134292
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.09804948421723496,
+            "residual_RMS": 0.12923616888635708,
+            "standardized_beta": -0.7586845467653416
+          }
+        },
+        "direction": -1,
+        "eligible_for_prospective_ranking": true,
+        "endpoint": "ROI_to_network:108:SomMot",
+        "evidence_ids": [
+          "CLM:CASE1MAN:35264921:1128",
+          "CLM:case3_manual_30837901_001",
+          "CLM:27bedef663cbaca0e92df92dd522f16d"
+        ],
+        "evidence_transfer_limit_zh": "外部结果来自相邻或局部回路，未直接测量该ROI—网络边；不外推共同效应、特异性或因果关系。",
+        "explanation_is_not_an_executable_filter": true,
+        "feedback_action_zh": "承接1956499df923d233e353的双诊断低方向高稳定反馈，细化至新ROI 108。",
+        "feedback_parent": "1956499df923d233e353",
+        "hypothesis_id": "e3b5ea76fb92c756d9e3",
+        "hypothesis_zh": "ROI_to_network:108:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+        "joint_direction_stability": 0.98828125,
+        "model_evidence_ids": [
+          "E049",
+          "E086",
+          "E010"
+        ],
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "occurrences": [
+          {
+            "origin_slot": 6,
+            "round": 5,
+            "seed": 2
+          }
+        ],
+        "origin_slot": 6,
+        "population_scope": "TCP_all_predeclared_cases_vs_controls",
+        "rationale_zh": "E049、E086、E010涉及感觉运动、岛叶及视觉相关连接异常或降低；仅作双诊断ROI低方向探索。",
+        "resampling_replicates": 512,
+        "score": 0.6989320664007718,
+        "spec": {
+          "kind": "ROI_to_network",
+          "network": "SomMot",
+          "roi": 108
+        }
+      },
+      "parent_parcel": null,
+      "child_parcel": {
+        "name": "7Networks_LH_SalVentAttn_Med_2",
+        "network": "SalVentAttn",
+        "roi": 108
+      },
+      "feedback_as_sent": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.07072910576451859,
+            "residual_RMS": 0.12673386548781782,
+            "standardized_beta": -0.5580916000018745
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.07698219838332447,
+            "residual_RMS": 0.11964708420438602,
+            "standardized_beta": -0.6434105677980446
+          }
+        },
+        "eligible_for_prospective_ranking": true,
+        "joint_direction_stability": 0.958984375,
+        "resampling_replicates": 512,
+        "score": 0.5352011242205477
+      },
+      "lineage": {
+        "proposal_event_id": "D_s2_r5_slot6",
+        "child_hypothesis_id": "e3b5ea76fb92c756d9e3",
+        "parent_hypothesis_id": "1956499df923d233e353",
+        "child_original_feedback_action_zh": "承接1956499df923d233e353的双诊断低方向高稳定反馈，细化至新ROI 108。",
+        "parent_prior_same_seed_TCP_records": [
+          {
+            "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\all_results.json",
+            "json_pointer": "/records/110",
+            "seed": 2,
+            "round": 2,
+            "origin_slot": 3,
+            "endpoint": "network_pair:DorsAttn:SomMot",
+            "named": [
+              "bipolar",
+              "psychosis_SZ_SZA"
+            ],
+            "feedback": {
+              "P_values_produced": false,
+              "calibrated_confidence_interval": false,
+              "components": {
+                "bipolar": {
+                  "beta": -0.07072910576451859,
+                  "residual_RMS": 0.12673386548781782,
+                  "standardized_beta": -0.5580916000018745
+                },
+                "psychosis_SZ_SZA": {
+                  "beta": -0.07698219838332447,
+                  "residual_RMS": 0.11964708420438602,
+                  "standardized_beta": -0.6434105677980446
+                }
+              },
+              "eligible_for_prospective_ranking": true,
+              "joint_direction_stability": 0.958984375,
+              "resampling_replicates": 512,
+              "score": 0.5352011242205477
+            }
+          }
+        ],
+        "parent_in_pre_generation_context": [
+          {
+            "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\s2\\r5\\context.json",
+            "json_pointer": "/context/previous_feedback/18",
+            "feedback": {
+              "P_values_produced": false,
+              "calibrated_confidence_interval": false,
+              "components": {
+                "bipolar": {
+                  "beta": -0.07072910576451859,
+                  "residual_RMS": 0.12673386548781782,
+                  "standardized_beta": -0.5580916000018745
+                },
+                "psychosis_SZ_SZA": {
+                  "beta": -0.07698219838332447,
+                  "residual_RMS": 0.11964708420438602,
+                  "standardized_beta": -0.6434105677980446
+                }
+              },
+              "eligible_for_prospective_ranking": true,
+              "joint_direction_stability": 0.958984375,
+              "resampling_replicates": 512,
+              "score": 0.5352011242205477
+            }
+          }
+        ],
+        "same_feedback_verified": true
+      },
+      "lineage_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json",
+        "json_pointer": "/records/114"
+      },
+      "parent_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/candidate_index.json",
+        "json_pointer": "/records/72"
+      },
+      "child_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/candidate_index.json",
+        "json_pointer": "/records/101"
+      }
+    },
+    "packet-03": {
+      "kind": "explicit_parent",
+      "parent_hypothesis_id": "ab911271cb051c884457",
+      "child_hypothesis_id": "c94c1f0143413b424323",
+      "parent": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.07361974472975849,
+            "residual_RMS": 0.150522126201648,
+            "standardized_beta": -0.48909583320084976
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.08923163230842814,
+            "residual_RMS": 0.15480570932663862,
+            "standardized_beta": -0.5764104741133947
+          }
+        },
+        "direction": -1,
+        "eligible_for_prospective_ranking": true,
+        "endpoint": "ROI_to_network:054:SalVentAttn",
+        "evidence_ids": [
+          "CLM:27bedef663cbaca0e92df92dd522f16d",
+          "CLM:case3_manual_30837901_001",
+          "CLM:case3_manual_32688026_001"
+        ],
+        "evidence_transfer_limit_zh": "证据来自不同局部回路和诊断，未直接测量ROI 054—SalVentAttn聚合边；不能外推共同效应、特异性或因果关系。",
+        "explanation_is_not_an_executable_filter": true,
+        "feedback_action_zh": "承接44cb2eeb8581a8b48b55的SomMot:Vis双诊断低方向反馈，细化为ROI 054边。",
+        "feedback_parent": "44cb2eeb8581a8b48b55",
+        "hypothesis_id": "ab911271cb051c884457",
+        "hypothesis_zh": "ROI_to_network:054:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+        "joint_direction_stability": 0.951171875,
+        "model_evidence_ids": [
+          "E010",
+          "E086",
+          "E087"
+        ],
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "occurrences": [
+          {
+            "origin_slot": 7,
+            "round": 4,
+            "seed": 2
+          }
+        ],
+        "origin_slot": 7,
+        "population_scope": "TCP_all_predeclared_cases_vs_controls",
+        "rationale_zh": "E010、E086、E087涉及视觉、岛叶—感觉运动连接异常或降低，检验ROI 054—SalVentAttn的双诊断低方向。",
+        "resampling_replicates": 512,
+        "score": 0.46521420072033953,
+        "spec": {
+          "kind": "ROI_to_network",
+          "network": "SalVentAttn",
+          "roi": 54
+        }
+      },
+      "child": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.07831144340713711,
+            "residual_RMS": 0.13949307723236462,
+            "standardized_beta": -0.5614002139811395
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.10771619437776074,
+            "residual_RMS": 0.1337161907944654,
+            "standardized_beta": -0.8055583526405629
+          }
+        },
+        "direction": -1,
+        "eligible_for_prospective_ranking": true,
+        "endpoint": "ROI_to_network:254:SalVentAttn",
+        "evidence_ids": [
+          "CLM:case3_manual_30837901_001",
+          "CLM:27bedef663cbaca0e92df92dd522f16d",
+          "CLM:case3_manual_32688026_001"
+        ],
+        "evidence_transfer_limit_zh": "E087为双相II抑郁且方向双向，E086/E010来自局部或相邻回路；未直接验证ROI 254—SalVentAttn TCP均值，无P值或校准CI，不外推共同效应、特异性或因果关系。",
+        "explanation_is_not_an_executable_filter": true,
+        "feedback_action_zh": "承接ab911271cb051c884457的双诊断低方向高稳定反馈，转检新ROI 254。",
+        "feedback_parent": "ab911271cb051c884457",
+        "hypothesis_id": "c94c1f0143413b424323",
+        "hypothesis_zh": "ROI_to_network:254:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+        "joint_direction_stability": 0.96875,
+        "model_evidence_ids": [
+          "E086",
+          "E010",
+          "E087"
+        ],
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "occurrences": [
+          {
+            "origin_slot": 2,
+            "round": 5,
+            "seed": 2
+          }
+        ],
+        "origin_slot": 2,
+        "population_scope": "TCP_all_predeclared_cases_vs_controls",
+        "rationale_zh": "E086、E010涉及岛叶及视觉相关异常；E087限于双相II抑郁且岛叶—感觉运动连接一降一升，故仅作双诊断ROI低方向、可反驳探索。",
+        "resampling_replicates": 512,
+        "score": 0.5438564572942288,
+        "spec": {
+          "kind": "ROI_to_network",
+          "network": "SalVentAttn",
+          "roi": 254
+        }
+      },
+      "parent_parcel": {
+        "name": "7Networks_LH_SomMot_23",
+        "network": "SomMot",
+        "roi": 54
+      },
+      "child_parcel": {
+        "name": "7Networks_RH_SomMot_24",
+        "network": "SomMot",
+        "roi": 254
+      },
+      "feedback_as_sent": {
+        "P_values_produced": false,
+        "calibrated_confidence_interval": false,
+        "components": {
+          "bipolar": {
+            "beta": -0.07361974472975849,
+            "residual_RMS": 0.150522126201648,
+            "standardized_beta": -0.48909583320084976
+          },
+          "psychosis_SZ_SZA": {
+            "beta": -0.08923163230842814,
+            "residual_RMS": 0.15480570932663862,
+            "standardized_beta": -0.5764104741133947
+          }
+        },
+        "eligible_for_prospective_ranking": true,
+        "joint_direction_stability": 0.94921875,
+        "resampling_replicates": 512,
+        "score": 0.4642589354211191
+      },
+      "lineage": {
+        "proposal_event_id": "D_s2_r5_slot2",
+        "child_hypothesis_id": "c94c1f0143413b424323",
+        "parent_hypothesis_id": "ab911271cb051c884457",
+        "child_original_feedback_action_zh": "承接ab911271cb051c884457的双诊断低方向高稳定反馈，转检新ROI 254。",
+        "parent_prior_same_seed_TCP_records": [
+          {
+            "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\all_results.json",
+            "json_pointer": "/records/129",
+            "seed": 2,
+            "round": 4,
+            "origin_slot": 7,
+            "endpoint": "ROI_to_network:054:SalVentAttn",
+            "named": [
+              "bipolar",
+              "psychosis_SZ_SZA"
+            ],
+            "feedback": {
+              "P_values_produced": false,
+              "calibrated_confidence_interval": false,
+              "components": {
+                "bipolar": {
+                  "beta": -0.07361974472975849,
+                  "residual_RMS": 0.150522126201648,
+                  "standardized_beta": -0.48909583320084976
+                },
+                "psychosis_SZ_SZA": {
+                  "beta": -0.08923163230842814,
+                  "residual_RMS": 0.15480570932663862,
+                  "standardized_beta": -0.5764104741133947
+                }
+              },
+              "eligible_for_prospective_ranking": true,
+              "joint_direction_stability": 0.94921875,
+              "resampling_replicates": 512,
+              "score": 0.4642589354211191
+            }
+          }
+        ],
+        "parent_in_pre_generation_context": [
+          {
+            "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\s2\\r5\\context.json",
+            "json_pointer": "/context/previous_feedback/37",
+            "feedback": {
+              "P_values_produced": false,
+              "calibrated_confidence_interval": false,
+              "components": {
+                "bipolar": {
+                  "beta": -0.07361974472975849,
+                  "residual_RMS": 0.150522126201648,
+                  "standardized_beta": -0.48909583320084976
+                },
+                "psychosis_SZ_SZA": {
+                  "beta": -0.08923163230842814,
+                  "residual_RMS": 0.15480570932663862,
+                  "standardized_beta": -0.5764104741133947
+                }
+              },
+              "eligible_for_prospective_ranking": true,
+              "joint_direction_stability": 0.94921875,
+              "resampling_replicates": 512,
+              "score": 0.4642589354211191
+            }
+          }
+        ],
+        "same_feedback_verified": true
+      },
+      "lineage_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json",
+        "json_pointer": "/records/110"
+      },
+      "parent_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/candidate_index.json",
+        "json_pointer": "/records/94"
+      },
+      "child_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/candidate_index.json",
+        "json_pointer": "/records/97"
+      }
+    }
+  },
+  "forward": {
+    "packet-05": {
+      "kind": "explicit_parent_and_completed_child",
+      "hypothesis_id": "1c1c59c7fd87df6ec713",
+      "lineage_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json",
+        "json_pointer": "/records/1"
+      },
+      "lineage": {
+        "proposal_event_id": "D_s0_r1_slot2",
+        "child_hypothesis_id": "3d876479c52024fd703d",
+        "parent_hypothesis_id": "1c1c59c7fd87df6ec713",
+        "child_original_feedback_action_zh": "依据父卡1c1c59c7fd87df6ec713的SomMot高稳定反馈，改为可执行SomMot内三诊断检验，回应跨Default-SomMot证据不足。",
+        "parent_prior_same_seed_TCP_records": [
+          {
+            "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\all_results.json",
+            "json_pointer": "/records/1",
+            "seed": 0,
+            "round": 0,
+            "origin_slot": 2,
+            "endpoint": "network_pair:SomMot:SomMot",
+            "named": [
+              "bipolar",
+              "psychosis_SZ_SZA"
+            ],
+            "feedback": {
+              "P_values_produced": false,
+              "calibrated_confidence_interval": false,
+              "components": {
+                "bipolar": {
+                  "beta": -0.09076667225827621,
+                  "residual_RMS": 0.1320373385179223,
+                  "standardized_beta": -0.6874318528160567
+                },
+                "psychosis_SZ_SZA": {
+                  "beta": -0.08338357222476268,
+                  "residual_RMS": 0.12720419801061006,
+                  "standardized_beta": -0.6555095942494578
+                }
+              },
+              "eligible_for_prospective_ranking": true,
+              "joint_direction_stability": 0.990234375,
+              "resampling_replicates": 512,
+              "score": 0.6491081333681153
+            }
+          }
+        ],
+        "parent_in_pre_generation_context": [
+          {
+            "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\s0\\r1\\context.json",
+            "json_pointer": "/context/previous_feedback/1",
+            "feedback": {
+              "P_values_produced": false,
+              "calibrated_confidence_interval": false,
+              "components": {
+                "bipolar": {
+                  "beta": -0.09076667225827621,
+                  "residual_RMS": 0.1320373385179223,
+                  "standardized_beta": -0.6874318528160567
+                },
+                "psychosis_SZ_SZA": {
+                  "beta": -0.08338357222476268,
+                  "residual_RMS": 0.12720419801061006,
+                  "standardized_beta": -0.6555095942494578
+                }
+              },
+              "eligible_for_prospective_ranking": true,
+              "joint_direction_stability": 0.990234375,
+              "resampling_replicates": 512,
+              "score": 0.6491081333681153
+            }
+          }
+        ],
+        "same_feedback_verified": true
+      },
+      "child_pointer": {
+        "path": "core/web/study_materials/sources_v6/old_r1/candidate_index.json",
+        "json_pointer": "/records/7"
+      },
+      "child_occurrence": {
+        "source": {
+          "path": "\\\\192.168.3.61\\data\\Public Dataset\\case1_five_cohort_discovery_20260910\\nd_multiagent_luna_20260914_v4r5\\all_results.json",
+          "json_pointer": "/records/7"
+        },
+        "record": {
+          "direction": -1,
+          "endpoint": "network_pair:SomMot:SomMot",
+          "evidence_ids": [
+            "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+            "CLM:494a426b0a78"
+          ],
+          "evidence_transfer_limit_zh": "E002为局部连接，E019为动态网络内结果；均不等同TCP全边均值，三诊断迁移有限，无TCP效应量、P值或校准CI。",
+          "explanation_is_not_an_executable_filter": true,
+          "feedback": {
+            "P_values_produced": false,
+            "calibrated_confidence_interval": false,
+            "components": {
+              "ADHD": {
+                "beta": -0.07199787449308474,
+                "residual_RMS": 0.12474250258930605,
+                "standardized_beta": -0.5771719582228182
+              },
+              "bipolar": {
+                "beta": -0.09076667225827621,
+                "residual_RMS": 0.1320373385179223,
+                "standardized_beta": -0.6874318528160567
+              },
+              "psychosis_SZ_SZA": {
+                "beta": -0.08338357222476268,
+                "residual_RMS": 0.12720419801061006,
+                "standardized_beta": -0.6555095942494578
+              }
+            },
+            "eligible_for_prospective_ranking": true,
+            "joint_direction_stability": 0.982421875,
+            "resampling_replicates": 512,
+            "score": 0.5670263573946828
+          },
+          "feedback_action_zh": "依据父卡1c1c59c7fd87df6ec713的SomMot高稳定反馈，改为可执行SomMot内三诊断检验，回应跨Default-SomMot证据不足。",
+          "feedback_parent": "1c1c59c7fd87df6ec713",
+          "hypothesis_id": "3d876479c52024fd703d",
+          "hypothesis_zh": "network_pair:SomMot:SomMot；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+          "model_evidence_ids": [
+            "E002",
+            "E019"
+          ],
+          "named": [
+            "ADHD",
+            "bipolar",
+            "psychosis_SZ_SZA"
+          ],
+          "origin_slot": 2,
+          "population_scope": "TCP_all_predeclared_cases_vs_controls",
+          "rationale_zh": "E002提示ADHD前运动/补充运动相关连接降低，E019报告双相和精神病性障碍多网络内连接下降，改测SomMot内均值作三诊断探索。",
+          "round": 1,
+          "seed": 0,
+          "spec": {
+            "kind": "network_pair",
+            "network_a": "SomMot",
+            "network_b": "SomMot"
+          }
+        }
+      }
+    },
+    "packet-36": {
+      "kind": "documented_round_input_and_output",
+      "hypothesis_id": "HYPGEN:0f6f0e437ac06a777731e4e5",
+      "task": "imaging_genetics",
+      "seed": 20260826,
+      "original_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+        "json_pointer": "/1"
+      },
+      "original_statement": "Higher APOE ε4 allele dosage is associated with smaller baseline entorhinal volume.",
+      "original_revision_of": [],
+      "feedback_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/requests/imaging_genetics__seed_20260826__round_01/request.json",
+        "json_pointer": "/payload/new_run_internal_feedback/internal_results/1"
+      },
+      "feedback": {
+        "hypothesis_id": "HYPGEN:0f6f0e437ac06a777731e4e5",
+        "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline entorhinal volume.",
+        "measurement_pair": [
+          "apoe_e4_dosage",
+          "Entorhinal_icv"
+        ],
+        "mapping_status": "executable",
+        "mapping_errors": [],
+        "duplicate_of": null,
+        "internal_results": [
+          {
+            "model": "association_glm",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 313,
+              "effect": -0.14054335723558314,
+              "p_value": 0.024805231018950553,
+              "covariate_design_rank": 59,
+              "residual_df": 253,
+              "standard_error": null,
+              "effect_definition": "partial_correlation"
+            },
+            "provisional_q_value": 0.04464941583411099,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "rank_association",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 313,
+              "effect": -0.10370412031293867,
+              "p_value": 0.09846446403772158,
+              "covariate_design_rank": 59,
+              "residual_df": 253,
+              "standard_error": null,
+              "effect_definition": "ranked_variable_partial_correlation"
+            },
+            "provisional_q_value": 0.14769669605658237,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "robust_huber",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 313,
+              "effect": -0.16043804994173222,
+              "p_value": 0.00436109792874079,
+              "covariate_design_rank": 59,
+              "residual_df": 253,
+              "standard_error": 0.05627848396106651,
+              "effect_definition": "standardized_Huber_residual_slope"
+            },
+            "provisional_q_value": 0.00981247033966678,
+            "failure": null,
+            "secondary_status": "complete"
+          }
+        ],
+        "results_are_exploratory": true,
+        "external_results_present": false
+      },
+      "other_tested_inputs": [
+        {
+          "hypothesis_id": "HYPGEN:f4ffd685a824c9d229d7a6d5",
+          "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline hippocampal volume."
+        },
+        {
+          "hypothesis_id": "HYPGEN:354ce045cf6fc2a1642fdd52",
+          "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline middle-temporal volume."
+        }
+      ],
+      "subsequent": [
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/10"
+          },
+          "hypothesis_id": "HYPGEN:c6c650696b1634ecb8abafb6",
+          "statement": "Higher APOE ε4 dosage is expected to be associated with smaller baseline middle-temporal volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "apoe_e4_dosage",
+            "MidTemp_icv"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:354ce045cf6fc2a1642fdd52",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/11"
+          },
+          "hypothesis_id": "HYPGEN:74b40e513d6d56866667b67a",
+          "statement": "Higher Mendelian-AD pathway PRS is expected to be associated with larger baseline ventricular volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "pathway_prs__curated__mendelian_ad__p5em02",
+            "Ventricles_icv"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/12"
+          },
+          "hypothesis_id": "HYPGEN:7dabd2418f80315c2fed46ba",
+          "statement": "Higher GABA/glutamate pathway PRS is expected to be associated with smaller baseline entorhinal volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "pathway_prs__curated__gaba_glutamate__p5em02",
+            "Entorhinal_icv"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        }
+      ],
+      "individual_parent_relationship_recorded": false,
+      "external_results_in_feedback": false
+    },
+    "packet-37": {
+      "kind": "documented_round_input_and_output",
+      "hypothesis_id": "HYPGEN:f4ffd685a824c9d229d7a6d5",
+      "task": "imaging_genetics",
+      "seed": 20260826,
+      "original_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+        "json_pointer": "/0"
+      },
+      "original_statement": "Higher APOE ε4 allele dosage is associated with smaller baseline hippocampal volume.",
+      "original_revision_of": [],
+      "feedback_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/requests/imaging_genetics__seed_20260826__round_01/request.json",
+        "json_pointer": "/payload/new_run_internal_feedback/internal_results/0"
+      },
+      "feedback": {
+        "hypothesis_id": "HYPGEN:f4ffd685a824c9d229d7a6d5",
+        "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline hippocampal volume.",
+        "measurement_pair": [
+          "apoe_e4_dosage",
+          "Hippocampus_icv"
+        ],
+        "mapping_status": "executable",
+        "mapping_errors": [],
+        "duplicate_of": null,
+        "internal_results": [
+          {
+            "model": "association_glm",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 326,
+              "effect": -0.18497856666579576,
+              "p_value": 0.0023184923752611122,
+              "covariate_design_rank": 58,
+              "residual_df": 267,
+              "standard_error": null,
+              "effect_definition": "partial_correlation"
+            },
+            "provisional_q_value": 0.006955477125783337,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "rank_association",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 326,
+              "effect": -0.1919650482030638,
+              "p_value": 0.001560076037909448,
+              "covariate_design_rank": 58,
+              "residual_df": 267,
+              "standard_error": null,
+              "effect_definition": "ranked_variable_partial_correlation"
+            },
+            "provisional_q_value": 0.006955477125783337,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "robust_huber",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 326,
+              "effect": -0.20668971173826153,
+              "p_value": 0.00013685477416989765,
+              "covariate_design_rank": 58,
+              "residual_df": 267,
+              "standard_error": 0.05419543442377404,
+              "effect_definition": "standardized_Huber_residual_slope"
+            },
+            "provisional_q_value": 0.001231692967529079,
+            "failure": null,
+            "secondary_status": "complete"
+          }
+        ],
+        "results_are_exploratory": true,
+        "external_results_present": false
+      },
+      "other_tested_inputs": [
+        {
+          "hypothesis_id": "HYPGEN:0f6f0e437ac06a777731e4e5",
+          "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline entorhinal volume."
+        },
+        {
+          "hypothesis_id": "HYPGEN:354ce045cf6fc2a1642fdd52",
+          "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline middle-temporal volume."
+        }
+      ],
+      "subsequent": [
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/10"
+          },
+          "hypothesis_id": "HYPGEN:c6c650696b1634ecb8abafb6",
+          "statement": "Higher APOE ε4 dosage is expected to be associated with smaller baseline middle-temporal volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "apoe_e4_dosage",
+            "MidTemp_icv"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:354ce045cf6fc2a1642fdd52",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/11"
+          },
+          "hypothesis_id": "HYPGEN:74b40e513d6d56866667b67a",
+          "statement": "Higher Mendelian-AD pathway PRS is expected to be associated with larger baseline ventricular volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "pathway_prs__curated__mendelian_ad__p5em02",
+            "Ventricles_icv"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/12"
+          },
+          "hypothesis_id": "HYPGEN:7dabd2418f80315c2fed46ba",
+          "statement": "Higher GABA/glutamate pathway PRS is expected to be associated with smaller baseline entorhinal volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "pathway_prs__curated__gaba_glutamate__p5em02",
+            "Entorhinal_icv"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        }
+      ],
+      "individual_parent_relationship_recorded": false,
+      "external_results_in_feedback": false
+    },
+    "packet-38": {
+      "kind": "documented_round_input_and_output",
+      "hypothesis_id": "HYPGEN:354ce045cf6fc2a1642fdd52",
+      "task": "imaging_genetics",
+      "seed": 20260826,
+      "original_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+        "json_pointer": "/2"
+      },
+      "original_statement": "Higher APOE ε4 allele dosage is associated with smaller baseline middle-temporal volume.",
+      "original_revision_of": [],
+      "feedback_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/requests/imaging_genetics__seed_20260826__round_01/request.json",
+        "json_pointer": "/payload/new_run_internal_feedback/internal_results/2"
+      },
+      "feedback": {
+        "hypothesis_id": "HYPGEN:354ce045cf6fc2a1642fdd52",
+        "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline middle-temporal volume.",
+        "measurement_pair": [
+          "apoe_e4_dosage",
+          "MidTemp_icv"
+        ],
+        "mapping_status": "executable",
+        "mapping_errors": [],
+        "duplicate_of": null,
+        "internal_results": [
+          {
+            "model": "association_glm",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 313,
+              "effect": -0.03394718351980086,
+              "p_value": 0.589483074965546,
+              "covariate_design_rank": 59,
+              "residual_df": 253,
+              "standard_error": null,
+              "effect_definition": "partial_correlation"
+            },
+            "provisional_q_value": 0.7579068106699877,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "rank_association",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 313,
+              "effect": -0.01596132915214753,
+              "p_value": 0.799769134371235,
+              "covariate_design_rank": 59,
+              "residual_df": 253,
+              "standard_error": null,
+              "effect_definition": "ranked_variable_partial_correlation"
+            },
+            "provisional_q_value": 0.799769134371235,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "robust_huber",
+            "horizon_years": null,
+            "status": "complete",
+            "primary": {
+              "n": 313,
+              "effect": -0.019536625099075704,
+              "p_value": 0.7340356446724621,
+              "covariate_design_rank": 59,
+              "residual_df": 253,
+              "standard_error": 0.05750088523633717,
+              "effect_definition": "standardized_Huber_residual_slope"
+            },
+            "provisional_q_value": 0.799769134371235,
+            "failure": null,
+            "secondary_status": "complete"
+          }
+        ],
+        "results_are_exploratory": true,
+        "external_results_present": false
+      },
+      "other_tested_inputs": [
+        {
+          "hypothesis_id": "HYPGEN:f4ffd685a824c9d229d7a6d5",
+          "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline hippocampal volume."
+        },
+        {
+          "hypothesis_id": "HYPGEN:0f6f0e437ac06a777731e4e5",
+          "statement": "Higher APOE ε4 allele dosage is associated with smaller baseline entorhinal volume."
+        }
+      ],
+      "subsequent": [
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/10"
+          },
+          "hypothesis_id": "HYPGEN:c6c650696b1634ecb8abafb6",
+          "statement": "Higher APOE ε4 dosage is expected to be associated with smaller baseline middle-temporal volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "apoe_e4_dosage",
+            "MidTemp_icv"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:354ce045cf6fc2a1642fdd52",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/11"
+          },
+          "hypothesis_id": "HYPGEN:74b40e513d6d56866667b67a",
+          "statement": "Higher Mendelian-AD pathway PRS is expected to be associated with larger baseline ventricular volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "pathway_prs__curated__mendelian_ad__p5em02",
+            "Ventricles_icv"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/12"
+          },
+          "hypothesis_id": "HYPGEN:7dabd2418f80315c2fed46ba",
+          "statement": "Higher GABA/glutamate pathway PRS is expected to be associated with smaller baseline entorhinal volume in participants on the Alzheimer's disease spectrum.",
+          "measurement_pair": [
+            "pathway_prs__curated__gaba_glutamate__p5em02",
+            "Entorhinal_icv"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        }
+      ],
+      "individual_parent_relationship_recorded": false,
+      "external_results_in_feedback": false
+    },
+    "packet-42": {
+      "kind": "documented_round_input_and_output",
+      "hypothesis_id": "HYPGEN:9ee6984dd76616c1fb5d52d1",
+      "task": "prognosis",
+      "seed": 20260827,
+      "original_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+        "json_pointer": "/64"
+      },
+      "original_statement": "Lower baseline Entorhinal_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression.",
+      "original_revision_of": [],
+      "feedback_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/requests/prognosis__seed_20260827__round_01/request.json",
+        "json_pointer": "/payload/new_run_internal_feedback/internal_results/1"
+      },
+      "feedback": {
+        "hypothesis_id": "HYPGEN:9ee6984dd76616c1fb5d52d1",
+        "statement": "Lower baseline Entorhinal_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression.",
+        "measurement_pair": [
+          "Entorhinal_icv",
+          "mci_to_dementia"
+        ],
+        "mapping_status": "executable",
+        "mapping_errors": [],
+        "duplicate_of": null,
+        "internal_results": [
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 2,
+            "status": "complete",
+            "primary": {
+              "n": 140,
+              "events": 11,
+              "log_hazard_ratio": -0.2407709795551881,
+              "log_hazard_ratio_ci_low": -0.871048182915095,
+              "log_hazard_ratio_ci_high": 0.3895062238047188,
+              "hazard_ratio": 0.7860216207975858,
+              "hazard_ratio_ci_low": 0.41851264145947265,
+              "hazard_ratio_ci_high": 1.476251675951089,
+              "standard_error": 0.3215700017142382,
+              "p_value": 0.4540164482611142,
+              "bootstrap_log_hr_ci_low": -1.265831740713432,
+              "bootstrap_log_hr_ci_high": 0.5501361086169464,
+              "bootstrap_sign_stability": 0.735655737704918,
+              "bootstrap_successes": 488,
+              "effect": -0.2407709795551881
+            },
+            "provisional_q_value": 0.4540164482611142,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 3,
+            "status": "complete",
+            "primary": {
+              "n": 140,
+              "events": 20,
+              "log_hazard_ratio": -0.4500417630339646,
+              "log_hazard_ratio_ci_low": -0.9221300056644385,
+              "log_hazard_ratio_ci_high": 0.022046479596509294,
+              "hazard_ratio": 0.6376015228916725,
+              "hazard_ratio_ci_low": 0.39767109665342654,
+              "hazard_ratio_ci_high": 1.0222912990532953,
+              "standard_error": 0.24086134828085404,
+              "p_value": 0.061696842572296816,
+              "bootstrap_log_hr_ci_low": -1.1120794032002526,
+              "bootstrap_log_hr_ci_high": 0.08139003572309114,
+              "bootstrap_sign_stability": 0.9478957915831663,
+              "bootstrap_successes": 499,
+              "effect": -0.4500417630339646
+            },
+            "provisional_q_value": 0.11105431663013426,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 5,
+            "status": "complete",
+            "primary": {
+              "n": 140,
+              "events": 26,
+              "log_hazard_ratio": -0.5839347332623511,
+              "log_hazard_ratio_ci_low": -1.0043200136893595,
+              "log_hazard_ratio_ci_high": -0.16354945283534272,
+              "hazard_ratio": 0.5576996443683632,
+              "hazard_ratio_ci_low": 0.36629362479006244,
+              "hazard_ratio_ci_high": 0.8491245063488667,
+              "standard_error": 0.21448228593214716,
+              "p_value": 0.0064783899438289536,
+              "bootstrap_log_hr_ci_low": -1.1197561188804708,
+              "bootstrap_log_hr_ci_high": -0.1389136919086325,
+              "bootstrap_sign_stability": 0.9979959919839679,
+              "bootstrap_successes": 499,
+              "effect": -0.5839347332623511
+            },
+            "provisional_q_value": 0.021076963778209203,
+            "failure": null,
+            "secondary_status": "complete"
+          }
+        ],
+        "results_are_exploratory": true,
+        "external_results_present": false
+      },
+      "other_tested_inputs": [
+        {
+          "hypothesis_id": "HYPGEN:15b561e34864007836301d74",
+          "statement": "Lower baseline Hippocampus_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression."
+        },
+        {
+          "hypothesis_id": "HYPGEN:3e9cc319d0cf71807121e2ee",
+          "statement": "Lower baseline MidTemp_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression."
+        }
+      ],
+      "subsequent": [
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/75"
+          },
+          "hypothesis_id": "HYPGEN:b867d57cdf9333b9be099f4d",
+          "statement": "Baseline ICV-normalized entorhinal volume will be associated with subsequent progression from MCI to dementia within the prespecified 2-, 3-, and 5-year windows; the direction will be estimated empirically.",
+          "measurement_pair": [
+            "Entorhinal_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:9ee6984dd76616c1fb5d52d1",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/76"
+          },
+          "hypothesis_id": "HYPGEN:33135b380727126f1e896486",
+          "statement": "Baseline ICV-normalized hippocampal volume will be associated with subsequent progression from MCI to dementia within the prespecified follow-up windows; the direction will be estimated empirically.",
+          "measurement_pair": [
+            "Hippocampus_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:15b561e34864007836301d74",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/77"
+          },
+          "hypothesis_id": "HYPGEN:5506017aacca4792da1cad98",
+          "statement": "Baseline ICV-normalized ventricular volume will be associated with subsequent progression from MCI to dementia within the prespecified follow-up windows; the direction will be estimated empirically.",
+          "measurement_pair": [
+            "Ventricles_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        }
+      ],
+      "individual_parent_relationship_recorded": false,
+      "external_results_in_feedback": false
+    },
+    "packet-44": {
+      "kind": "documented_round_input_and_output",
+      "hypothesis_id": "HYPGEN:3e9cc319d0cf71807121e2ee",
+      "task": "prognosis",
+      "seed": 20260827,
+      "original_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+        "json_pointer": "/65"
+      },
+      "original_statement": "Lower baseline MidTemp_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression.",
+      "original_revision_of": [],
+      "feedback_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/requests/prognosis__seed_20260827__round_01/request.json",
+        "json_pointer": "/payload/new_run_internal_feedback/internal_results/2"
+      },
+      "feedback": {
+        "hypothesis_id": "HYPGEN:3e9cc319d0cf71807121e2ee",
+        "statement": "Lower baseline MidTemp_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression.",
+        "measurement_pair": [
+          "MidTemp_icv",
+          "mci_to_dementia"
+        ],
+        "mapping_status": "executable",
+        "mapping_errors": [],
+        "duplicate_of": null,
+        "internal_results": [
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 2,
+            "status": "complete",
+            "primary": {
+              "n": 140,
+              "events": 11,
+              "log_hazard_ratio": -0.550927337835393,
+              "log_hazard_ratio_ci_low": -1.2530398556732267,
+              "log_hazard_ratio_ci_high": 0.15118518000244063,
+              "hazard_ratio": 0.5764150309911026,
+              "hazard_ratio_ci_low": 0.28563518604338806,
+              "hazard_ratio_ci_high": 1.1632120417475607,
+              "standard_error": 0.35822067236624167,
+              "p_value": 0.12405957449760847,
+              "bootstrap_log_hr_ci_low": -1.702488864031176,
+              "bootstrap_log_hr_ci_high": 0.18425588375033414,
+              "bootstrap_sign_stability": 0.9368635437881874,
+              "bootstrap_successes": 491,
+              "effect": -0.550927337835393
+            },
+            "provisional_q_value": 0.15950516721121089,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 3,
+            "status": "complete",
+            "primary": {
+              "n": 140,
+              "events": 20,
+              "log_hazard_ratio": -0.7477441816189588,
+              "log_hazard_ratio_ci_low": -1.2925987609525542,
+              "log_hazard_ratio_ci_high": -0.20288960228536346,
+              "hazard_ratio": 0.4734333286672717,
+              "hazard_ratio_ci_low": 0.27455634885126184,
+              "hazard_ratio_ci_high": 0.8163683616524129,
+              "standard_error": 0.27798703027224253,
+              "p_value": 0.007148355036766678,
+              "bootstrap_log_hr_ci_low": -1.5501976594956828,
+              "bootstrap_log_hr_ci_high": -0.23056431302656052,
+              "bootstrap_sign_stability": 1,
+              "bootstrap_successes": 499,
+              "effect": -0.7477441816189588
+            },
+            "provisional_q_value": 0.021076963778209203,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 5,
+            "status": "complete",
+            "primary": {
+              "n": 140,
+              "events": 26,
+              "log_hazard_ratio": -0.9291937093292654,
+              "log_hazard_ratio_ci_low": -1.4271296772096507,
+              "log_hazard_ratio_ci_high": -0.43125774144888007,
+              "hazard_ratio": 0.3948719636324536,
+              "hazard_ratio_ci_low": 0.23999680284461444,
+              "hazard_ratio_ci_high": 0.6496914367809408,
+              "standard_error": 0.2540489632042782,
+              "p_value": 0.0002546496228396479,
+              "bootstrap_log_hr_ci_low": -1.5964014206105022,
+              "bootstrap_log_hr_ci_high": -0.46644739283429903,
+              "bootstrap_sign_stability": 1,
+              "bootstrap_successes": 499,
+              "effect": -0.9291937093292654
+            },
+            "provisional_q_value": 0.002291846605556831,
+            "failure": null,
+            "secondary_status": "complete"
+          }
+        ],
+        "results_are_exploratory": true,
+        "external_results_present": false
+      },
+      "other_tested_inputs": [
+        {
+          "hypothesis_id": "HYPGEN:15b561e34864007836301d74",
+          "statement": "Lower baseline Hippocampus_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression."
+        },
+        {
+          "hypothesis_id": "HYPGEN:9ee6984dd76616c1fb5d52d1",
+          "statement": "Lower baseline Entorhinal_icv is hypothesized to be associated with higher subsequent risk of MCI-to-dementia progression."
+        }
+      ],
+      "subsequent": [
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/75"
+          },
+          "hypothesis_id": "HYPGEN:b867d57cdf9333b9be099f4d",
+          "statement": "Baseline ICV-normalized entorhinal volume will be associated with subsequent progression from MCI to dementia within the prespecified 2-, 3-, and 5-year windows; the direction will be estimated empirically.",
+          "measurement_pair": [
+            "Entorhinal_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:9ee6984dd76616c1fb5d52d1",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/76"
+          },
+          "hypothesis_id": "HYPGEN:33135b380727126f1e896486",
+          "statement": "Baseline ICV-normalized hippocampal volume will be associated with subsequent progression from MCI to dementia within the prespecified follow-up windows; the direction will be estimated empirically.",
+          "measurement_pair": [
+            "Hippocampus_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "duplicate_measurement_pair",
+          "mapping_errors": [],
+          "duplicate_of": "HYPGEN:15b561e34864007836301d74",
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/77"
+          },
+          "hypothesis_id": "HYPGEN:5506017aacca4792da1cad98",
+          "statement": "Baseline ICV-normalized ventricular volume will be associated with subsequent progression from MCI to dementia within the prespecified follow-up windows; the direction will be estimated empirically.",
+          "measurement_pair": [
+            "Ventricles_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "executable",
+          "mapping_errors": [],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        }
+      ],
+      "individual_parent_relationship_recorded": false,
+      "external_results_in_feedback": false
+    },
+    "packet-46": {
+      "kind": "documented_round_input_and_output",
+      "hypothesis_id": "HYPGEN:f0a173b426dc0fd09596c2fc",
+      "task": "prognosis",
+      "seed": 20260828,
+      "original_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+        "json_pointer": "/80"
+      },
+      "original_statement": "Higher baseline WholeBrain_icv is hypothesized to be associated with lower subsequent risk of mci_to_dementia.",
+      "original_revision_of": [],
+      "feedback_pointer": {
+        "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/requests/prognosis__seed_20260828__round_01/request.json",
+        "json_pointer": "/payload/new_run_internal_feedback/internal_results/2"
+      },
+      "feedback": {
+        "hypothesis_id": "HYPGEN:f0a173b426dc0fd09596c2fc",
+        "statement": "Higher baseline WholeBrain_icv is hypothesized to be associated with lower subsequent risk of mci_to_dementia.",
+        "measurement_pair": [
+          "WholeBrain_icv",
+          "mci_to_dementia"
+        ],
+        "mapping_status": "executable",
+        "mapping_errors": [],
+        "duplicate_of": null,
+        "internal_results": [
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 2,
+            "status": "complete",
+            "primary": {
+              "n": 158,
+              "events": 12,
+              "log_hazard_ratio": -0.3073162712765651,
+              "log_hazard_ratio_ci_low": -0.9533192441864418,
+              "log_hazard_ratio_ci_high": 0.33868670163331155,
+              "hazard_ratio": 0.7354179725413728,
+              "hazard_ratio_ci_low": 0.38545946364233863,
+              "hazard_ratio_ci_high": 1.403103686250908,
+              "standard_error": 0.3295933535254473,
+              "p_value": 0.35112447106512656,
+              "bootstrap_log_hr_ci_low": -0.9638173596572446,
+              "bootstrap_log_hr_ci_high": 0.1544024743420549,
+              "bootstrap_sign_stability": 0.9191919191919192,
+              "bootstrap_successes": 495,
+              "effect": -0.3073162712765651
+            },
+            "provisional_q_value": 0.35112447106512656,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 3,
+            "status": "complete",
+            "primary": {
+              "n": 158,
+              "events": 21,
+              "log_hazard_ratio": -0.4994937268909784,
+              "log_hazard_ratio_ci_low": -0.9914973176305817,
+              "log_hazard_ratio_ci_high": -0.007490136151375004,
+              "hazard_ratio": 0.6068378076192454,
+              "hazard_ratio_ci_low": 0.37102073901370564,
+              "hazard_ratio_ci_high": 0.9925378450139116,
+              "standard_error": 0.251022240173267,
+              "p_value": 0.04660872487744973,
+              "bootstrap_log_hr_ci_low": -1.0871210682025578,
+              "bootstrap_log_hr_ci_high": -0.07530180372418546,
+              "bootstrap_sign_stability": 0.9839679358717435,
+              "bootstrap_successes": 499,
+              "effect": -0.4994937268909784
+            },
+            "provisional_q_value": 0.08389570477940951,
+            "failure": null,
+            "secondary_status": "complete"
+          },
+          {
+            "model": "cox_adjusted",
+            "horizon_years": 5,
+            "status": "complete",
+            "primary": {
+              "n": 158,
+              "events": 29,
+              "log_hazard_ratio": -0.5887700418410177,
+              "log_hazard_ratio_ci_low": -1.0198131816783889,
+              "log_hazard_ratio_ci_high": -0.15772690200364653,
+              "hazard_ratio": 0.5550095035654166,
+              "hazard_ratio_ci_low": 0.3606623122075522,
+              "hazard_ratio_ci_high": 0.8540829984771553,
+              "standard_error": 0.2199199693047812,
+              "p_value": 0.0074240001902166255,
+              "bootstrap_log_hr_ci_low": -1.0057071201629533,
+              "bootstrap_log_hr_ci_high": -0.25430528511925177,
+              "bootstrap_sign_stability": 1,
+              "bootstrap_successes": 499,
+              "effect": -0.5887700418410177
+            },
+            "provisional_q_value": 0.021076963778209203,
+            "failure": null,
+            "secondary_status": "complete"
+          }
+        ],
+        "results_are_exploratory": true,
+        "external_results_present": false
+      },
+      "other_tested_inputs": [
+        {
+          "hypothesis_id": "HYPGEN:dfddecd6f84aae11b76da66f",
+          "statement": "Higher baseline Hippocampus_icv is hypothesized to be associated with lower subsequent risk of mci_to_dementia."
+        },
+        {
+          "hypothesis_id": "HYPGEN:1fc129a178f5fe14bbb9aa12",
+          "statement": "Higher baseline MidTemp_icv is hypothesized to be associated with lower subsequent risk of mci_to_dementia."
+        }
+      ],
+      "subsequent": [
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/90"
+          },
+          "hypothesis_id": "HYPGEN:12ebb75744eb66df6e22f682",
+          "statement": "Baseline Entorhinal_icv is associated with subsequent progression from mild cognitive impairment to dementia.",
+          "measurement_pair": [
+            "Entorhinal_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "rejected_or_unmappable",
+          "mapping_errors": [
+            "no_variable_mention_in_cited_evidence_outcome_variable",
+            "no_variable_mention_in_cited_evidence_predictor_variable"
+          ],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        },
+        {
+          "source_pointer": {
+            "path": ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready/hypothesis_ledger.json",
+            "json_pointer": "/91"
+          },
+          "hypothesis_id": "HYPGEN:f2c747da7dc3945e308157b5",
+          "statement": "Baseline MidTemp_icv is associated with subsequent progression from mild cognitive impairment to dementia.",
+          "measurement_pair": [
+            "MidTemp_icv",
+            "mci_to_dementia"
+          ],
+          "mapping_status": "rejected_or_unmappable",
+          "mapping_errors": [
+            "no_variable_mention_in_cited_evidence_predictor_variable"
+          ],
+          "duplicate_of": null,
+          "revision_of": [],
+          "selected": false,
+          "experiment_configurations": 0
+        }
+      ],
+      "individual_parent_relationship_recorded": false,
+      "external_results_in_feedback": false
+    }
+  },
+  "omitted_forward": {
+    "packet-01": {
+      "hypothesis_id": "883a01a4ed23487912f8",
+      "reason": "No documented child link in either frozen lineage index.",
+      "searched": [
+        "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json",
+        "core/web/study_materials/sources_v6/r7/feedback_lineage.json"
+      ]
+    },
+    "packet-02": {
+      "hypothesis_id": "e3b5ea76fb92c756d9e3",
+      "reason": "No documented child link in either frozen lineage index.",
+      "searched": [
+        "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json",
+        "core/web/study_materials/sources_v6/r7/feedback_lineage.json"
+      ]
+    },
+    "packet-03": {
+      "hypothesis_id": "c94c1f0143413b424323",
+      "reason": "No documented child link in either frozen lineage index.",
+      "searched": [
+        "core/web/study_materials/sources_v6/old_r1/feedback_lineage.json",
+        "core/web/study_materials/sources_v6/r7/feedback_lineage.json"
+      ]
+    }
+  },
+  "scope": "Detailed wording only. Explicit parent links remain distinct from same-run previous-feedback inputs and subsequent candidates. No new lineage, result, or experiment is created."
+}

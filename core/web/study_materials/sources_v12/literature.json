@@ -1,0 +1,4317 @@
+{
+  "retrieved_at": "2026-09-20T07:42:54.881Z",
+  "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&resultType=core&pageSize=100&query=SRC%3AMED%20AND%20(EXT_ID%3A17097769%20OR%20EXT_ID%3A24524014%20OR%20EXT_ID%3A28360829%20OR%20EXT_ID%3A29897593%20OR%20EXT_ID%3A30837901%20OR%20EXT_ID%3A32688026%20OR%20EXT_ID%3A33210798%20OR%20EXT_ID%3A34120907%20OR%20EXT_ID%3A35264921%20OR%20EXT_ID%3A38665271%20OR%20EXT_ID%3A39903109%20OR%20EXT_ID%3A42115951)",
+  "response_sha256": "0bbeb2b5c02e085e93e0643b91b4312d86e10df364f5f926496fc5198541158e",
+  "ids": [
+    "17097769",
+    "24524014",
+    "28360829",
+    "29897593",
+    "30837901",
+    "32688026",
+    "33210798",
+    "34120907",
+    "35264921",
+    "38665271",
+    "39903109",
+    "42115951"
+  ],
+  "papers": [
+    {
+      "id": "42115951",
+      "source": "MED",
+      "pmid": "42115951",
+      "pmcid": "PMC13340103",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC13340103"
+        ]
+      },
+      "doi": "10.1186/s12880-026-02404-1",
+      "title": "A longitudinal analysis of T1-weighted MRI features associated with progression from mild cognitive impairment to Alzheimer's disease.",
+      "authorString": "Wang Y, Song W, Yang X, Meng W, Ma Y, Wang A, Guo G, Zhang Z, Li Z, Han H, Wang S, Shi F.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Wang Y",
+            "lastName": "Wang",
+            "firstName": "Yanxia",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Song W",
+            "lastName": "Song",
+            "firstName": "Wangchen",
+            "initials": "W",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Yang X",
+            "lastName": "Yang",
+            "firstName": "Xinyu",
+            "initials": "X",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Meng W",
+            "lastName": "Meng",
+            "firstName": "Weijing",
+            "initials": "W",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Experimental Teaching Center for Public Health and Preventive Medicine, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Ma Y",
+            "lastName": "Ma",
+            "firstName": "Yonghua",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang A",
+            "lastName": "Wang",
+            "firstName": "Aimin",
+            "initials": "A",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Guo G",
+            "lastName": "Guo",
+            "firstName": "Guiya",
+            "initials": "G",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhang Z",
+            "lastName": "Zhang",
+            "firstName": "Zhaoxue",
+            "initials": "Z",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Li Z",
+            "lastName": "Li",
+            "firstName": "Zihui",
+            "initials": "Z",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Han H",
+            "lastName": "Han",
+            "firstName": "Hairui",
+            "initials": "H",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang S",
+            "lastName": "Wang",
+            "firstName": "Suzhen",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China. wangsz@sdsmu.edu.cn."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Shi F",
+            "lastName": "Shi",
+            "firstName": "Fuyan",
+            "initials": "F",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China. shifuyan@sdsmu.edu.cn."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "altmetrics",
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "issue": "1",
+        "volume": "26",
+        "journalIssueId": 4193999,
+        "dateOfPublication": "2026 May",
+        "monthOfPublication": 5,
+        "yearOfPublication": 2026,
+        "journal": {
+          "medlineAbbreviation": "BMC Med Imaging",
+          "title": "BMC medical imaging",
+          "essn": "1471-2342",
+          "issn": "1471-2342",
+          "nlmid": "100968553",
+          "isoabbreviation": "BMC Med Imaging"
+        },
+        "printPublicationDate": "2026-05-01"
+      },
+      "pubYear": "2026",
+      "pageInfo": "329",
+      "abstractText": "<h4>Objective</h4>Our study aimed to systematically identify T1-weighted MRI-derived brain structural features associated with progression from mild cognitive impairment (MCI) to Alzheimer's disease (AD).<h4>Methods</h4>We utilized the data from the Alzheimer's Disease Neuroimaging Initiative (ADNI). A total of 947 participants with MCI at baseline were included. All participants underwent a neuropsychological assessment and clinical diagnosis every 6 months. The longest follow-up period was 15.5 years, with a median follow-up time of 3.0 years (range: 0-15.5 years). During the follow-up period, 314 (33.16%) individuals progressed to AD, while 633 (66.84%) remained stable or reverted to normal cognition. After ComBat-based harmonization to reduce scanner-related batch effects, 192 high-dimensional T1-magnetic resonance imaging (MRI)-derived morphometric and volumetric measures were analyzed. To identify the characteristics associated with AD progression from MCI, we employed a comprehensive analysis framework. Firstly, we applied the penalized generalized estimating equations (PGEE) and mixed effects random forest (MERF) models for feature screening. Based on the union features obtained from these two methods, a high-dimensional joint model (HDJM) was further used to select the key brain structural features. Lastly, a multivariate joint model was employed to capture the influence of the longitudinal MRI trajectories on the MCI-to-AD conversion.<h4>Results</h4>We identified 8 brain structural features from 192 MRI features that were associated with the risk of MCI progressing to AD, including: left hippocampus, left inferior lateral ventricle, left amygdala, right middle temporal gyrus, left fusiform gyrus, right amygdala, left cortical total volume, and brain parenchyma total volume. In the multivariate joint model, the atrophy of left hippocampus volume (α = -0.0009, P = 0.0010), the expansion of left lateral inferior ventricle volume (α = 0.0003, P = 0.0238), the atrophy of right middle temporal gyrus volume (α = -0.0002, P = 0.0036), and the accelerated atrophy of brain parenchyma total volume (α = 0.000005, P = 0.0008) were all significantly associated with the risk of disease transformation. Additionally, the covariate APOE ε4 allele remained a significant independent risk factor (γ = 0.6930, P < 0.0001).<h4>Conclusion</h4>Left hippocampal atrophy, left inferior lateral ventricular enlargement, right middle temporal gyrus atrophy, and brain parenchyma total volume atrophy were independently associated with the risk of progression from MCI to AD, alongside the established genetic risk factor APOE ε4.",
+      "affiliation": "Department of Health Statistics, School of Public Health, Shandong Second Medical University, Weifang, Shandong, 261053, China.",
+      "publicationStatus": "epublish",
+      "language": "eng",
+      "pubModel": "Electronic",
+      "pubTypeList": {
+        "pubType": [
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81803337",
+            "orderIn": 0
+          },
+          {
+            "agency": "Shandong Provincial Youth Innovation Team Development Plan of Colleges and Universities",
+            "grantId": "No. 2019-6-156, Lu-Jiao",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81872719",
+            "orderIn": 0
+          },
+          {
+            "agency": "the Shandong Provincial Natural Science Foundation",
+            "grantId": "No. ZR2023MH313)",
+            "orderIn": 0
+          }
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Brain",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Alzheimer Disease",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Disease Progression"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Magnetic Resonance Imaging",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "MT",
+                  "qualifierName": "methods"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Longitudinal Studies"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged, 80 and over"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Female"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Male"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Cognitive Dysfunction",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Alzheimer's disease",
+          "Imaging Data",
+          "Mixed Effects Random Forest",
+          "Penalized Generalized Estimating Equation",
+          "High-dimensional Joint Model"
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1186/s12880-026-02404-1"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC13340103"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC13340103?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 1,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "license": "cc by-nc-nd",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "Y",
+      "tmAccessionTypeList": {
+        "accessionType": [
+          "doi"
+        ]
+      },
+      "dateOfCompletion": "2026-07-07",
+      "dateOfCreation": "2026-05-12",
+      "dateOfRevision": "2026-08-13",
+      "electronicPublicationDate": "2026-05-11",
+      "firstPublicationDate": "2026-05-11",
+      "firstIndexDate": "2026-05-14",
+      "fullTextReceivedDate": "2026-09-03",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "39903109",
+      "source": "MED",
+      "pmid": "39903109",
+      "pmcid": "PMC11831164",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC11831164"
+        ]
+      },
+      "doi": "10.1073/pnas.2416042122",
+      "title": "Impact of <i>APOE</i>, <i>Klotho,</i> and sex on cognitive decline with aging.",
+      "authorString": "Shibata K, Chen C, Tai XY, Manohar SG, Husain M.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Shibata K",
+            "lastName": "Shibata",
+            "firstName": "Kengo",
+            "initials": "K",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-6156-426X"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford OX3 9DU, United Kingdom."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Chen C",
+            "lastName": "Chen",
+            "firstName": "Cheng",
+            "initials": "C",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Experimental Psychology, University of Oxford, Oxford OX2 6GG, United Kingdom."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Tai XY",
+            "lastName": "Tai",
+            "firstName": "Xin You",
+            "initials": "XY",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford OX3 9DU, United Kingdom."
+                },
+                {
+                  "affiliation": "Division of Clinical Neurology, John Radcliffe Hospital, Oxford University Hospitals Trust, Oxford OX3 9DU, United Kingdom."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Manohar SG",
+            "lastName": "Manohar",
+            "firstName": "Sanjay G",
+            "initials": "SG",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford OX3 9DU, United Kingdom."
+                },
+                {
+                  "affiliation": "Department of Experimental Psychology, University of Oxford, Oxford OX2 6GG, United Kingdom."
+                },
+                {
+                  "affiliation": "Division of Clinical Neurology, John Radcliffe Hospital, Oxford University Hospitals Trust, Oxford OX3 9DU, United Kingdom."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Husain M",
+            "lastName": "Husain",
+            "firstName": "Masud",
+            "initials": "M",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-6850-9255"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford OX3 9DU, United Kingdom."
+                },
+                {
+                  "affiliation": "Department of Experimental Psychology, University of Oxford, Oxford OX2 6GG, United Kingdom."
+                },
+                {
+                  "affiliation": "Division of Clinical Neurology, John Radcliffe Hospital, Oxford University Hospitals Trust, Oxford OX3 9DU, United Kingdom."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0002-6156-426X"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-6850-9255"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "altmetrics",
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "issue": "6",
+        "volume": "122",
+        "journalIssueId": 3888450,
+        "dateOfPublication": "2025 Feb",
+        "monthOfPublication": 2,
+        "yearOfPublication": 2025,
+        "journal": {
+          "medlineAbbreviation": "Proc Natl Acad Sci U S A",
+          "title": "Proceedings of the National Academy of Sciences of the United States of America",
+          "essn": "1091-6490",
+          "issn": "0027-8424",
+          "nlmid": "7505876",
+          "isoabbreviation": "Proc Natl Acad Sci U S A"
+        },
+        "printPublicationDate": "2025-02-01"
+      },
+      "pubYear": "2025",
+      "pageInfo": "e2416042122",
+      "abstractText": "The effects of apolipoprotein E (<i>APOE</i>) and <i>Klotho</i> genes, both implicated in aging, on human cognition as a function of sex and age are yet to be definitively established. Here, we showed in the largest cohort studied to date (<i>N</i> = 320,861) that <i>APOE</i> homozygous ε4 carriers had a greater decline in cognition with aging compared to ε3 carriers (ε3/ε4 and ε3/ε3) as well as smaller hippocampi and amygdala (<i>N</i> = 29,510). Critically, sex and age differentially affected the decline in cognition. Younger (40 to 50 y) female homozygous ε4 carriers showed a cognitive advantage over female ε3 carriers, but this advantage was not present in males. By contrast, <i>Klotho-VS</i> heterozygosity did not affect cognition or brain volume, regardless of <i>APOE</i> genotype, sex, or age. These cognitive trajectories with aging demonstrate clear sex-dependent antagonistic pleiotropy effects of <i>APOE</i> ε4, but no effects of <i>Klotho</i> genotype on cognition and brain volume.",
+      "affiliation": "Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford OX3 9DU, United Kingdom.",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print-Electronic",
+      "pubTypeList": {
+        "pubType": [
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "Medical Research Council",
+            "grantId": "MR/P00878X",
+            "orderIn": 0
+          },
+          {
+            "agency": "UKRI | Medical Research Council",
+            "grantId": "MR/P00878X",
+            "orderIn": 0
+          },
+          {
+            "agency": "Wellcome Trust",
+            "acronym": "WT",
+            "grantId": "206330/Z/17/Z",
+            "orderIn": 0
+          },
+          {
+            "agency": "Wellcome Trust",
+            "acronym": "WT_",
+            "orderIn": 0
+          }
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Brain",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Glucuronidase",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Apolipoproteins E",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Cognition",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PH",
+                  "qualifierName": "physiology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Sex Factors"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Aging",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Genotype"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Adult"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Middle Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Female"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Male"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Apolipoprotein E4",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Cognitive Dysfunction",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Klotho Proteins"
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Aging",
+          "Cognition",
+          "Klotho",
+          "Antagonistic Pleiotropy",
+          "Apolipoprotein Ε (Apoe)"
+        ]
+      },
+      "chemicalList": {
+        "chemical": [
+          {
+            "name": "Glucuronidase",
+            "registryNumber": "EC 3.2.1.31"
+          },
+          {
+            "name": "Apolipoproteins E",
+            "registryNumber": "0"
+          },
+          {
+            "name": "Apolipoprotein E4",
+            "registryNumber": "0"
+          },
+          {
+            "name": "ApoE protein, human",
+            "registryNumber": "0"
+          },
+          {
+            "name": "Klotho Proteins",
+            "registryNumber": "EC 3.2.1.31"
+          },
+          {
+            "name": "KL protein, human",
+            "registryNumber": "EC 3.2.1.31"
+          }
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1073/pnas.2416042122"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC11831164"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC11831164?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 12,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "license": "cc by",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCompletion": "2025-05-05",
+      "dateOfCreation": "2025-02-04",
+      "dateOfRevision": "2025-05-25",
+      "electronicPublicationDate": "2025-02-04",
+      "firstPublicationDate": "2025-02-04",
+      "firstIndexDate": "2025-02-05",
+      "fullTextReceivedDate": "2025-12-02",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "38665271",
+      "source": "MED",
+      "pmid": "38665271",
+      "pmcid": "PMC11003433",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC11003433"
+        ]
+      },
+      "doi": "10.1093/psyrad/kkac016",
+      "title": "Reduced homotopic interhemispheric connectivity in psychiatric disorders: evidence for both transdiagnostic and disorder specific features.",
+      "authorString": "Yao S, Kendrick KM.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Yao S",
+            "lastName": "Yao",
+            "firstName": "Shuxia",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Clinical Hospital of Chengdu Brain Science Institute, MOE Key Laboratory for Neuroinformation, University of Electronic Science and Technology of China, Chengdu 611731, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Kendrick KM",
+            "lastName": "Kendrick",
+            "firstName": "Keith M",
+            "initials": "KM",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-0371-5904"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Clinical Hospital of Chengdu Brain Science Institute, MOE Key Laboratory for Neuroinformation, University of Electronic Science and Technology of China, Chengdu 611731, China."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0002-0371-5904"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "issue": "4",
+        "volume": "2",
+        "journalIssueId": 3760887,
+        "dateOfPublication": "2022 Dec",
+        "monthOfPublication": 12,
+        "yearOfPublication": 2022,
+        "journal": {
+          "medlineAbbreviation": "Psychoradiology",
+          "title": "Psychoradiology",
+          "essn": "2634-4416",
+          "issn": "2634-4416",
+          "nlmid": "9918317784806676",
+          "isoabbreviation": "Psychoradiology"
+        },
+        "printPublicationDate": "2022-12-01"
+      },
+      "pubYear": "2022",
+      "pageInfo": "129-145",
+      "abstractText": "There is considerable interest in the significance of structural and functional connections between the two brain hemispheres in terms of both normal function and in relation to psychiatric disorders. In recent years, many studies have used voxel mirrored homotopic connectivity analysis of resting state data to investigate the importance of connectivity between homotopic regions in the brain hemispheres in a range of neuropsychiatric disorders. The current review summarizes findings from these voxel mirrored homotopic connectivity studies in individuals with autism spectrum disorder, addiction, attention deficit hyperactivity disorder, anxiety and depression disorders, and schizophrenia, as well as disorders such as Alzheimer's disease, mild cognitive impairment, epilepsy, and insomnia. Overall, other than attention deficit hyperactivity disorder, studies across psychiatric disorders report decreased homotopic resting state functional connectivity in the default mode, attention, salience, sensorimotor, social cognition, visual recognition, primary visual processing, and reward networks, which are often associated with symptom severity and/or illness onset/duration. Decreased homotopic resting state functional connectivity may therefore represent a transdiagnostic marker for general psychopathology. In terms of disorder specificity, the extensive decreases in homotopic resting state functional connectivity in autism differ markedly from attention deficit hyperactivity disorder, despite both occurring during early childhood and showing extensive co-morbidity. A pattern of more posterior than anterior regions showing reductions in schizophrenia is also distinctive. Going forward, more studies are needed to elucidate the functions of these homotopic functional connections in both health and disorder and focusing on associations with general psychopathology, and not only on disorder specific symptoms.",
+      "affiliation": "The Clinical Hospital of Chengdu Brain Science Institute, MOE Key Laboratory for Neuroinformation, University of Electronic Science and Technology of China, Chengdu 611731, China.",
+      "publicationStatus": "epublish",
+      "language": "eng",
+      "pubModel": "Electronic-eCollection",
+      "pubTypeList": {
+        "pubType": [
+          "review-article",
+          "Review",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "UESTC",
+            "grantId": "Y0301902610100201",
+            "orderIn": 0
+          },
+          {
+            "agency": "UESTC",
+            "grantId": "2018B030335001",
+            "orderIn": 0
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Psychiatric disorders",
+          "Resting State Fmri",
+          "Interhemispheric Communication",
+          "Voxel Mirrored Homotopic Connectivity",
+          "Transdiagnostic Marker",
+          "Disorder Specific Marker"
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "doi",
+            "site": "Unpaywall",
+            "url": "https://doi.org/10.1093/psyrad/kkac016"
+          },
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1093/psyrad/kkac016"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC11003433"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC11003433?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 10,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "N",
+      "hasLabsLinks": "N",
+      "hasData": "Y",
+      "license": "cc by-nc",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "Y",
+      "tmAccessionTypeList": {
+        "accessionType": [
+          "doi"
+        ]
+      },
+      "dateOfCreation": "2024-04-26",
+      "dateOfRevision": "2024-04-27",
+      "electronicPublicationDate": "2022-11-24",
+      "firstPublicationDate": "2022-11-24",
+      "firstIndexDate": "2024-04-26",
+      "fullTextReceivedDate": "2025-02-04",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "35264921",
+      "source": "MED",
+      "pmid": "35264921",
+      "pmcid": "PMC8898951",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC8898951"
+        ]
+      },
+      "doi": "10.3389/fnins.2021.823550",
+      "title": "Aberrant Functional Connectivity of Sensorimotor Network and Its Relationship With Executive Dysfunction in Bipolar Disorder Type I.",
+      "authorString": "Zhu W, Tang W, Liang Y, Jiang X, Li Y, Chen Z, Zhu C.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Zhu W",
+            "lastName": "Zhu",
+            "firstName": "Wenjing",
+            "initials": "W",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                },
+                {
+                  "affiliation": "Department of Neurology, School of Medicine, Affiliated ZhongDa Hospital, Institution of Neuropsychiatry, Southeast University, Nanjing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Tang W",
+            "lastName": "Tang",
+            "firstName": "Wenxin",
+            "initials": "W",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Liang Y",
+            "lastName": "Liang",
+            "firstName": "Yan",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Jiang X",
+            "lastName": "Jiang",
+            "firstName": "Xiaoying",
+            "initials": "X",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Li Y",
+            "lastName": "Li",
+            "firstName": "Yi",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Chen Z",
+            "lastName": "Chen",
+            "firstName": "Zhiyu",
+            "initials": "Z",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhu C",
+            "lastName": "Zhu",
+            "firstName": "Cheng",
+            "initials": "C",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "altmetrics"
+        ]
+      },
+      "journalInfo": {
+        "volume": "15",
+        "journalIssueId": 3109441,
+        "dateOfPublication": "2021 ",
+        "monthOfPublication": 0,
+        "yearOfPublication": 2021,
+        "journal": {
+          "medlineAbbreviation": "Front Neurosci",
+          "title": "Frontiers in neuroscience",
+          "essn": "1662-453X",
+          "issn": "1662-4548",
+          "nlmid": "101478481",
+          "isoabbreviation": "Front Neurosci"
+        },
+        "printPublicationDate": "2021-01-01"
+      },
+      "pubYear": "2021",
+      "pageInfo": "823550",
+      "abstractText": "<h4>Background</h4>The key pathophysiological mechanism of executive dysfunction in patients with bipolar disorder type I (BD-I) is still unclear. Previous studies have demonstrated that it may be related to the disbalance of the sensory motor network (SMN).<h4>Objective</h4>This study was designed to explore the aberrant functional connectivity (FC) of SMN in BD-I patients and its potential associations with executive dysfunction.<h4>Methods</h4>Eighteen BD-I patients and 20 healthy controls (HCs) underwent resting-state fMRI scans. The intranetwork and internetwork functional connectivities of SMN were extracted by independent component analysis (ICA). Clinical symptoms were assessed by the Bech-Rafaelsen Mania Rating Scale (BRMS) and Positive and Negative Syndrome Scale (PANSS). Executive function was measured by digit span tasks and a verbal fluency test. Finally, linear regression and correlation analyses were applied to measure the potential associations between clinical symptoms, intranetwork and internetwork functional connectivities, and executive function performance.<h4>Results</h4>(1) Patients with BD-I showed increased connectivity in the right paracentral lobule and the right postcentral gyrus within the SMN, and the increased connectivity value was positively correlated with the BRMS score (<i>P</i> < 0.05) but negatively correlated with digit span forward scores (<i>P</i> < 0.05). (2) Compared with HC, the connectivity value increased between the SMN and dorsal attention network (DAN) (<i>P</i> < 0.01) and between the default mode network (DMN) and DAN (<i>P</i> < 0.05) but decreased between the DAN and auditory network (AN) (<i>P</i> < 0.05) and between the SMN and DMN (<i>P</i> < 0.01) in patients with BD-I. (3) Digit span forward scores and education of all participants were negatively correlated with FC between SMN and DAN. Age of all subjects was positively correlated with FC between SMN and DMN.<h4>Conclusion</h4>Our findings suggest that the sensorimotor network of BD-I has abnormal functional connections within and between networks, and the abnormal FC value correlated with clinical symptoms and executive function, which provide new information for exploring the neural physiopathology of executive dysfunction in BD-I patients.",
+      "affiliation": "Hangzhou Seventh People's Hospital, Hangzhou, China.",
+      "publicationStatus": "epublish",
+      "language": "eng",
+      "pubModel": "Electronic-eCollection",
+      "pubTypeList": {
+        "pubType": [
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "Medical Science and Technology Project of Zhejiang Province",
+            "orderIn": 0
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Bipolar disorder",
+          "Functional Connectivity",
+          "Executive Function",
+          "Resting-state Fmri",
+          "Sensorimotor Network"
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.3389/fnins.2021.823550"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC8898951"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC8898951?pdf=render"
+          }
+        ]
+      },
+      "commentCorrectionList": {
+        "commentCorrection": [
+          {
+            "source": "MED",
+            "id": "39564527",
+            "reference": "Front Neurosci. 2024 Nov 05;18:1515904. doi: 10.3389/fnins.2024.1515904",
+            "type": "Erratum in",
+            "orderIn": 1
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 30,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "N",
+      "hasLabsLinks": "Y",
+      "hasData": "N",
+      "license": "cc by",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCreation": "2022-03-10",
+      "dateOfRevision": "2024-11-20",
+      "electronicPublicationDate": "2022-02-21",
+      "firstPublicationDate": "2022-02-21",
+      "firstIndexDate": "2022-03-11",
+      "fullTextReceivedDate": "2022-03-09",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "34120907",
+      "source": "MED",
+      "pmid": "34120907",
+      "pmcid": "PMC8461709",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC8461709"
+        ]
+      },
+      "doi": "10.3233/jad-210434",
+      "title": "Segmented Linear Mixed Model Analysis Reveals Association of the APOEɛ4 Allele with Faster Rate of Alzheimer's Disease Dementia Progression.",
+      "authorString": "Chen XR, Shao Y, Sadowski MJ, Alzheimer’s Disease Neuroimaging Initiative.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Chen XR",
+            "lastName": "Chen",
+            "firstName": "X Richard",
+            "initials": "XR",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "University of Rochester School of Medicine & Dentistry, Rochester, NY, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Shao Y",
+            "lastName": "Shao",
+            "firstName": "Yongzhao",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Population Health, NYU Grossman School of Medicine, New York, NY, USA."
+                },
+                {
+                  "affiliation": "Department of Environmental Medicine, NYU Grossman School of Medicine, New York, NY, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Sadowski MJ",
+            "lastName": "Sadowski",
+            "firstName": "Martin J",
+            "initials": "MJ",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-3830-1779"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Neurology, NYU Grossman School of Medicine, New York, NY, USA."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, NYU Grossman School of Medicine, New York, NY, USA."
+                },
+                {
+                  "affiliation": "Department of Biochemistry and Molecular Pharmacology, NYU Grossman School of Medicine, New York, NY, USA."
+                }
+              ]
+            }
+          },
+          {
+            "collectiveName": "Alzheimer’s Disease Neuroimaging Initiative"
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0002-3830-1779"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "issue": "3",
+        "volume": "82",
+        "journalIssueId": 3215770,
+        "dateOfPublication": "2021 ",
+        "monthOfPublication": 0,
+        "yearOfPublication": 2021,
+        "journal": {
+          "medlineAbbreviation": "J Alzheimers Dis",
+          "title": "Journal of Alzheimer's disease : JAD",
+          "essn": "1875-8908",
+          "issn": "1387-2877",
+          "nlmid": "9814863",
+          "isoabbreviation": "J Alzheimers Dis"
+        },
+        "printPublicationDate": "2021-01-01"
+      },
+      "pubYear": "2021",
+      "pageInfo": "921-937",
+      "abstractText": "<h4>Background</h4>APOEɛ4 allele carriers present with an increased risk for late-onset Alzheimer's disease (AD), show cognitive symptoms at an earlier age, and are more likely to transition from mild cognitive impairment (MCI) to dementia but despite this, it remains unclear whether or not the ɛ4 allele controls the rate of disease progression.<h4>Objective</h4>To determine the effects of the ɛ4 allele on rates of cognitive decline and brain atrophy during MCI and dementia stages of AD.<h4>Methods</h4>A segmented linear mixed model was chosen for longitudinal modeling of cognitive and brain volumetric data of 73 ɛ3/ɛ3, 99 ɛ3/ɛ4, and 39 ɛ4/ɛ4 Alzheimer's Disease Neuroimaging Initiative participants who transitioned during the study from MCI to AD dementia.<h4>Results</h4>ɛ4 carriers showed faster decline on MMSE, ADAS-11, CDR-SB, and MoCA scales, with the last two measures showing significant ɛ4 allele-dose effects after dementia transition but not during MCI. The ɛ4 effect was more prevalent in younger participants and in females. ɛ4 carriers also demonstrated faster rates of atrophy of the whole brain, the hippocampus, the entorhinal cortex, the middle temporal gyrus, and expansion of the ventricles after transitioning to dementia but not during MCI.<h4>Conclusion</h4>Possession of the ɛ4 allele is associated with a faster progression of dementia due to AD. Our observations support the notion that APOE genotype not only controls AD risk but also differentially regulates mechanisms of neurodegeneration underlying disease advancement. Furthermore, our findings carry significance for AD clinical trial design.",
+      "affiliation": "University of Rochester School of Medicine & Dentistry, Rochester, NY, USA.",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print",
+      "pubTypeList": {
+        "pubType": [
+          "Research Support, Non-U.S. Gov't",
+          "research-article",
+          "Journal Article",
+          "Research Support, N.I.H., Extramural"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "P01 AG060882",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "T35 AG050998",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "R01 AG031221",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "R01 AG053990",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "R01 AG067478",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "P30 AG066512",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "U01 AG024904",
+            "orderIn": 0
+          }
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Alzheimer Disease",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                },
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PX",
+                  "qualifierName": "psychology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Disease Progression"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Magnetic Resonance Imaging",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "TD",
+                  "qualifierName": "trends"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Linear Models"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Longitudinal Studies"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Follow-Up Studies"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Cross-Sectional Studies"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Alleles"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Databases, Factual",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "TD",
+                  "qualifierName": "trends"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged, 80 and over"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Female"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Male"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Apolipoprotein E4",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Cognitive Dysfunction",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                },
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "PX",
+                  "qualifierName": "psychology"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Alzheimer disease",
+          "MRI",
+          "apoE",
+          "Cognitive Decline",
+          "Linear Mixed Model"
+        ]
+      },
+      "chemicalList": {
+        "chemical": [
+          {
+            "name": "Apolipoprotein E4",
+            "registryNumber": "0"
+          }
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Unpaywall",
+            "url": "https://content.iospress.com:443/download/journal-of-alzheimers-disease/jad210434?id=journal-of-alzheimers-disease%2Fjad210434"
+          },
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.3233/JAD-210434"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC8461709"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC8461709?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 21,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "license": "cc by-nc",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "Y",
+      "tmAccessionTypeList": {
+        "accessionType": [
+          "doi"
+        ]
+      },
+      "dateOfCompletion": "2021-09-15",
+      "dateOfCreation": "2021-06-14",
+      "dateOfRevision": "2021-11-13",
+      "firstPublicationDate": "2021-01-01",
+      "firstIndexDate": "2021-06-15",
+      "fullTextReceivedDate": "2025-02-02",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "33210798",
+      "source": "MED",
+      "pmid": "33210798",
+      "pmcid": "PMC7856647",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC7856647"
+        ]
+      },
+      "doi": "10.1002/hbm.25285",
+      "title": "Transdiagnostic time-varying dysconnectivity across major psychiatric disorders.",
+      "authorString": "Li C, Dong M, Womer FY, Han S, Yin Y, Jiang X, Wei Y, Duan J, Feng R, Zhang L, Zhang X, Wang F, Tang Y, Xu K.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Li C",
+            "lastName": "Li",
+            "firstName": "Chao",
+            "initials": "C",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Dong M",
+            "lastName": "Dong",
+            "firstName": "Mengshi",
+            "initials": "M",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Womer FY",
+            "lastName": "Womer",
+            "firstName": "Fay Y",
+            "initials": "FY",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Washington University School of Medicine, St. Louis, Missouri, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Han S",
+            "lastName": "Han",
+            "firstName": "Shaoqiang",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of MRI, The First Affiliated Hospital of ZhengZhou University, ZhengZhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Yin Y",
+            "lastName": "Yin",
+            "firstName": "Yi",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Guangdong Second Provincial General Hospital, The Second School of Clinical Medicine, Southern Medical University, Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Jiang X",
+            "lastName": "Jiang",
+            "firstName": "Xiaowei",
+            "initials": "X",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wei Y",
+            "lastName": "Wei",
+            "firstName": "Yange",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Duan J",
+            "lastName": "Duan",
+            "firstName": "Jia",
+            "initials": "J",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Feng R",
+            "lastName": "Feng",
+            "firstName": "Ruiqi",
+            "initials": "R",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhang L",
+            "lastName": "Zhang",
+            "firstName": "Luheng",
+            "initials": "L",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhang X",
+            "lastName": "Zhang",
+            "firstName": "Xizhe",
+            "initials": "X",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "School of Biomedical Engineering and Informatics, Nanjing Medical University, Nanjing, China."
+                },
+                {
+                  "affiliation": "Nanjing Brain Hospital, Nanjing Medical University, Nanjing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang F",
+            "lastName": "Wang",
+            "firstName": "Fei",
+            "initials": "F",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-5982-2303"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, Yale School of Medicine, New Haven, Connecticut, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Tang Y",
+            "lastName": "Tang",
+            "firstName": "Yanqing",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Xu K",
+            "lastName": "Xu",
+            "firstName": "Ke",
+            "initials": "K",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-3606-3279"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, China."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0002-3606-3279"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-5982-2303"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-8684-4591"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "issue": "4",
+        "volume": "42",
+        "journalIssueId": 3116844,
+        "dateOfPublication": "2021 Mar",
+        "monthOfPublication": 3,
+        "yearOfPublication": 2021,
+        "journal": {
+          "medlineAbbreviation": "Hum Brain Mapp",
+          "title": "Human brain mapping",
+          "essn": "1097-0193",
+          "issn": "1065-9471",
+          "nlmid": "9419065",
+          "isoabbreviation": "Hum Brain Mapp"
+        },
+        "printPublicationDate": "2021-03-01"
+      },
+      "pubYear": "2021",
+      "pageInfo": "1182-1196",
+      "abstractText": "Dynamic functional connectivity (DFC) analysis can capture time-varying properties of connectivity. However, studies on large samples using DFC to investigate transdiagnostic dysconnectivity across schizophrenia (SZ), bipolar disorder (BD), and major depressive disorder (MDD) are rare. In this study, we used resting-state functional magnetic resonance imaging and a sliding-window method to study DFC in a total of 610 individuals (150 with SZ, 100 with BD, 150 with MDD, and 210 healthy controls [HC]) at a single site. Using k-means clustering, DFCs were clustered into three functional connectivity states: one was a more frequent state with moderate positive and negative connectivity (State 1), and the other two were less frequent states with stronger positive and negative connectivity (State 2 and State 3). Significant 4-group differences (SZ, BD, MDD, and HC groups; q < .05, false-discovery rate [FDR]-corrected) in DFC were nearly only in State 1. Post hoc analyses (q < .05, FDR-corrected) in State 1 showed that transdiagnostic dysconnectivity patterns among SZ, BD and MDD featured consistently decreased connectivity within most networks (the visual, somatomotor, salience and frontoparietal networks), which was most obvious in both range and extent for SZ. Our findings suggest that there is more common dysconnectivity across SZ, BD and MDD than we previously expected and that such dysconnectivity is state-dependent, which provides new insights into the pathophysiological mechanism of major psychiatric disorders.",
+      "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, China.",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print-Electronic",
+      "pubTypeList": {
+        "pubType": [
+          "Research Support, Non-U.S. Gov't",
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Cerebral Cortex",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Nerve Net",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Magnetic Resonance Imaging"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Bipolar Disorder",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Schizophrenia",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Adult"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Female"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Male"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Young Adult"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Connectome",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "MT",
+                  "qualifierName": "methods"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Major Depressive Disorder",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Schizophrenia",
+          "Bipolar disorder",
+          "Major Depressive Disorder",
+          "Dynamic Functional Connectivity",
+          "Transdiagnostic Study"
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1002/hbm.25285"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC7856647"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC7856647?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 48,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "license": "cc by-nc",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCompletion": "2022-01-03",
+      "dateOfCreation": "2020-11-19",
+      "dateOfRevision": "2026-01-27",
+      "electronicPublicationDate": "2020-11-19",
+      "firstPublicationDate": "2020-11-19",
+      "firstIndexDate": "2020-11-20",
+      "fullTextReceivedDate": "2025-02-04",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "32688026",
+      "source": "MED",
+      "pmid": "32688026",
+      "doi": "10.1016/j.bbi.2020.07.004",
+      "title": "Inflammation is associated with decreased functional connectivity of insula in unmedicated bipolar disorder.",
+      "authorString": "Chen P, Chen F, Chen G, Zhong S, Gong J, Zhong H, Ye T, Tang G, Wang J, Luo Z, Qi Z, Jia Y, Yang H, Yin Z, Huang L, Wang Y.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Chen P",
+            "lastName": "Chen",
+            "firstName": "Pan",
+            "initials": "P",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Chen F",
+            "lastName": "Chen",
+            "firstName": "Feng",
+            "initials": "F",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Chen G",
+            "lastName": "Chen",
+            "firstName": "Guanmao",
+            "initials": "G",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhong S",
+            "lastName": "Zhong",
+            "firstName": "Shuming",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, First Affiliated Hospital of Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Gong J",
+            "lastName": "Gong",
+            "firstName": "JiaYing",
+            "initials": "J",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China; Department of Radiology, Six Affiliated Hospital of Sun Yat-sen University, Guangzhou 510655, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhong H",
+            "lastName": "Zhong",
+            "firstName": "Hui",
+            "initials": "H",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Biomedical Translational Research Institute, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Ye T",
+            "lastName": "Ye",
+            "firstName": "Tao",
+            "initials": "T",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Clinical Laboratory Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Tang G",
+            "lastName": "Tang",
+            "firstName": "Guixian",
+            "initials": "G",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0001-7401-0963"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang J",
+            "lastName": "Wang",
+            "firstName": "Jurong",
+            "initials": "J",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Luo Z",
+            "lastName": "Luo",
+            "firstName": "Zhenye",
+            "initials": "Z",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Qi Z",
+            "lastName": "Qi",
+            "firstName": "Zhangzhang",
+            "initials": "Z",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Jia Y",
+            "lastName": "Jia",
+            "firstName": "Yanbin",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, First Affiliated Hospital of Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Yang H",
+            "lastName": "Yang",
+            "firstName": "Hengwen",
+            "initials": "H",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-6418-1985"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Biomedical Translational Research Institute, Jinan University, Guangzhou 510630, China; Zhuhai Precision Medical Center, Zhuhai People's Hospital (Zhuhai Hospital Affiliated with Jinan University), Jinan University, Zhuhai 519000, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Yin Z",
+            "lastName": "Yin",
+            "firstName": "Zhinan",
+            "initials": "Z",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Biomedical Translational Research Institute, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Huang L",
+            "lastName": "Huang",
+            "firstName": "Li",
+            "initials": "L",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang Y",
+            "lastName": "Wang",
+            "firstName": "Ying",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China. Electronic address: johneil@vip.sina.com."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0001-7401-0963"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-6418-1985"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "altmetrics"
+        ]
+      },
+      "journalInfo": {
+        "volume": "89",
+        "journalIssueId": 3037793,
+        "dateOfPublication": "2020 Oct",
+        "monthOfPublication": 10,
+        "yearOfPublication": 2020,
+        "journal": {
+          "medlineAbbreviation": "Brain Behav Immun",
+          "title": "Brain, behavior, and immunity",
+          "essn": "1090-2139",
+          "issn": "0889-1591",
+          "nlmid": "8800478",
+          "isoabbreviation": "Brain Behav Immun"
+        },
+        "printPublicationDate": "2020-10-01"
+      },
+      "pubYear": "2020",
+      "pageInfo": "615-622",
+      "abstractText": "<h4>Background</h4>Systemic inflammation and immune dysregulation have been considered as risk factors in the pathophysiology of mood disorders including bipolar disorder (BD). Previous neuroimaging studies have demonstrated metabolic, structural and functional abnormalities in the insula in BD, proposed that the insula played an important role in BD. We herein aimed to explore neural mechanisms underlying inflammation-induced in the insular subregions functional connectivity (FC) in patients with BD.<h4>Methods</h4>Brain resting-state functional magnetic resonance imaging (rs-fMRI) data were acquired from 41 patients with unmedicated BD II (current episode depressed), 68 healthy controls (HCs). Three pairs of insular seed regions were selected: the bilateral anterior insula (AI), the bilateral middle insula (MI) and the bilateral posterior insula (PI), and calculated the whole-brain FC for each subregion. Additionally, the serum levels of pro-inflammatory cytokines in patients and HCs, including IL-6 and TNF-α, were detected. Then the partial correlation coefficients between the abnormal insular subregions FC values and pro-inflammatory cytokines levels in patients with BD II depression were calculated.<h4>Results</h4>The BD II depression group exhibited decreased FC between the right PI and the left postcentral gyrus, and increased FC between the left AI and the bilateral insula (extended to the right putamen) when compared with the HC group. Moreover, the patients with BD II depression showed higher IL-6 and TNF-α levels than HCs, and IL-6 level was negatively correlated with FC of the right PI to the left postcentral gyrus.<h4>Conclusions</h4>Our results demonstrated that abnormal FC between the bilateral insula, and between the insula and sensorimotor areas in BD. Moreover, disrupted FC between the insula and sensorimotor areas was associated with elevated pro-inflammatory cytokine levels of IL-6 in BD.",
+      "affiliation": "Medical Imaging Center, First Affiliated Hospital of Jinan University, Guangzhou 510630, China; Institute of Molecular and Functional Imaging, Jinan University, Guangzhou 510630, China.",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print-Electronic",
+      "pubTypeList": {
+        "pubType": [
+          "Research Support, Non-U.S. Gov't",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "National Natural Science Foundation of China",
+            "orderIn": 0
+          }
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Cerebral Cortex",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Inflammation",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Magnetic Resonance Imaging"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Bipolar Disorder",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Neuroimaging"
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Inflammation",
+          "Functional magnetic resonance imaging",
+          "Bipolar disorder",
+          "Insula",
+          "Functional Connectivity"
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1016/j.bbi.2020.07.004"
+          }
+        ]
+      },
+      "isOpenAccess": "N",
+      "inEPMC": "N",
+      "inPMC": "N",
+      "citedByCount": 53,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "N",
+      "hasBook": "N",
+      "hasSuppl": "N",
+      "hasLabsLinks": "Y",
+      "hasData": "N",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCompletion": "2021-04-27",
+      "dateOfCreation": "2020-07-21",
+      "dateOfRevision": "2021-04-27",
+      "electronicPublicationDate": "2020-07-17",
+      "firstPublicationDate": "2020-07-17",
+      "firstIndexDate": "2020-07-21",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "29897593",
+      "source": "MED",
+      "pmid": "29897593",
+      "pmcid": "PMC6403059",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC6403059"
+        ]
+      },
+      "doi": "10.1093/schbul/sby046",
+      "title": "Shared and Distinct Functional Architectures of Brain Networks Across Psychiatric Disorders.",
+      "authorString": "Xia M, Womer FY, Chang M, Zhu Y, Zhou Q, Edmiston EK, Jiang X, Wei S, Duan J, Xu K, Tang Y, He Y, Wang F.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Xia M",
+            "lastName": "Xia",
+            "firstName": "Mingrui",
+            "initials": "M",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0003-4615-9132"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "National Key Laboratory of Cognitive Neuroscience and Learning, Beijing Normal University, Beijing, PR China."
+                },
+                {
+                  "affiliation": "Beijing Key Laboratory of Brain Imaging and Connectomics, Beijing Normal University, Beijing, PR China."
+                },
+                {
+                  "affiliation": "IDG/McGovern Institute for Brain Research, Beijing Normal University, Beijing, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Womer FY",
+            "lastName": "Womer",
+            "firstName": "Fay Y",
+            "initials": "FY",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Washington University School of Medicine, St. Louis, MO."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Chang M",
+            "lastName": "Chang",
+            "firstName": "Miao",
+            "initials": "M",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhu Y",
+            "lastName": "Zhu",
+            "firstName": "Yue",
+            "initials": "Y",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0009-0004-5220-4176"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhou Q",
+            "lastName": "Zhou",
+            "firstName": "Qian",
+            "initials": "Q",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Edmiston EK",
+            "lastName": "Edmiston",
+            "firstName": "Elliot Kale",
+            "initials": "EK",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-3548-6026"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Jiang X",
+            "lastName": "Jiang",
+            "firstName": "Xiaowei",
+            "initials": "X",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wei S",
+            "lastName": "Wei",
+            "firstName": "Shengnan",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Duan J",
+            "lastName": "Duan",
+            "firstName": "Jia",
+            "initials": "J",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-6140-1428"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Xu K",
+            "lastName": "Xu",
+            "firstName": "Ke",
+            "initials": "K",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Tang Y",
+            "lastName": "Tang",
+            "firstName": "Yanqing",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "He Y",
+            "lastName": "He",
+            "firstName": "Yong",
+            "initials": "Y",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-7039-2850"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "National Key Laboratory of Cognitive Neuroscience and Learning, Beijing Normal University, Beijing, PR China."
+                },
+                {
+                  "affiliation": "Beijing Key Laboratory of Brain Imaging and Connectomics, Beijing Normal University, Beijing, PR China."
+                },
+                {
+                  "affiliation": "IDG/McGovern Institute for Brain Research, Beijing Normal University, Beijing, PR China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang F",
+            "lastName": "Wang",
+            "firstName": "Fei",
+            "initials": "F",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Radiology, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Brain Function Research Section, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, The First Affiliated Hospital of China Medical University, Shenyang, Liaoning, PR China."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0002-3548-6026"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-6140-1428"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-7039-2850"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0003-4615-9132"
+          },
+          {
+            "type": "ORCID",
+            "value": "0009-0004-5220-4176"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "issue": "2",
+        "volume": "45",
+        "journalIssueId": 2790994,
+        "dateOfPublication": "2019 Mar",
+        "monthOfPublication": 3,
+        "yearOfPublication": 2019,
+        "journal": {
+          "medlineAbbreviation": "Schizophr Bull",
+          "title": "Schizophrenia bulletin",
+          "essn": "1745-1701",
+          "issn": "1787-9965",
+          "nlmid": "0236760",
+          "isoabbreviation": "Schizophr Bull"
+        },
+        "printPublicationDate": "2019-03-01"
+      },
+      "pubYear": "2019",
+      "pageInfo": "450-463",
+      "abstractText": "Brain network alterations have increasingly been implicated in schizophrenia (SCZ), bipolar disorder (BD), and major depressive disorder (MDD). However, little is known about the similarities and differences in functional brain networks among patients with SCZ, BD, and MDD. A total of 512 participants (121 with SCZ, 100 with BD, 108 with MDD, and 183 healthy controls, matched for age and sex) completed resting-state functional magnetic resonance imaging at a single site. Four global measures (the clustering coefficient, the characteristic shortest path length, the normalized clustering coefficient, and the normalized characteristic path length) were computed at a voxel level to quantify segregated and integrated configurations. Inter-regional functional associations were examined based on the Euclidean distance between regions. Distance strength maps were used to localize regions with altered distances based on functional connectivity. Patient groups exhibited shifts in their network architectures toward randomized configurations, with SCZ>BD>MDD in the degree of randomization. Patient groups displayed significantly decreased short-range connectivity and increased medium-/long-range connectivity. Decreases in short-range connectivity were similar across the SZ, BD, and MDD groups and were primarily distributed in the primary sensory and association cortices and the thalamus. Increases in medium-/long-range connectivity were differentially localized within the prefrontal cortices among the patient groups. We highlight shared and distinct connectivity features in functional brain networks among patients with SCZ, BD, and MDD, which expands our understanding of the common and distinct pathophysiological mechanisms and provides crucial insights into neuroimaging-based methods for the early diagnosis of and interventions for psychiatric disorders.",
+      "affiliation": "National Key Laboratory of Cognitive Neuroscience and Learning, Beijing Normal University, Beijing, PR China.",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print",
+      "pubTypeList": {
+        "pubType": [
+          "Research Support, Non-U.S. Gov't",
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81571311",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81401479",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81571331",
+            "orderIn": 0
+          },
+          {
+            "agency": "Beijing Natural Science Foundation",
+            "grantId": "Z161100004916027",
+            "orderIn": 0
+          },
+          {
+            "agency": "Liaoning Education Foundation",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Key Research and Development Program",
+            "grantId": "2016YFC0904300",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81671767",
+            "orderIn": 0
+          },
+          {
+            "agency": "Fundamental Research Funds for the Central Universities",
+            "grantId": "2017XTCX04",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81271499",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81620108016",
+            "orderIn": 0
+          },
+          {
+            "agency": "National High Tech Development Plan",
+            "grantId": "2015AA020513",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Natural Science Foundation of China",
+            "grantId": "81071099",
+            "orderIn": 0
+          },
+          {
+            "agency": "Fundamental Research Funds for the Central Universities",
+            "grantId": "2015KJJCA13",
+            "orderIn": 0
+          },
+          {
+            "agency": "National Key Research and Development Program",
+            "grantId": "2016YFC1306900",
+            "orderIn": 0
+          },
+          {
+            "agency": "Beijing Natural Science Foundation",
+            "grantId": "Z151100003915082",
+            "orderIn": 0
+          },
+          {
+            "agency": "Beijing Natural Science Foundation",
+            "grantId": "Z161100000216125",
+            "orderIn": 0
+          }
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Prefrontal Cortex",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Nerve Net",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Magnetic Resonance Imaging"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Bipolar Disorder",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Schizophrenia",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Adolescent"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Adult"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Middle Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Female"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Male"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Young Adult"
+          },
+          {
+            "majorTopic_YN": "Y",
+            "descriptorName": "Connectome"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Major Depressive Disorder",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "DG",
+                  "qualifierName": "diagnostic imaging"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PP",
+                  "qualifierName": "physiopathology"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Frontal cortex",
+          "Functional Connectivity",
+          "Connectome",
+          "Big Data",
+          "High-resolution Network"
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1093/schbul/sby046"
+          },
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC6403059"
+          },
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC6403059?pdf=render"
+          },
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1093/schbul/sby046"
+          }
+        ]
+      },
+      "isOpenAccess": "N",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 85,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCompletion": "2020-04-06",
+      "dateOfCreation": "2018-06-14",
+      "dateOfRevision": "2026-01-27",
+      "firstPublicationDate": "2019-03-01",
+      "firstIndexDate": "2018-06-14",
+      "fullTextReceivedDate": "2025-02-04",
+      "embargoDate": "2020-03-07",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "30837901",
+      "source": "MED",
+      "pmid": "30837901",
+      "pmcid": "PMC6389674",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC6389674"
+        ]
+      },
+      "doi": "10.3389/fpsyt.2019.00052",
+      "title": "Common and Specific Functional Activity Features in Schizophrenia, Major Depressive Disorder, and Bipolar Disorder.",
+      "authorString": "Yang Y, Liu S, Jiang X, Yu H, Ding S, Lu Y, Li W, Zhang H, Liu B, Cui Y, Fan L, Jiang T, Lv L.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Yang Y",
+            "lastName": "Yang",
+            "firstName": "Yongfeng",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Key Laboratory for Neuroinformation of Ministry of Education, School of Life Science and Technology, University of Electronic Science and Technology of China, Chengdu, China."
+                },
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                },
+                {
+                  "affiliation": "Henan Key Laboratory of Biological Psychiatry, Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Liu S",
+            "lastName": "Liu",
+            "firstName": "Shu",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brainnetome Center, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "National Laboratory of Pattern Recognition, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Jiang X",
+            "lastName": "Jiang",
+            "firstName": "Xiaoyan",
+            "initials": "X",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Key Laboratory for Neuroinformation of Ministry of Education, School of Life Science and Technology, University of Electronic Science and Technology of China, Chengdu, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Yu H",
+            "lastName": "Yu",
+            "firstName": "Hongyan",
+            "initials": "H",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Ding S",
+            "lastName": "Ding",
+            "firstName": "Shuang",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                },
+                {
+                  "affiliation": "Henan Key Laboratory of Biological Psychiatry, Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Lu Y",
+            "lastName": "Lu",
+            "firstName": "Yanli",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                },
+                {
+                  "affiliation": "Henan Key Laboratory of Biological Psychiatry, Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Li W",
+            "lastName": "Li",
+            "firstName": "Wenqiang",
+            "initials": "W",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                },
+                {
+                  "affiliation": "Henan Key Laboratory of Biological Psychiatry, Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhang H",
+            "lastName": "Zhang",
+            "firstName": "Hongxing",
+            "initials": "H",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                },
+                {
+                  "affiliation": "Henan Key Laboratory of Biological Psychiatry, Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Liu B",
+            "lastName": "Liu",
+            "firstName": "Bing",
+            "initials": "B",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brainnetome Center, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "National Laboratory of Pattern Recognition, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "University of Chinese Academy of Sciences, Beijing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Cui Y",
+            "lastName": "Cui",
+            "firstName": "Yue",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brainnetome Center, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "National Laboratory of Pattern Recognition, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "University of Chinese Academy of Sciences, Beijing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Fan L",
+            "lastName": "Fan",
+            "firstName": "Lingzhong",
+            "initials": "L",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-4813-621X"
+            },
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Brainnetome Center, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "National Laboratory of Pattern Recognition, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "University of Chinese Academy of Sciences, Beijing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Jiang T",
+            "lastName": "Jiang",
+            "firstName": "Tianzi",
+            "initials": "T",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Key Laboratory for Neuroinformation of Ministry of Education, School of Life Science and Technology, University of Electronic Science and Technology of China, Chengdu, China."
+                },
+                {
+                  "affiliation": "Brainnetome Center, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "National Laboratory of Pattern Recognition, Institute of Automation, Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "University of Chinese Academy of Sciences, Beijing, China."
+                },
+                {
+                  "affiliation": "The Queensland Brain Institute, University of Queensland, Brisbane, QLD, Australia."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Lv L",
+            "lastName": "Lv",
+            "firstName": "Luxian",
+            "initials": "L",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Psychiatry, Henan Mental Hospital, The Second Affiliated Hospital of Xinxiang Medical University, Xinxiang, China."
+                },
+                {
+                  "affiliation": "Henan Key Laboratory of Biological Psychiatry, Xinxiang Medical University, Xinxiang, China."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0002-4813-621X"
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "volume": "10",
+        "journalIssueId": 2779307,
+        "dateOfPublication": "2019 ",
+        "monthOfPublication": 0,
+        "yearOfPublication": 2019,
+        "journal": {
+          "medlineAbbreviation": "Front Psychiatry",
+          "title": "Frontiers in psychiatry",
+          "essn": "1664-0640",
+          "issn": "1664-0640",
+          "nlmid": "101545006",
+          "isoabbreviation": "Front Psychiatry"
+        },
+        "printPublicationDate": "2019-01-01"
+      },
+      "pubYear": "2019",
+      "pageInfo": "52",
+      "abstractText": "<b>Objectives:</b> Schizophrenia (SZ), major depressive disorder (MDD), and bipolar disorder (BD) are serious mental disorders with distinct diagnostic criteria. They share common clinical and biological features. However, there are still only few studies on the common and specific brain imaging changes associated with the three mental disorders. Therefore, the aim of this study was to identify the common and specific functional activity and connectivity changes in SZ, MDD, and BD. <b>Methods:</b> A total of 271 individuals underwent functional magnetic resonance imaging: SZ (<i>n</i> = 64), MDD (<i>n</i> = 73), BD (<i>n</i> = 41), and healthy controls (<i>n</i> = 93). The symptoms of SZ patients were evaluated by the Positive and Negative Syndrome Scale. The Beck Depression Inventory (BDI), and Beck Anxiety Inventory (BAI) were used to evaluate the symptoms of MDD patients. The BDI, BAI, and Young Mania Rating Scale were used to evaluate the symptoms of MDD and BD patients. In addition, we compared the fALFF and functional connectivity between the three mental disorders and healthy controls using two sample <i>t</i>-tests. <b>Results:</b> Significantly decreased functional activity was found in the right superior frontal gyrus, middle cingulate gyrus, left middle frontal gyrus, and decreased functional connectivity (FC) of the insula was found in SZ, MDD, and BD. Specific fALFF changes, mainly in the ventral lateral pre-frontal cortex, striatum, and thalamus were found for SZ, in the left motor cortex and parietal lobe for MDD, and the dorsal lateral pre-frontal cortex, orbitofrontal cortex, and posterior cingulate cortex in BD. <b>Conclusion:</b> Our findings of common abnormalities in SZ, MDD, and BD provide evidence that salience network abnormality may play a critical role in the pathogenesis of these three mental disorders. Meanwhile, our findings also indicate that specific alterations in SZ, MDD, and BD provide neuroimaging evidence for the differential diagnosis of the three mental disorders.",
+      "affiliation": "Key Laboratory for Neuroinformation of Ministry of Education, School of Life Science and Technology, University of Electronic Science and Technology of China, Chengdu, China.",
+      "publicationStatus": "epublish",
+      "language": "eng",
+      "pubModel": "Electronic-eCollection",
+      "pubTypeList": {
+        "pubType": [
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "National Natural Science Foundation of China",
+            "orderIn": 0
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Schizophrenia",
+          "Bipolar disorder",
+          "Magnetic Resonance Imaging",
+          "Major Depressive Disorder",
+          "Functional Activity"
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "doi",
+            "site": "Unpaywall",
+            "url": "https://doi.org/10.3389/fpsyt.2019.00052"
+          },
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.3389/fpsyt.2019.00052"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC6389674"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC6389674?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 53,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "license": "cc by",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCreation": "2019-03-07",
+      "dateOfRevision": "2020-10-01",
+      "electronicPublicationDate": "2019-02-19",
+      "firstPublicationDate": "2019-02-19",
+      "firstIndexDate": "2019-03-07",
+      "fullTextReceivedDate": "2025-02-03",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "28360829",
+      "source": "MED",
+      "pmid": "28360829",
+      "pmcid": "PMC5350153",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC5350153"
+        ]
+      },
+      "doi": "10.3389/fnins.2017.00107",
+      "title": "Activation and Functional Connectivity of the Left Inferior Temporal Gyrus during Visual Speech Priming in Healthy Listeners and Listeners with Schizophrenia.",
+      "authorString": "Wu C, Zheng Y, Li J, Zhang B, Li R, Wu H, She S, Liu S, Peng H, Ning Y, Li L.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Wu C",
+            "lastName": "Wu",
+            "firstName": "Chao",
+            "initials": "C",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Beijing Key Laboratory of Behavior and Mental Health, Key Laboratory on Machine Perception, Ministry of Education, School of Psychological and Cognitive Sciences, Peking UniversityBeijing, China; School of Life Sciences, Peking UniversityBeijing, China; School of Psychology, Beijing Normal UniversityBeijing, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zheng Y",
+            "lastName": "Zheng",
+            "firstName": "Yingjun",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Li J",
+            "lastName": "Li",
+            "firstName": "Juanhua",
+            "initials": "J",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Zhang B",
+            "lastName": "Zhang",
+            "firstName": "Bei",
+            "initials": "B",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Li R",
+            "lastName": "Li",
+            "firstName": "Ruikeng",
+            "initials": "R",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wu H",
+            "lastName": "Wu",
+            "firstName": "Haibo",
+            "initials": "H",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "She S",
+            "lastName": "She",
+            "firstName": "Shenglin",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Liu S",
+            "lastName": "Liu",
+            "firstName": "Sha",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Peng H",
+            "lastName": "Peng",
+            "firstName": "Hongjun",
+            "initials": "H",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Ning Y",
+            "lastName": "Ning",
+            "firstName": "Yuping",
+            "initials": "Y",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital) Guangzhou, China."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Li L",
+            "lastName": "Li",
+            "firstName": "Liang",
+            "initials": "L",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Beijing Key Laboratory of Behavior and Mental Health, Key Laboratory on Machine Perception, Ministry of Education, School of Psychological and Cognitive Sciences, Peking UniversityBeijing, China; The Affiliated Brain Hospital of Guangzhou Medical University (Guangzhou Huiai Hospital)Guangzhou, China; Beijing Institute for Brain Disorder, Capital Medical UniversityBeijing, China."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "altmetrics",
+          "supporting_data"
+        ]
+      },
+      "journalInfo": {
+        "volume": "11",
+        "journalIssueId": 2520978,
+        "dateOfPublication": "2017 ",
+        "monthOfPublication": 0,
+        "yearOfPublication": 2017,
+        "journal": {
+          "medlineAbbreviation": "Front Neurosci",
+          "title": "Frontiers in neuroscience",
+          "essn": "1662-453X",
+          "issn": "1662-4548",
+          "nlmid": "101478481",
+          "isoabbreviation": "Front Neurosci"
+        },
+        "printPublicationDate": "2017-01-01"
+      },
+      "pubYear": "2017",
+      "pageInfo": "107",
+      "abstractText": "Under a \"cocktail-party\" listening condition with multiple-people talking, compared to healthy people, people with schizophrenia benefit less from the use of visual-speech (lipreading) priming (VSP) cues to improve speech recognition. The neural mechanisms underlying the unmasking effect of VSP remain unknown. This study investigated the brain substrates underlying the unmasking effect of VSP in healthy listeners and the schizophrenia-induced changes in the brain substrates. Using functional magnetic resonance imaging, brain activation and functional connectivity for the contrasts of the VSP listening condition vs. the visual non-speech priming (VNSP) condition were examined in 16 healthy listeners (27.4 ± 8.6 years old, 9 females and 7 males) and 22 listeners with schizophrenia (29.0 ± 8.1 years old, 8 females and 14 males). The results showed that in healthy listeners, but not listeners with schizophrenia, the VSP-induced activation (against the VNSP condition) of the left posterior inferior temporal gyrus (pITG) was significantly correlated with the VSP-induced improvement in target-speech recognition against speech masking. Compared to healthy listeners, listeners with schizophrenia showed significantly lower VSP-induced activation of the left pITG and reduced functional connectivity of the left pITG with the bilateral Rolandic operculum, bilateral STG, and left insular. Thus, the left pITG and its functional connectivity may be the brain substrates related to the unmasking effect of VSP, assumedly through enhancing both the processing of target visual-speech signals and the inhibition of masking-speech signals. In people with schizophrenia, the reduced unmasking effect of VSP on speech recognition may be associated with a schizophrenia-related reduction of VSP-induced activation and functional connectivity of the left pITG.",
+      "affiliation": "Beijing Key Laboratory of Behavior and Mental Health, Key Laboratory on Machine Perception, Ministry of Education, School of Psychological and Cognitive Sciences, Peking UniversityBeijing, China; School of Life Sciences, Peking UniversityBeijing, China; School of Psychology, Beijing Normal UniversityBeijing, China.",
+      "publicationStatus": "epublish",
+      "language": "eng",
+      "pubModel": "Electronic-eCollection",
+      "pubTypeList": {
+        "pubType": [
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "National Basic Research Program of China",
+            "grantId": "2015CB351800",
+            "orderIn": 0
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Schizophrenia",
+          "Lipreading",
+          "Unmasking",
+          "Speech Recognition",
+          "Informational Masking",
+          "Inferior Temporal Gyrus",
+          "Cocktail-party Problem",
+          "Visual Speech Priming"
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Unpaywall",
+            "url": "https://www.frontiersin.org/articles/10.3389/fnins.2017.00107/pdf"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Unpaywall",
+            "url": "https://www.frontiersin.org/articles/10.3389/fnins.2017.00107/pdf"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Unpaywall",
+            "url": "https://www.frontiersin.org/articles/10.3389/fnins.2017.00107/pdf"
+          },
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.3389/fnins.2017.00107"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC5350153"
+          },
+          {
+            "availability": "Open access",
+            "availabilityCode": "OA",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC5350153?pdf=render"
+          }
+        ]
+      },
+      "isOpenAccess": "Y",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 23,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "Y",
+      "hasLabsLinks": "Y",
+      "hasData": "Y",
+      "license": "cc by",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCreation": "2017-04-01",
+      "dateOfRevision": "2020-09-30",
+      "electronicPublicationDate": "2017-03-15",
+      "firstPublicationDate": "2017-03-15",
+      "firstIndexDate": "2017-03-31",
+      "fullTextReceivedDate": "2025-02-03",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "24524014",
+      "source": "MED",
+      "pmid": "24524014",
+      "pmcid": "PMC3919474",
+      "fullTextIdList": {
+        "fullTextId": [
+          "PMC3919474"
+        ]
+      },
+      "doi": "10.7726/ajad.2013.1002",
+      "title": "Variation in Variables that Predict Progression from MCI to AD Dementia over Duration of Follow-up.",
+      "authorString": "Li S, Okonkwo O, Albert M, Wang MC.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Li S",
+            "lastName": "Li",
+            "firstName": "Shanshan",
+            "initials": "S",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Biostatistics, Johns Hopkins Bloomberg School of Public Health, Baltimore, Maryland, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Okonkwo O",
+            "lastName": "Okonkwo",
+            "firstName": "Ozioma",
+            "initials": "O",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Medicine, University of Wisconsin, Madison, Wisconsin, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Albert M",
+            "lastName": "Albert",
+            "firstName": "Marilyn",
+            "initials": "M",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Neurology, Johns Hopkins School of Medicine, Baltimore, Maryland, USA."
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Wang MC",
+            "lastName": "Wang",
+            "firstName": "Mei-Cheng",
+            "initials": "MC",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Biostatistics, Johns Hopkins Bloomberg School of Public Health, Baltimore, Maryland, USA."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dataLinksTagsList": {
+        "dataLinkstag": [
+          "altmetrics"
+        ]
+      },
+      "journalInfo": {
+        "issue": "1",
+        "volume": "2",
+        "journalIssueId": 2126636,
+        "dateOfPublication": "2013 ",
+        "monthOfPublication": 0,
+        "yearOfPublication": 2013,
+        "journal": {
+          "medlineAbbreviation": "Am J Alzheimers Dis (Columbia)",
+          "title": "American journal of Alzheimer's disease (Columbia, Mo.)",
+          "essn": "2162-9986",
+          "issn": "2162-9978",
+          "nlmid": "101615975",
+          "isoabbreviation": "Am J Alzheimers Dis (Columbia)"
+        },
+        "printPublicationDate": "2013-01-01"
+      },
+      "pubYear": "2013",
+      "pageInfo": "12-28",
+      "abstractText": "The purpose of this paper is to investigate the relative utility of using neuroimaging, genetic, cerebrospinal fluid (CSF), and cognitive measures to predict progression from mild cognitive impairment (MCI) to Alzheimer's disease (AD) dementia over a follow-up period. The studied subjects were 139 persons with MCI enrolled in the Alzheimer's Disease Neuroimaging Initiative. Predictors of progression to AD included brain volume, ventricular volume, hippocampal volume, APOE ε4 two alleles, Aβ<sub>42</sub>, p-tau<sub>181</sub>, p-tau<sub>181</sub>/Aβ<sub>42</sub>, memory, language, and executive function. We employ a combination of Cox regression analyses and time-dependent receiver operating characteristic (ROC) methods to assess the prognostic utility and performance stability of candidate biomarkers. In a demographic-adjusted multivariable Cox model, seven measures- brain volume, hippocampal volume, ventricular volume, APOE ε4 two alleles, Aβ<sub>42</sub>, Memory composite, Executive function composite - predicted progression to AD. Time-dependent ROC revealed that this multivariable model had an area under the curve of 0.832, 0.788, 0.794, and 0.757 at 12, 18, 24, and 36 months respectively. Supplemental Cox models with time of origin set differentially at 12, 18, 24 and 36 months showed that six measures were significant predictors at 12 months whereas only memory and executive function predicted progression to AD at 18 and 24 months. The authors concluded that baseline volumetric MRI and cognitive measures selectively predict progression from MCI to AD, with cognitive measures remaining predictive even late in the follow-up period. These findings may inform case selection for AD clinical trials.",
+      "affiliation": "Department of Biostatistics, Johns Hopkins Bloomberg School of Public Health, Baltimore, Maryland, USA.",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print",
+      "pubTypeList": {
+        "pubType": [
+          "research-article",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "U01 AG033655",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "U19 AG033655",
+            "orderIn": 0
+          },
+          {
+            "agency": "NIA NIH HHS",
+            "acronym": "AG",
+            "grantId": "U01 AG024904",
+            "orderIn": 0
+          }
+        ]
+      },
+      "keywordList": {
+        "keyword": [
+          "Memory",
+          "Alzheimer's disease",
+          "Roc Analysis",
+          "Mild Cognitive Impairment",
+          "Cox Models"
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.7726/ajad.2013.1002"
+          },
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "html",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC3919474"
+          },
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "pdf",
+            "site": "Europe_PMC",
+            "url": "https://europepmc.org/articles/PMC3919474?pdf=render"
+          },
+          {
+            "availability": "Free",
+            "availabilityCode": "F",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.7726/ajad.2013.1002"
+          }
+        ]
+      },
+      "isOpenAccess": "N",
+      "inEPMC": "Y",
+      "inPMC": "Y",
+      "citedByCount": 29,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "Y",
+      "hasBook": "N",
+      "hasSuppl": "N",
+      "hasLabsLinks": "Y",
+      "hasData": "N",
+      "authMan": "Y",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "Y",
+      "manuscriptId": "NIHMS512358",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCreation": "2014-02-14",
+      "dateOfRevision": "2021-10-21",
+      "firstPublicationDate": "2013-01-01",
+      "firstIndexDate": "2014-02-14",
+      "fullTextReceivedDate": "2025-02-05",
+      "hasEvaluations": "N"
+    },
+    {
+      "id": "17097769",
+      "source": "MED",
+      "pmid": "17097769",
+      "doi": "10.1016/j.neurobiolaging.2006.09.007",
+      "title": "MRI of hippocampus and entorhinal cortex in mild cognitive impairment: a follow-up study.",
+      "authorString": "Tapiola T, Pennanen C, Tapiola M, Tervo S, Kivipelto M, Hänninen T, Pihlajamäki M, Laakso MP, Hallikainen M, Hämäläinen A, Vanhanen M, Helkala EL, Vanninen R, Nissinen A, Rossi R, Frisoni GB, Frisoni GB, Soininen H.",
+      "authorList": {
+        "author": [
+          {
+            "fullName": "Tapiola T",
+            "lastName": "Tapiola",
+            "firstName": "Tero",
+            "initials": "T",
+            "authorAffiliationDetailsList": {
+              "authorAffiliation": [
+                {
+                  "affiliation": "Department of Neuroscience and Neurology, University of Kuopio, Brain Research Unit, Clinical Research Center, Mediteknia, 70211 Kuopio, Finland. tero.tapiola@uku.fi"
+                }
+              ]
+            }
+          },
+          {
+            "fullName": "Pennanen C",
+            "lastName": "Pennanen",
+            "firstName": "Corina",
+            "initials": "C"
+          },
+          {
+            "fullName": "Tapiola M",
+            "lastName": "Tapiola",
+            "firstName": "Mia",
+            "initials": "M"
+          },
+          {
+            "fullName": "Tervo S",
+            "lastName": "Tervo",
+            "firstName": "Susanna",
+            "initials": "S"
+          },
+          {
+            "fullName": "Kivipelto M",
+            "lastName": "Kivipelto",
+            "firstName": "Miia",
+            "initials": "M",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0003-0992-3875"
+            }
+          },
+          {
+            "fullName": "Hänninen T",
+            "lastName": "Hänninen",
+            "firstName": "Tuomo",
+            "initials": "T"
+          },
+          {
+            "fullName": "Pihlajamäki M",
+            "lastName": "Pihlajamäki",
+            "firstName": "Maija",
+            "initials": "M"
+          },
+          {
+            "fullName": "Laakso MP",
+            "lastName": "Laakso",
+            "firstName": "Mikko P",
+            "initials": "MP",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0003-1250-3425"
+            }
+          },
+          {
+            "fullName": "Hallikainen M",
+            "lastName": "Hallikainen",
+            "firstName": "Merja",
+            "initials": "M"
+          },
+          {
+            "fullName": "Hämäläinen A",
+            "lastName": "Hämäläinen",
+            "firstName": "Anne",
+            "initials": "A"
+          },
+          {
+            "fullName": "Vanhanen M",
+            "lastName": "Vanhanen",
+            "firstName": "Matti",
+            "initials": "M"
+          },
+          {
+            "fullName": "Helkala EL",
+            "lastName": "Helkala",
+            "firstName": "Eeva-Liisa",
+            "initials": "EL"
+          },
+          {
+            "fullName": "Vanninen R",
+            "lastName": "Vanninen",
+            "firstName": "Ritva",
+            "initials": "R"
+          },
+          {
+            "fullName": "Nissinen A",
+            "lastName": "Nissinen",
+            "firstName": "Aulikki",
+            "initials": "A"
+          },
+          {
+            "fullName": "Rossi R",
+            "lastName": "Rossi",
+            "firstName": "Roberta",
+            "initials": "R",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0001-8408-1124"
+            }
+          },
+          {
+            "fullName": "Frisoni GB",
+            "lastName": "Frisoni",
+            "firstName": "Giovanni B",
+            "initials": "GB",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0002-6419-1753"
+            }
+          },
+          {
+            "fullName": "Frisoni GB",
+            "lastName": "Frisoni",
+            "firstName": "Giovanni B",
+            "initials": "GB",
+            "authorId": {
+              "type": "ORCID",
+              "value": "0000-0001-7075-7082"
+            }
+          },
+          {
+            "fullName": "Soininen H",
+            "lastName": "Soininen",
+            "firstName": "Hilkka",
+            "initials": "H"
+          }
+        ]
+      },
+      "authorIdList": {
+        "authorId": [
+          {
+            "type": "ORCID",
+            "value": "0000-0001-7075-7082"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0001-8408-1124"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-1157-0813"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0002-6419-1753"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0003-0992-3875"
+          },
+          {
+            "type": "ORCID",
+            "value": "0000-0003-1250-3425"
+          }
+        ]
+      },
+      "journalInfo": {
+        "issue": "1",
+        "volume": "29",
+        "journalIssueId": 1482500,
+        "dateOfPublication": "2008 Jan",
+        "monthOfPublication": 1,
+        "yearOfPublication": 2008,
+        "journal": {
+          "medlineAbbreviation": "Neurobiol Aging",
+          "title": "Neurobiology of aging",
+          "essn": "1558-1497",
+          "issn": "0197-4580",
+          "nlmid": "8100437",
+          "isoabbreviation": "Neurobiol Aging"
+        },
+        "printPublicationDate": "2008-01-01"
+      },
+      "pubYear": "2008",
+      "pageInfo": "31-38",
+      "abstractText": "The concept of mild cognitive impairment (MCI) has been proposed to represent a transitional stage between normal aging and dementia. We studied the predictive value of the MRI-derived volumes of medial temporal lobe (MTL) structures, white matter lesions (WML), neuropsychological tests, and Apolipoprotein E (APOE) genotype on conversion of MCI to dementia and AD. The study included 60 subjects with MCI identified from population cohorts. During the mean follow-up period of 34 months, 13 patients had progressed to dementia (9 to Alzheimer's disease (AD)). In Cox regression analysis the baseline volumes of the right hippocampus, the right entorhinal cortex and CDR sum of boxes predicted the progression of MCI to dementia during the follow-up. In a bivariate analysis, only the baseline volumes of entorhinal cortex predicted conversion of MCI to AD. The Mini-Mental State Examination (MMSE) score at baseline, WML load, or APOE genotype were not significant predictors of progression. The MTL volumetry helps in identifying among the MCI subjects a group, which is at high risk for developing AD.",
+      "affiliation": "Department of Neuroscience and Neurology, University of Kuopio, Brain Research Unit, Clinical Research Center, Mediteknia, 70211 Kuopio, Finland. tero.tapiola@uku.fi",
+      "publicationStatus": "ppublish",
+      "language": "eng",
+      "pubModel": "Print-Electronic",
+      "pubTypeList": {
+        "pubType": [
+          "Research Support, Non-U.S. Gov't",
+          "Journal Article"
+        ]
+      },
+      "grantsList": {
+        "grant": [
+          {
+            "agency": "Sigrid Juséliuksen Säätiö",
+            "orderIn": 0
+          },
+          {
+            "agency": "Academy of Finland",
+            "orderIn": 0
+          },
+          {
+            "agency": "Suomen Kulttuurirahasto",
+            "orderIn": 0
+          },
+          {
+            "agency": "Kuopion Yliopistollinen Sairaala",
+            "orderIn": 0
+          }
+        ]
+      },
+      "meshHeadingList": {
+        "meshHeading": [
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Hippocampus",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Entorhinal Cortex",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Humans"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Apolipoproteins E",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Magnetic Resonance Imaging",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "MT",
+                  "qualifierName": "methods"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Analysis of Variance"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Proportional Hazards Models"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Follow-Up Studies"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Cognition Disorders",
+            "meshQualifierList": {
+              "meshQualifier": [
+                {
+                  "majorTopic_YN": "N",
+                  "abbreviation": "GE",
+                  "qualifierName": "genetics"
+                },
+                {
+                  "majorTopic_YN": "Y",
+                  "abbreviation": "PA",
+                  "qualifierName": "pathology"
+                }
+              ]
+            }
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Aged, 80 and over"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Middle Aged"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Female"
+          },
+          {
+            "majorTopic_YN": "N",
+            "descriptorName": "Male"
+          }
+        ]
+      },
+      "chemicalList": {
+        "chemical": [
+          {
+            "name": "Apolipoproteins E",
+            "registryNumber": "0"
+          }
+        ]
+      },
+      "subsetList": {
+        "subset": [
+          {
+            "code": "IM",
+            "name": "Index Medicus"
+          }
+        ]
+      },
+      "fullTextUrlList": {
+        "fullTextUrl": [
+          {
+            "availability": "Subscription required",
+            "availabilityCode": "S",
+            "documentStyle": "doi",
+            "site": "DOI",
+            "url": "https://doi.org/10.1016/j.neurobiolaging.2006.09.007"
+          }
+        ]
+      },
+      "isOpenAccess": "N",
+      "inEPMC": "N",
+      "inPMC": "N",
+      "citedByCount": 103,
+      "hasReferences": "Y",
+      "hasTextMinedTerms": "Y",
+      "hasDbCrossReferences": "N",
+      "hasPDF": "N",
+      "hasBook": "N",
+      "hasSuppl": "N",
+      "hasLabsLinks": "N",
+      "hasData": "N",
+      "authMan": "N",
+      "epmcAuthMan": "N",
+      "nihAuthMan": "N",
+      "hasTMAccessionNumbers": "N",
+      "dateOfCompletion": "2008-01-31",
+      "dateOfCreation": "2006-11-14",
+      "dateOfRevision": "2007-11-21",
+      "electronicPublicationDate": "2006-11-13",
+      "firstPublicationDate": "2006-11-13",
+      "firstIndexDate": "2008-02-01",
+      "hasEvaluations": "N"
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "version": 2,
+  "pack_id": "neurodiscovery-multitopic-20260920-v12",
+  "pack_sha256": "26ddc96e0a9bb13f993930259d28cd7a81114191d9e2e5d3d7e028b8d1f59dda",
+  "notes": {
+    "packet-01": {
+      "P1": {
+        "did_zh": "研究对 610 人的静息态 fMRI 进行动态连接分析，比较精神分裂症、双相障碍、抑郁症与健康对照。在最常出现的连接状态中，三类患者的视觉、感觉运动、显著性及额顶网络内部连接均较低。",
+        "did_en": "Dynamic resting-state connectivity was examined in 610 people with schizophrenia, bipolar disorder, depression or no psychiatric diagnosis. In the most frequent connectivity state, all three patient groups showed lower within-network connectivity in visual, sensorimotor, salience and frontoparietal networks.",
+        "relation_zh": "该研究提供了显著性网络跨诊断低连接的线索。本案例把动态网络层面的观察具体化为右侧 ROI312 到该网络的静态平均连接，并检验双相与精神分裂症谱系是否同向。",
+        "relation_en": "The salience-network finding motivates a shared diagnostic pattern. This case turns a dynamic network-level observation into a specific static mean-connection test from right ROI312 in bipolar disorder and the schizophrenia spectrum."
+      },
+      "P2": {
+        "did_zh": "这篇综述汇总多个精神疾病中左右脑同源区域的静息态连接研究。多种疾病在注意、显著性、感觉运动等网络出现同源连接降低，但 ADHD 的模式不同。",
+        "did_en": "This review compared resting-state connectivity between matching regions in the two hemispheres across psychiatric disorders. Several disorders showed reduced homotopic connectivity in attention, salience and sensorimotor networks, whereas ADHD showed a different pattern.",
+        "relation_zh": "综述提示，连接降低可能跨越传统诊断分类。本案例进一步询问，这一共同方向能否出现在具体分区到显著性网络的连接中，而不仅是左右脑同源区域之间。",
+        "relation_en": "The review motivates a cross-diagnostic decrease. This case asks whether the shared direction also appears between a specific parcel and the salience network, rather than only between matching regions across hemispheres."
+      },
+      "P3": {
+        "did_zh": "研究比较 512 名精神分裂症、双相障碍、抑郁症患者及健康对照的脑网络。三类患者均出现短距离连接降低，主要涉及感觉及联合皮层；中、长距离连接则升高，其前额叶分布随疾病而异。",
+        "did_en": "Brain networks were compared in 512 people with schizophrenia, bipolar disorder, depression or no psychiatric diagnosis. Short-range connectivity was reduced across patient groups, particularly in sensory and association cortex. Medium- and long-range connectivity increased, with different prefrontal distributions across disorders.",
+        "relation_zh": "共同的短程连接降低为跨诊断假设提供依据；同时存在的长程连接升高说明不能预设所有连接都下降。因此，本案例针对 ROI312 的指定连接单独检验方向。",
+        "relation_en": "Shared short-range decreases motivate the hypothesis, while long-range increases show that direction depends on the connection. The ROI312 connection therefore requires its own directional test."
+      }
+    },
+    "packet-02": {
+      "P1": {
+        "did_zh": "研究比较 18 名双相 I 型患者与 20 名健康对照的感觉运动网络，并评估执行功能。患者部分网络内连接升高、感觉运动与默认模式网络间连接降低，一些连接差异与躁狂症状及数字广度表现相关。",
+        "did_en": "Resting-state sensorimotor connectivity and executive function were studied in 18 people with bipolar I disorder and 20 controls. Patients showed increased connectivity in parts of the sensorimotor network but reduced connectivity with the default-mode network. Some differences related to mania symptoms and digit-span performance.",
+        "relation_zh": "该研究把感觉运动连接异常与双相障碍的执行功能联系起来，说明值得在该网络中寻找表型。它同时报告升高与降低，本案例因此对左侧 ROI108 的指定连接及跨诊断方向另行检验。",
+        "relation_en": "The link with executive function motivates examining the sensorimotor network in bipolar disorder. Because the study found both increases and decreases, this case separately tests the specific ROI108 connection and its direction across diagnoses."
+      },
+      "P2": {
+        "did_zh": "研究在 271 名参与者中比较精神分裂症、抑郁症、双相障碍与健康对照的静息态活动和连接。三类患者均有岛叶连接降低，以及部分额叶、扣带区域活动降低，同时也存在各疾病特有的改变。",
+        "did_en": "Resting-state activity and connectivity were compared across schizophrenia, depression, bipolar disorder and controls in 271 participants. The patient groups shared reduced insular connectivity and lower activity in some frontal and cingulate regions, alongside disorder-specific changes.",
+        "relation_zh": "三类疾病共享连接异常，为寻找共同脑表型提供背景。本案例把这一思路落到左侧 ROI108—感觉运动网络连接，集中比较双相与精神分裂症谱系。",
+        "relation_en": "Shared abnormalities across disorders motivate a common imaging phenotype. This case focuses that idea on left ROI108–sensorimotor connectivity in bipolar disorder and the schizophrenia spectrum."
+      },
+      "P3": {
+        "did_zh": "研究让 22 名精神分裂症患者和 16 名健康对照完成视觉言语提示任务。患者左后颞下回的任务激活较低，该区域与双侧中央沟盖、颞上回及左岛叶的连接也较弱。",
+        "did_en": "A visual-speech priming task was studied in 22 people with schizophrenia and 16 controls. Patients showed lower task-related activation of the left posterior inferior temporal gyrus and weaker connectivity from that region to the Rolandic operculum, superior temporal gyri and left insula.",
+        "relation_zh": "视觉、言语与感觉运动相关区域之间的低连接，为本案例提供局部回路线索。当前问题则检验静息状态下分区到整个感觉运动网络的平均连接，并增加双相障碍比较。",
+        "relation_en": "Weaker connections among visual, speech and sensorimotor-related regions provide a circuit-level clue. The current test concerns resting-state mean connectivity to the whole sensorimotor network and adds a bipolar comparison."
+      }
+    },
+    "packet-03": {
+      "P1": {
+        "did_zh": "研究在 271 名参与者中比较精神分裂症、抑郁症、双相障碍与健康对照的静息态活动和连接。三类患者均有岛叶连接降低，以及部分额叶、扣带区域活动降低，同时也存在各疾病特有的改变。",
+        "did_en": "Resting-state activity and connectivity were compared across schizophrenia, depression, bipolar disorder and controls in 271 participants. The patient groups shared reduced insular connectivity and lower activity in some frontal and cingulate regions, alongside disorder-specific changes.",
+        "relation_zh": "岛叶及显著性网络的共同异常，是本案例选择显著性/腹侧注意网络的主要依据。当前实验进一步定位到右侧 ROI254，并检查两类诊断及外部队列是否呈同一方向。",
+        "relation_en": "Shared insular and salience-network abnormalities motivate selecting the salience/ventral attention network. The present test narrows this to right ROI254 and examines agreement across two diagnoses and external cohorts."
+      },
+      "P2": {
+        "did_zh": "研究让 22 名精神分裂症患者和 16 名健康对照完成视觉言语提示任务。患者左后颞下回的任务激活较低，该区域与双侧中央沟盖、颞上回及左岛叶的连接也较弱。",
+        "did_en": "A visual-speech priming task was studied in 22 people with schizophrenia and 16 controls. Patients showed lower task-related activation of the left posterior inferior temporal gyrus and weaker connectivity from that region to the Rolandic operculum, superior temporal gyri and left insula.",
+        "relation_zh": "该研究提供了精神分裂症中视觉相关区域与岛叶、感觉运动相关区域连接较弱的线索。本案例把局部任务回路问题扩展为静息态的分区—网络比较，并纳入双相障碍。",
+        "relation_en": "The study provides a clue about weaker visual-related connections to insular and sensorimotor-related regions in schizophrenia. This case extends the circuit question to a resting-state parcel-to-network comparison and includes bipolar disorder."
+      },
+      "P3": {
+        "did_zh": "研究比较 41 名未用药、处于抑郁发作期的双相 II 型患者与 68 名对照。患者右后岛叶与左中央后回连接降低，并与较高 IL-6 水平相关；另一些前岛叶连接则升高。",
+        "did_en": "The study compared 41 unmedicated patients with bipolar II depression and 68 controls. Right posterior insula–left postcentral connectivity was lower and related to higher IL-6 levels, while some anterior-insular connections were increased.",
+        "relation_zh": "岛叶—感觉运动连接降低为双相障碍一侧提供了具体线索，与显著性网络研究形成互补。本案例不测量炎症，而是检验指定 ROI—网络连接能否成为两类诊断共有的影像表现。",
+        "relation_en": "Reduced insula–sensorimotor connectivity provides a specific bipolar clue that complements the salience-network evidence. This case tests a shared imaging pattern in two diagnoses; it does not measure inflammation."
+      }
+    },
+    "packet-05": {
+      "P1": {
+        "did_zh": "研究对 610 人的静息态 fMRI 进行动态连接分析，比较精神分裂症、双相障碍、抑郁症与健康对照。在最常出现的连接状态中，三类患者的视觉、感觉运动、显著性及额顶网络内部连接均较低。",
+        "did_en": "Dynamic resting-state connectivity was examined in 610 people with schizophrenia, bipolar disorder, depression or no psychiatric diagnosis. In the most frequent connectivity state, all three patient groups showed lower within-network connectivity in visual, sensorimotor, salience and frontoparietal networks.",
+        "relation_zh": "这项研究直接提供了跨诊断感觉运动网络内部连接降低的线索。本案例沿用同一网络问题，但改用静态平均连接指标，并在多个外部队列中检查双相和精神分裂症谱系的结果方向。",
+        "relation_en": "This study directly motivates a shared decrease within the sensorimotor network. The current case uses static mean connectivity and checks the bipolar and schizophrenia-spectrum pattern across external cohorts."
+      }
+    },
+    "packet-36": {
+      "P1": {
+        "did_zh": "研究随访 211 名从 MCI 进展至阿尔茨海默病痴呆的 ADNI 参与者，比较不同 APOE 基因型的认知及脑体积变化。ε4 携带者在进入痴呆阶段后，全脑、海马、内嗅皮层和颞中回萎缩较快，脑室扩大也较快。",
+        "did_en": "The study followed 211 ADNI participants who progressed from MCI to Alzheimer's dementia, comparing cognitive and volumetric trajectories by APOE genotype. After dementia onset, ε4 carriers showed faster whole-brain, hippocampal, entorhinal and middle temporal atrophy, along with faster ventricular expansion.",
+        "relation_zh": "该研究将 ε4 与痴呆阶段更快的内嗅皮层萎缩联系起来。本案例把纵向变化线索转成基线剂量问题：ε4 拷贝数较多的人，入组时的内嗅皮层是否已经较小，并在另一批数据中检验。",
+        "relation_en": "The study links ε4 with faster entorhinal atrophy during dementia. This case asks a baseline dosage question: do people with more ε4 copies already have smaller entorhinal volumes at enrollment, and does the association recur in another dataset?"
+      }
+    },
+    "packet-37": {
+      "P1": {
+        "did_zh": "研究分析 320,861 人的认知数据及 29,510 人的脑影像，考察 APOE、Klotho、年龄和性别。APOE ε4 纯合子表现出更明显的年龄相关认知下降，海马和杏仁核也较小。",
+        "did_en": "The study examined APOE, Klotho, age and sex using cognitive data from 320,861 people and imaging from 29,510. APOE ε4 homozygotes showed greater age-related cognitive decline and smaller hippocampi and amygdalae.",
+        "relation_zh": "既有研究已观察到 ε4 纯合子海马较小，提供了基因型与脑结构的直接线索。本案例进一步按 0、1、2 个拷贝检验剂量关系，并在 ADNI 的两个数据批次中检查关联能否重现。",
+        "relation_en": "The observation of smaller hippocampi in ε4 homozygotes provides direct genotype–structure evidence. This case tests dosage across zero, one and two copies and examines whether the association recurs in two ADNI data phases."
+      }
+    },
+    "packet-38": {
+      "P1": {
+        "did_zh": "研究随访 211 名从 MCI 进展至阿尔茨海默病痴呆的 ADNI 参与者，比较不同 APOE 基因型的认知及脑体积变化。ε4 携带者在进入痴呆阶段后，全脑、海马、内嗅皮层和颞中回萎缩较快，脑室扩大也较快。",
+        "did_en": "The study followed 211 ADNI participants who progressed from MCI to Alzheimer's dementia, comparing cognitive and volumetric trajectories by APOE genotype. After dementia onset, ε4 carriers showed faster whole-brain, hippocampal, entorhinal and middle temporal atrophy, along with faster ventricular expansion.",
+        "relation_zh": "颞中回萎缩更快的观察使关注点从海马扩展到外侧颞叶。本案例检验的不是萎缩速度，而是一次基线扫描中的体积与 ε4 剂量关系，考察同一遗传线索能否体现在这一结构指标中。",
+        "relation_en": "The faster middle temporal atrophy finding extends attention beyond the hippocampus to lateral temporal cortex. This case tests volume from a single baseline scan rather than atrophy rate, asking whether ε4 dosage relates to that structural measure."
+      }
+    },
+    "packet-42": {
+      "P1": {
+        "did_zh": "研究随访 60 名 MCI 参与者，平均随访 34 个月，13 人进展至痴呆，其中 9 人为阿尔茨海默病。基线右侧海马及内嗅皮层体积有助于预测痴呆进展，内嗅皮层体积还与阿尔茨海默病转归相关。",
+        "did_en": "Sixty participants with MCI were followed for an average of 34 months; 13 developed dementia, including nine with Alzheimer's disease. Baseline right hippocampal and entorhinal volumes predicted dementia progression, and entorhinal volume also predicted conversion to Alzheimer's disease.",
+        "relation_zh": "该研究已经提示，基线内嗅皮层体积可提供 MCI 预后信息。本案例在 ADNI 的两个批次中重新检验这种关系，并比较 2、3、5 年窗口，观察关联在不同随访长度下是否一致。",
+        "relation_en": "The study establishes a rationale for baseline entorhinal volume as a prognostic measure. This case re-examines the relationship in two ADNI phases and compares two-, three- and five-year windows to assess consistency over follow-up."
+      }
+    },
+    "packet-44": {
+      "P1": {
+        "did_zh": "研究对 947 名 ADNI MCI 参与者的 192 项 MRI 结构指标进行纵向分析，随访中 314 人进展至阿尔茨海默病。分析筛出包括右颞中回、海马、脑室及全脑体积在内的结构特征，其变化轨迹与进展风险相关。",
+        "did_en": "The study analyzed 192 longitudinal MRI structural measures in 947 ADNI participants with MCI, of whom 314 progressed to Alzheimer's disease. Selected features included right middle temporal, hippocampal, ventricular and whole-brain measures whose trajectories related to progression risk.",
+        "relation_zh": "这项研究把右颞中回的纵向萎缩轨迹与进展风险联系起来。本案例转而检验一次基线 MRI 中的颞中回体积是否已经包含预后信息，并在另一 ADNI 批次及不同随访窗口中比较。",
+        "relation_en": "The study links longitudinal right middle temporal atrophy to progression risk. This case asks whether volume from one baseline MRI already contains prognostic information and compares another ADNI phase and different follow-up windows."
+      }
+    },
+    "packet-46": {
+      "P1": {
+        "did_zh": "研究随访 139 名 ADNI MCI 参与者，将全脑、海马、脑室体积与遗传、脑脊液及认知指标联合用于预测进展。模型在不同随访时间的预测表现有所变化，认知指标在较晚随访阶段仍有预测价值。",
+        "did_en": "The study followed 139 ADNI participants with MCI and combined whole-brain, hippocampal and ventricular volumes with genetic, CSF and cognitive measures to predict progression. Predictive performance varied with follow-up duration, while cognitive measures remained informative later in follow-up.",
+        "relation_zh": "既有模型已纳入全脑体积，但它与其他脑区、认知和生物标志物共同参与预测。本案例单独考察这一整体结构指标与进展时间的关联，并将观察窗口延伸到 5 年。",
+        "relation_en": "The earlier model included whole-brain volume together with regional, cognitive and biological measures. This case examines the global structural measure's association with time to progression and extends the observation window to five years."
+      }
+    }
+  },
+  "definition_plain": {
+    "packet-01": {
+      "zh": "把右侧 ROI312 分区与显著/腹侧注意（SalVentAttn）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI312 parcel and every parcel of the SalVentAttn network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-02": {
+      "zh": "把左侧 ROI108 分区与躯体运动（SomMot）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the left ROI108 parcel and every parcel of the SomMot network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-03": {
+      "zh": "把右侧 ROI254 分区与显著/腹侧注意（SalVentAttn）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI254 parcel and every parcel of the SalVentAttn network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-05": {
+      "zh": "把躯体运动（SomMot）网络内部各分区之间的功能连接取平均（共 2,926 条），作为本假设的测量指标；它反映该网络内部的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection within the SomMot network (2,926 connections in total); it reflects overall within-network connectivity rather than any single parcel."
+    }
+  },
+  "note_count": 16
+}

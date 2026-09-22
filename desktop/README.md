@@ -38,6 +38,25 @@ npm run dist:mac:x64
 
 ## Windows build
 
+### Demo distribution (without Human Evaluation)
+
+```powershell
+cd desktop
+npm run dist:demo:win
+```
+
+Reuses the prepared `runtime/python` interpreter and stages current backend
+source separately in `runtime-demo`. Produces a Windows x64 portable executable
+and ZIP in `dist-demo`. Staging refuses to overwrite an existing demo runtime.
+Human Evaluation menus, routes and study materials are excluded; the normal
+distribution retains evaluation. Demo settings and runtime caches use the
+separate `NeuroDiscovery-Demo` user-data directory. No personal credentials,
+chat history, local datasets or knowledge graph are included. Configure a model
+in Settings for live inference; graph/data demonstrations require separately
+supplied data. This Windows build does not produce a macOS application.
+
+### Standard distribution
+
 ```powershell
 cd desktop
 npm ci

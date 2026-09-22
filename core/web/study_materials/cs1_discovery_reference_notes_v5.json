@@ -1,0 +1,572 @@
+{
+  "version": 2,
+  "pack_id": "neurodiscovery-multitopic-20260920-v10",
+  "pack_sha256": "2400d3d7bf1c701c7a9f0cef47420b43d6da08b0a0b37b6e3cd007d083828e91",
+  "notes": {
+    "packet-01": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：state-1 dynamic functional connectivity reductions within visual somatomotor salience and frontoparietal networks 被标记为 transdiagnostic dysconnectivity across schizophrenia bipolar disorder and major depressive disorder 的候选标志物。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): state-1 dynamic functional connectivity reductions within visual somatomotor salience and frontoparietal networks was flagged as a candidate marker of transdiagnostic dysconnectivity across schizophrenia bipolar disorder and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（ADHD）：decreased homotopic resting-state functional connectivity 与 illness duration 相关。",
+        "did_en": "KG record (ADHD): decreased homotopic resting-state functional connectivity correlated with illness duration.",
+        "relation_zh": "不涉及本假设预定的诊断组合，属背景证据；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Does not cover the hypothesis's pre-registered diagnoses; cited as background evidence; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：short-range and medium/long-range functional connectivity 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): short-range and medium/long-range functional connectivity distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-02": {
+      "P1": {
+        "did_zh": "该文献记录（双相）：sensorimotor network functional connectivity 与 executive dysfunction in bipolar I disorder 相关。",
+        "did_en": "KG record (bipolar disorder): sensorimotor network functional connectivity correlated with executive dysfunction in bipolar I disorder.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：decreased insular functional connectivity with shared frontal or cingulate hypoactivity 与 schizophrenia, major depressive disorder, and bipolar disorder 相关联。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): decreased insular functional connectivity with shared frontal or cingulate hypoactivity was associated with schizophrenia, major depressive disorder, and bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-03": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：decreased insular functional connectivity with shared frontal or cingulate hypoactivity 与 schizophrenia, major depressive disorder, and bipolar disorder 相关联。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): decreased insular functional connectivity with shared frontal or cingulate hypoactivity was associated with schizophrenia, major depressive disorder, and bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相）：elevated IL-6 and TNF-alpha with insula-sensorimotor dysconnectivity 与 bipolar II depression 相关联。",
+        "did_en": "KG record (bipolar disorder): elevated IL-6 and TNF-alpha with insula-sensorimotor dysconnectivity was associated with bipolar II depression.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-04": {
+      "P1": {
+        "did_zh": "该文献记录（ADHD）：decreased homotopic resting-state functional connectivity 与 illness duration 相关。",
+        "did_en": "KG record (ADHD): decreased homotopic resting-state functional connectivity correlated with illness duration.",
+        "relation_zh": "不涉及本假设预定的诊断组合，属背景证据；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Does not cover the hypothesis's pre-registered diagnoses; cited as background evidence; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：decreased functional connectivity strength with increased connection diversity reduced clustering and reduced small-worldness 能区分 schizophrenia resting-state network topology。",
+        "did_en": "KG record (SZ/SZA): decreased functional connectivity strength with increased connection diversity reduced clustering and reduced small-worldness distinguished schizophrenia resting-state network topology.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：state-1 dynamic functional connectivity reductions within visual somatomotor salience and frontoparietal networks 被标记为 transdiagnostic dysconnectivity across schizophrenia bipolar disorder and major depressive disorder 的候选标志物。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): state-1 dynamic functional connectivity reductions within visual somatomotor salience and frontoparietal networks was flagged as a candidate marker of transdiagnostic dysconnectivity across schizophrenia bipolar disorder and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-05": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：dynamic functional connectivity within the salience network 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): dynamic functional connectivity within the salience network distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-08": {
+      "P1": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 interhemispheric functional connectivity in sensorimotor and visual processing pathways 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced interhemispheric functional connectivity in sensorimotor and visual processing pathways.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：aberrant visual-processing gyrification and functional connectivity 能区分 schizophrenia from psychotic bipolar disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): aberrant visual-processing gyrification and functional connectivity distinguished schizophrenia from psychotic bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（SZ/SZA）：resting-state fMRI spatial and temporal complexity disruption 被标记为 psychosis network instability 的候选标志物。",
+        "did_en": "KG record (SZ/SZA): resting-state fMRI spatial and temporal complexity disruption was flagged as a candidate marker of psychosis network instability.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-09": {
+      "P1": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：dynamic functional connectivity within the salience network 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): dynamic functional connectivity within the salience network distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相）：amygdala subregion connectivity with salience, default-mode, sensorimotor, and visual networks 能区分 bipolar disorder。",
+        "did_en": "KG record (bipolar disorder): amygdala subregion connectivity with salience, default-mode, sensorimotor, and visual networks distinguished bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-10": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：dynamic functional connectivity within the salience network 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): dynamic functional connectivity within the salience network distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-12": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：dynamic functional connectivity within the salience network 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): dynamic functional connectivity within the salience network distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-13": {
+      "P1": {
+        "did_zh": "该文献记录（ADHD）：default-network resting-state functional connectivity with internalizing and externalizing dimensions 可预测 dimensional psychiatric symptoms in children with and without ADHD。",
+        "did_en": "KG record (ADHD): default-network resting-state functional connectivity with internalizing and externalizing dimensions predicted dimensional psychiatric symptoms in children with and without ADHD.",
+        "relation_zh": "覆盖本假设预定的 ADHD；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：default-mode and salience network resting-state connectivity 与 schizophrenia symptomatology 相关。",
+        "did_en": "KG record (SZ/SZA): default-mode and salience network resting-state connectivity correlated with schizophrenia symptomatology.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（ADHD、双相、SZ/SZA）：frontal functional connectivity deficits 与 ADHD, autism, schizophrenia, schizoaffective disorder, bipolar disorder, and major depression 相关联。",
+        "did_en": "KG record (ADHD、bipolar disorder、SZ/SZA): frontal functional connectivity deficits was associated with ADHD, autism, schizophrenia, schizoaffective disorder, bipolar disorder, and major depression.",
+        "relation_zh": "覆盖本假设预定的 ADHD、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-17": {
+      "P1": {
+        "did_zh": "该文献记录（双相）：default-mode and limbic intrinsic functional connectivity disruption 被标记为 nonmedicated bipolar II depression 的候选标志物。",
+        "did_en": "KG record (bipolar disorder): default-mode and limbic intrinsic functional connectivity disruption was flagged as a candidate marker of nonmedicated bipolar II depression.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：default-mode network functional and anatomical connectivity abnormalities 被标记为 schizophrenia symptoms and treatment biomarker potential 的候选标志物。",
+        "did_en": "KG record (SZ/SZA): default-mode network functional and anatomical connectivity abnormalities was flagged as a candidate marker of schizophrenia symptoms and treatment biomarker potential.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相）：观察到 functional connectivity in left cingulate, left precuneus, left inferior parietal, and left postcentral gyri 降低。",
+        "did_en": "KG record (bipolar disorder): reported reduced functional connectivity in left cingulate, left precuneus, left inferior parietal, and left postcentral gyri.",
+        "relation_zh": "覆盖本假设预定的 双相；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P4": {
+        "did_zh": "该文献记录（SZ/SZA）：default-mode and salience network resting-state connectivity 与 schizophrenia symptomatology 相关。",
+        "did_en": "KG record (SZ/SZA): default-mode and salience network resting-state connectivity correlated with schizophrenia symptomatology.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-22": {
+      "P1": {
+        "did_zh": "该文献记录（ADHD）：reduced cerebellum to premotor and anterior-cingulate functional connectivity 可预测 balance disturbance in children with ADHD。",
+        "did_en": "KG record (ADHD): reduced cerebellum to premotor and anterior-cingulate functional connectivity predicted balance disturbance in children with ADHD.",
+        "relation_zh": "覆盖本假设预定的 ADHD；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 links of functional connectivity in a subnetwork 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced links of functional connectivity in a subnetwork.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（SZ/SZA）：BOLD band power, functional connectivity graph metrics, and maximum entropy model switching 与 early psychosis working memory and positive symptoms 相关。",
+        "did_en": "KG record (SZ/SZA): BOLD band power, functional connectivity graph metrics, and maximum entropy model switching correlated with early psychosis working memory and positive symptoms.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-24": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：dynamic functional connectivity within the salience network 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): dynamic functional connectivity within the salience network distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（SZ/SZA）：regularized voxel-level resting-state connectivity reductions 被标记为 schizophrenia functional dysconnectivity 的候选标志物。",
+        "did_en": "KG record (SZ/SZA): regularized voxel-level resting-state connectivity reductions was flagged as a candidate marker of schizophrenia functional dysconnectivity.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-27": {
+      "P1": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 between-network functional connectivity across 14 cerebellar network pairs relative to healthy controls 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced between-network functional connectivity across 14 cerebellar network pairs relative to healthy controls.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（双相）：观察到 functional connectivity among frontal eye fields, thalamus, and cerebellar oculomotor regions 降低。",
+        "did_en": "KG record (bipolar disorder): reported reduced functional connectivity among frontal eye fields, thalamus, and cerebellar oculomotor regions.",
+        "relation_zh": "覆盖本假设预定的 双相；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（ADHD、双相、SZ/SZA）：procedural-memory-network resting-state functional-connectivity disruption 与 ADHD, bipolar disorder, and schizophrenia 相关联。",
+        "did_en": "KG record (ADHD、bipolar disorder、SZ/SZA): procedural-memory-network resting-state functional-connectivity disruption was associated with ADHD, bipolar disorder, and schizophrenia.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-28": {
+      "P1": {
+        "did_zh": "该文献记录（SZ/SZA）：hippocampus-medial prefrontal cortex functional connectivity 能区分 schizophrenia。",
+        "did_en": "KG record (SZ/SZA): hippocampus-medial prefrontal cortex functional connectivity distinguished schizophrenia.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（双相）：default-mode and executive-control connectivity abnormality 与 global cognitive impairment in bipolar disorder 相关。",
+        "did_en": "KG record (bipolar disorder): default-mode and executive-control connectivity abnormality correlated with global cognitive impairment in bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：resting-state global connectivity 与 schizophrenia-bipolar disorder continuum 相关联。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): resting-state global connectivity was associated with schizophrenia-bipolar disorder continuum.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-30": {
+      "P1": {
+        "did_zh": "该文献记录（双相）：elevated IL-6 and TNF-alpha with insula-sensorimotor dysconnectivity 与 bipolar II depression 相关联。",
+        "did_en": "KG record (bipolar disorder): elevated IL-6 and TNF-alpha with insula-sensorimotor dysconnectivity was associated with bipolar II depression.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：decreased insular functional connectivity with shared frontal or cingulate hypoactivity 与 schizophrenia, major depressive disorder, and bipolar disorder 相关联。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): decreased insular functional connectivity with shared frontal or cingulate hypoactivity was associated with schizophrenia, major depressive disorder, and bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-31": {
+      "P1": {
+        "did_zh": "该文献记录（ADHD）：观察到 resting functional connectivity in orbitofrontal, left dorsolateral prefrontal, left premotor/supplementary-motor, inferior-prefrontal, and right-middle-temporal regions 降低。",
+        "did_en": "KG record (ADHD): reported reduced resting functional connectivity in orbitofrontal, left dorsolateral prefrontal, left premotor/supplementary-motor, inferior-prefrontal, and right-middle-temporal regions.",
+        "relation_zh": "覆盖本假设预定的 ADHD；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：regularized voxel-level resting-state connectivity reductions 被标记为 schizophrenia functional dysconnectivity 的候选标志物。",
+        "did_en": "KG record (SZ/SZA): regularized voxel-level resting-state connectivity reductions was flagged as a candidate marker of schizophrenia functional dysconnectivity.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-32": {
+      "P1": {
+        "did_zh": "该文献记录（ADHD）：default-mode cerebellar functional connectivity and superior occipital local connectivity alterations 与 social phobia with ADHD comorbidity 相关联。",
+        "did_en": "KG record (ADHD): default-mode cerebellar functional connectivity and superior occipital local connectivity alterations was associated with social phobia with ADHD comorbidity.",
+        "relation_zh": "覆盖本假设预定的 ADHD；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（ADHD、双相、SZ/SZA）：resting-state functional-connectivity normative deviations 能区分 schizophrenia, bipolar disorder and ADHD。",
+        "did_en": "KG record (ADHD、bipolar disorder、SZ/SZA): resting-state functional-connectivity normative deviations distinguished schizophrenia, bipolar disorder and ADHD.",
+        "relation_zh": "覆盖本假设预定的 ADHD、双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD, bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（SZ/SZA）：large-scale network functional connectivity 与 first-episode psychosis 相关联。",
+        "did_en": "KG record (SZ/SZA): large-scale network functional connectivity was associated with first-episode psychosis.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P4": {
+        "did_zh": "该文献记录（ADHD、双相、SZ/SZA）：procedural-memory-network resting-state functional-connectivity disruption 与 ADHD, bipolar disorder, and schizophrenia 相关联。",
+        "did_en": "KG record (ADHD、bipolar disorder、SZ/SZA): procedural-memory-network resting-state functional-connectivity disruption was associated with ADHD, bipolar disorder, and schizophrenia.",
+        "relation_zh": "覆盖本假设预定的 ADHD、双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD, bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-33": {
+      "P1": {
+        "did_zh": "该文献记录（ADHD）：functional connectivity among cognitive-control regions 被标记为 familial ADHD risk intermediate phenotype 的候选标志物。",
+        "did_en": "KG record (ADHD): functional connectivity among cognitive-control regions was flagged as a candidate marker of familial ADHD risk intermediate phenotype.",
+        "relation_zh": "覆盖本假设预定的 ADHD；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（ADHD）：reduced cerebellum to premotor and anterior-cingulate functional connectivity 可预测 balance disturbance in children with ADHD。",
+        "did_en": "KG record (ADHD): reduced cerebellum to premotor and anterior-cingulate functional connectivity predicted balance disturbance in children with ADHD.",
+        "relation_zh": "覆盖本假设预定的 ADHD；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered ADHD; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相）：sensorimotor network functional connectivity 与 executive dysfunction in bipolar I disorder 相关。",
+        "did_en": "KG record (bipolar disorder): sensorimotor network functional connectivity correlated with executive dysfunction in bipolar I disorder.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-34": {
+      "P1": {
+        "did_zh": "该文献记录（双相、SZ/SZA）：dynamic functional connectivity within the salience network 能区分 schizophrenia, bipolar disorder, and major depressive disorder。",
+        "did_en": "KG record (bipolar disorder、SZ/SZA): dynamic functional connectivity within the salience network distinguished schizophrenia, bipolar disorder, and major depressive disorder.",
+        "relation_zh": "覆盖本假设预定的 双相、SZ/SZA；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder, SZ/SZA; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P2": {
+        "did_zh": "该文献记录（SZ/SZA）：观察到 left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula 降低。",
+        "did_en": "KG record (SZ/SZA): reported reduced left pITG functional connectivity with bilateral Rolandic operculum, bilateral superior temporal gyri, and left insula.",
+        "relation_zh": "覆盖本假设预定的 SZ/SZA；报告方向（降低）与本假设“共同降低”一致。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered SZ/SZA; its reported direction matches the hypothesis's joint direction. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      },
+      "P3": {
+        "did_zh": "该文献记录（双相）：amygdala subregion connectivity with salience, default-mode, sensorimotor, and visual networks 能区分 bipolar disorder。",
+        "did_en": "KG record (bipolar disorder): amygdala subregion connectivity with salience, default-mode, sensorimotor, and visual networks distinguished bipolar disorder.",
+        "relation_zh": "覆盖本假设预定的 双相；不直接给出方向，作为关联/区分类证据引用。它是系统提出本假设时引用的既有证据之一。",
+        "relation_en": "Covers the hypothesis's pre-registered bipolar disorder; it is non-directional and cited as associational evidence. It is one of the prior-evidence records cited when the system proposed this hypothesis."
+      }
+    },
+    "packet-35": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-36": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-37": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-38": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-39": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-40": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-41": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-42": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-43": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-44": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-45": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-46": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-47": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    },
+    "packet-48": {
+      "P1": {
+        "did_zh": "",
+        "did_en": "",
+        "relation_zh": "",
+        "relation_en": ""
+      }
+    }
+  },
+  "definition_plain": {
+    "packet-01": {
+      "zh": "把右侧 ROI312 分区与显著/腹侧注意（SalVentAttn）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI312 parcel and every parcel of the SalVentAttn network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-02": {
+      "zh": "把左侧 ROI108 分区与躯体运动（SomMot）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the left ROI108 parcel and every parcel of the SomMot network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-03": {
+      "zh": "把右侧 ROI254 分区与显著/腹侧注意（SalVentAttn）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI254 parcel and every parcel of the SalVentAttn network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-04": {
+      "zh": "把左侧 ROI036 分区与背侧注意（DorsAttn）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the left ROI036 parcel and every parcel of the DorsAttn network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-05": {
+      "zh": "把躯体运动（SomMot）网络内部各分区之间的功能连接取平均（共 2,926 条），作为本假设的测量指标；它反映该网络内部的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection within the SomMot network (2,926 connections in total); it reflects overall within-network connectivity rather than any single parcel."
+    },
+    "packet-08": {
+      "zh": "把右侧 ROI201 分区与视觉（Vis）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI201 parcel and every parcel of the Vis network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-09": {
+      "zh": "把视觉（Vis）网络内部各分区之间的功能连接取平均（共 1,830 条），作为本假设的测量指标；它反映该网络内部的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection within the Vis network (1,830 connections in total); it reflects overall within-network connectivity rather than any single parcel."
+    },
+    "packet-10": {
+      "zh": "把显著/腹侧注意（SalVentAttn）网络内部各分区之间的功能连接取平均（共 1,081 条），作为本假设的测量指标；它反映该网络内部的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection within the SalVentAttn network (1,081 connections in total); it reflects overall within-network connectivity rather than any single parcel."
+    },
+    "packet-12": {
+      "zh": "把躯体运动（SomMot）网络与显著/腹侧注意（SalVentAttn）网络之间所有分区间的功能连接取平均（共 3,619 条），作为本假设的测量指标；它反映两个网络之间的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection between the SomMot and SalVentAttn networks (3,619 connections in total); it reflects overall between-network connectivity rather than any single parcel."
+    },
+    "packet-13": {
+      "zh": "把右侧 ROI312 分区与默认模式（Default）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI312 parcel and every parcel of the Default network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-17": {
+      "zh": "把右侧 ROI316 分区与默认模式（Default）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the right ROI316 parcel and every parcel of the Default network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-22": {
+      "zh": "把左侧 ROI109 分区与躯体运动（SomMot）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the left ROI109 parcel and every parcel of the SomMot network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-24": {
+      "zh": "把视觉（Vis）网络与躯体运动（SomMot）网络之间所有分区间的功能连接取平均（共 4,697 条），作为本假设的测量指标；它反映两个网络之间的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection between the Vis and SomMot networks (4,697 connections in total); it reflects overall between-network connectivity rather than any single parcel."
+    },
+    "packet-27": {
+      "zh": "把躯体运动（SomMot）网络与背侧注意（DorsAttn）网络之间所有分区间的功能连接取平均（共 3,542 条），作为本假设的测量指标；它反映两个网络之间的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection between the SomMot and DorsAttn networks (3,542 connections in total); it reflects overall between-network connectivity rather than any single parcel."
+    },
+    "packet-28": {
+      "zh": "把默认模式（Default）网络内部各分区之间的功能连接取平均（共 4,095 条），作为本假设的测量指标；它反映该网络内部的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection within the Default network (4,095 connections in total); it reflects overall within-network connectivity rather than any single parcel."
+    },
+    "packet-30": {
+      "zh": "把左侧 ROI098 分区与躯体运动（SomMot）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the left ROI098 parcel and every parcel of the SomMot network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-31": {
+      "zh": "把躯体运动（SomMot）与边缘（Limbic）网络之间所有分区的功能连接取平均，作为本假设的测量指标；它不针对单个分区。",
+      "en": "The measure averages functional connectivity across all parcel pairs between the SomMot and Limbic networks; it does not target a single parcel."
+    },
+    "packet-32": {
+      "zh": "把视觉（Vis）网络与背侧注意（DorsAttn）网络之间所有分区间的功能连接取平均（共 2,806 条），作为本假设的测量指标；它反映两个网络之间的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection between the Vis and DorsAttn networks (2,806 connections in total); it reflects overall between-network connectivity rather than any single parcel."
+    },
+    "packet-33": {
+      "zh": "把左侧 ROI104 分区与躯体运动（SomMot）网络所有分区之间的功能连接取平均，作为本假设的测量指标。它只是这一个分区到该网络的平均连接，不代表整个脑区或整个网络。",
+      "en": "The measure averages functional connectivity between the left ROI104 parcel and every parcel of the SomMot network. It is only that parcel-to-network average, not an entire anatomical region."
+    },
+    "packet-34": {
+      "zh": "把视觉（Vis）网络与边缘（Limbic）网络之间所有分区间的功能连接取平均（共 1,586 条），作为本假设的测量指标；它反映两个网络之间的总体连接强度，不针对单个分区。",
+      "en": "The measure averages every parcel-to-parcel functional connection between the Vis and Limbic networks (1,586 connections in total); it reflects overall between-network connectivity rather than any single parcel."
+    }
+  },
+  "note_count": 69
+}

@@ -5,7 +5,8 @@ param(
   [string]$RuntimeRoot = (Join-Path (Resolve-Path "$PSScriptRoot\..").Path "runtime"),
   [string]$Requirements = (Join-Path (Resolve-Path "$PSScriptRoot\..").Path "runtime-requirements.txt"),
   [switch]$SkipPython,
-  [switch]$SkipBackend
+  [switch]$SkipBackend,
+  [switch]$Demo
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,6 +37,10 @@ function Assert-Directory {
 
 function Remove-DirectoryFresh {
   param([string]$Path)
+  $resolvedTarget = [System.IO.Path]::GetFullPath($Path)
+  if (-not $resolvedTarget.StartsWith($RuntimeRoot.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to remove a path outside runtime staging: $resolvedTarget"
+  }
   if (Test-Path -LiteralPath $Path) {
     Remove-Item -LiteralPath $Path -Recurse -Force
   }
@@ -187,6 +192,7 @@ if (-not $SkipBackend) {
       "logs",
       "output",
       "materials",
+      "study_materials",
       ".venv",
       "venv"
     )
@@ -202,6 +208,10 @@ if (-not $SkipBackend) {
       "*.ckpt",
       "*.safetensors"
     )
+    if ($Demo) {
+      $ExcludeDirs += ".frozen"
+      $ExcludeFiles += @("study.html", "study-workspace.*", "discovery-study*", "discovery_study.py", "user_study.py", "evaluation*", "build_study*", "build_evaluation*")
+    }
 
     # Skills import reusable models.common and model-family modules. Ship source,
     # but never local checkpoints, weights, datasets or experimental results.
@@ -215,6 +225,9 @@ if (-not $SkipBackend) {
         # release artifacts while preserving reusable scripts shipped by skills.
         if ($dirName -in @("core", "neurooracle")) {
           $dirExcludes += "scripts"
+        }
+        if ($Demo -and $dirName -eq "core") {
+          $fileExcludes += @("build_*.py", "discovery_*.py", "conftest.py")
         }
         if ($dirName -eq "models") {
           # Development-only sweeps carry local experiment paths; runtime skills
@@ -230,10 +243,16 @@ if (-not $SkipBackend) {
     }
 
     $StudySubsetSource = Join-Path $RepoRoot "neurooracle\data\user_study\case1_tcp_external_expert_study_v1.json"
-    if (Test-Path -LiteralPath $StudySubsetSource -PathType Leaf) {
+    if ((-not $Demo) -and (Test-Path -LiteralPath $StudySubsetSource -PathType Leaf)) {
       $StudySubsetTarget = Join-Path $BackendTarget "neurooracle\data\user_study"
       New-Item -ItemType Directory -Path $StudySubsetTarget -Force | Out-Null
       Copy-Item -LiteralPath $StudySubsetSource -Destination (Join-Path $StudySubsetTarget "case1_tcp_external_expert_study_v1.json") -Force
+      foreach ($name in @("case1_tcp_expert_pair_assignments_v1.json", "case1_tcp_expert_study_v2.json", "case1_tcp_expert_study_v2_reference_notes_v1.json", "case1_tcp_expert_study_v2_reference_notes_v2.json", "case1_tcp_expert_pair_assignments_v2.json", "case1_tcp_expert_pair_assignments_v3.json")) {
+        $extra = Join-Path $RepoRoot ("neurooracle\data\user_study\" + $name)
+        if (Test-Path -LiteralPath $extra -PathType Leaf) {
+          Copy-Item -LiteralPath $extra -Destination (Join-Path $StudySubsetTarget $name) -Force
+        }
+      }
     }
 
     # Required import-time policy asset, not a graph/dataset or mutable run state.
@@ -247,6 +266,17 @@ if (-not $SkipBackend) {
     Assert-File $PythonExe "Bundled Python is required to validate runtime helper staging"
     & $PythonExe -I (Join-Path $PSScriptRoot "stage-runtime-helpers.py") --source $RepoRoot --backend $BackendTarget
     if ($LASTEXITCODE -ne 0) { throw "Failed to stage required runtime helpers" }
+
+    if (-not $Demo) {
+      & $PythonExe -I (Join-Path $PSScriptRoot "stage-discovery-study.py") --source $RepoRoot --backend $BackendTarget
+      if ($LASTEXITCODE -ne 0) { throw "Failed to stage participant-only discovery study" }
+    } else {
+      Write-Utf8NoBom -Path (Join-Path $BackendTarget "DEMO_DISTRIBUTION.json") -Content '{"distribution":"demo","human_evaluation":false}'
+      $indexPath = Join-Path $BackendTarget "core\web\static\index.html"
+      $indexText = [System.IO.File]::ReadAllText($indexPath)
+      if (-not $indexText.Contains('const HUMAN_EVALUATION_ENABLED = true;')) { throw "Missing evaluation UI feature flag" }
+      Write-Utf8NoBom -Path $indexPath -Content $indexText.Replace('const HUMAN_EVALUATION_ENABLED = true;', 'const HUMAN_EVALUATION_ENABLED = false;')
+    }
 
     $defaultEnvironment = [ordered]@{
       setup_type = "bundled"

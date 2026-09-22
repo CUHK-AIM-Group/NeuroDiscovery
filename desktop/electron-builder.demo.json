@@ -1,0 +1,12 @@
+{
+  "extends": null,
+  "appId": "org.neurodiscovery.demo",
+  "productName": "NeuroDiscovery Demo",
+  "directories": {"output": "dist-demo"},
+  "artifactName": "NeuroDiscovery-Demo-${version}-${os}-${arch}.${ext}",
+  "files": ["main.js", "llm-settings.js", "llm-credentials.js", "model-library.js", "settings-restart.js", "preload.js", "package.json"],
+  "extraMetadata": {"main": "main.js", "distribution": "demo"},
+  "extraResources": [{"from": "runtime-demo", "to": "runtime", "filter": ["**/*", "!**/__pycache__/**", "!**/*.pyc", "!*.zip", "!**/.frozen/**", "!backend/core/web/evaluation*", "!backend/core/web/build_*.py", "!backend/core/web/discovery_*.py", "!backend/core/web/conftest.py", "!backend/core/web/static/evaluation*"]}],
+  "win": {"target": ["portable", "zip"]},
+  "portable": {"artifactName": "NeuroDiscovery-Demo-${version}-Portable-${arch}.${ext}"}
+}

@@ -1,0 +1,144 @@
+{
+  "version": 2,
+  "pack_id": "cs1-discovery-capabilities-20260919-v7",
+  "pack_sha256": "787094275b59cc037dc5633d1bd5cb6695ce9666ab9851085c49c59a0c528568",
+  "disclaimer_zh": "意义句是面向评审的通俗说明，不是新的科学结论。",
+  "significance": {
+    "packet-01": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI312 与显著性/腹侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI312 and the salience/ventral attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-02": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI108 与感觉运动网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI108 and the somatomotor network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-03": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI254 与显著性/腹侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI254 and the salience/ventral attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-04": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI036 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI036 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-05": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「感觉运动网络内部连接」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Within-network somatomotor connectivity\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-06": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI271 与感觉运动网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI271 and the somatomotor network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-07": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI155 与显著性/腹侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI155 and the salience/ventral attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-08": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI201 与视觉网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI201 and the visual network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-09": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「视觉网络内部连接」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Within-network visual connectivity\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-10": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「显著性/腹侧注意网络内部连接」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Within-network salience/ventral attention connectivity\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-11": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI255 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI255 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-12": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「感觉运动网络与显著性/腹侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Somatomotor and salience/ventral attention networks\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-13": {
+      "zh": "如果成真，这条假设意味着ADHD 与精神分裂症/分裂情感性障碍患者在「右侧 ROI312 与默认网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI312 and the default network\" for people with ADHD and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-14": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI106 与显著性/腹侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI106 and the salience/ventral attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-15": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI240 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI240 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-16": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI237 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI237 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-17": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI316 与默认网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI316 and the default network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-18": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI107 与显著性/腹侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI107 and the salience/ventral attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-19": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI270 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI270 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-20": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI289 与感觉运动网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI289 and the somatomotor network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-21": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI315 与视觉网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI315 and the visual network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-22": {
+      "zh": "如果成真，这条假设意味着ADHD 与精神分裂症/分裂情感性障碍患者在「左侧 ROI109 与感觉运动网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI109 and the somatomotor network\" for people with ADHD and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-23": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI041 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI041 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-24": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「视觉网络与感觉运动网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Visual and somatomotor networks\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-25": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「右侧 ROI317 与默认网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Right ROI317 and the default network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-26": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI155 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI155 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-27": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「感觉运动网络与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Somatomotor and dorsal attention networks\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-28": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「默认网络内部连接」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Within-network default connectivity\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-29": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI152 与背侧注意网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI152 and the dorsal attention network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-30": {
+      "zh": "如果成真，这条假设意味着双相障碍与精神分裂症/分裂情感性障碍患者在「左侧 ROI098 与感觉运动网络」这一指标上存在稳定的同方向降低——对脑研究，它把不同诊断连接到同一个可检验的网络机制上；对临床，这类可复现的连接指标有望成为辅助分型或追踪疗效的候选线索。",
+      "en": "If confirmed, this hypothesis would mean a stable, same-direction decrease in \"Left ROI098 and the somatomotor network\" for people with bipolar disorder and schizophrenia/schizoaffective disorder. For brain research, it ties different diagnoses to one testable network mechanism; clinically, such a reproducible connectivity measure is a candidate lead for subtyping and for tracking treatment response."
+    },
+    "packet-31": {
+      "zh": "若后续研究确认，这条命题意味着ADHD 与精神分裂症/分裂情感性障碍患者在「边缘网络与感觉运动网络」上存在共同降低；本次不一致结果目前主要帮助界定该跨诊断命题的适用边界，不能作为已验证标志物。",
+      "en": "If later confirmed, this claim would imply a shared decrease in \"Limbic and somatomotor networks\" among people with ADHD and schizophrenia/schizoaffective disorder. The present inconsistent result instead helps define the boundary of the transdiagnostic claim and is not a validated biomarker."
+    },
+    "packet-32": {
+      "zh": "若后续研究确认，这条命题意味着ADHD、双相障碍与精神分裂症/分裂情感性障碍患者在「视觉网络与背侧注意网络」上存在共同降低；本次不一致结果目前主要帮助界定该跨诊断命题的适用边界，不能作为已验证标志物。",
+      "en": "If later confirmed, this claim would imply a shared decrease in \"Visual and dorsal attention networks\" among people with ADHD, bipolar disorder, and schizophrenia/schizoaffective disorder. The present inconsistent result instead helps define the boundary of the transdiagnostic claim and is not a validated biomarker."
+    },
+    "packet-33": {
+      "zh": "若后续研究确认，这条命题意味着ADHD 与双相障碍患者在「左侧 ROI104 与感觉运动网络」上存在共同降低；本次不一致结果目前主要帮助界定该跨诊断命题的适用边界，不能作为已验证标志物。",
+      "en": "If later confirmed, this claim would imply a shared decrease in \"Left ROI104 and the somatomotor network\" among people with ADHD and bipolar disorder. The present inconsistent result instead helps define the boundary of the transdiagnostic claim and is not a validated biomarker."
+    },
+    "packet-34": {
+      "zh": "若后续研究确认，这条命题意味着双相障碍与精神分裂症/分裂情感性障碍患者在「视觉网络与边缘网络」上存在共同降低；本次不一致结果目前主要帮助界定该跨诊断命题的适用边界，不能作为已验证标志物。",
+      "en": "If later confirmed, this claim would imply a shared decrease in \"Visual and limbic networks\" among people with bipolar disorder and schizophrenia/schizoaffective disorder. The present inconsistent result instead helps define the boundary of the transdiagnostic claim and is not a validated biomarker."
+    }
+  }
+}
