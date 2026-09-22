@@ -1,0 +1,166 @@
+{
+  "review_date": "2026-09-22",
+  "review_scope": "Root read cached owning PubMed abstracts; related literature, not independent replication or automatic support. No model-generated review.",
+  "papers": {
+    "28444556": {
+      "anchor": "increased thalamo-somatomotor connectivity in BD",
+      "did": {"zh": "静息态 fMRI 比较精神分裂症、双相障碍与对照，发现精神分裂症的丘脑内部及丘脑—额顶连接降低，而双相障碍的丘脑—躯体运动连接升高。", "en": "Resting-state fMRI compared schizophrenia, bipolar disorder and controls. Within-thalamic and thalamo-frontoparietal connectivity was reduced in schizophrenia, whereas thalamo-somatomotor connectivity increased in bipolar disorder."},
+      "relation": {"zh": "这是跨诊断感觉运动回路的相关研究，但测量的是丘脑—皮层而非 SomMot 网络内部均值；升高结果不能被算作本假设的下降支持。", "en": "This study concerns sensorimotor circuitry across diagnoses, but measures thalamocortical connectivity rather than the within-SomMot mean. Its increases must not be counted as support for the proposed decrease."}
+    },
+    "26248537": {
+      "anchor": "increased somatomotor-thalamic connectivity in both chronic and early-stage psychosis patients",
+      "did": {"zh": "研究比较早期及慢性精神病患者与健康对照，发现前额叶—丘脑连接降低、躯体运动—丘脑连接升高，并考察连接与认知的关系。", "en": "The study compared early-stage and chronic psychosis with controls, finding reduced prefrontal-thalamic and increased somatomotor-thalamic connectivity and examining associations with cognition."},
+      "relation": {"zh": "提供精神病中感觉运动连接异常的背景与不同方向结果；不包含本例双相障碍与精神分裂症谱系的 SomMot 网络内均值检验。", "en": "It supplies sensorimotor-connectivity context and a different directional result in psychosis, not this case's within-SomMot mean test across bipolar disorder and the schizophrenia spectrum."}
+    },
+    "29278888": {
+      "anchor": "increased atrophy in the hippocampus, entorhinal cortex, and fimbria",
+      "did": {"zh": "在无症状 APOE ε4 携带者中，采用非空间导航策略者比采用空间策略者表现出更明显的海马、内嗅皮层及海马伞萎缩；使用空间策略者的灰质水平与非携带者相近。", "en": "Among asymptomatic APOE ε4 carriers, non-spatial navigators showed greater hippocampal, entorhinal and fimbria atrophy than spatial navigators. Spatial navigators had grey-matter levels comparable to non-carriers."},
+      "relation": {"zh": "直接涉及 APOE 与内嗅皮层结构，但重点是携带者内导航策略差异，并未证明 ε4 拷贝数与基线归一化体积呈线性关系。", "en": "It directly concerns APOE and entorhinal structure, but focuses on navigation differences within carriers rather than a linear association between ε4 copy number and normalized baseline volume."}
+    },
+    "25879865": {
+      "anchor": "largely independent, additive manner",
+      "did": {"zh": "研究随访245名起初认知正常者，发现内侧颞叶 MRI 指标、APOE ε4 与认知储备对 MCI 症状出现时间主要呈独立、相加的预测关系。", "en": "In 245 initially cognitively normal participants, medial-temporal MRI measures, APOE ε4 and cognitive reserve predicted MCI symptom onset largely independently and additively."},
+      "relation": {"zh": "帮助区分遗传风险和内嗅皮层结构两类指标；二者共同预测病程不等于 ε4 剂量必然导致更小的内嗅皮层体积。", "en": "It distinguishes genetic risk from entorhinal structure: their joint prognostic value does not establish that greater ε4 dosage necessarily implies smaller entorhinal volume."}
+    },
+    "23107432": {
+      "anchor": "APOE ε4 carrier status, age, education, and clinical status as covariates",
+      "did": {"zh": "ADNI 研究以海马和内嗅皮层12个月萎缩率为表型，检验通路内 SNP 交互作用，并把 APOE ε4 携带状态等作为协变量。", "en": "An ADNI study tested within-pathway SNP interactions against 12-month hippocampal and entorhinal atrophy, adjusting for APOE ε4 carrier status and other covariates."},
+      "relation": {"zh": "提供影像遗传学测量与分析背景；APOE 在此为协变量，结局为萎缩率，不能视为 ε4 剂量—基线内嗅皮层体积的直接验证。ADNI 数据可能与本例重叠。", "en": "It provides imaging-genetics methodology. APOE is a covariate and the outcome is atrophy rate, not a direct test of ε4 dosage against baseline entorhinal volume. ADNI data may overlap this case."}
+    },
+    "32190571": {
+      "anchor": "a thinner cortical thickness of bilateral entorhinal",
+      "did": {"zh": "在178名 ADNI A+T+ MCI 参与者中，APOE ε4 携带者的双侧内嗅皮层更薄、双侧海马体积更小，并有更明显的部分认知损害。", "en": "Among 178 ADNI A+T+ MCI participants, APOE ε4 carriers had thinner bilateral entorhinal cortices, smaller bilateral hippocampi and greater impairment in some cognitive domains."},
+      "relation": {"zh": "直接关联 APOE 与内嗅皮层，但使用携带状态和皮层厚度，而本例使用剂量和归一化体积；A+T+ 筛选及 ADNI 队列重叠也限制迁移。", "en": "It links APOE to entorhinal structure, but uses carrier status and cortical thickness rather than dosage and normalized volume. A+T+ selection and possible ADNI cohort overlap limit transfer."}
+    },
+    "24929969": {
+      "anchor": "Rate of hippocampal atrophy was not greater in the APOE ε4 group",
+      "did": {"zh": "对认知正常的中老年人进行纵向 MRI 随访，发现 ε4 携带者起初海马体积较小，但其海马萎缩速度并未比 ε3 纯合子更快。", "en": "Longitudinal MRI in cognitively normal middle-aged and older adults found smaller initial hippocampal volumes in ε4 carriers, but no faster hippocampal atrophy than in ε3 homozygotes."},
+      "relation": {"zh": "与基线海马体积假设密切相关，同时提示基线大小和后续变化率应分开；携带状态比较仍不等于连续剂量效应。", "en": "It is closely related to baseline hippocampal volume and distinguishes initial size from subsequent change. A carrier comparison is still not a continuous dosage effect."}
+    },
+    "24260406": {
+      "anchor": "No significant effects of APOE ε or TOMM40 523 genotype were found on hippocampal volumes",
+      "did": {"zh": "Lothian Birth Cohort 1936 的老年社区样本中，APOE 或 TOMM40 基因型与海马体积未呈显著关联，无论使用原始体积还是颅内容积/全脑组织体积校正。", "en": "In older community participants from the Lothian Birth Cohort 1936, neither APOE nor TOMM40 genotype was significantly associated with hippocampal volume, whether raw or adjusted for intracranial or total brain-tissue volume."},
+      "relation": {"zh": "这是与 APOE—海马体积假设直接相关的零结果，提示效应可能依赖人群和体积校正方式，不能只列同向结果。", "en": "This directly relevant null finding cautions that APOE–hippocampal associations may depend on population and volume adjustment; it is not supporting evidence for a decrease."}
+    },
+    "28157104": {
+      "anchor": "no hippocampal volume differences between APOE groups in healthy 14-year-old adolescents",
+      "did": {"zh": "多队列研究比较 APOE、淀粉样蛋白与基线海马体积；AD/MCI 中 ε4 携带者体积较小，ε4 与淀粉样蛋白阳性共同出现时更明显，但健康青少年未见 APOE 组间差异。", "en": "A multi-cohort study related APOE and amyloid to baseline hippocampal volume. ε4 carriers with AD/MCI had smaller volumes, particularly with amyloid positivity, whereas healthy adolescents showed no APOE-group differences."},
+      "relation": {"zh": "直接关联 APOE 与海马基线结构，但强调疾病和年龄背景；不能把跨等位基因组差异直接等同于本例0、1、2拷贝的剂量斜率。", "en": "It directly relates APOE to baseline hippocampal structure while emphasizing disease and age context. Differences across allele groups are not identical to this case's 0/1/2-copy dosage slope."}
+    },
+    "33015312": {
+      "anchor": "significant only in ε4 carriers",
+      "did": {"zh": "Lifebrain 纵向研究分析748名无痴呆者的海马体积和情景记忆，发现体积变化与记忆变化的关联在 ε4 携带者中更明显。", "en": "A longitudinal Lifebrain study of 748 non-demented participants found stronger coupling between hippocampal-volume change and episodic-memory change in ε4 carriers."},
+      "relation": {"zh": "提供 APOE 调节海马结构—认知关系的纵向背景，不直接检验剂量与基线海马体积的关系。", "en": "It provides longitudinal context for APOE modulation of hippocampal–cognitive relationships, not a direct test of dosage against baseline hippocampal volume."}
+    },
+    "36530087": {
+      "anchor": "right middle temporal gyrus",
+      "did": {"zh": "研究在 APOE4 背景下比较 AD 与对照的结构 MRI、灰质体积及结构网络，报告 AD 的右颞中回等区域灰质体积降低。", "en": "The study examined structural MRI, grey-matter volume and structural networks in AD and controls in the context of APOE4, reporting reduced right middle-temporal and other regional grey-matter volumes in AD."},
+      "relation": {"zh": "涉及同一颞中回结构和 APOE 研究背景，但摘要中的 AD—对照差异不能被解释成 ε4 剂量对归一化体积的独立效应。", "en": "It concerns the same middle-temporal structure and APOE context, but the abstract's AD–control contrast cannot be interpreted as an independent ε4-dosage effect on normalized volume."}
+    },
+    "39196521": {
+      "anchor": "females had thicker superior frontal cortices bilaterally, left middle temporal cortex",
+      "did": {"zh": "128名认知正常中年人的研究考察性别、APOE 与皮层厚度。女性的左颞中皮层较厚，APOE 相关差异主要报告于部分额叶及扣带区域，并受性别影响。", "en": "In 128 cognitively unimpaired middle-aged adults, sex and APOE were examined against cortical thickness. Women had thicker left middle-temporal cortex; reported APOE-related differences mainly involved frontal and cingulate regions and varied by sex."},
+      "relation": {"zh": "作为性别与测量选择的相关背景；颞中皮层的性别差异不是 APOE 效应，厚度也不等于本例体积，不据此声称支持剂量假设。", "en": "This is context for sex and measurement choice. A middle-temporal sex difference is not an APOE effect, and thickness is not this case's volume measure; it does not establish the dosage hypothesis."}
+    },
+    "23064258": {
+      "anchor": "superior and middle temporal gyrus",
+      "did": {"zh": "65名遗忘型 MCI 参与者的基线 VBM 研究发现，APOE ε4 携带者在海马及颞上、颞中回等区域有更多灰质萎缩，并考察 MAPT 的共同作用。", "en": "Baseline VBM in 65 participants with amnestic MCI found greater grey-matter atrophy in APOE ε4 carriers in hippocampal, superior-temporal and middle-temporal regions, and examined joint effects with MAPT."},
+      "relation": {"zh": "直接涉及 APOE 和颞中回灰质结构，但携带状态、VBM 萎缩模式与本例连续剂量—归一化体积并非同一统计量。", "en": "It directly concerns APOE and middle-temporal grey matter, but carrier status and VBM atrophy patterns are not identical to continuous dosage against normalized regional volume."}
+    },
+    "18843182": {
+      "anchor": "atrophy was only found in subjects homozygous for epsilon4 and confined to the right superior and middle temporal gyrus",
+      "did": {"zh": "83名 MCI 参与者按 ε4 的0、1、2拷贝分组进行 VBM 比较；纯合子内侧颞叶灰质密度降低，右颞上及颞中回的改变则报告于白质。", "en": "VBM compared 83 participants with MCI across 0, 1 and 2 ε4 copies. Homozygotes showed reduced medial-temporal grey-matter density; right superior- and middle-temporal changes were reported in white matter."},
+      "relation": {"zh": "提供剂量分组和颞叶形态背景，但颞中回结果属于白质，不能直接当作本例颞中回皮层体积降低的证据。", "en": "It provides dosage-group and temporal-morphology context, but the middle-temporal result concerns white matter, not direct evidence for lower middle-temporal cortical volume in this case."}
+    },
+    "17353470": {
+      "anchor": "smaller hippocampal and entorhinal cortex volumes each contribute",
+      "did": {"zh": "139名 MCI 患者及63名对照平均随访5年。较小的基线海马和内嗅皮层体积均预测向 AD 转化，但在年龄与认知指标之外增加的预测价值较小。", "en": "Over approximately five years, 139 patients with MCI and 63 controls were followed. Smaller baseline hippocampal and entorhinal volumes predicted AD conversion, with modest added value beyond age and cognition."},
+      "relation": {"zh": "与内嗅皮层基线体积和进展风险直接相关；随访范围、临床样本及协变量组合与本例不完全相同，也未证明队列独立性。", "en": "It directly concerns baseline entorhinal volume and progression risk, but follow-up, clinical sampling and covariates differ from this case; cohort independence is not established."}
+    },
+    "34742361": {
+      "anchor": "Data from 61 aMCI patients were analyzed",
+      "did": {"zh": "61名遗忘型 MCI 患者的研究比较内嗅皮层萎缩视觉评分 ERICA 与内侧颞叶萎缩评分预测 AD 转化的表现；ERICA 特异度较高但敏感度较低。", "en": "In 61 patients with amnestic MCI, visual ERICA and medial-temporal atrophy scores were compared for predicting AD conversion. ERICA had higher specificity but lower sensitivity."},
+      "relation": {"zh": "相关于内嗅皮层结构和 MCI 预后，但采用视觉萎缩量表而非归一化连续体积；小样本结果不等于本例风险模型已验证。", "en": "It relates entorhinal structure to MCI prognosis, but uses a visual atrophy scale rather than normalized continuous volume. This small-sample result does not validate the present risk model."}
+    },
+    "15312965": {
+      "anchor": "Ten of the 27 patients converted to AD",
+      "did": {"zh": "27名 MCI 患者接受基线高分辨率 MRI 并随访36个月，10人转化为 AD；基线内嗅皮层和海马体积均有预测价值，其中右内嗅皮层区分表现较好。", "en": "Twenty-seven patients with MCI underwent baseline high-resolution MRI and 36-month follow-up; ten converted to AD. Entorhinal and hippocampal volumes predicted conversion, with right entorhinal volume performing best."},
+      "relation": {"zh": "与本例基线内嗅皮层体积及进展问题直接相关，但样本小、侧化定义与建模方式不同，不能把原研究准确率迁移成本例表现。", "en": "It directly addresses baseline entorhinal volume and progression, but its small sample, lateralization and model differ. Its reported accuracy cannot be transferred to this case."}
+    },
+    "22289801": {
+      "anchor": "especially in the anterior-inferior pole bilaterally",
+      "did": {"zh": "MCI 纵向研究用表面形态学定位进展者的海马与内嗅皮层局部萎缩，提示海马 CA1/下托及双侧内嗅皮层前下极的形变可预测转化。", "en": "A longitudinal MCI study used surface morphometry to localize atrophy associated with conversion, identifying hippocampal CA1/subiculum and bilateral anterior-inferior entorhinal deformation."},
+      "relation": {"zh": "说明同一脑区内部位置可能影响预后价值；局部表面形变不是本例整个内嗅皮层平均体积，相关论文也不自动代表独立队列。", "en": "It shows that location within the region may affect prognostic value. Local surface deformation is not whole-region entorhinal volume, and separate papers do not automatically imply independent cohorts."}
+    },
+    "28436391": {
+      "anchor": "middle temporal gyrus and hippocampal volume",
+      "did": {"zh": "ADNI-1 研究联合纵向指标和生存资料预测 MCI 向 AD 转化；颞中回与海马体积属于较强影像预测指标，但认知指标通常更强。", "en": "An ADNI-1 study jointly modelled longitudinal measures and survival to predict MCI-to-AD conversion. Middle-temporal and hippocampal volumes were strong imaging predictors, although cognitive measures were generally stronger."},
+      "relation": {"zh": "直接涉及颞中回和进展时间，但使用纵向变化信息，而本例检验基线体积；同属 ADNI，不能自动视为独立验证。", "en": "It directly concerns middle-temporal structure and time to progression, but incorporates longitudinal change rather than baseline volume alone. Shared ADNI provenance prevents assuming independent validation."}
+    },
+    "24495339": {
+      "anchor": "MRI) middle temporal cortical thinning",
+      "did": {"zh": "ADNI 研究构建 MCI 向 AD 转化的积分工具，组合日常功能、颞中皮层变薄、海马体积及认知测验来预测3年转化。", "en": "An ADNI study developed a point score for MCI-to-AD conversion combining daily function, middle-temporal cortical thinning, hippocampal volume and cognitive tests to predict three-year conversion."},
+      "relation": {"zh": "提供颞中回结构的预后背景，但厚度不是体积，组合积分也不是单一脑区的风险效应；ADNI 样本可能重叠。", "en": "It provides prognostic context for middle-temporal structure, but thickness is not volume and a composite score is not a single-region risk effect. ADNI samples may overlap."}
+    },
+    "15979341": {
+      "anchor": "inferior and middle temporal gyrus, posterior cingulate, and precuneus",
+      "did": {"zh": "18名遗忘型 MCI 患者随访18个月，7人转化为 AD；转化者在海马、颞下/颞中回等区域表现出更快的灰质丢失。", "en": "Eighteen patients with amnestic MCI were followed for 18 months; seven converted to AD. Converters showed faster grey-matter loss in hippocampal, inferior-/middle-temporal and other regions."},
+      "relation": {"zh": "与颞中回和临床进展相关，但主要证据是随访萎缩速度，不是较低基线体积的独立风险比。", "en": "It relates middle-temporal structure to progression, but the relevant finding is longitudinal atrophy, not an independent hazard ratio for lower baseline volume."}
+    },
+    "21893661": {
+      "anchor": "middle temporal lobe cortical thickness",
+      "did": {"zh": "ADNI 研究比较两年内116名转化者与204名未转化者，多类指标联合分析中，基线延迟记忆和颞中叶皮层厚度能预测转化；认知指标通常比多数生物标志物更稳健。", "en": "An ADNI study compared 116 converters and 204 non-converters over two years. Baseline delayed memory and middle-temporal cortical thickness predicted conversion in combined models; cognition was generally more robust than most biomarkers."},
+      "relation": {"zh": "涉及同一颞中结构和两年预后，但测量为厚度而非体积，也不能将重复使用 ADNI 视为独立队列复现。", "en": "It concerns the same middle-temporal structure and two-year prognosis, but measures thickness rather than volume. Reuse of ADNI is not independent cohort replication."}
+    },
+    "27295347": {
+      "anchor": "hippocampal volume/whole brain volume",
+      "did": {"zh": "123名 MCI 患者随访12个月，研究认知与脑储备对转化或恢复的关系；恢复者的基线海马/全脑体积比更高，部分区域灰质丢失组间无显著差异。", "en": "In 123 patients with MCI followed for 12 months, cognitive and brain reserve were studied against conversion or reversion. Reverters had a higher baseline hippocampal/whole-brain volume ratio, while some regional grey-matter-loss comparisons were non-significant."},
+      "relation": {"zh": "提供脑储备与进展的相关背景，但海马/全脑比值不能解释为全脑体积本身的保护效应，且随访窗口更短。", "en": "It provides brain-reserve and progression context, but a hippocampal/whole-brain ratio cannot be interpreted as a protective effect of whole-brain volume itself; follow-up is also shorter."}
+    },
+    "39011362": {
+      "anchor": "Hippocampus volume, but not WBV, was associated with conversion",
+      "did": {"zh": "156名主观认知下降或 MCI 患者的自动 MRI 体积研究发现，全脑体积未关联诊断转化，但与 CDR-SB 年变化有关；诊断转化和连续认知恶化呈不同结果。", "en": "Automated MRI volumetry in 156 patients with subjective decline or MCI found that whole-brain volume was not associated with diagnostic conversion, but was associated with annual CDR-SB change. Diagnostic conversion and continuous decline yielded different results."},
+      "relation": {"zh": "这是全脑体积—转化假设的重要零结果及结局区分，不能因为与连续评分相关就写成支持痴呆转化风险。", "en": "This is an important null result and endpoint distinction for the whole-brain-volume conversion hypothesis. An association with continuous decline must not be recast as support for dementia conversion."}
+    },
+    "18195145": {
+      "anchor": "BPF did not predict progression from normal to MCI but did predict conversion to dementia",
+      "did": {"zh": "前瞻性队列以脑实质占颅腔比例衡量全脑结构；该比例较低可预测基线 MCI 者向痴呆转化，但不预测正常认知者向 MCI 进展。", "en": "A prospective cohort measured global structure as brain parenchymal fraction. Lower fraction predicted dementia conversion in baseline MCI, but not progression from normal cognition to MCI."},
+      "relation": {"zh": "与归一化全脑体积和 MCI 进展密切相关，同时提示疾病阶段重要；脑实质比例、成像序列与本例 WholeBrain_icv 的实现仍需区分。", "en": "It is closely related to normalized whole-brain volume and MCI progression and emphasizes disease stage. Brain parenchymal fraction and its imaging implementation still differ from this case's WholeBrain_icv."}
+    },
+    "19289740": {
+      "anchor": "Within patients with MCI, only hippocampal baseline volume and atrophy rate predicted progression",
+      "did": {"zh": "研究比较海马与全脑 MRI 指标预测 AD 进展的价值；全脑萎缩率在合并无痴呆样本中有预测作用，但在 MCI 子组中仅海马基线体积和萎缩率预测进展。", "en": "A study compared hippocampal and whole-brain MRI predictors of AD progression. Whole-brain atrophy rate predicted progression in the pooled non-demented sample, but only hippocampal baseline volume and atrophy rate predicted progression within MCI."},
+      "relation": {"zh": "提供全脑与局部指标的直接比较及边界结果；全脑萎缩率不等于基线体积，合并样本的关联不能替代 MCI 子组结论。", "en": "It directly compares global and regional measures and supplies a limiting result. Whole-brain atrophy rate is not baseline volume, and pooled-sample associations cannot replace MCI-specific conclusions."}
+    }
+  },
+  "additions": {
+    "packet-01": ["30837901", "32688026"],
+    "packet-02": ["33210798", "29897593"],
+    "packet-03": ["33210798", "29897593"],
+    "packet-05": ["35264921", "29897593", "28444556", "26248537"],
+    "packet-36": ["29278888", "25879865", "23107432", "32190571"],
+    "packet-37": ["24929969", "24260406", "28157104", "33015312"],
+    "packet-38": ["36530087", "39196521", "23064258", "18843182"],
+    "packet-42": ["17353470", "34742361", "15312965", "22289801"],
+    "packet-44": ["28436391", "24495339", "15979341", "21893661"],
+    "packet-46": ["27295347", "39011362", "18195145", "19289740"]
+  },
+  "reused_relations": {
+    "packet-01": {
+      "30837901": {"zh": "跨诊断岛叶连接结果提供显著性网络的相关背景，但不能直接验证特定右侧 ROI312 到整个网络的平均连接。", "en": "Cross-diagnostic insular connectivity provides salience-network context, not direct validation of mean connectivity from the specific right ROI312 to the whole network."},
+      "32688026": {"zh": "涉及岛叶及感觉运动连接，并同时报告升高和降低；双相 II 型抑郁期样本不等同于本例全部病例或特定 ROI312。", "en": "It examines insular and sensorimotor connectivity with both increases and decreases. Bipolar II depression is not equivalent to this case's full case groups or specific ROI312."}
+    },
+    "packet-02": {
+      "33210798": {"zh": "动态感觉运动网络的跨诊断结果与本例相关，但动态网络内连接不等于左侧 ROI108 的静态网络平均连接。", "en": "Cross-diagnostic dynamic sensorimotor-network findings are relevant, but within-network dynamic connectivity is not static mean connectivity from left ROI108."},
+      "29897593": {"zh": "短程降低与长程升高提示连接方向依赖空间尺度；这是左侧 ROI108—感觉运动网络检验的背景，不是该精确端点的验证。", "en": "Short-range decreases and long-range increases show dependence on spatial scale. This is context for the left ROI108–sensorimotor test, not validation of that exact endpoint."}
+    },
+    "packet-03": {
+      "33210798": {"zh": "显著性网络的动态低连接与该主题相关，但不直接验证右侧 ROI254 到网络的静态均值。", "en": "Dynamic salience-network hypoconnectivity is relevant, but does not directly validate static mean connectivity from right ROI254."},
+      "29897593": {"zh": "提供跨诊断网络异常及空间尺度差异的背景；特定右侧 ROI254 的连接方向仍需本例独立检验。", "en": "It provides cross-diagnostic network and spatial-scale context; the direction for the specific right ROI254 connection still requires this case's own test."}
+    },
+    "packet-05": {
+      "35264921": {"zh": "直接涉及感觉运动网络，但双相 I 型患者部分网络内连接升高，与一概下降的解释不一致；ICA 局部连接也不等于本例全网络均值。作为相关的方向差异保留，不恢复为原假设支持。", "en": "It directly concerns the sensorimotor network, but some within-network connections increased in bipolar I disorder, qualifying a uniform-decrease interpretation. Local ICA connectivity is not the whole-network mean. It is retained as a related directional difference, not restored as original support."},
+      "29897593": {"zh": "作为跨诊断网络空间尺度的背景重新核查：短程和长程方向不同，并未直接检验本例 SomMot 网络内均值，不据此恢复历史支持信用。", "en": "Reassessed as cross-diagnostic spatial-scale context: short- and long-range directions differ, and the study did not test this case's within-SomMot mean. No historical support credit is restored."}
+    }
+  }
+}

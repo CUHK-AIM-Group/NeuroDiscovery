@@ -1,0 +1,148 @@
+{
+  "version": 2,
+  "pack_id": "neurodiscovery-multitopic-20260920-v14",
+  "pack_sha256": "acbc50ac1c8d724081043f6e871387b5bf1f75e7b51a4e2290102d51a9235b6d",
+  "cards_per_expert": 10,
+  "experts": {
+    "P01": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P02": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P03": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P04": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P05": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P06": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P07": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P08": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P09": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ],
+    "P10": [
+      "packet-01",
+      "packet-02",
+      "packet-03",
+      "packet-05",
+      "packet-36",
+      "packet-37",
+      "packet-38",
+      "packet-42",
+      "packet-44",
+      "packet-46"
+    ]
+  },
+  "coverage": {
+    "packet-01": 10,
+    "packet-02": 10,
+    "packet-03": 10,
+    "packet-05": 10,
+    "packet-36": 10,
+    "packet-37": 10,
+    "packet-38": 10,
+    "packet-42": 10,
+    "packet-44": 10,
+    "packet-46": 10
+  },
+  "allocation_revision": "he1-topic40-success-led-v7",
+  "topic_slots": {
+    "跨诊断脑连接": 40,
+    "影像遗传学": 30,
+    "预后研究": 30
+  },
+  "rule_zh": "每位专家评审同一组 10 份材料：4 份跨诊断脑连接（40%）、3 份影像遗传学和 3 份预后研究。保留现有展示顺序逻辑。",
+  "rule_en": "Each expert reviews the same 10 cases: 4 transdiagnostic connectivity cases (40%), 3 imaging-genetics cases and 3 prognosis cases. The existing presentation-order logic is unchanged."
+}

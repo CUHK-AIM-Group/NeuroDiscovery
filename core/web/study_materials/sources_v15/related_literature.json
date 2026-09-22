@@ -1,0 +1,1616 @@
+{
+  "review_date": "2026-09-22",
+  "source_database": "tmp\\kgwg_article_retrieval_v3\\ARTICLES.sqlite",
+  "papers": {
+    "15312965": {
+      "document": {
+        "pmid": "15312965",
+        "own_article_ids": {
+          "pubmed": "15312965",
+          "doi": "10.1016/j.neurobiolaging.2003.12.007",
+          "pii": "S0197458004000375"
+        },
+        "title": "MRI-derived entorhinal volume is a good predictor of conversion from MCI to AD.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "With high-resolution quantitative magnetic resonance imaging (MRI) techniques, it is possible to examine alterations in brain anatomy in vivo and to identify regions affected in the earliest stages of Alzheimer's disease (AD). In the present study, 27 patients diagnosed with mild cognitive impairment (MCI) received a high-resolution MRI scan at baseline and were followed with yearly clinical evaluations. Ten of the 27 patients converted to AD during a 36-month period following the baseline clinical evaluation. Hippocampal and entorhinal cortex volumes derived from the baseline scan were compared to determine which of these two regions, known to be pathologically involved very early in the course of AD, could best differentiate MCI converters from non-converters. Although both entorhinal and hippocampal volumes were found to be independent predictors of the likelihood of conversion to AD, it was the right hemisphere entorhinal volume that best predicted conversion with a concordance rate of 93.5%."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, U.S. Gov't, P.H.S."
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\4b61d3728395f970c18b8a1ea484fa2e1cfb15728204bd2679bc23c5c3a5cf35\\OWN_PUBMED.xml",
+          "bytes": 1967028,
+          "mtime_ns": 1789321341408429700,
+          "sha256": "9004c3ec82c3b52c4d5d3c3191982997d98c397d754c3bf8053c702e29228706"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15312965/"
+      },
+      "authority": {
+        "pmid": "15312965",
+        "title": "mri-derived entorhinal volume is a good predictor of conversion from mci to ad",
+        "years": [
+          "2004"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.neurobiolaging.2003.12.007"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "9004c3ec82c3b52c4d5d3c3191982997d98c397d754c3bf8053c702e29228706",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\4b61d3728395f970c18b8a1ea484fa2e1cfb15728204bd2679bc23c5c3a5cf35\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "15312965"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "6f9dadd504122361d0eec94c9d00ad65c51560b4f42a65ecd160f75e690e6a7c",
+      "title": "MRI-derived entorhinal volume is a good predictor of conversion from MCI to AD.",
+      "journal": "Neurobiology of aging",
+      "year": 2004
+    },
+    "15979341": {
+      "document": {
+        "pmid": "15979341",
+        "own_article_ids": {
+          "pubmed": "15979341",
+          "doi": "10.1016/j.neuroimage.2005.05.015",
+          "pii": "S1053-8119(05)00327-7"
+        },
+        "title": "Using voxel-based morphometry to map the structural changes associated with rapid conversion in MCI: a longitudinal MRI study.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "Capturing the dynamics of gray matter (GM) atrophy in relation to the conversion from mild cognitive impairment (MCI) to clinically probable Alzheimer's disease (AD) would be of considerable interest. In this prospective study we have used a novel longitudinal voxel-based method to map the progression of GM loss in MCI patients over time and compared converters to non-converters. Eighteen amnestic MCI patients were followed-up for a predefined fixed period of 18 months and conversion was judged according to NINCDS-ADRDA criteria for probable AD. Each patient underwent a high-resolution T1-weighted volume MRI scan both at entry in the study and 18 months later. We used an optimal VBM protocol to compare baseline imaging data of converters to those of non-converters. Moreover, to map GM loss from baseline to follow-up assessment, we used a modified voxel-based morphometry (VBM) procedure specially designed for longitudinal studies. At the end of the follow-up period, seven patients had converted to probable AD. Areas of lower baseline GM value in converters mainly included the hippocampus, parahippocampal cortex, and lingual and fusiform gyri. Regions of significant GM loss over the 18-month follow-up period common to both converters and non-converters included the temporal neocortex, parahippocampal cortex, orbitofrontal and inferior parietal areas, and the left thalamus. However, there was significantly greater GM loss in converters relative to non-converters in the hippocampal area, inferior and middle temporal gyrus, posterior cingulate, and precuneus. This accelerated atrophy may result from both neurofibrillary tangles accumulation and parallel pathological processes such as functional alteration in the posterior cingulate. The ability to longitudinally assess GM changes in MCI offers new perspectives to better understand the pathological processes underlying AD and to monitor the effects of treatment on brain structure."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\672c25d830439872f703e38d639d514f16dc1619e72cfe1dc18f170574aa6011\\OWN_PUBMED.xml",
+          "bytes": 1728310,
+          "mtime_ns": 1789321395106092000,
+          "sha256": "e500a017a75dcf7da9f719576a1a45b5da88ef8aab2d0c7634b823335c970cd8"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/15979341/"
+      },
+      "authority": {
+        "pmid": "15979341",
+        "title": "using voxel-based morphometry to map the structural changes associated with rapid conversion in mci: a longitudinal mri study",
+        "years": [
+          "2005"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.neuroimage.2005.05.015"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "e500a017a75dcf7da9f719576a1a45b5da88ef8aab2d0c7634b823335c970cd8",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\672c25d830439872f703e38d639d514f16dc1619e72cfe1dc18f170574aa6011\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "15979341"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "90c59e732978cfb40e27008991f78370938450edaf106cee7d5668f5d0573d11",
+      "title": "Using voxel-based morphometry to map the structural changes associated with rapid conversion in MCI: a longitudinal MRI study.",
+      "journal": "NeuroImage",
+      "year": 2005
+    },
+    "17353470": {
+      "document": {
+        "pmid": "17353470",
+        "own_article_ids": {
+          "pubmed": "17353470",
+          "doi": "10.1212/01.wnl.0000256697.20968.d7",
+          "pii": "68/11/828"
+        },
+        "title": "Hippocampal and entorhinal atrophy in mild cognitive impairment: prediction of Alzheimer disease.",
+        "abstract": [
+          {
+            "label": "OBJECTIVE",
+            "text": "To evaluate the utility of MRI hippocampal and entorhinal cortex atrophy in predicting conversion from mild cognitive impairment (MCI) to Alzheimer disease (AD)."
+          },
+          {
+            "label": "METHODS",
+            "text": "Baseline brain MRI was performed in 139 patients with MCI, broadly defined, and 63 healthy controls followed for an average of 5 years (range 1 to 9 years)."
+          },
+          {
+            "label": "RESULTS",
+            "text": "Hippocampal and entorhinal cortex volumes were each largest in controls, intermediate in MCI nonconverters, and smallest in MCI converters to AD (37 of 139 patients converted to AD). In separate Cox proportional hazards models, covarying for intracranial volume, smaller hippocampal volume (risk ratio [RR] 3.62, 95% CI 1.93 to 6.80, p < 0.0001), and entorhinal cortex volume (RR 2.43, 95% CI 1.56 to 3.79, p < 0.0001) each predicted time to conversion to AD. Similar results were obtained for hippocampal and entorhinal cortex volume in patients with MCI with Mini-Mental State Examination (MMSE) scores > or = 27 out of 30 (21% converted to AD) and in the subset of patients with amnestic MCI (35% converted to AD). In the total patient sample, when both hippocampal and entorhinal volume were entered into an age-stratified Cox model with sex, MMSE, education, and intracranial volume, smaller hippocampal volume (RR 2.21, 95% CI 1.14 to 4.29, p < 0.02) and entorhinal cortex volume (RR 2.48, 95% CI 1.54 to 3.97, p < 0.0002) predicted time to conversion to AD. Similar results were obtained in a Cox model that also included Selective Reminding Test (SRT) delayed recall and Wechsler Adult Intelligence Scale-Revised (WAIS-R) Digit Symbol as predictors. Based on logistic regression models in the 3-year follow-up sample, for a fixed specificity of 80%, the sensitivities for MCI conversion to AD were as follows: age 43.3%, MMSE 43.3%, age + MMSE 63.7%, age + MMSE + SRT delayed recall + WAIS-R Digit Symbol 80.6% (79.6% correctly classified), hippocampus + entorhinal cortex 66.7%, age + MMSE + hippocampus + entorhinal cortex 76.7% (85% correctly classified), age + MMSE + SRT delayed recall + WAIS-R Digit Symbol + hippocampus + entorhinal cortex 83.3% (86.8% correctly classified)."
+          },
+          {
+            "label": "CONCLUSIONS",
+            "text": "Smaller hippocampal and entorhinal cortex volumes each contribute to the prediction of conversion to Alzheimer disease. Age and cognitive variables also contribute to prediction, and the added value of hippocampal and entorhinal cortex volumes is small. Nonetheless, combining these MRI volumes with age and cognitive measures leads to high levels of predictive accuracy that may have potential clinical application."
+          }
+        ],
+        "publication_types": [
+          "Comparative Study",
+          "Journal Article",
+          "Research Support, N.I.H., Extramural"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\f7a95ae20d4a3f96b30c6313492eab6a0cda238546eee28e62de687c0e1bd5e5\\OWN_PUBMED.xml",
+          "bytes": 2153702,
+          "mtime_ns": 1789321481974909800,
+          "sha256": "6253f4affd4f8ae5d2149a76eac98d0790428a9def89e019f98b5cd6af3a56bb"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/17353470/"
+      },
+      "authority": {
+        "pmid": "17353470",
+        "title": "hippocampal and entorhinal atrophy in mild cognitive impairment: prediction of alzheimer disease",
+        "years": [
+          "2007"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1212/01.wnl.0000256697.20968.d7"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "6253f4affd4f8ae5d2149a76eac98d0790428a9def89e019f98b5cd6af3a56bb",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\f7a95ae20d4a3f96b30c6313492eab6a0cda238546eee28e62de687c0e1bd5e5\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "17353470"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "f755f3ee925d17f830fc6f2695c67bcecbb8e27ababe2acf02e6c282910ddc51",
+      "title": "Hippocampal and entorhinal atrophy in mild cognitive impairment: prediction of Alzheimer disease.",
+      "journal": "Neurology",
+      "year": 2007
+    },
+    "18195145": {
+      "document": {
+        "pmid": "18195145",
+        "own_article_ids": {
+          "pubmed": "18195145",
+          "doi": "10.1001/archneurol.2007.23",
+          "pii": "65/1/94"
+        },
+        "title": "Magnetic resonance imaging white matter hyperintensities and brain volume in the prediction of mild cognitive impairment and dementia.",
+        "abstract": [
+          {
+            "label": "OBJECTIVE",
+            "text": "To determine whether magnetic resonance imaging (MRI) white matter hyperintensities (WMH), whole-brain atrophy, and cardiovascular risk factors predict the development of cognitive decline and dementia."
+          },
+          {
+            "label": "DESIGN",
+            "text": "Subjects were recruited into this prospective cohort study and followed for incident cognitive decline for mean (SD) 6.0 (4.1) years. Magnetic resonance imaging dual-echo sequences, obtained at baseline, were used to determine the volume of WMH and the brain parenchymal fraction (BPF), the proportion of the intracranial cavity occupied by brain. White matter hyperintensity volume was analyzed as the percentage of intracranial volume (WMHr); \"high WMH\" was defined as a WMHr more than 1 SD above the mean."
+          },
+          {
+            "label": "SETTING",
+            "text": "General community."
+          },
+          {
+            "label": "PATIENTS",
+            "text": "Volunteer sample consisting of 67 subjects with normal cognition and 156 subjects with mild cognitive impairment (MCI)."
+          },
+          {
+            "label": "MAIN OUTCOME MEASURES",
+            "text": "Time to diagnosis of MCI (among those with normal cognition at baseline) or time to diagnosis of dementia, either all-cause or probable Alzheimer disease (AD) (among those with MCI at baseline). Cox proportional hazards models were used for multivariable analysis."
+          },
+          {
+            "label": "RESULTS",
+            "text": "High WMH was a predictor of progression from normal to MCI (adjusted hazard ratio [HR], 3.30; 95% confidence interval [CI], 1.33-8.17; P= .01) but not conversion from MCI to all-cause dementia. Conversely, BPF did not predict progression from normal to MCI but did predict conversion to dementia (adjusted HR, 1.10 for each 1% decrease in BPF; 95% CI, 1.02-1.19; P= .02). When conversion to AD dementia was considered as the outcome, BPF was likewise a predictor (adjusted HR, 1.16 for each 1% decrease in BPF; 95% CI, 1.08-1.24; P< .001), but high WMH was not. Past tobacco smoking was associated with both progression from normal to MCI (adjusted HR, 2.71; 95% CI, 1.12-6.55; P= .03) and conversion to all-cause dementia (adjusted HR, 2.08; 95% CI, 1.13-3.82; P= .02), but not AD dementia."
+          },
+          {
+            "label": "CONCLUSIONS",
+            "text": "These findings suggest that WMH are associated with the risk of progressing from normal to MCI. In persons whose cognitive abilities are already impaired, BPF predicts the conversion to dementia."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\db3fee8f26a376171ed82104ae8f0213b6a1704e93e33afc93ad43a9451550ce\\OWN_PUBMED.xml",
+          "bytes": 2434021,
+          "mtime_ns": 1789321536198371900,
+          "sha256": "dba05d42eae67cdf720fe635eeafec6cfced6f5234e27496cb06b8fde4645a6a"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/18195145/"
+      },
+      "authority": {
+        "pmid": "18195145",
+        "title": "magnetic resonance imaging white matter hyperintensities and brain volume in the prediction of mild cognitive impairment and dementia",
+        "years": [
+          "2008"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1001/archneurol.2007.23"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "dba05d42eae67cdf720fe635eeafec6cfced6f5234e27496cb06b8fde4645a6a",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\db3fee8f26a376171ed82104ae8f0213b6a1704e93e33afc93ad43a9451550ce\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "18195145"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "8397a0ad50728cc833ee3443250bf909d53a2936d2f41edfa36ff569fae8302a",
+      "title": "Magnetic resonance imaging white matter hyperintensities and brain volume in the prediction of mild cognitive impairment and dementia.",
+      "journal": "Archives of neurology",
+      "year": 2008
+    },
+    "18843182": {
+      "document": {
+        "pmid": "18843182",
+        "own_article_ids": {
+          "pubmed": "18843182",
+          "doi": "10.1159/000161054",
+          "pii": "000161054"
+        },
+        "title": "Apolipoprotein E polymorphism and brain morphology in mild cognitive impairment.",
+        "abstract": [
+          {
+            "label": "BACKGROUND",
+            "text": "The apolipoprotein E (ApoE) genotype has been confirmed as the major genetic risk factor for late-onset Alzheimer's disease (AD). How the ApoE genotype and brain morphology relate to each other is only partly understood, particularly in mild cognitive impairment, the assumed prestage of AD."
+          },
+          {
+            "label": "METHODS",
+            "text": "A total of 83 subjects with mild cognitive impairment (aging-associated cognitive decline criteria) were investigated with optimized voxel-based morphometry (VBM). We tested for differences in gray and white matter densities between groups according to their ApoE status, i.e. epsilon4 allele noncarriers (n = 42), subjects with one epsilon4 allele (n = 27) and subjects with two epsilon4 alleles (n = 14)."
+          },
+          {
+            "label": "RESULTS",
+            "text": "In individuals carrying two epsilon4 alleles, VBM revealed a decline in gray matter density predominantly in the medial temporal lobe region. Subjects with a single copy of the epsilon4 allele exhibited gray matter atrophy in the right inferior frontal gyrus. With respect to white matter changes, atrophy was only found in subjects homozygous for epsilon4 and confined to the right superior and middle temporal gyrus."
+          },
+          {
+            "label": "CONCLUSION",
+            "text": "Our findings support the hypothesis that the ApoE genotype in mild cognitive impairment might be associated with structural changes typically found in the early stages of AD."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\b62a85e1fd6046462a8a3d155e67c3d0924809aa8ef00aa79548d3a71c7a1e93\\OWN_PUBMED.xml",
+          "bytes": 2909499,
+          "mtime_ns": 1789321611790561800,
+          "sha256": "3f021f2ae5e50097ea60b0d5efd7f773786b74e2f101a9b2a48d7ee4ed9d6dae"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/18843182/"
+      },
+      "authority": {
+        "pmid": "18843182",
+        "title": "apolipoprotein e polymorphism and brain morphology in mild cognitive impairment",
+        "years": [
+          "2008"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1159/000161054"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "3f021f2ae5e50097ea60b0d5efd7f773786b74e2f101a9b2a48d7ee4ed9d6dae",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\b62a85e1fd6046462a8a3d155e67c3d0924809aa8ef00aa79548d3a71c7a1e93\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "18843182"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "d70a74f335a6a9c02dc1acbcf3d6ac456f744292807477c98e6e28b92d2449eb",
+      "title": "Apolipoprotein E polymorphism and brain morphology in mild cognitive impairment.",
+      "journal": "Dementia and geriatric cognitive disorders",
+      "year": 2008
+    },
+    "19289740": {
+      "document": {
+        "pmid": "19289740",
+        "own_article_ids": {
+          "pubmed": "19289740",
+          "pmc": "PMC2821835",
+          "doi": "10.1212/01.wnl.0000344568.09360.31",
+          "pii": "72/11/999"
+        },
+        "title": "Hippocampal atrophy rates in Alzheimer disease: added value over whole brain volume measures.",
+        "abstract": [
+          {
+            "label": "OBJECTIVE",
+            "text": "To investigate the added value of hippocampal atrophy rates over whole brain volume measurements on MRI in patients with Alzheimer disease (AD), patients with mild cognitive impairment (MCI), and controls."
+          },
+          {
+            "label": "METHODS",
+            "text": "We included 64 patients with AD (67 +/- 9 years; F/M 38/26), 44 patients with MCI (71 +/- 6 years; 21/23), and 34 controls (67 +/- 9 years; 16/18). Two MR scans were performed (scan interval: 1.8 +/- 0.7 years; 1.0 T), using a coronal three-dimensional T1-weighted gradient echo sequence. At follow-up, 3 controls and 23 patients with MCI had progressed to AD. Hippocampi were manually delineated at baseline. Hippocampal atrophy rates were calculated using regional, nonlinear fluid registration. Whole brain baseline volumes and atrophy rates were determined using automated segmentation and registration tools."
+          },
+          {
+            "label": "RESULTS",
+            "text": "All MRI measures differed between groups (p < 0.005). For the distinction of MCI from controls, larger effect sizes of hippocampal measures were found compared to whole brain measures. Between MCI and AD, only whole brain atrophy rate differed significantly. Cox proportional hazards models (variables dichotomized by median) showed that within all patients without dementia, hippocampal baseline volume (hazard ratio [HR]: 5.7 [95% confidence interval: 1.5-22.2]), hippocampal atrophy rate (5.2 [1.9-14.3]), and whole brain atrophy rate (2.8 [1.1-7.2]) independently predicted progression to AD; the combination of low hippocampal volume and high atrophy rate yielded a HR of 61.1 (6.1-606.8). Within patients with MCI, only hippocampal baseline volume and atrophy rate predicted progression."
+          },
+          {
+            "label": "CONCLUSION",
+            "text": "Hippocampal measures, especially hippocampal atrophy rate, best discriminate mild cognitive impairment (MCI) from controls. Whole brain atrophy rate discriminates Alzheimer disease (AD) from MCI. Regional measures of hippocampal atrophy are the strongest predictors of progression to AD."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\acec553a81eaa6c16ded8029035e941e781c065d619cc7920fa686f67d138802\\OWN_PUBMED.xml",
+          "bytes": 2772052,
+          "mtime_ns": 1789321664166510000,
+          "sha256": "f5d0f878049c7e6536cef16afd6d3688127a281e8e2c4b46ca9f75b3f278b9a6"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/19289740/"
+      },
+      "authority": {
+        "pmid": "19289740",
+        "title": "hippocampal atrophy rates in alzheimer disease: added value over whole brain volume measures",
+        "years": [
+          "2009"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1212/01.wnl.0000344568.09360.31"
+        ],
+        "pmcid": [
+          "PMC2821835"
+        ],
+        "witness": {
+          "response_sha256": "f5d0f878049c7e6536cef16afd6d3688127a281e8e2c4b46ca9f75b3f278b9a6",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\acec553a81eaa6c16ded8029035e941e781c065d619cc7920fa686f67d138802\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "19289740"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "640c7559bebb5767d1b5daf95262446c29a58b20743546c55b426253e5999afe",
+      "title": "Hippocampal atrophy rates in Alzheimer disease: added value over whole brain volume measures.",
+      "journal": "Neurology",
+      "year": 2009
+    },
+    "21893661": {
+      "document": {
+        "pmid": "21893661",
+        "own_article_ids": {
+          "pubmed": "21893661",
+          "doi": "10.1001/archgenpsychiatry.2011.96",
+          "pii": "68/9/961"
+        },
+        "title": "Utility of combinations of biomarkers, cognitive markers, and risk factors to predict conversion from mild cognitive impairment to Alzheimer disease in patients in the Alzheimer's disease neuroimaging initiative.",
+        "abstract": [
+          {
+            "label": "CONTEXT",
+            "text": "Biomarkers have become increasingly important in understanding neurodegenerative processes associated with Alzheimer disease. Markers include regional brain volumes, cerebrospinal fluid measures of pathological Aβ1-42 and total tau, cognitive measures, and individual risk factors."
+          },
+          {
+            "label": "OBJECTIVE",
+            "text": "To determine the discriminative utility of different classes of biomarkers and cognitive markers by examining their ability to predict a change in diagnostic status from mild cognitive impairment to Alzheimer disease."
+          },
+          {
+            "label": "DESIGN",
+            "text": "Longitudinal study."
+          },
+          {
+            "label": "PARTICIPANTS",
+            "text": "We analyzed the Alzheimer's Disease Neuroimaging Initiative database to study patients with mild cognitive impairment who converted to Alzheimer disease (n = 116) and those who did not convert (n = 204) within a 2-year period. We determined the predictive utility of 25 variables from all classes of markers, biomarkers, and risk factors in a series of logistic regression models and effect size analyses."
+          },
+          {
+            "label": "SETTING",
+            "text": "The Alzheimer's Disease Neuroimaging Initiative public database."
+          },
+          {
+            "label": "OUTCOME MEASURES",
+            "text": "Primary outcome measures were odds ratios, pseudo- R(2)s, and effect sizes."
+          },
+          {
+            "label": "RESULTS",
+            "text": "In comprehensive stepwise logistic regression models that thus included variables from all classes of markers, the following baseline variables predicted conversion within a 2-year period: 2 measures of delayed verbal memory and middle temporal lobe cortical thickness. In an effect size analysis that examined rates of decline, change scores for biomarkers were modest for 2 years, but a change in an everyday functional activities measure (Functional Assessment Questionnaire) was considerably larger. Decline in scores on the Functional Assessment Questionnaire and Trail Making Test, part B, accounted for approximately 50% of the predictive variance in conversion from mild cognitive impairment to Alzheimer disease."
+          },
+          {
+            "label": "CONCLUSIONS",
+            "text": "Cognitive markers at baseline were more robust predictors of conversion than most biomarkers. Longitudinal analyses suggested that conversion appeared to be driven less by changes in the neurobiologic trajectory of the disease than by a sharp decline in functional ability and, to a lesser extent, by declines in executive function."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\77cffbe75685bf4679f5f4ca356eb162f45f8c36355e287f7b3ecfcdf2ab19a9\\OWN_PUBMED.xml",
+          "bytes": 3156893,
+          "mtime_ns": 1789321887682309100,
+          "sha256": "a99867aa07cb158d8d48c790fdf6d120112505728a8bd096876af1b32bea646b"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/21893661/"
+      },
+      "authority": {
+        "pmid": "21893661",
+        "title": "utility of combinations of biomarkers, cognitive markers, and risk factors to predict conversion from mild cognitive impairment to alzheimer disease in patients in the alzheimer's disease neuroimaging initiative",
+        "years": [
+          "2011"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1001/archgenpsychiatry.2011.96"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "a99867aa07cb158d8d48c790fdf6d120112505728a8bd096876af1b32bea646b",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\77cffbe75685bf4679f5f4ca356eb162f45f8c36355e287f7b3ecfcdf2ab19a9\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "21893661"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "6fc323c589dc2b2bc39028cb65b7e4b13043ea8102d3fc025424f59076863660",
+      "title": "Utility of combinations of biomarkers, cognitive markers, and risk factors to predict conversion from mild cognitive impairment to Alzheimer disease in patients in the Alzheimer's disease neuroimaging initiative.",
+      "journal": "Archives of general psychiatry",
+      "year": 2011
+    },
+    "22289801": {
+      "document": {
+        "pmid": "22289801",
+        "own_article_ids": {
+          "pubmed": "22289801",
+          "mid": "NIHMS363497",
+          "pmc": "PMC3320768",
+          "doi": "10.1016/j.neuroimage.2012.01.075",
+          "pii": "S1053-8119(12)00092-4"
+        },
+        "title": "MRI hippocampal and entorhinal cortex mapping in predicting conversion to Alzheimer's disease.",
+        "abstract": [
+          {
+            "label": "OBJECTIVE",
+            "text": "Using MRI surface morphometry mapping, to evaluate local deformations of the hippocampus, parahippocampal gyrus, and entorhinal cortex in predicting conversion from mild cognitive impairment (MCI) to Alzheimer's disease (AD)."
+          },
+          {
+            "label": "METHODS",
+            "text": "Baseline brain MRI with surface morphological analysis was performed in 130 outpatients with MCI, broadly defined, and 61 healthy controls followed for an average of 4 years in a single site study."
+          },
+          {
+            "label": "RESULTS",
+            "text": "Patients with MCI differed from controls in several regions of the hippocampus and entorhinal cortex, and to a lesser extent in the parahippocampal gyrus. In the MCI sample, Cox regression models were conducted for time to conversion comparing converters to AD (n=31) and non-converters (n=99), controlling for age, sex and education. Converters showed greater atrophy in the head of the hippocampus, predominantly in the CA1 region and subiculum, and in the entorhinal cortex, especially in the anterior-inferior pole bilaterally. When distances of specific points representing localized inward deformation were entered together with the corresponding hippocampal or entorhinal cortex volume in the same Cox regression model, the distances remained highly significant whereas the volumes of the corresponding structures were either marginally significant or not significant. Inclusion of cognitive or memory measures or apolipoprotein E ε4 genotype as covariates, or restricting the sample to patients with amnestic MCI (24 converters and 81 non-converters) did not materially change the findings. In the 3-year follow-up sample of patients with MCI, logistic regression analyses using the same measures and covariates yielded similar results."
+          },
+          {
+            "label": "INTERPRETATION",
+            "text": "These findings indicate selective early involvement of the CA1 and subiculum regions of the hippocampus and provide new information on early anterior pole involvement in the entorhinal cortex in incipient AD. Fine-grained surface morphometry of medial temporal lobe structures may be superior to volumetric assessment in predicting conversion to AD in patients clinically diagnosed with MCI."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\c474fc7db95a0277b498dfb4ace9396540e118862a92f4f8fb8e9084428b9102\\OWN_PUBMED.xml",
+          "bytes": 3040263,
+          "mtime_ns": 1789321930384790100,
+          "sha256": "c53a6fdedff0d836708a69516ec6f9ac6f0613f4317078e61c8a8cfb88b973d7"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/22289801/"
+      },
+      "authority": {
+        "pmid": "22289801",
+        "title": "mri hippocampal and entorhinal cortex mapping in predicting conversion to alzheimer's disease",
+        "years": [
+          "2012"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.neuroimage.2012.01.075"
+        ],
+        "pmcid": [
+          "PMC3320768"
+        ],
+        "witness": {
+          "response_sha256": "c53a6fdedff0d836708a69516ec6f9ac6f0613f4317078e61c8a8cfb88b973d7",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\c474fc7db95a0277b498dfb4ace9396540e118862a92f4f8fb8e9084428b9102\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "22289801"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "e70afb47584b95befaa19418b46ed807f426fe344e25d3a5246de5cae27ae204",
+      "title": "MRI hippocampal and entorhinal cortex mapping in predicting conversion to Alzheimer's disease.",
+      "journal": "NeuroImage",
+      "year": 2012
+    },
+    "23064258": {
+      "document": {
+        "pmid": "23064258",
+        "own_article_ids": {
+          "pubmed": "23064258",
+          "doi": "10.3233/JAD-2012-121174",
+          "pii": "6774521P1T88M434"
+        },
+        "title": "Selective brain gray matter atrophy associated with APOE ε4 and MAPT H1 in subjects with mild cognitive impairment.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "The aim of our study was to elucidate whether specific patterns of gray matter loss were associated with apolipoprotein E ε4 (APOE ε4) and microtubule-associated protein tau (MAPT)-H1) genetic variants in subjects with mild cognitive impairment (MCI) at a baseline visit. Gray matter voxel-based morphometry analysis of T1 magnetic resonance imaging scans were performed in 65 amnestic-MCI subjects. MCI APOE ε4 carriers compared with non-carriers showed increased brain atrophy in right hippocampus and rostral amygdala, superior and middle temporal gyrus, and right parietal operculum, including inferior frontal gyrus, inferior parietal, and supramarginal gyrus. MAPT-H1/H1 MCI carriers showed an increased bilateral atrophy in superior frontal gyri (including frontal eye fields and left prefrontal cortex) and precentral gyrus but also unilateral left atrophy in the inferior temporal gyrus and calcarine gyrus. In addition, MCI subjects carrying both APOE ε4 and MAPT-H1/H1 variants showed gray matter loss in the supplementary motor area and right pre- and postcentral gyri. The effect of APOE ε4 on gray matter loss in right hippocampus suggests that, at least in some AD sub-types, the neuronal vulnerability could be increased in the right hemisphere. The pattern of frontal gray matter loss observed among MCI MAPT H1/H1 carriers has also been found in other tauopathies, suggesting that MCI may share etiological factors with other tauopathies. Frontal and parietal cortex vulnerability was found when adding MAPT H1/H1 and APOE ε4 effects, suggesting a synergistic effect of these variants. These results could be due to changes in APOE ε4 and MAPT expression."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\2788adebfabc1e6f1f46cc78eff8177e50ad459b4ee8132bf84cad063614ae95\\OWN_PUBMED.xml",
+          "bytes": 3169764,
+          "mtime_ns": 1789322019873314500,
+          "sha256": "d8fcca75407a1466b8cf063c943df8a3662ff70137a4b230af0c26e362860615"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/23064258/"
+      },
+      "authority": {
+        "pmid": "23064258",
+        "title": "selective brain gray matter atrophy associated with apoe ε4 and mapt h1 in subjects with mild cognitive impairment",
+        "years": [
+          "2013"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.3233/jad-2012-121174"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "d8fcca75407a1466b8cf063c943df8a3662ff70137a4b230af0c26e362860615",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\2788adebfabc1e6f1f46cc78eff8177e50ad459b4ee8132bf84cad063614ae95\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "23064258"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "c7a58d4af738268e2de3aded9bc55dc422f7df525e27440e2f072e9f48e9cec5",
+      "title": "Selective brain gray matter atrophy associated with APOE ε4 and MAPT H1 in subjects with mild cognitive impairment.",
+      "journal": "Journal of Alzheimer's disease : JAD",
+      "year": 2013
+    },
+    "23107432": {
+      "document": {
+        "pmid": "23107432",
+        "own_article_ids": {
+          "pubmed": "23107432",
+          "mid": "NIHMS418397",
+          "pmc": "PMC3570748",
+          "doi": "10.1016/j.neurobiolaging.2012.09.020",
+          "pii": "S0197-4580(12)00490-3"
+        },
+        "title": "Genetic interactions associated with 12-month atrophy in hippocampus and entorhinal cortex in Alzheimer's Disease Neuroimaging Initiative.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "Missing heritability in late onset Alzheimer disease can be attributed, at least in part, to heterogeneity in disease status and to the lack of statistical analyses exploring genetic interactions. In the current study, we use quantitative intermediate phenotypes derived from magnetic resonance imaging data available from the Alzheimer's Disease Neuroimaging Initiative, and we test for association with gene-gene interactions within biological pathways. Regional brain volumes from the hippocampus (HIP) and entorhinal cortex (EC) were estimated from baseline and 12-month magnetic resonance imaging scans. Approximately 560,000 single nucleotide polymorphisms (SNPs) were available genome-wide. We tested all pairwise SNP-SNP interactions (approximately 151 million) within 212 Kyoto Encyclopedia of Genes and Genomes pathways for association with 12-month regional atrophy rates using linear regression, with sex, APOE ε4 carrier status, age, education, and clinical status as covariates. A total of 109 SNP-SNP interactions were associated with right HIP atrophy, and 125 were associated with right EC atrophy. Enrichment analysis indicated significant SNP-SNP interactions were overrepresented in the calcium signaling and axon guidance pathways for both HIP and EC atrophy and in the ErbB signaling pathway for HIP atrophy."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\cd2c960d3f2f3b96f94a474c949686ff004d3fdfeb37cc8c0dfc26182eeead62\\OWN_PUBMED.xml",
+          "bytes": 3281288,
+          "mtime_ns": 1789322014483939500,
+          "sha256": "60023aad9f2604876961a64ce0f173aec891024e9e5488f139ebd3dbbec88d36"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/23107432/"
+      },
+      "authority": {
+        "pmid": "23107432",
+        "title": "genetic interactions associated with 12-month atrophy in hippocampus and entorhinal cortex in alzheimer's disease neuroimaging initiative",
+        "years": [
+          "2012",
+          "2013"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.neurobiolaging.2012.09.020"
+        ],
+        "pmcid": [
+          "PMC3570748"
+        ],
+        "witness": {
+          "response_sha256": "60023aad9f2604876961a64ce0f173aec891024e9e5488f139ebd3dbbec88d36",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\cd2c960d3f2f3b96f94a474c949686ff004d3fdfeb37cc8c0dfc26182eeead62\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "23107432"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "5bacbb99782f4853fadbac779a0ce125ee4a5479e387e4488d7603a50398da20",
+      "title": "Genetic interactions associated with 12-month atrophy in hippocampus and entorhinal cortex in Alzheimer's Disease Neuroimaging Initiative.",
+      "journal": "Neurobiology of aging",
+      "year": 2013
+    },
+    "24260406": {
+      "document": {
+        "pmid": "24260406",
+        "own_article_ids": {
+          "pubmed": "24260406",
+          "pmc": "PMC3829876",
+          "doi": "10.1371/journal.pone.0080513",
+          "pii": "PONE-D-13-25115"
+        },
+        "title": "Alzheimer's disease susceptibility genes APOE and TOMM40, and hippocampal volumes in the Lothian birth cohort 1936.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "The APOE ε and TOMM40 rs10524523 ('523') variable length poly-T repeat gene loci have been significantly and independently associated with Alzheimer's disease (AD) related phenotypes such as age of clinical onset. Hippocampal atrophy has been significantly associated with memory impairment, a characteristic of AD. The current study aimed to test for independent effects of APOE ε and TOMM40 '523' genotypes on hippocampal volumes as assessed by brain structural MRI in a relatively large sample of community-dwelling older adults. As part of a longitudinal study of cognitive ageing, participants in the Lothian Birth Cohort 1936 underwent genotyping for APOE ε2/ε3/ε4 status and TOMM40 '523' poly-T repeat length, and detailed structural brain MRI at a mean age of 72.7 years (standard deviation = 0.7, N range = 624 to 636). No significant effects of APOE ε or TOMM40 523 genotype were found on hippocampal volumes when analysed raw, or when adjusted for either intracranial or total brain tissue volumes. In summary, in a large community-dwelling sample of older adults, we found no effects of APOE ε or TOMM40 523 genotypes on hippocampal volumes. This is discrepant with some previous reports of significant association between APOE and left/right hippocampal volumes, and instead echoes other reports that found no association. Previous significant findings may partly reflect type 1 error. Future studies should carefully consider: 1) their specific techniques in adjusting for brain size; 2) assessing more detailed sub-divisions of the hippocampal formation; and 3) testing whether significant APOE-hippocampal associations are independent of generalised brain atrophy."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\0b4b78c0cf1b2ce2733cc4778c7b31c88b303ec90d90b770866a0ef6fb38db53\\OWN_PUBMED.xml",
+          "bytes": 3827237,
+          "mtime_ns": 1789322104364423300,
+          "sha256": "e58604a600aefef2b5d5e0f0f626b9ff63ba4ab86443b1e689cb3e553a544959"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/24260406/"
+      },
+      "authority": {
+        "pmid": "24260406",
+        "title": "alzheimer's disease susceptibility genes apoe and tomm40, and hippocampal volumes in the lothian birth cohort 1936",
+        "years": [
+          "2013"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1371/journal.pone.0080513"
+        ],
+        "pmcid": [
+          "PMC3829876"
+        ],
+        "witness": {
+          "response_sha256": "e58604a600aefef2b5d5e0f0f626b9ff63ba4ab86443b1e689cb3e553a544959",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\0b4b78c0cf1b2ce2733cc4778c7b31c88b303ec90d90b770866a0ef6fb38db53\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "24260406"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "e92a706eee631fdd671615410d2b63b55a12c8c92918162241ec51207f08a6f5",
+      "title": "Alzheimer's disease susceptibility genes APOE and TOMM40, and hippocampal volumes in the Lothian birth cohort 1936.",
+      "journal": "PloS one",
+      "year": 2013
+    },
+    "24495339": {
+      "document": {
+        "pmid": "24495339",
+        "own_article_ids": {
+          "pubmed": "24495339",
+          "mid": "NIHMS564526",
+          "pmc": "PMC4119093",
+          "doi": "10.1016/j.jalz.2013.12.014",
+          "pii": "S1552-5260(13)02941-5"
+        },
+        "title": "A point-based tool to predict conversion from mild cognitive impairment to probable Alzheimer's disease.",
+        "abstract": [
+          {
+            "label": "BACKGROUND",
+            "text": "Our objective in this study was to develop a point-based tool to predict conversion from amnestic mild cognitive impairment (MCI) to probable Alzheimer's disease (AD)."
+          },
+          {
+            "label": "METHODS",
+            "text": "Subjects were participants in the first part of the Alzheimer's Disease Neuroimaging Initiative. Cox proportional hazards models were used to identify factors associated with development of AD, and a point score was created from predictors in the final model."
+          },
+          {
+            "label": "RESULTS",
+            "text": "The final point score could range from 0 to 9 (mean 4.8) and included: the Functional Assessment Questionnaire (2‒3 points); magnetic resonance imaging (MRI) middle temporal cortical thinning (1 point); MRI hippocampal subcortical volume (1 point); Alzheimer's Disease Cognitive Scale-cognitive subscale (2‒3 points); and the Clock Test (1 point). Prognostic accuracy was good (Harrell's c = 0.78; 95% CI 0.75, 0.81); 3-year conversion rates were 6% (0‒3 points), 53% (4‒6 points), and 91% (7‒9 points)."
+          },
+          {
+            "label": "CONCLUSIONS",
+            "text": "A point-based risk score combining functional dependence, cerebral MRI measures, and neuropsychological test scores provided good accuracy for prediction of conversion from amnestic MCI to AD."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural",
+          "Research Support, Non-U.S. Gov't",
+          "Research Support, U.S. Gov't, Non-P.H.S."
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\a03dc439ad5aab3d108792e9b409ab74f573d5a45a54a3606c0156b7b71e436e\\OWN_PUBMED.xml",
+          "bytes": 3643896,
+          "mtime_ns": 1789322122140572200,
+          "sha256": "d043cb6d57a7c812c8c1085d047b256351d5e4b14eb0b9fb479493e97a3489f4"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/24495339/"
+      },
+      "authority": {
+        "pmid": "24495339",
+        "title": "a point-based tool to predict conversion from mild cognitive impairment to probable alzheimer's disease",
+        "years": [
+          "2014"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.jalz.2013.12.014"
+        ],
+        "pmcid": [
+          "PMC4119093"
+        ],
+        "witness": {
+          "response_sha256": "d043cb6d57a7c812c8c1085d047b256351d5e4b14eb0b9fb479493e97a3489f4",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\a03dc439ad5aab3d108792e9b409ab74f573d5a45a54a3606c0156b7b71e436e\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "24495339"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "8e00d0680b98e87f2988312e7b9cd1ffa4b9f1ab1343cf40ea5e7e44ed8de226",
+      "title": "A point-based tool to predict conversion from mild cognitive impairment to probable Alzheimer's disease.",
+      "journal": "Alzheimer's & dementia : the journal of the Alzheimer's Association",
+      "year": 2014
+    },
+    "24929969": {
+      "document": {
+        "pmid": "24929969",
+        "own_article_ids": {
+          "pubmed": "24929969",
+          "mid": "NIHMS604771",
+          "pmc": "PMC4171437",
+          "doi": "10.1016/j.neurobiolaging.2014.05.011",
+          "pii": "S0197-4580(14)00360-1"
+        },
+        "title": "APOE-epsilon4 and aging of medial temporal lobe gray matter in healthy adults older than 50 years.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "Atrophy of the hippocampus and surrounding temporal regions occurs in Alzheimer's disease (AD). APOE ε4, the major genetic risk factor for late-onset AD, has been associated with smaller volume in these regions before amyloidosis can be detected by AD biomarkers. To examine APOE ε4 effects in relation to aging, we performed a longitudinal magnetic resonance imaging study involving cognitively normal adults (25 APOE ε4 carriers and 31 ε3 homozygotes), initially aged 51-75 years. We used growth curve analyses, which can provide information about APOE ε4-related differences initially and later in life. Hippocampal volume was the primary outcome; nearby medial temporal regions were secondary outcomes. Brain-derived neurotrophic factor, val66met was a secondary covariate. APOE ε4 carriers had significantly smaller initial hippocampal volumes than ε3 homozygotes. Rate of hippocampal atrophy was not greater in the APOE ε4 group, although age-related atrophy was detected in the overall sample. The findings add to the growing evidence that effects of APOE ε4 on hippocampal size begin early in life, underscoring the importance of early interventions to increase reserve."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural",
+          "Research Support, U.S. Gov't, Non-P.H.S."
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\f9b1289d09dc8edce8304a6d878639e9895e394647081c77522a732a2bd862c9\\OWN_PUBMED.xml",
+          "bytes": 3290290,
+          "mtime_ns": 1789322153982515600,
+          "sha256": "2678779a87bee85e390ab80d87a5c51d8844e397edf46019c143228bae0a0485"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/24929969/"
+      },
+      "authority": {
+        "pmid": "24929969",
+        "title": "apoe-epsilon4 and aging of medial temporal lobe gray matter in healthy adults older than 50 years",
+        "years": [
+          "2014"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.neurobiolaging.2014.05.011"
+        ],
+        "pmcid": [
+          "PMC4171437"
+        ],
+        "witness": {
+          "response_sha256": "2678779a87bee85e390ab80d87a5c51d8844e397edf46019c143228bae0a0485",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\f9b1289d09dc8edce8304a6d878639e9895e394647081c77522a732a2bd862c9\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "24929969"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "e700fd04c48d5a3be5ca9a77a2d8c9dddc3f63cb3eaf20e645f129d3633e5d2e",
+      "title": "APOE-epsilon4 and aging of medial temporal lobe gray matter in healthy adults older than 50 years.",
+      "journal": "Neurobiology of aging",
+      "year": 2014
+    },
+    "25879865": {
+      "document": {
+        "pmid": "25879865",
+        "own_article_ids": {
+          "pubmed": "25879865",
+          "mid": "NIHMS680523",
+          "pmc": "PMC4478167",
+          "doi": "10.1002/hbm.22810"
+        },
+        "title": "Relationship of medial temporal lobe atrophy, APOE genotype, and cognitive reserve in preclinical Alzheimer's disease.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "This study evaluated the utility of baseline and longitudinal magnetic resonance imaging (MRI) measures of medial temporal lobe brain regions collected when participants were cognitively normal and largely in middle age (mean age 57 years) to predict the time to onset of clinical symptoms associated with mild cognitive impairment (MCI). Furthermore, we examined whether the relationship between MRI measures and clinical symptom onset was modified by apolipoprotein E (ApoE) genotype and level of cognitive reserve (CR). MRI scans and measures of CR were obtained at baseline from 245 participants who had been followed for up to 18 years (mean follow-up 11 years). A composite score based on reading, vocabulary, and years of education was used as an index of CR. Cox regression models showed that lower baseline volume of the right hippocampus and smaller baseline thickness of the right entorhinal cortex predicted the time to symptom onset independently of CR and ApoE-ɛ4 genotype, which also predicted the onset of symptoms. The atrophy rates of bilateral entorhinal cortex and amygdala volumes were also associated with time to symptom onset, independent of CR, ApoE genotype, and baseline volume. Only one measure, the left entorhinal cortex baseline volume, interacted with CR, such that smaller volumes predicted symptom onset only in individuals with lower CR. These results suggest that MRI measures of medial temporal atrophy, ApoE-ɛ4 genotype, and the protective effects of higher CR all predict the time to onset of symptoms associated with MCI in a largely independent, additive manner during the preclinical phase of Alzheimer's disease."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, N.I.H., Extramural"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\93e06f0ac67ce843583c26d4cb113c0c497cb6ff7d66ea0b461390a03d38ebf6\\OWN_PUBMED.xml",
+          "bytes": 4343280,
+          "mtime_ns": 1789322274557680800,
+          "sha256": "eaed121067d7999736f9f9e54454c9605611c97b80e8a1febc4797ae8efe1f98"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/25879865/"
+      },
+      "authority": {
+        "pmid": "25879865",
+        "title": "relationship of medial temporal lobe atrophy, apoe genotype, and cognitive reserve in preclinical alzheimer's disease",
+        "years": [
+          "2015"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1002/hbm.22810"
+        ],
+        "pmcid": [
+          "PMC4478167"
+        ],
+        "witness": {
+          "response_sha256": "eaed121067d7999736f9f9e54454c9605611c97b80e8a1febc4797ae8efe1f98",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\93e06f0ac67ce843583c26d4cb113c0c497cb6ff7d66ea0b461390a03d38ebf6\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "25879865"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "0d47331fa187db84d966d86ba87a3877a582fa9eb09caf73d9a59ebf303442ed",
+      "title": "Relationship of medial temporal lobe atrophy, APOE genotype, and cognitive reserve in preclinical Alzheimer's disease.",
+      "journal": "Human brain mapping",
+      "year": 2015
+    },
+    "26248537": {
+      "document": {
+        "pmid": "26248537",
+        "own_article_ids": {
+          "pubmed": "26248537",
+          "mid": "NIHMS706879",
+          "pmc": "PMC4698230",
+          "doi": "10.1016/j.biopsych.2015.06.026",
+          "pii": "S0006-3223(15)00534-X"
+        },
+        "title": "Mapping Thalamocortical Functional Connectivity in Chronic and Early Stages of Psychotic Disorders.",
+        "abstract": [
+          {
+            "label": "BACKGROUND",
+            "text": "There is considerable evidence that the thalamus is abnormal in psychotic disorders. Resting-state functional magnetic resonance imaging has revealed an intriguing pattern of thalamic dysconnectivity in psychosis characterized by reduced prefrontal cortex (PFC) connectivity and increased somatomotor-thalamic connectivity. However, critical knowledge gaps remain with respect to the onset, anatomical specificity, and clinical correlates of thalamic dysconnectivity in psychosis."
+          },
+          {
+            "label": "METHODS",
+            "text": "Resting-state functional magnetic resonance imaging was collected on 105 healthy subjects and 148 individuals with psychosis, including 53 early-stage psychosis patients. Using all 253 subjects, the thalamus was parceled into functional regions of interest (ROIs) on the basis of connectivity with six a priori defined cortical ROIs covering most of the cortical mantle. Functional connectivity between each cortical ROI and its corresponding thalamic ROI was quantified and compared across groups. Significant differences in the ROI-to-ROI analysis were followed up with voxelwise seed-based analyses to further localize thalamic dysconnectivity."
+          },
+          {
+            "label": "RESULTS",
+            "text": "ROI analysis revealed reduced PFC-thalamic connectivity and increased somatomotor-thalamic connectivity in both chronic and early-stage psychosis patients. PFC hypoconnectivity and motor cortex hyperconnectivity correlated in patients, suggesting that they result from a common pathophysiological mechanism. Seed-based analyses revealed thalamic hypoconnectivity in psychosis localized to dorsolateral PFC, medial PFC, and cerebellar areas of the well-described executive control network. Across all subjects, thalamic connectivity with areas of the fronto-parietal network correlated with cognitive functioning, including verbal learning and memory."
+          },
+          {
+            "label": "CONCLUSIONS",
+            "text": "Thalamocortical dysconnectivity is present in both chronic and early stages of psychosis, includes reduced thalamic connectivity with the executive control network, and is related to cognitive impairment."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, Non-U.S. Gov't",
+          "Research Support, N.I.H., Extramural"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\11f605406c2c689009fa52717440e4d1e6cc006792eb6c5336a2d0c825535723\\OWN_PUBMED.xml",
+          "bytes": 4429166,
+          "mtime_ns": 1789322319024219700,
+          "sha256": "e0b6369f8fd8e7d727c5a880d185714b7cc7e869a525e2119d9656019214401c"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/26248537/"
+      },
+      "authority": {
+        "pmid": "26248537",
+        "title": "mapping thalamocortical functional connectivity in chronic and early stages of psychotic disorders",
+        "years": [
+          "2015",
+          "2016"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1016/j.biopsych.2015.06.026"
+        ],
+        "pmcid": [
+          "PMC4698230"
+        ],
+        "witness": {
+          "response_sha256": "e0b6369f8fd8e7d727c5a880d185714b7cc7e869a525e2119d9656019214401c",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\11f605406c2c689009fa52717440e4d1e6cc006792eb6c5336a2d0c825535723\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "26248537"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "576d1b7fd6447ae7cda857215ec92ee2689ef48ab2d1f4dce553c3f812e342fe",
+      "title": "Mapping Thalamocortical Functional Connectivity in Chronic and Early Stages of Psychotic Disorders.",
+      "journal": "Biological psychiatry",
+      "year": 2016
+    },
+    "27295347": {
+      "document": {
+        "pmid": "27295347",
+        "own_article_ids": {
+          "pubmed": "27295347",
+          "doi": "10.1080/13803395.2016.1191620"
+        },
+        "title": "Cognitive and brain reserve in conversion and reversion in patients with mild cognitive impairment over 12 months of follow-up.",
+        "abstract": [
+          {
+            "label": "INTRODUCTION",
+            "text": "Two reserve hypotheses have been proposed to account for the observed disjunction between the degree of brain pathology and its clinical manifestations. This study investigated whether cognitive reserve (CR), taken here as educational attainment and premorbid IQ, or brain reserve (BR; i.e., brain volume) is associated with progression and regression in patients with mild cognitive impairment (MCI) over a 12-month follow-up."
+          },
+          {
+            "label": "METHOD",
+            "text": "Patients with MCI (n = 123) were prospectively enrolled. The Mini-Mental State Examination, the Japanese version of the Cognitive subscale of the Alzheimer's Disease Assessment Scale, the Clinical Dementia Rating (CDR), the Frontal Assessment Battery, the Neuropsychiatric Inventory, magnetic resonance imaging (MRI), and quantitative single-photon emission computed tomography were performed at intake and again at 12-month follow-up. Patients were classified into three groups: no change, conversion, and reversion. Conversion was defined as a change in CDR from 0.5 to 1, and reversion as a change from 0.5 to 0."
+          },
+          {
+            "label": "RESULTS",
+            "text": "Voxel-based morphometry MRI revealed no significant differences in entorhinal and hippocampal gray matter loss among the groups. Patients with reversion had higher premorbid IQ (p = .03, ηp(2) = .35) as measured by the Japanese version of the National Adult Reading Test, higher atrophy ratio (hippocampal volume/whole brain volume; p = .04, ηp(2) = .89) at baseline, and better cognitive performance (p < .001) during the 12-month follow-up than those with conversion did. There were no statistically significant differences among the three groups in terms of years of education."
+          },
+          {
+            "label": "CONCLUSION",
+            "text": "Multinomial logistic regression analysis revealed that higher CR contributed to protecting against cognitive decline during the 12-month follow-up, whereas higher BR at baseline was the strongest predictor for reversion and conversion."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\550b6fcc0f280ecc82ee2aaaf8e935462ffde26b352dcf93b9090e7a444c1168\\OWN_PUBMED.xml",
+          "bytes": 3640819,
+          "mtime_ns": 1789322450394322200,
+          "sha256": "c35c1faa630fc52ad9eba500becc93621189ea3b054d7eac20b8dcaf8ce96c62"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/27295347/"
+      },
+      "authority": {
+        "pmid": "27295347",
+        "title": "cognitive and brain reserve in conversion and reversion in patients with mild cognitive impairment over 12 months of follow-up",
+        "years": [
+          "2016"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1080/13803395.2016.1191620"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "c35c1faa630fc52ad9eba500becc93621189ea3b054d7eac20b8dcaf8ce96c62",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\550b6fcc0f280ecc82ee2aaaf8e935462ffde26b352dcf93b9090e7a444c1168\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "27295347"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "e3c21f042e6f03798aec3463617a50d2db147b19d4f141f16307d59544771b6c",
+      "title": "Cognitive and brain reserve in conversion and reversion in patients with mild cognitive impairment over 12 months of follow-up.",
+      "journal": "Journal of clinical and experimental neuropsychology",
+      "year": 2016
+    },
+    "28157104": {
+      "document": {
+        "pmid": "28157104",
+        "own_article_ids": {
+          "pubmed": "28157104",
+          "pmc": "PMC5302035",
+          "doi": "10.3233/JAD-161097",
+          "pii": "JAD161097"
+        },
+        "title": "A Multi-Cohort Study of ApoE ɛ4 and Amyloid-β Effects on the Hippocampus in Alzheimer's Disease.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "The apolipoprotein E (APOE) gene has been consistently shown to modulate the risk of Alzheimer's disease (AD). Here, using an AD and normal aging dataset primarily consisting of three AD multi-center studies (n = 1,781), we compared the effect of APOE and amyloid-β (Aβ) on baseline hippocampal volumes in AD patients, mild cognitive impairment (MCI) subjects, and healthy controls. A large sample of healthy adolescents (n = 1,387) was also used to compared hippocampal volumes between APOE groups. Subjects had undergone a magnetic resonance imaging (MRI) scan and APOE genotyping. Hippocampal volumes were processed using FreeSurfer. In the AD and normal aging dataset, hippocampal comparisons were performed in each APOE group and in ɛ4 carriers with positron emission tomography Aβ who were dichotomized (Aβ+/Aβ-) using previous cut-offs. We found a linear reduction in hippocampal volumes with ɛ4 carriers possessing the smallest volumes, ɛ3 carriers possessing intermediate volumes, and ɛ2 carriers possessing the largest volumes. Moreover, AD and MCI ɛ4 carriers possessed the smallest hippocampal volumes and control ɛ2 carriers possessed the largest hippocampal volumes. Subjects with both APOE ɛ4 and Aβ+ had the lowest hippocampal volumes when compared to Aβ- ɛ4 carriers, suggesting a synergistic relationship between APOE ɛ4 and Aβ. However, we found no hippocampal volume differences between APOE groups in healthy 14-year-old adolescents. Our findings suggest that the strongest neuroanatomic effect of APOE ɛ4 on the hippocampus is observed in AD and groups most at risk of developing the disease, whereas hippocampi of old and young healthy individuals remain unaffected."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Multicenter Study",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\a25949fca9fc45e8d86c5b9f921579f1bfd695c6d50e10138e4154171152e8a0\\OWN_PUBMED.xml",
+          "bytes": 3734154,
+          "mtime_ns": 1789322526019407800,
+          "sha256": "ff8f30f53e42f6475c775b256836f0b4f1a9403e2b293a6504cc02732ddcd80b"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/28157104/"
+      },
+      "authority": {
+        "pmid": "28157104",
+        "title": "a multi-cohort study of apoe ɛ4 and amyloid-β effects on the hippocampus in alzheimer's disease",
+        "years": [
+          "2017"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.3233/jad-161097"
+        ],
+        "pmcid": [
+          "PMC5302035"
+        ],
+        "witness": {
+          "response_sha256": "ff8f30f53e42f6475c775b256836f0b4f1a9403e2b293a6504cc02732ddcd80b",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\a25949fca9fc45e8d86c5b9f921579f1bfd695c6d50e10138e4154171152e8a0\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "28157104"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "a88abe1a44941ff6b944944d5ecf89b44e050fdd0597cfdc7eb98730d349ba0d",
+      "title": "A Multi-Cohort Study of ApoE ɛ4 and Amyloid-β Effects on the Hippocampus in Alzheimer's Disease.",
+      "journal": "Journal of Alzheimer's disease : JAD",
+      "year": 2017
+    },
+    "28436391": {
+      "document": {
+        "pmid": "28436391",
+        "own_article_ids": {
+          "pubmed": "28436391",
+          "mid": "NIHMS865707",
+          "pmc": "PMC5477671",
+          "doi": "10.3233/JAD-161201",
+          "pii": "JAD161201"
+        },
+        "title": "Prediction of Conversion to Alzheimer's Disease with Longitudinal Measures and Time-To-Event Data.",
+        "abstract": [
+          {
+            "label": "BACKGROUND",
+            "text": "Identifying predictors of conversion to Alzheimer's disease (AD) is critically important for AD prevention and targeted treatment."
+          },
+          {
+            "label": "OBJECTIVE",
+            "text": "To compare various clinical and biomarker trajectories for tracking progression and predicting conversion from amnestic mild cognitive impairment to probable AD."
+          },
+          {
+            "label": "METHODS",
+            "text": "Participants were from the ADNI-1 study. We assessed the ability of 33 longitudinal biomarkers to predict time to AD conversion, accounting for demographic and genetic factors. We used joint modelling of longitudinal and survival data to examine the association between changes of measures and disease progression. We also employed time-dependent receiver operating characteristic method to assess the discriminating capability of the measures."
+          },
+          {
+            "label": "RESULTS",
+            "text": "23 of 33 longitudinal clinical and imaging measures are significant predictors of AD conversion beyond demographic and genetic factors. The strong phenotypic and biological predictors are in the cognitive domain (ADAS-Cog; RAVLT), functional domain (FAQ), and neuroimaging domain (middle temporal gyrus and hippocampal volume). The strongest predictor is ADAS-Cog 13 with an increase of one SD in ADAS-Cog 13 increased the risk of AD conversion by 2.92 times."
+          },
+          {
+            "label": "CONCLUSION",
+            "text": "Prediction of AD conversion can be improved by incorporating longitudinal change information, in addition to baseline characteristics. Cognitive measures are consistently significant and generally stronger predictors than imaging measures."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, U.S. Gov't, Non-P.H.S.",
+          "Research Support, Non-U.S. Gov't",
+          "Research Support, N.I.H., Extramural"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\80c8189156c9682d6f01e419d68f94918b03ef2c0ecb0c9cded41c892c3775c0\\OWN_PUBMED.xml",
+          "bytes": 4000029,
+          "mtime_ns": 1789322557779859200,
+          "sha256": "ce1068850e19ba324564036591ab72c9669a2cd0b94c51ae3c5dd662493c90f7"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/28436391/"
+      },
+      "authority": {
+        "pmid": "28436391",
+        "title": "prediction of conversion to alzheimer's disease with longitudinal measures and time-to-event data",
+        "years": [
+          "2017"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.3233/jad-161201"
+        ],
+        "pmcid": [
+          "PMC5477671"
+        ],
+        "witness": {
+          "response_sha256": "ce1068850e19ba324564036591ab72c9669a2cd0b94c51ae3c5dd662493c90f7",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\80c8189156c9682d6f01e419d68f94918b03ef2c0ecb0c9cded41c892c3775c0\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "28436391"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "e8b5eb1327d7249b2bb7bfbb69d73a100c91fac4401745fc06bc0bc26b3e242e",
+      "title": "Prediction of Conversion to Alzheimer's Disease with Longitudinal Measures and Time-To-Event Data.",
+      "journal": "Journal of Alzheimer's disease : JAD",
+      "year": 2017
+    },
+    "28444556": {
+      "document": {
+        "pmid": "28444556",
+        "own_article_ids": {
+          "pubmed": "28444556",
+          "doi": "10.1007/s11682-017-9714-y",
+          "pii": "10.1007/s11682-017-9714-y"
+        },
+        "title": "Thalamo-cortical functional connectivity in schizophrenia and bipolar disorder.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "The thalamus is a highly connected subcortical structure that relays and integrates sensory and cortical information, which is critical for coherent and accurate perceptual awareness and cognition. Thalamic dysfunction is a classical finding in schizophrenia (SZ), and resting-state functional MRI has implicated somatomotor and frontal lobe thalamic dysconnectivity. However, it remains unclear whether these findings generalize to different psychotic disorders, are confined to specific thalamic sub-regions, and how they relate to structural thalamic alterations. Within-thalamic and thalamo-cortical functional connectivity was assessed using resting-state functional MRI data obtained from patients with SZ (n = 96), bipolar disorder (BD, n = 57), and healthy controls (HC, n = 280). Further, we used thalamic sub-regions as seeds to investigate specific cortical connectivity patterns, and performed structural analyses of thalamic volume and shape. Results showed reduced within-thalamic connectivity and thalamo-frontoparietal coupling in SZ and increased thalamo-somatomotor connectivity in BD. One thalamic sub-region showed increased sensory connectivity in SZ and eight sub-regions showed reductions with frontal and posterior areas. Reduced gray matter and shape abnormalities were found in frontal-projecting regions in both SZ and BD, but did not seem to explain reduced functional connectivity. Aberrant thalamo-cortical connectivity patterns in SZ and BD supports the notion of the thalamus as a key structure in the functional connectome across the psychosis spectrum, and the frontal and somatomotor anatomical distribution is in line with the characteristic cognitive and perceptual symptoms in psychotic disorders."
+          }
+        ],
+        "publication_types": [
+          "Comparative Study",
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\80c8189156c9682d6f01e419d68f94918b03ef2c0ecb0c9cded41c892c3775c0\\OWN_PUBMED.xml",
+          "bytes": 4000029,
+          "mtime_ns": 1789322557779859200,
+          "sha256": "ce1068850e19ba324564036591ab72c9669a2cd0b94c51ae3c5dd662493c90f7"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/28444556/"
+      },
+      "authority": {
+        "pmid": "28444556",
+        "title": "thalamo-cortical functional connectivity in schizophrenia and bipolar disorder",
+        "years": [
+          "2018"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1007/s11682-017-9714-y"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "ce1068850e19ba324564036591ab72c9669a2cd0b94c51ae3c5dd662493c90f7",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\80c8189156c9682d6f01e419d68f94918b03ef2c0ecb0c9cded41c892c3775c0\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "28444556"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "83db9902efc2e06ece1748497092555950824367bbb67fdee30f7d32dcf4683f",
+      "title": "Thalamo-cortical functional connectivity in schizophrenia and bipolar disorder.",
+      "journal": "Brain imaging and behavior",
+      "year": 2018
+    },
+    "29278888": {
+      "document": {
+        "pmid": "29278888",
+        "own_article_ids": {
+          "pubmed": "29278888",
+          "pmc": "PMC5798531",
+          "doi": "10.3233/JAD-170540",
+          "pii": "JAD170540"
+        },
+        "title": "Healthy versus Entorhinal Cortical Atrophy Identification in Asymptomatic APOE4 Carriers at Risk for Alzheimer's Disease.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "Early detection of Alzheimer's disease (AD) has been challenging as current biomarkers are invasive and costly. Strong predictors of future AD diagnosis include lower volume of the hippocampus and entorhinal cortex, as well as the ɛ4 allele of the Apolipoprotein E gene (APOE) gene. Therefore, studying functions that are critically mediated by the hippocampus and entorhinal cortex, such as spatial memory, in APOE ɛ4 allele carriers, may be key to the identification of individuals at risk of AD, prior to the manifestation of cognitive impairments. Using a virtual navigation task developed in-house, specifically designed to assess spatial versus non-spatial strategies, the current study is the first to differentiate functional and structural differences within APOE ɛ4 allele carriers. APOE ɛ4 allele carriers that predominantly use non-spatial strategies have decreased fMRI activity in the hippocampus and increased atrophy in the hippocampus, entorhinal cortex, and fimbria compared to APOE ɛ4 allele carriers who use spatial strategies. In contrast, APOE ɛ4 allele carriers who use spatial strategies have grey matter levels comparable to non-APOE ɛ4 allele carriers. Furthermore, in a leave-one-out analysis, grey matter in the entorhinal cortex could predict navigational strategy with 92% accuracy."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\0de88401e17437f3c8afa0d947e6c3fb131aab55e7926ecf5086a6c4d3159cdb\\OWN_PUBMED.xml",
+          "bytes": 4257311,
+          "mtime_ns": 1789322636743586400,
+          "sha256": "8535777a9b282d3ca4bd1dcea916de249721dd3b0cd12f71aba4ddcad141e07d"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/29278888/"
+      },
+      "authority": {
+        "pmid": "29278888",
+        "title": "healthy versus entorhinal cortical atrophy identification in asymptomatic apoe4 carriers at risk for alzheimer's disease",
+        "years": [
+          "2018"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.3233/jad-170540"
+        ],
+        "pmcid": [
+          "PMC5798531"
+        ],
+        "witness": {
+          "response_sha256": "8535777a9b282d3ca4bd1dcea916de249721dd3b0cd12f71aba4ddcad141e07d",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\0de88401e17437f3c8afa0d947e6c3fb131aab55e7926ecf5086a6c4d3159cdb\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "29278888"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "f1847d227d61ba614df78d466ba94a5cd4e1f55fa700ea31bd159e30fdcf9979",
+      "title": "Healthy versus Entorhinal Cortical Atrophy Identification in Asymptomatic APOE4 Carriers at Risk for Alzheimer's Disease.",
+      "journal": "Journal of Alzheimer's disease : JAD",
+      "year": 2018
+    },
+    "32190571": {
+      "document": {
+        "pmid": "32190571",
+        "own_article_ids": {
+          "pubmed": "32190571",
+          "pmc": "PMC7063277",
+          "doi": "10.21037/qims.2020.01.14",
+          "pii": "qims-10-02-464"
+        },
+        "title": "The effect of ApoE ε 4 on clinical and structural MRI markers in prodromal Alzheimer's disease.",
+        "abstract": [
+          {
+            "label": "BACKGROUND",
+            "text": "Apolipoprotein E (ApoE) ε 4 has been identified as the strongest genetic risk factor for Alzheimer's disease (AD). However, the importance of ApoE ε 4 on clinical and biological heterogeneity of AD is still to be determined, particularly at the prodromal stage. Here, we evaluate the association of ApoE ε 4 with clinical cognition and neuroimaging regions in mild cognitive impairment (MCI) participants based on the AT (N) system, which is increasingly essential for developing a precise assessment of AD."
+          },
+          {
+            "label": "METHODS",
+            "text": "We stratified 178 A+T+MCI participants (prodromal AD) into ApoE ε 4 (+) and ApoE ε 4 (-) according to ApoE genotype from the Alzheimer's Disease Neuroimaging Initiative (ADNI). We determined Aβ-positivity (A+) by the standardized uptake values ratios (SUVR) means of florbetapir-PET-AV45 (the cut-off value of 1.1) and fibrillar tau-positivity (T+) by cerebrospinal fluid (CSF) phosphorylated-tau at threonine 181 position (p-Tau) (cut-off value of 23 pg/mL). We evaluated the effect of ApoE ε 4 status on cognitive conditions and brain atrophy from structural magnetic resonance imaging (MRI) scans. A multivariate analysis of variance was used to compare the differences of cognitive scores and brain atrophy from structural MRI regions of interest (ROIs) between both groups. Furthermore, we performed a linear regression model to assess the correlation between signature ROIs of structural MRI and cognitive scores in the prodromal AD participants."
+          },
+          {
+            "label": "RESULTS",
+            "text": "ApoE ε 4 (+) prodromal AD participants had lower levels of CSF Aβ 1-42, higher levels of t-Tau, more memory and global cognitive impairment, and faster decline of global cognition, compared to ApoE ε 4 (-) prodromal AD. ApoE ε 4 (+) prodromal AD participants had a thinner cortical thickness of bilateral entorhinal, smaller subcortical volume of the left amygdala, bilateral hippocampus, and left ventral diencephalon (DC) relative to ApoE ε 4 (-) prodromal AD. Furthermore, the cortical thickness average of bilateral entorhinal was highly correlated with memory and global cognition."
+          },
+          {
+            "label": "CONCLUSIONS",
+            "text": "ApoE ε 4 status in prodromal AD participants has an important effect on clinical cognitive domains. After ascertaining the ApoE ε 4 status, specific MRI regions can be correlated to the cognitive domain and will be helpful for precise assessment in prodromal AD."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\327aaace73dd3b11a5d228ee176d9927d030e3c92a86d375e5905e1e1bab4c10\\OWN_PUBMED.xml",
+          "bytes": 5674487,
+          "mtime_ns": 1789322928586952000,
+          "sha256": "812d0297ac1918a7704657f68da75a55e2c08f7d9f0e294ac68db78d8397e7fa"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/32190571/"
+      },
+      "authority": {
+        "pmid": "32190571",
+        "title": "the effect of apoe ε 4 on clinical and structural mri markers in prodromal alzheimer's disease",
+        "years": [
+          "2020"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.21037/qims.2020.01.14"
+        ],
+        "pmcid": [
+          "PMC7063277"
+        ],
+        "witness": {
+          "response_sha256": "812d0297ac1918a7704657f68da75a55e2c08f7d9f0e294ac68db78d8397e7fa",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\327aaace73dd3b11a5d228ee176d9927d030e3c92a86d375e5905e1e1bab4c10\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "32190571"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "c4b3a512aeb94e5c0d1ac8d1c11880751698b515a4dc81e6fbd6d3a4083021bf",
+      "title": "The effect of ApoE ε 4 on clinical and structural MRI markers in prodromal Alzheimer's disease.",
+      "journal": "Quantitative imaging in medicine and surgery",
+      "year": 2020
+    },
+    "33015312": {
+      "document": {
+        "pmid": "33015312",
+        "own_article_ids": {
+          "pubmed": "33015312",
+          "pmc": "PMC7521596",
+          "doi": "10.1002/dad2.12110",
+          "pii": "DAD212110"
+        },
+        "title": "Longitudinal association between hippocampus atrophy and episodic-memory decline in non-demented APOE ε4 carriers.",
+        "abstract": [
+          {
+            "label": "INTRODUCTION",
+            "text": "The apolipoprotein E (APOE) ε4 allele is the main genetic risk factor for Alzheimer's disease (AD), accelerated cognitive aging, and hippocampal atrophy, but its influence on the association between hippocampus atrophy and episodic-memory decline in non-demented individuals remains unclear."
+          },
+          {
+            "label": "METHODS",
+            "text": "We analyzed longitudinal (two to six observations) magnetic resonance imaging (MRI)-derived hippocampal volumes and episodic memory from 748 individuals (55 to 90 years at baseline, 50% female) from the European Lifebrain consortium."
+          },
+          {
+            "label": "RESULTS",
+            "text": "The change-change association for hippocampal volume and memory was significant only in ε4 carriers (N = 173, r = 0.21, P = .007; non-carriers: N = 467, r = 0.073, P = .117). The linear relationship was significantly steeper for the carriers [t(629) = 2.4, P = .013]. A similar trend toward a stronger change-change relation for carriers was seen in a subsample with more than two assessments."
+          },
+          {
+            "label": "DISCUSSION",
+            "text": "These findings provide evidence for a difference in hippocampus-memory association between ε4 carriers and non-carriers, thus highlighting how genetic factors modulate the translation of the AD-related pathophysiological cascade into cognitive deficits."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\eadebdcf2a78cc92337bc606b020201154d3da7dfc53130d5768000c9120e339\\OWN_PUBMED.xml",
+          "bytes": 4424664,
+          "mtime_ns": 1789323012456662200,
+          "sha256": "bde01c441155fab63c56fe6d76ee481d7b3c9de40dcadd8fdf0b2904bafc6d4b"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/33015312/"
+      },
+      "authority": {
+        "pmid": "33015312",
+        "title": "longitudinal association between hippocampus atrophy and episodic-memory decline in non-demented apoe ε4 carriers",
+        "years": [
+          "2020"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1002/dad2.12110"
+        ],
+        "pmcid": [
+          "PMC7521596"
+        ],
+        "witness": {
+          "response_sha256": "bde01c441155fab63c56fe6d76ee481d7b3c9de40dcadd8fdf0b2904bafc6d4b",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\eadebdcf2a78cc92337bc606b020201154d3da7dfc53130d5768000c9120e339\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "33015312"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "cbc390d82f15902173eacecd4ea36c48bc133b36ce777e1d3a3d38ac5dd7e38d",
+      "title": "Longitudinal association between hippocampus atrophy and episodic-memory decline in non-demented APOE ε4 carriers.",
+      "journal": "Alzheimer's & dementia (Amsterdam, Netherlands)",
+      "year": 2020
+    },
+    "34742361": {
+      "document": {
+        "pmid": "34742361",
+        "own_article_ids": {
+          "pubmed": "34742361",
+          "doi": "10.1017/cjn.2021.253",
+          "pii": "S0317167121002535"
+        },
+        "title": "Specificity of Entorhinal Atrophy MRI Scale in Predicting Alzheimer's Disease Conversion.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "We compared entorhinal cortex atrophy (ERICA) score vs. medial temporal atrophy (MTA) score's ability to predict conversion from amnestic mild cognitive impairment (aMCI) to Alzheimer's disease (AD) using magnetic resonance imaging (MRI). We hypothesized that ERICA would show higher specificity. Data from 61 aMCI patients were analyzed. Positive ERICA was associated with AD conversion with a sensitivity of 56% (95% CI: 30-80%) and a specificity of 78% (63-89%) vs. 69% (41-89%) SE and 60% (44-74%) SP for the MTA. Results suggest that ERICA is superior to MTA in predicting conversion from aMCI to AD in a small sample of participants."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\f83d12adf34b2a017b33052018b3290875b7fec32a30e5a00c6bcbc582f90b5e\\OWN_PUBMED.xml",
+          "bytes": 5043079,
+          "mtime_ns": 1789323157317993700,
+          "sha256": "8b90e4059ff695ca0c8949442f5cf9dd7ba3252365bdb62609fe431e0f9b8f24"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/34742361/"
+      },
+      "authority": {
+        "pmid": "34742361",
+        "title": "specificity of entorhinal atrophy mri scale in predicting alzheimer's disease conversion",
+        "years": [
+          "2021",
+          "2023"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1017/cjn.2021.253"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "8b90e4059ff695ca0c8949442f5cf9dd7ba3252365bdb62609fe431e0f9b8f24",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\f83d12adf34b2a017b33052018b3290875b7fec32a30e5a00c6bcbc582f90b5e\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "34742361"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "569edc6acd5f3655c56bfb9799b7522ded445bebfd2a409995c46850e0b4fbdb",
+      "title": "Specificity of Entorhinal Atrophy MRI Scale in Predicting Alzheimer's Disease Conversion.",
+      "journal": "The Canadian journal of neurological sciences. Le journal canadien des sciences neurologiques",
+      "year": 2023
+    },
+    "36530087": {
+      "document": {
+        "pmid": "36530087",
+        "own_article_ids": {
+          "pubmed": "36530087",
+          "doi": "10.3233/JAD-220877",
+          "pii": "JAD220877"
+        },
+        "title": "Morphological and Structural Network Analysis of Sporadic Alzheimer's Disease Brains Based on the APOE4 Gene.",
+        "abstract": [
+          {
+            "label": "BACKGROUND",
+            "text": "Alzheimer's disease (AD) is an increasingly common type of dementia. Apolipoprotein E (APOE) gene is a strong risk factor for AD."
+          },
+          {
+            "label": "OBJECTIVE",
+            "text": "Here, we explored alterations in grey matter structure (GMV) and networks in AD, as well as the effects of the APOEɛ4 allele on neuroimaging regions based on structural magnetic resonance imaging (sMRI)."
+          },
+          {
+            "label": "METHODS",
+            "text": "All subjects underwent an sMRI scan. GMV and cortical thickness were calculated using voxel-based morphological analysis, and structural networks were constructed based on graph theory analysis to compare differences between AD and normal controls."
+          },
+          {
+            "label": "RESULTS",
+            "text": "The volumes of grey matter in the bilateral inferior temporal gyrus, right middle temporal gyrus, right inferior parietal lobule, right limbic lobe, right frontal lobe, left anterior cingulate gyrus, and bilateral olfactory cortex of patients with AD were significantly decreased. The cortical thickness in patients with AD was significantly reduced in the left lateral occipital lobe, inferior parietal lobe, orbitofrontal region, precuneus, superior parietal gyrus, right precentral gyrus, middle temporal gyrus, pars opercularis gyrus, insular gyrus, superior marginal gyrus, bilateral fusiform gyrus, and superior frontal gyrus. In terms of local properties, there were significant differences between the AD and control groups in these areas, including the right bank, right temporalis pole, bilateral middle temporal gyrus, right transverse temporal gyrus, left postcentral gyrus, and left parahippocampal gyrus."
+          },
+          {
+            "label": "CONCLUSION",
+            "text": "There were significant differences in the morphological and structural covariate networks between AD patients and healthy controls under APOEɛ4 allele effects."
+          }
+        ],
+        "publication_types": [
+          "Journal Article",
+          "Research Support, Non-U.S. Gov't"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\7f3c71ee3e4678b6ac16535101e0b717253a07eae660e549453d63197138b804\\OWN_PUBMED.xml",
+          "bytes": 5301161,
+          "mtime_ns": 1789323281474718500,
+          "sha256": "5b53f38d62f54cc3725f53b8aca1c654dff18d91a78ef8dd9b6973b9645b83a0"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/36530087/"
+      },
+      "authority": {
+        "pmid": "36530087",
+        "title": "morphological and structural network analysis of sporadic alzheimer's disease brains based on the apoe4 gene",
+        "years": [
+          "2023"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.3233/jad-220877"
+        ],
+        "pmcid": [],
+        "witness": {
+          "response_sha256": "5b53f38d62f54cc3725f53b8aca1c654dff18d91a78ef8dd9b6973b9645b83a0",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\7f3c71ee3e4678b6ac16535101e0b717253a07eae660e549453d63197138b804\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "36530087"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "6761bcfc1f9af198454a9eaf111957e97dc83a942a202933dc6cc53657ca2c17",
+      "title": "Morphological and Structural Network Analysis of Sporadic Alzheimer's Disease Brains Based on the APOE4 Gene.",
+      "journal": "Journal of Alzheimer's disease : JAD",
+      "year": 2023
+    },
+    "39011362": {
+      "document": {
+        "pmid": "39011362",
+        "own_article_ids": {
+          "pubmed": "39011362",
+          "pmc": "PMC11248186",
+          "doi": "10.3389/fneur.2024.1425502"
+        },
+        "title": "Clinically feasible automated MRI volumetry of the brain as a prognostic marker in subjective and mild cognitive impairment.",
+        "abstract": [
+          {
+            "label": "BACKGROUND/AIMS",
+            "text": "The number of patients suffering from cognitive decline and dementia increases, and new possible treatments are being developed. Thus, the need for time efficient and cost-effective methods to facilitate an early diagnosis and prediction of future cognitive decline in patients with early cognitive symptoms is becoming increasingly important. The aim of this study was to evaluate whether an MRI based software, NeuroQuant® (NQ), producing volumetry of the hippocampus and whole brain volume (WBV) could predict: (1) conversion from subjective cognitive decline (SCD) at baseline to mild cognitive impairment (MCI) or dementia at follow-up, and from MCI at baseline to dementia at follow-up and (2) progression of cognitive and functional decline defined as an annual increase in the Clinical Dementia Rating Scale Sum of Boxes (CDR-SB) score."
+          },
+          {
+            "label": "METHODS",
+            "text": "MRI was performed in 156 patients with SCD or MCI from the memory clinic at Oslo University Hospital (OUH) that had been assessed with NQ and had a clinical follow-up examination. Logistic and linear regression analyses were performed with hippocampus volume and WBV as independent variables, and conversion or progression as dependent variables, adjusting for demographic and other relevant covariates including Mini-Mental State Examination-Norwegian Revised Version score (MMSE-NR) and Apolipoprotein E ɛ4 (APOE ɛ4) carrier status."
+          },
+          {
+            "label": "RESULTS",
+            "text": "Hippocampus volume, but not WBV, was associated with conversion to MCI or dementia, but neither were associated with conversion when adjusting for MMSE-NR. Both hippocampus volume and WBV were associated with progression as measured by the annual change in CDR-SB score in both unadjusted and adjusted analyses."
+          },
+          {
+            "label": "CONCLUSION",
+            "text": "The results indicate that automated regional MRI volumetry of the hippocampus and WBV can be useful in predicting further cognitive decline in patients with early cognitive symptoms."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\db7abcd347521552f08cb65f1e99cd2326a7269487848d0ed229aa41506ae4c8\\OWN_PUBMED.xml",
+          "bytes": 6297182,
+          "mtime_ns": 1789323434937425200,
+          "sha256": "ccbe9c522a91bd75359644b4cc755bb86b3beac0fa37a188bb1e7131536c03eb"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/39011362/"
+      },
+      "authority": {
+        "pmid": "39011362",
+        "title": "clinically feasible automated mri volumetry of the brain as a prognostic marker in subjective and mild cognitive impairment",
+        "years": [
+          "2024"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.3389/fneur.2024.1425502"
+        ],
+        "pmcid": [
+          "PMC11248186"
+        ],
+        "witness": {
+          "response_sha256": "ccbe9c522a91bd75359644b4cc755bb86b3beac0fa37a188bb1e7131536c03eb",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\db7abcd347521552f08cb65f1e99cd2326a7269487848d0ed229aa41506ae4c8\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "39011362"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "12a968de0bdab62d2e09fb7580eebc9826f02b813b5bd010b8287799961ff4cb",
+      "title": "Clinically feasible automated MRI volumetry of the brain as a prognostic marker in subjective and mild cognitive impairment.",
+      "journal": "Frontiers in neurology",
+      "year": 2024
+    },
+    "39196521": {
+      "document": {
+        "pmid": "39196521",
+        "own_article_ids": {
+          "pubmed": "39196521",
+          "mid": "NIHMS2057954",
+          "pmc": "PMC11845251",
+          "doi": "10.1007/s11682-024-00911-9",
+          "pii": "10.1007/s11682-024-00911-9"
+        },
+        "title": "APOE4-related differences in cortical thickness are modulated by sex in middle age.",
+        "abstract": [
+          {
+            "label": "",
+            "text": "Apolipoprotein E (APOE) ε4, the strongest genetic risk for late-onset Alzheimer's disease (AD), confers greater risk in females than males. While APOE4-related modulation of structural brain integrity in AD is well documented, extant literature on sex-APOE interactions has focused on older adults. The understanding of the healthy brain as a part of the normal aging process and as distinct from explicit disease or pathology is essential before comparison can be made with pathological states. Hence, it is crucial to characterize and better understand these relationships in middle-age prior to the onset of overt clinical symptoms and advanced neurodegeneration. The present study examined the relationships between sex, APOE status, and cortical thickness in 128 healthy, cognitively unimpaired, middle-aged adults (ages 40-60, M(SD) = 49.97(6.04); 77 females). All participants underwent structural magnetic resonance imaging and were genotyped for APOE (APOE4 +  = 38; APOE4- = 90). Compared to males, females had thicker superior frontal cortices bilaterally, left middle temporal cortex, and left pars triangularis. APOE4 + had thinner left rostral middle frontal gyrus compared to APOE4-. Female compared to male APOE4- had thicker left banks of the superior temporal sulcus, left caudal anterior cingulate, left superior frontal, left superior parietal, and right precentral cortices. Female compared to male APOE4 + had thicker superior frontal cortices bilaterally. Female APOE4 + had thinner left rostral anterior cingulate cortex compared to female APOE4-. Overall, APOE-related differences in cortical thickness are more pronounced in females and detectable in middle age, well before the onset of overt clinical symptoms of AD."
+          }
+        ],
+        "publication_types": [
+          "Journal Article"
+        ],
+        "comments_corrections": [],
+        "source": {
+          "path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\b579259a224c61ea17a9d0c47487653abd93c91a66c43218bcb88861e748ff29\\OWN_PUBMED.xml",
+          "bytes": 5877292,
+          "mtime_ns": 1789323447974720000,
+          "sha256": "3f9f0c91010b70e547298a6f77a8ac26b026dda9cac7a6ef31b2005cdd0bd52f"
+        },
+        "url": "https://pubmed.ncbi.nlm.nih.gov/39196521/"
+      },
+      "authority": {
+        "pmid": "39196521",
+        "title": "apoe4-related differences in cortical thickness are modulated by sex in middle age",
+        "years": [
+          "2024"
+        ],
+        "preprint": false,
+        "doi": [
+          "10.1007/s11682-024-00911-9"
+        ],
+        "pmcid": [
+          "PMC11845251"
+        ],
+        "witness": {
+          "response_sha256": "3f9f0c91010b70e547298a6f77a8ac26b026dda9cac7a6ef31b2005cdd0bd52f",
+          "response_path": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\tmp\\kgwg_sources_v3\\requests\\b579259a224c61ea17a9d0c47487653abd93c91a66c43218bcb88861e748ff29\\OWN_PUBMED.xml",
+          "source": "cached_own_PubmedArticle",
+          "own_record_pmid": "39196521"
+        }
+      },
+      "source_state": "OWN_RECORD_CACHED",
+      "document_sha": "db6502c145125dbe7372c6250262336361c84da2600880703d15c05fe83e034d",
+      "title": "APOE4-related differences in cortical thickness are modulated by sex in middle age.",
+      "journal": "Brain imaging and behavior",
+      "year": 2024
+    }
+  }
+}

@@ -1,0 +1,4072 @@
+{
+  "candidates": [
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.09376206115492287,
+          "residual_RMS": 0.13257838845188988,
+          "standardized_beta": -0.7072197984134292
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.09804948421723496,
+          "residual_RMS": 0.12923616888635708,
+          "standardized_beta": -0.7586845467653416
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:108:SomMot",
+      "evidence_ids": [
+        "CLM:CASE1MAN:35264921:1128",
+        "CLM:case3_manual_30837901_001",
+        "CLM:27bedef663cbaca0e92df92dd522f16d"
+      ],
+      "evidence_transfer_limit_zh": "外部结果来自相邻或局部回路，未直接测量该ROI—网络边；不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接1956499df923d233e353的双诊断低方向高稳定反馈，细化至新ROI 108。",
+      "feedback_parent": "1956499df923d233e353",
+      "hypothesis_id": "e3b5ea76fb92c756d9e3",
+      "hypothesis_zh": "ROI_to_network:108:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.98828125,
+      "model_evidence_ids": [
+        "E049",
+        "E086",
+        "E010"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 6,
+          "round": 5,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 6,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E049、E086、E010涉及感觉运动、岛叶及视觉相关连接异常或降低；仅作双诊断ROI低方向探索。",
+      "resampling_replicates": 512,
+      "score": 0.6989320664007718,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 108
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.07616126347457988,
+          "residual_RMS": 0.11711436796660593,
+          "standardized_beta": -0.650315284084499
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06416298718147932,
+          "residual_RMS": 0.11432056163371497,
+          "standardized_beta": -0.5612550031643356
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:Vis:Vis",
+      "evidence_ids": [
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:494a426b0a78",
+        "CLM:CASE1MAN:39498275:6112"
+      ],
+      "evidence_transfer_limit_zh": "KG证据多未经独立复核且来自异质任务；与TCP聚合端点不完全同构，方向仅作探索性假设。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无既往TCP反馈，本卡用于初始探索，不作反馈驱动调整。",
+      "feedback_parent": "",
+      "hypothesis_id": "693bb1e22a6fff29c492",
+      "hypothesis_zh": "network_pair:Vis:Vis；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.978515625,
+      "model_evidence_ids": [
+        "E008",
+        "E019",
+        "E060"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 0,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "初始探索：E019报告视觉网络内连接下降；E008支持精神分裂症视觉相关连接降低，E060提示双相视觉网络异常。",
+      "resampling_replicates": 512,
+      "score": 0.5491967902057269,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "Vis"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.07831144340713711,
+          "residual_RMS": 0.13949307723236462,
+          "standardized_beta": -0.5614002139811395
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.10771619437776074,
+          "residual_RMS": 0.1337161907944654,
+          "standardized_beta": -0.8055583526405629
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:254:SalVentAttn",
+      "evidence_ids": [
+        "CLM:case3_manual_30837901_001",
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:case3_manual_32688026_001"
+      ],
+      "evidence_transfer_limit_zh": "E087为双相II抑郁且方向双向，E086/E010来自局部或相邻回路；未直接验证ROI 254—SalVentAttn TCP均值，无P值或校准CI，不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接ab911271cb051c884457的双诊断低方向高稳定反馈，转检新ROI 254。",
+      "feedback_parent": "ab911271cb051c884457",
+      "hypothesis_id": "c94c1f0143413b424323",
+      "hypothesis_zh": "ROI_to_network:254:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.96875,
+      "model_evidence_ids": [
+        "E086",
+        "E010",
+        "E087"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 5,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E086、E010涉及岛叶及视觉相关异常；E087限于双相II抑郁且岛叶—感觉运动连接一降一升，故仅作双诊断ROI低方向、可反驳探索。",
+      "resampling_replicates": 512,
+      "score": 0.5438564572942288,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SalVentAttn",
+        "roi": 254
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.07072910576451859,
+          "residual_RMS": 0.12673386548781782,
+          "standardized_beta": -0.5580916000018745
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.07698219838332447,
+          "residual_RMS": 0.11964708420438602,
+          "standardized_beta": -0.6434105677980446
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:DorsAttn:SomMot",
+      "evidence_ids": [
+        "CLM:49e51579a03f82dc3e653a786e75dd3f",
+        "CLM:bdc6dca29e16d9434a80e48a89bfcb8d",
+        "CLM:case3_manual_39806317_001"
+      ],
+      "evidence_transfer_limit_zh": "局部结构与跨网均值不等价；E097无方向，本端点无统一N、效应量、P值、校准CI；诊断缩减属适应性选择，未校正多重性。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无新TCP结果；承接父项b2aae1e076345da38355低向反馈，将范围缩为双诊断并仅作反馈后探索；不作确证并披露多重性。",
+      "feedback_parent": "b2aae1e076345da38355",
+      "hypothesis_id": "1956499df923d233e353",
+      "hypothesis_zh": "network_pair:DorsAttn:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.970703125,
+      "model_evidence_ids": [
+        "E019",
+        "E084",
+        "E097"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 5,
+          "seed": 1
+        },
+        {
+          "origin_slot": 3,
+          "round": 2,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019/E084仅为小脑或FEF/丘脑局部线索，E097无方向；DorsAttn–SomMot低向是反馈后待检编码。",
+      "resampling_replicates": 512,
+      "score": 0.5417412601580696,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "DorsAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05418605273142589,
+          "residual_RMS": 0.0995509314783236,
+          "standardized_beta": -0.5443048289630967
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.0704817478171818,
+          "residual_RMS": 0.10568162521791766,
+          "standardized_beta": -0.6669252831024032
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:Limbic:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:3ae37c82c9427439"
+      ],
+      "evidence_transfer_limit_zh": "E002为局部、E015为区域正则化，均非Limbic-SomMot全边均值；缺乏Limbic直接证据，来源方向、TCP效应量、P值和校准CI均需独立估计。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡604ef8cd9e730efce7d5，回应三位评审，删除未在理由中支撑的E019，补明缺乏Limbic直接证据并强化跨网迁移限制。",
+      "feedback_parent": "604ef8cd9e730efce7d5",
+      "hypothesis_id": "35b55341fad57c6ce37f",
+      "hypothesis_zh": "network_pair:Limbic:SomMot；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.890625,
+      "model_evidence_ids": [
+        "E002",
+        "E015"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 5,
+          "round": 5,
+          "seed": 0
+        },
+        {
+          "origin_slot": 4,
+          "round": 3,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 5,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002提示ADHD运动相关局部连接降低，E015提示精神病躯体感觉/枕叶区域连接减弱；两者无Limbic直接锚点，负向仅作最低先验迁移探索。",
+      "resampling_replicates": 512,
+      "score": 0.484771488295258,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "Limbic"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.09076667225827621,
+          "residual_RMS": 0.1320373385179223,
+          "standardized_beta": -0.6874318528160567
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08338357222476268,
+          "residual_RMS": 0.12720419801061006,
+          "standardized_beta": -0.6555095942494578
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:SomMot",
+      "evidence_ids": [
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "E019的FDR/q值属于来源分析，不是TCP结果；网络内与TCP聚合均值不等价，且无TCP效应量、P值或校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无既往TCP反馈；本次按审阅收窄诊断与证据，仍仅作初始探索。",
+      "feedback_parent": "",
+      "hypothesis_id": "1c1c59c7fd87df6ec713",
+      "hypothesis_zh": "network_pair:SomMot:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.990234375,
+      "model_evidence_ids": [
+        "E019"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 0,
+          "seed": 0
+        },
+        {
+          "origin_slot": 1,
+          "round": 5,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019来源分析报告双相与精神病性障碍躯体运动网络内连接下降，故聚焦该网络内均值作探索。",
+      "resampling_replicates": 512,
+      "score": 0.6491081333681153,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.07199787449308474,
+          "residual_RMS": 0.12474250258930605,
+          "standardized_beta": -0.5771719582228182
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08338357222476268,
+          "residual_RMS": 0.12720419801061006,
+          "standardized_beta": -0.6555095942494578
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "E002为局部且多重校正不明，E019的FDR结果属来源分析；两者均不等同TCP聚合均值或显著性，无TCP效应量、P值、校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无既往TCP反馈；本次按审阅改为SomMot内并收紧证据，仍仅作初始探索。",
+      "feedback_parent": "",
+      "hypothesis_id": "ef3c44c5b6e76a7452c0",
+      "hypothesis_zh": "network_pair:SomMot:SomMot；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.986328125,
+      "model_evidence_ids": [
+        "E002",
+        "E019"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 6,
+          "round": 0,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 6,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002提示ADHD前运动/补充运动相关连接降低，E019报告精神病性躯体运动网络内下降；据此改测SomMot内均值。",
+      "resampling_replicates": 512,
+      "score": 0.5692809353564906,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.07199787449308474,
+          "residual_RMS": 0.12474250258930605,
+          "standardized_beta": -0.5771719582228182
+        },
+        "bipolar": {
+          "beta": -0.09076667225827621,
+          "residual_RMS": 0.1320373385179223,
+          "standardized_beta": -0.6874318528160567
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78",
+        "CLM:6259272a16f10b095d390813b5ea1ee7"
+      ],
+      "evidence_transfer_limit_zh": "E002/E028为局部或跨区连接，E019为动态网络内结果；均不等同SomMot全边均值，TCP效应量、P值和校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡3d876479c52024fd703d的SomMot内三诊断高方向稳定，拆分为ADHD与双相检验诊断组合迁移。",
+      "feedback_parent": "3d876479c52024fd703d",
+      "hypothesis_id": "4ed33b618b2b423ff102",
+      "hypothesis_zh": "network_pair:SomMot:SomMot；TCP预定全部病例（ADHD、双相障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.984375,
+      "model_evidence_ids": [
+        "E002",
+        "E019",
+        "E028"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 3,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002提示ADHD前运动/额叶连接降低，E028补充ACC调节连接低，E019报告双相躯体运动网络内下降，检验SomMot内双诊断负向。",
+      "resampling_replicates": 512,
+      "score": 0.5681536463755866,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.07199787449308474,
+          "residual_RMS": 0.12474250258930605,
+          "standardized_beta": -0.5771719582228182
+        },
+        "bipolar": {
+          "beta": -0.09076667225827621,
+          "residual_RMS": 0.1320373385179223,
+          "standardized_beta": -0.6874318528160567
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08338357222476268,
+          "residual_RMS": 0.12720419801061006,
+          "standardized_beta": -0.6555095942494578
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "E002为局部连接，E019为动态网络内结果；均不等同TCP全边均值，三诊断迁移有限，无TCP效应量、P值或校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡1c1c59c7fd87df6ec713的SomMot高稳定反馈，改为可执行SomMot内三诊断检验，回应跨Default-SomMot证据不足。",
+      "feedback_parent": "1c1c59c7fd87df6ec713",
+      "hypothesis_id": "3d876479c52024fd703d",
+      "hypothesis_zh": "network_pair:SomMot:SomMot；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.982421875,
+      "model_evidence_ids": [
+        "E002",
+        "E019"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 1,
+          "seed": 0
+        },
+        {
+          "origin_slot": 2,
+          "round": 2,
+          "seed": 1
+        },
+        {
+          "origin_slot": 5,
+          "round": 0,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002提示ADHD前运动/补充运动相关连接降低，E019报告双相和精神病性障碍多网络内连接下降，改测SomMot内均值作三诊断探索。",
+      "resampling_replicates": 512,
+      "score": 0.5670263573946828,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.07257004179666963,
+          "residual_RMS": 0.12813006608758687,
+          "standardized_beta": -0.5663779315236002
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08515489941522834,
+          "residual_RMS": 0.1259305214515146,
+          "standardized_beta": -0.6762054062327888
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SomMot",
+      "evidence_ids": [
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "E019为动态网络内结果，不等同TCP两网络全边均值；方向、效应量、P值和校准CI均需独立估计。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡5275c5452b5aa4abea2f并回应评审，删除方向混合且未明确覆盖双相的E070、E100。",
+      "feedback_parent": "5275c5452b5aa4abea2f",
+      "hypothesis_id": "e8a17ceaad7b88f56490",
+      "hypothesis_zh": "network_pair:SalVentAttn:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.978515625,
+      "model_evidence_ids": [
+        "E019"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 4,
+          "seed": 0
+        },
+        {
+          "origin_slot": 3,
+          "round": 5,
+          "seed": 1
+        },
+        {
+          "origin_slot": 2,
+          "round": 1,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "仅E019提供双相与精神病多网络内下降线索；共同降低仅作低先验可证伪探索。",
+      "resampling_replicates": 512,
+      "score": 0.5542096556510229,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.07361974472975849,
+          "residual_RMS": 0.150522126201648,
+          "standardized_beta": -0.48909583320084976
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08923163230842814,
+          "residual_RMS": 0.15480570932663862,
+          "standardized_beta": -0.5764104741133947
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:054:SalVentAttn",
+      "evidence_ids": [
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:case3_manual_30837901_001",
+        "CLM:case3_manual_32688026_001"
+      ],
+      "evidence_transfer_limit_zh": "证据来自不同局部回路和诊断，未直接测量ROI 054—SalVentAttn聚合边；不能外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接44cb2eeb8581a8b48b55的SomMot:Vis双诊断低方向反馈，细化为ROI 054边。",
+      "feedback_parent": "44cb2eeb8581a8b48b55",
+      "hypothesis_id": "ab911271cb051c884457",
+      "hypothesis_zh": "ROI_to_network:054:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.951171875,
+      "model_evidence_ids": [
+        "E010",
+        "E086",
+        "E087"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 7,
+          "round": 4,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 7,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E010、E086、E087涉及视觉、岛叶—感觉运动连接异常或降低，检验ROI 054—SalVentAttn的双诊断低方向。",
+      "resampling_replicates": 512,
+      "score": 0.46521420072033953,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SalVentAttn",
+        "roi": 54
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.06420237248800094,
+          "residual_RMS": 0.12938462122052147,
+          "standardized_beta": -0.4962133202722389
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06767278487727438,
+          "residual_RMS": 0.13223783179118692,
+          "standardized_beta": -0.5117505630622755
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:317:SomMot",
+      "evidence_ids": [
+        "CLM:cf78c7818ba955ad",
+        "CLM:64adb021b4ee0ed9a1665682c91139fb",
+        "CLM:CASE1MAN:41648227:5791"
+      ],
+      "evidence_transfer_limit_zh": "证据涉及局部回路、疾病阶段和异质指标，未直接验证该ROI—网络边；不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接c9bc6cdd89105433e138的ADHD与精神病低方向可排名反馈，细化至新ROI 317。",
+      "feedback_parent": "c9bc6cdd89105433e138",
+      "hypothesis_id": "ae86c17ae078a27d4363",
+      "hypothesis_zh": "ROI_to_network:317:SomMot；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.927734375,
+      "model_evidence_ids": [
+        "E093",
+        "E028",
+        "E063"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 7,
+          "round": 5,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 7,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E093、E028、E063提供运动相关及早期精神病连接指标降低线索；仅作双诊断ROI低方向探索。",
+      "resampling_replicates": 512,
+      "score": 0.4603541545494404,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 317
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05627707696492677,
+          "residual_RMS": 0.11453158618343172,
+          "standardized_beta": -0.4913673060878981
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.0687930612521296,
+          "residual_RMS": 0.11782994374305031,
+          "standardized_beta": -0.5838334388255791
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78",
+        "CLM:6259272a16f10b095d390813b5ea1ee7"
+      ],
+      "evidence_transfer_limit_zh": "局部ACC、动态网络内和跨区证据均非SalVentAttn全边均值；来源方向与显著性不迁移，TCP效应量和校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡c974145dd9b0658c868d的高稳定三诊断反馈，补测未覆盖的ADHD-精神病组合，保持探索性。",
+      "feedback_parent": "c974145dd9b0658c868d",
+      "hypothesis_id": "8f5cd5ee21caf245935f",
+      "hypothesis_zh": "network_pair:SalVentAttn:SalVentAttn；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.90234375,
+      "model_evidence_ids": [
+        "E002",
+        "E019",
+        "E028"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 5,
+          "round": 4,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 5,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002、E028提示ADHD调节相关低连接，E019提示精神病显著性网络内下降，检验SalVentAttn内共同降低。",
+      "resampling_replicates": 512,
+      "score": 0.44338221760275176,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SalVentAttn",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05648662498642714,
+          "residual_RMS": 0.12230944214654219,
+          "standardized_beta": -0.46183372268797546
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08515489941522834,
+          "residual_RMS": 0.1259305214515146,
+          "standardized_beta": -0.6762054062327888
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:3ae37c82c9427439"
+      ],
+      "evidence_transfer_limit_zh": "证据多为局部、任务或正则化结果，非TCP两网络全边均值；方向与效应量不迁移，TCP的P值和校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡5275c5452b5aa4abea2f的高稳定反馈，拆分诊断组合并保持负向可证伪检验。",
+      "feedback_parent": "5275c5452b5aa4abea2f",
+      "hypothesis_id": "c9bc6cdd89105433e138",
+      "hypothesis_zh": "network_pair:SalVentAttn:SomMot；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.947265625,
+      "model_evidence_ids": [
+        "E002",
+        "E008",
+        "E015"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 4,
+          "seed": 0
+        },
+        {
+          "origin_slot": 1,
+          "round": 3,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002、E008、E015分别提供ADHD与精神病运动/视觉及感觉运动低连接线索，检验SalVentAttn-SomMot均值的负向迁移。",
+      "resampling_replicates": 512,
+      "score": 0.43747920996810175,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05648662498642714,
+          "residual_RMS": 0.12230944214654219,
+          "standardized_beta": -0.46183372268797546
+        },
+        "bipolar": {
+          "beta": -0.07257004179666963,
+          "residual_RMS": 0.12813006608758687,
+          "standardized_beta": -0.5663779315236002
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "删除E010以避免把干预后重组外推为基线方向；来源结果不等同TCP跨网全边均值，方向、效应量和不确定性待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡5275c5452b5aa4abea2f的高稳定反馈，回应评审移除E010并明确ADHD基线负向未获直接支持。",
+      "feedback_parent": "5275c5452b5aa4abea2f",
+      "hypothesis_id": "f26d73de9e8572edba15",
+      "hypothesis_zh": "network_pair:SalVentAttn:SomMot；TCP预定全部病例（ADHD、双相障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.943359375,
+      "model_evidence_ids": [
+        "E002",
+        "E019"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 4,
+          "round": 3,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 4,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002为ADHD局部运动连接，E019为双相网络内下降；二者不直接覆盖SalVentAttn-SomMot，负向仅作跨网迁移检验。",
+      "resampling_replicates": 512,
+      "score": 0.43567517198885186,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05648662498642714,
+          "residual_RMS": 0.12230944214654219,
+          "standardized_beta": -0.46183372268797546
+        },
+        "bipolar": {
+          "beta": -0.07257004179666963,
+          "residual_RMS": 0.12813006608758687,
+          "standardized_beta": -0.5663779315236002
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08515489941522834,
+          "residual_RMS": 0.1259305214515146,
+          "standardized_beta": -0.6762054062327888
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SomMot",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78",
+        "CLM:6259272a16f10b095d390813b5ea1ee7"
+      ],
+      "evidence_transfer_limit_zh": "E019为动态网络内结果，E002/E028为ADHD局部连接；均不等同TCP两网络全边均值，父卡高稳定性不等于本端点精度，且无TCP效应量、P值或校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡ef3c44c5b6e76a7452c0的SomMot高稳定反馈，保留端点并明确双相与精神病依据主要来自E019，不把父卡稳定性当作跨网统计证据。",
+      "feedback_parent": "ef3c44c5b6e76a7452c0",
+      "hypothesis_id": "5275c5452b5aa4abea2f",
+      "hypothesis_zh": "network_pair:SalVentAttn:SomMot；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.935546875,
+      "model_evidence_ids": [
+        "E002",
+        "E019",
+        "E028"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 8,
+          "round": 1,
+          "seed": 0
+        },
+        {
+          "origin_slot": 5,
+          "round": 2,
+          "seed": 1
+        },
+        {
+          "origin_slot": 1,
+          "round": 2,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 8,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019报告双相与精神病性障碍多网络内连接下降，E002/E028补充ADHD运动及ACC调节连接异常，支持三诊断SalVentAttn-SomMot负向探索。",
+      "resampling_replicates": 512,
+      "score": 0.43206709603035204,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.07511599947657316,
+          "residual_RMS": 0.14469802243668545,
+          "standardized_beta": -0.519122502240424
+        },
+        "bipolar": {
+          "beta": -0.0702019938199937,
+          "residual_RMS": 0.14690038857097143,
+          "standardized_beta": -0.4778884147476389
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08561124967778201,
+          "residual_RMS": 0.14912296800073363,
+          "standardized_beta": -0.5740983486686024
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:064:SalVentAttn",
+      "evidence_ids": [
+        "CLM:cf78c7818ba955ad",
+        "CLM:case3_manual_32688026_001",
+        "CLM:64adb021b4ee0ed9a1665682c91139fb"
+      ],
+      "evidence_transfer_limit_zh": "E087为双相II抑郁且结果双向，E093/E028来自局部或早期回路；未直接验证ROI 064—SalVentAttn TCP均值，无P值或校准CI，不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接5275c5452b5aa4abea2f的三诊断低方向高稳定反馈，细化至新ROI 064继续探索。",
+      "feedback_parent": "5275c5452b5aa4abea2f",
+      "hypothesis_id": "40162c8d78022fc4cb5e",
+      "hypothesis_zh": "ROI_to_network:064:SalVentAttn；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.892578125,
+      "model_evidence_ids": [
+        "E093",
+        "E087",
+        "E028"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 5,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E093提示运动相关低连接；E087限于双相II抑郁且岛叶—感觉运动连接一降一升；E028提示早期精神病连接减少，故仅作三诊断ROI低方向、可反驳探索。",
+      "resampling_replicates": 512,
+      "score": 0.42655274519466985,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SalVentAttn",
+        "roi": 64
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.08661209941180628,
+          "residual_RMS": 0.14776001502657213,
+          "standardized_beta": -0.5861673700847321
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06380174082348145,
+          "residual_RMS": 0.14599996506836552,
+          "standardized_beta": -0.43699832937361205
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:Vis",
+      "evidence_ids": [
+        "CLM:494a426b0a78",
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:3ae37c82c9427439"
+      ],
+      "evidence_transfer_limit_zh": "E008为任务局部、E015为正则化区域、E019为动态网络内结果；均非SomMot-Vis全边均值，TCP统计量需独立估计。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡cb95ddc012fdf9f8248c的三诊断SomMot-Vis高方向稳定，聚焦双相与精神病，避免把稳定性直接当作效应证据。",
+      "feedback_parent": "cb95ddc012fdf9f8248c",
+      "hypothesis_id": "44cb2eeb8581a8b48b55",
+      "hypothesis_zh": "network_pair:SomMot:Vis；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.97265625,
+      "model_evidence_ids": [
+        "E019",
+        "E008",
+        "E015"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 3,
+          "round": 3,
+          "seed": 0
+        },
+        {
+          "origin_slot": 5,
+          "round": 5,
+          "seed": 1
+        },
+        {
+          "origin_slot": 3,
+          "round": 3,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 3,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019报告双相与精神病视觉、躯体运动网络内下降，E008与E015补充精神病视觉及躯体感觉/枕叶连接降低，检验SomMot-Vis负向。",
+      "resampling_replicates": 512,
+      "score": 0.42504915630480233,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.06485703473258506,
+          "residual_RMS": 0.13113266334935228,
+          "standardized_beta": -0.4945909972086708
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06314730398532764,
+          "residual_RMS": 0.13104208620188068,
+          "standardized_beta": -0.48188567364567314
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:056:DorsAttn",
+      "evidence_ids": [
+        "CLM:CASE1MAN:29078281:6403",
+        "CLM:case3_manual_24306091_001"
+      ],
+      "evidence_transfer_limit_zh": "网络级或表型相关结果未定位56号ROI、DorsAttn全边有符号r；跨诊断外推有限，父项稳定性0且无P值、校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无新TCP结果；父项0c959051b1b4eea7a83b三组β均负但稳定性0，保留低向仅作未验证ROI探索，不把父项定位到56号ROI。",
+      "feedback_parent": "0c959051b1b4eea7a83b",
+      "hypothesis_id": "1b25538b74ff26c7842e",
+      "hypothesis_zh": "ROI_to_network:056:DorsAttn；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.87109375,
+      "model_evidence_ids": [
+        "E049",
+        "E090"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 8,
+          "round": 1,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 8,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E049与E090仅提示注意/控制网络受扰或控制网内降低；改写为56号ROI—DorsAttn低向的间接、未验证定位探索。",
+      "resampling_replicates": 512,
+      "score": 0.41976759852728557,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "DorsAttn",
+        "roi": 56
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.052023773386918166,
+          "residual_RMS": 0.11745654988246412,
+          "standardized_beta": -0.4429193045341199
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.0687930612521296,
+          "residual_RMS": 0.11782994374305031,
+          "standardized_beta": -0.5838334388255791
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+      "evidence_ids": [
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "来源q<.05/FDR校正不等于TCP显著；网络内结果不保证TCP全病例均值方向或精度，无TCP效应量、P值和校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无既往TCP反馈；本次按审阅收窄诊断并限定来源显著性，仍仅作初始探索。",
+      "feedback_parent": "",
+      "hypothesis_id": "ecd2315312c2a46bce16",
+      "hypothesis_zh": "network_pair:SalVentAttn:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.9375,
+      "model_evidence_ids": [
+        "E019"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 3,
+          "round": 0,
+          "seed": 0
+        },
+        {
+          "origin_slot": 7,
+          "round": 1,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 3,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019来源分析在双相与精神病性障碍中报告显著网络内连接下降，支持SalVentAttn内均值作探索。",
+      "resampling_replicates": 512,
+      "score": 0.4152368480007374,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SalVentAttn",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.06485703473258506,
+          "residual_RMS": 0.13113266334935228,
+          "standardized_beta": -0.4945909972086708
+        },
+        "bipolar": {
+          "beta": -0.07069024253649088,
+          "residual_RMS": 0.13824473470289736,
+          "standardized_beta": -0.5113413012684478
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06314730398532764,
+          "residual_RMS": 0.13104208620188068,
+          "standardized_beta": -0.48188567364567314
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:056:DorsAttn",
+      "evidence_ids": [
+        "CLM:CASE1MAN:29078281:6403",
+        "CLM:case3_manual_24306091_001",
+        "CLM:case3_manual_39806317_001"
+      ],
+      "evidence_transfer_limit_zh": "文献未定位056号ROI，也未提供该ROI与DorsAttn全边有符号r；跨诊断外推有限，无TCP效应量。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无新的TCP结果；沿父项1b25538b74ff26c7842e稳定低向反馈，扩展诊断组合并保留056号ROI定位为未验证探索。",
+      "feedback_parent": "1b25538b74ff26c7842e",
+      "hypothesis_id": "5a6ac33e386e6958aff0",
+      "hypothesis_zh": "ROI_to_network:056:DorsAttn；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.8515625,
+      "model_evidence_ids": [
+        "E049",
+        "E090",
+        "E097"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 7,
+          "round": 2,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 7,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E049提示注意—控制连接受扰，E090报告控制网内连接降低，E097显示跨诊断网络FC改变；定位056号ROI—DorsAttn作低向探索。",
+      "resampling_replicates": 512,
+      "score": 0.41035576896389353,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "DorsAttn",
+        "roi": 56
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05627707696492677,
+          "residual_RMS": 0.11453158618343172,
+          "standardized_beta": -0.4913673060878981
+        },
+        "bipolar": {
+          "beta": -0.052023773386918166,
+          "residual_RMS": 0.11745654988246412,
+          "standardized_beta": -0.4429193045341199
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+      "evidence_ids": [
+        "CLM:494a426b0a78",
+        "CLM:2d5ba1aa13b399d5",
+        "CLM:CASE1MAN:36065486:5214"
+      ],
+      "evidence_transfer_limit_zh": "E010/E052不支持ADHD基线负向，E019网络内结果不等同SalVentAttn全边均值；方向、效应量和不确定性需独立估计。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡c974145dd9b0658c868d的高稳定反馈，回应评审将ADHD负向限定为可证伪探索，不解释为干预效应。",
+      "feedback_parent": "c974145dd9b0658c868d",
+      "hypothesis_id": "e06d5de4bafd7680aeb8",
+      "hypothesis_zh": "network_pair:SalVentAttn:SalVentAttn；TCP预定全部病例（ADHD、双相障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.912109375,
+      "model_evidence_ids": [
+        "E019",
+        "E010",
+        "E052"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 6,
+          "round": 3,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 6,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019仅支持双相显著性网络内下降；E010为ADHD干预后重组，E052为未定向综述，ADHD基线负向待TCP检验。",
+      "resampling_replicates": 512,
+      "score": 0.4039908500340507,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SalVentAttn",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05627707696492677,
+          "residual_RMS": 0.11453158618343172,
+          "standardized_beta": -0.4913673060878981
+        },
+        "bipolar": {
+          "beta": -0.052023773386918166,
+          "residual_RMS": 0.11745654988246412,
+          "standardized_beta": -0.4429193045341199
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.0687930612521296,
+          "residual_RMS": 0.11782994374305031,
+          "standardized_beta": -0.5838334388255791
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+      "evidence_ids": [
+        "CLM:494a426b0a78",
+        "CLM:2d5ba1aa13b399d5",
+        "CLM:CASE1MAN:39498275:6112"
+      ],
+      "evidence_transfer_limit_zh": "E019为动态网络内结果，E010为干预重组且不提供ADHD基线方向，E060未定向；不等同SalVentAttn全边均值，TCP效应量/P/校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "回应评审，父卡SalVentAttn稳定性仅作选题线索，明确E010不支持ADHD基线降低；保留三诊断-1可证伪探索。",
+      "feedback_parent": "ecd2315312c2a46bce16",
+      "hypothesis_id": "c974145dd9b0658c868d",
+      "hypothesis_zh": "network_pair:SalVentAttn:SalVentAttn；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.880859375,
+      "model_evidence_ids": [
+        "E019",
+        "E010",
+        "E060"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 3,
+          "round": 2,
+          "seed": 0
+        },
+        {
+          "origin_slot": 1,
+          "round": 2,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 3,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019支持双相与精神病网络内下降；E010仅为ADHD干预后重组，E060为双相模式且未定向，故三诊断-1仅低先验探索。",
+      "resampling_replicates": 512,
+      "score": 0.3901496217673595,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SalVentAttn",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05613176852433405,
+          "residual_RMS": 0.14080049378396126,
+          "standardized_beta": -0.39866173062191407
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.1143237056926462,
+          "residual_RMS": 0.1471808171350382,
+          "standardized_beta": -0.7767568350144052
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:109:SomMot",
+      "evidence_ids": [
+        "CLM:cf78c7818ba955ad",
+        "CLM:64adb021b4ee0ed9a1665682c91139fb",
+        "CLM:CASE1MAN:41648227:5791"
+      ],
+      "evidence_transfer_limit_zh": "证据来自局部回路、疾病阶段及异质指标，未直接验证该ROI—网络边；不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接c9bc6cdd89105433e138的ADHD与精神病低方向可排名反馈，细化至新ROI 109。",
+      "feedback_parent": "c9bc6cdd89105433e138",
+      "hypothesis_id": "052ddd08846e3922b07e",
+      "hypothesis_zh": "ROI_to_network:109:SomMot；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.958984375,
+      "model_evidence_ids": [
+        "E093",
+        "E028",
+        "E063"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 3,
+          "round": 5,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 3,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E093、E028、E063提供运动相关或精神病连接指标降低线索；仅作双诊断ROI低方向探索。",
+      "resampling_replicates": 512,
+      "score": 0.3823103705768746,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 109
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.06635437317635177,
+          "residual_RMS": 0.15850055153928194,
+          "standardized_beta": -0.418638121646579
+        },
+        "bipolar": {
+          "beta": -0.08774910094234309,
+          "residual_RMS": 0.16345644430046646,
+          "standardized_beta": -0.5368347593628199
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.09825407044690745,
+          "residual_RMS": 0.16022850363821606,
+          "standardized_beta": -0.6132121827010116
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:314:SomMot",
+      "evidence_ids": [
+        "CLM:cf78c7818ba955ad",
+        "CLM:case3_manual_32688026_001",
+        "CLM:64adb021b4ee0ed9a1665682c91139fb"
+      ],
+      "evidence_transfer_limit_zh": "E087含双向结果且限于双相II抑郁；所有证据均未直接测量ROI 314—SomMot均值，不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接5275c5452b5aa4abea2f的三诊断SalVentAttn:SomMot高稳定低方向，细化至ROI 314。",
+      "feedback_parent": "5275c5452b5aa4abea2f",
+      "hypothesis_id": "91670f524eb41065896a",
+      "hypothesis_zh": "ROI_to_network:314:SomMot；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.91015625,
+      "model_evidence_ids": [
+        "E093",
+        "E087",
+        "E028"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 4,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E093、E028分别提示运动或精神病连接降低；E087限于双相II抑郁且含升、降连接，故-1仅作三诊断可反驳探索。",
+      "resampling_replicates": 512,
+      "score": 0.38102610290489414,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 314
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05539178143775711,
+          "residual_RMS": 0.13769970967716116,
+          "standardized_beta": -0.4022650560965153
+        },
+        "bipolar": {
+          "beta": -0.06586766393807306,
+          "residual_RMS": 0.13651962198300227,
+          "standardized_beta": -0.4824776320159609
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.05856044293101847,
+          "residual_RMS": 0.13841808984615486,
+          "standardized_beta": -0.42306928954232514
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:DorsAttn:Vis",
+      "evidence_ids": [
+        "CLM:7fe9ba0248871d24",
+        "CLM:CASE1MAN:36873218:1327",
+        "CLM:case3_manual_29982729_001",
+        "CLM:case3_manual_39806317_001"
+      ],
+      "evidence_transfer_limit_zh": "局部、共病及广义网络结果不能外推DorsAttn-Vis全边均值；父项仅作排序，多轮自适应选端点未作多重校正，亦无TCP效应量、P值或校准CI。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无新的TCP结果；针对评审关于自适应扩展与多重性的意见，明确父项仅供探索排序，将本端点保留为待检编码。",
+      "feedback_parent": "cb95ddc012fdf9f8248c",
+      "hypothesis_id": "27981a1d1ecac5af5013",
+      "hypothesis_zh": "network_pair:DorsAttn:Vis；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.8828125,
+      "model_evidence_ids": [
+        "E034",
+        "E060",
+        "E092",
+        "E097"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 4,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E034来自社交恐惧共病样本，E060仅列视觉异常，E092/E097为广义背景；无DorsAttn-Vis直接或共同方向证据，仅作间接待检编码。",
+      "resampling_replicates": 512,
+      "score": 0.35512461983520494,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "DorsAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.055926383844677865,
+          "residual_RMS": 0.14633353920297,
+          "standardized_beta": -0.38218431775306083
+        },
+        "bipolar": {
+          "beta": -0.08661209941180628,
+          "residual_RMS": 0.14776001502657213,
+          "standardized_beta": -0.5861673700847321
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:Vis",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "E002/E019的局部或网络内结果不等同TCP的SomMot-Vis全边均值；方向、效应量和不确定性需独立估计。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡a7ebd04f5fd82f432efa的高稳定反馈，回应评审删除E060方向作用，明确跨网负向仅为可证伪迁移假设。",
+      "feedback_parent": "a7ebd04f5fd82f432efa",
+      "hypothesis_id": "13a44159122f771d9512",
+      "hypothesis_zh": "network_pair:SomMot:Vis；TCP预定全部病例（ADHD、双相障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.923828125,
+      "model_evidence_ids": [
+        "E002",
+        "E019"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 2,
+          "round": 3,
+          "seed": 0
+        }
+      ],
+      "origin_slot": 2,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002仅提示ADHD局部运动连接降低，E019提示双相网络内下降；两者不直接覆盖SomMot-Vis，负向仅作间接迁移检验。",
+      "resampling_replicates": 512,
+      "score": 0.3530726216742144,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.07948030342278804,
+          "residual_RMS": 0.12176916302942177,
+          "standardized_beta": -0.6527128991071744
+        },
+        "bipolar": {
+          "beta": -0.051874623613765936,
+          "residual_RMS": 0.13276000488804734,
+          "standardized_beta": -0.3907398441082486
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.1245538780382211,
+          "residual_RMS": 0.1295213258522164,
+          "standardized_beta": -0.9616476454258726
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:261:SalVentAttn",
+      "evidence_ids": [
+        "CLM:cf78c7818ba955ad",
+        "CLM:case3_manual_32688026_001",
+        "CLM:64adb021b4ee0ed9a1665682c91139fb"
+      ],
+      "evidence_transfer_limit_zh": "E087含双向结果且限于双相II抑郁；证据均未直接测量ROI 261—SalVentAttn均值，不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接5275c5452b5aa4abea2f的SalVentAttn:SomMot三诊断低方向反馈，细化至ROI 261。",
+      "feedback_parent": "5275c5452b5aa4abea2f",
+      "hypothesis_id": "e9803d03879b6f64c4b8",
+      "hypothesis_zh": "ROI_to_network:261:SalVentAttn；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.90234375,
+      "model_evidence_ids": [
+        "E093",
+        "E087",
+        "E028"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 5,
+          "round": 4,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 5,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E093、E028提示运动或精神病连接降低；E087限于双相II抑郁且含升、降连接，故-1仅作三诊断可反驳探索。",
+      "resampling_replicates": 512,
+      "score": 0.35258165620705245,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SalVentAttn",
+        "roi": 261
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.055926383844677865,
+          "residual_RMS": 0.14633353920297,
+          "standardized_beta": -0.38218431775306083
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06380174082348145,
+          "residual_RMS": 0.14599996506836552,
+          "standardized_beta": -0.43699832937361205
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:Vis",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:3ae37c82c9427439"
+      ],
+      "evidence_transfer_limit_zh": "证据为局部、任务或正则化连接，不能等同TCP SomMot-Vis全边均值；父卡仅含两诊断，稳定性与本端点效应量、P值和校准CI不转移。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡693bb1e22a6fff29c492的Vis内负向反馈，按评审将DorsAttn改为SomMot，避免把父卡稳定性外推到SomMot-Vis。",
+      "feedback_parent": "693bb1e22a6fff29c492",
+      "hypothesis_id": "a7ebd04f5fd82f432efa",
+      "hypothesis_zh": "network_pair:SomMot:Vis；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.90625,
+      "model_evidence_ids": [
+        "E002",
+        "E008",
+        "E015"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 7,
+          "round": 1,
+          "seed": 0
+        },
+        {
+          "origin_slot": 6,
+          "round": 1,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 7,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002提示ADHD前运动/补充运动相关连接降低，E008提示精神病视觉—Rolandic/颞叶连接降低，E015补充躯体感觉与枕叶连接减弱，改测SomMot-Vis。",
+      "resampling_replicates": 512,
+      "score": 0.3463545379637114,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.055926383844677865,
+          "residual_RMS": 0.14633353920297,
+          "standardized_beta": -0.38218431775306083
+        },
+        "bipolar": {
+          "beta": -0.08661209941180628,
+          "residual_RMS": 0.14776001502657213,
+          "standardized_beta": -0.5861673700847321
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.06380174082348145,
+          "residual_RMS": 0.14599996506836552,
+          "standardized_beta": -0.43699832937361205
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SomMot:Vis",
+      "evidence_ids": [
+        "CLM:06c74ded3ff6e3bd56196cc65914b0b2",
+        "CLM:494a426b0a78",
+        "CLM:3ae37c82c9427439"
+      ],
+      "evidence_transfer_limit_zh": "证据多为局部、动态或正则化结果，非SomMot-Vis全边均值；来源方向、效应量和显著性不能直接迁移TCP。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡a7ebd04f5fd82f432efa的SomMot-Vis高方向稳定反馈，扩展为三诊断联合检验以评估迁移性。",
+      "feedback_parent": "a7ebd04f5fd82f432efa",
+      "hypothesis_id": "cb95ddc012fdf9f8248c",
+      "hypothesis_zh": "network_pair:SomMot:Vis；TCP预定全部病例（ADHD、双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.90234375,
+      "model_evidence_ids": [
+        "E002",
+        "E019",
+        "E015"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 2,
+          "seed": 0
+        },
+        {
+          "origin_slot": 4,
+          "round": 3,
+          "seed": 1
+        },
+        {
+          "origin_slot": 4,
+          "round": 2,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E002提示ADHD运动相关连接降低，E019报告双相与精神病多网络内连接下降，E015补充精神分裂症躯体感觉/枕叶连接减弱。",
+      "resampling_replicates": 512,
+      "score": 0.34486163047248847,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "SomMot"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.043176422197864085,
+          "residual_RMS": 0.11928710468497716,
+          "standardized_beta": -0.3619538114525271
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.0607107455402456,
+          "residual_RMS": 0.11798686193752088,
+          "standardized_beta": -0.5145551338791818
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:DorsAttn:SalVentAttn",
+      "evidence_ids": [
+        "CLM:case3_manual_29982729_001",
+        "CLM:case3_manual_32688026_001",
+        "CLM:case3_manual_39806317_001"
+      ],
+      "evidence_transfer_limit_zh": "文献未给该配对全边均值或共同方向；本端点无统一N、效应量、P值、校准CI，诊断缩减为适应性选择且未作多重校正。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无新TCP结果；承接父项55feee8620de8545e3c3低向反馈，保留双诊断但仅作反馈后探索；不将父项排序写成文献支持。",
+      "feedback_parent": "55feee8620de8545e3c3",
+      "hypothesis_id": "51c580a6139404272c66",
+      "hypothesis_zh": "network_pair:DorsAttn:SalVentAttn；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.875,
+      "model_evidence_ids": [
+        "E092",
+        "E094",
+        "E097"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 4,
+          "round": 5,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 4,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E092为早期广网、E094方向混合、E097无方向，未直接检验DorsAttn–SalVentAttn；-1仅为反馈后待检编码。",
+      "resampling_replicates": 512,
+      "score": 0.3167095850209612,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "DorsAttn",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.05577827155233775,
+          "residual_RMS": 0.13695954974361074,
+          "standardized_beta": -0.40726091504210604
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.0477228011472996,
+          "residual_RMS": 0.13717381443889767,
+          "standardized_beta": -0.34790022674886767
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:SalVentAttn:Vis",
+      "evidence_ids": [
+        "CLM:494a426b0a78",
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:CASE1MAN:39498275:6112"
+      ],
+      "evidence_transfer_limit_zh": "E019为动态网络内、E008为任务局部、E060未定向；均不等同SalVentAttn-Vis全边均值，TCP效应量、P值和校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡c974145dd9b0658c868d的显著性网络内三诊断高稳定，改测SalVentAttn-Vis并聚焦双相与精神病，检验视觉迁移。",
+      "feedback_parent": "c974145dd9b0658c868d",
+      "hypothesis_id": "5d67548292b43a29fbd2",
+      "hypothesis_zh": "network_pair:SalVentAttn:Vis；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.908203125,
+      "model_evidence_ids": [
+        "E019",
+        "E008",
+        "E060"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 5,
+          "round": 3,
+          "seed": 0
+        },
+        {
+          "origin_slot": 5,
+          "round": 3,
+          "seed": 1
+        },
+        {
+          "origin_slot": 8,
+          "round": 2,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 5,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019支持双相与精神病视觉/显著性网络内下降，E008补充精神病视觉相关连接降低，E060提示双相显著性与视觉网络异常，检验SalVentAttn-Vis负向。",
+      "resampling_replicates": 512,
+      "score": 0.3159640731215302,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "SalVentAttn"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.05987445003115975,
+          "residual_RMS": 0.16709196047073702,
+          "standardized_beta": -0.35833232109120905
+        },
+        "bipolar": {
+          "beta": -0.07660828029275979,
+          "residual_RMS": 0.16877590294500583,
+          "standardized_beta": -0.45390532034494246
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:104:SomMot",
+      "evidence_ids": [
+        "CLM:91dd739743721506",
+        "CLM:cf78c7818ba955ad",
+        "CLM:CASE1MAN:35264921:1128"
+      ],
+      "evidence_transfer_limit_zh": "证据未直接测量该ROI—网络边，且回路与指标异质；不外推共同效应、特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接d022f817b2d0170e6b2b的ADHD与双相低方向可排名反馈，细化至新ROI 104。",
+      "feedback_parent": "d022f817b2d0170e6b2b",
+      "hypothesis_id": "91db7740c66a41792684",
+      "hypothesis_zh": "ROI_to_network:104:SomMot；TCP预定全部病例（ADHD、双相障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.853515625,
+      "model_evidence_ids": [
+        "E039",
+        "E093",
+        "E049"
+      ],
+      "named": [
+        "ADHD",
+        "bipolar"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 8,
+          "round": 5,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 8,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E039、E093提示控制或运动相关低连接，E049提示双相感觉运动网络异常；仅作双诊断ROI低方向探索。",
+      "resampling_replicates": 512,
+      "score": 0.305842234993864,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 104
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.04543767957974533,
+          "residual_RMS": 0.13172853460398232,
+          "standardized_beta": -0.3449342218551613
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.08114287785503939,
+          "residual_RMS": 0.1267153220377099,
+          "standardized_beta": -0.6403556929831393
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:Cont:SomMot",
+      "evidence_ids": [
+        "CLM:3ae37c82c9427439",
+        "CLM:494a426b0a78"
+      ],
+      "evidence_transfer_limit_zh": "E019为动态网络内、E015为区域正则化结果；均不等同TCP Cont-SomMot全边均值，效应量、P值和校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡93e98e27f31d1e192193的Cont-SomMot反馈，补测未覆盖的双相-精神病组合，不将相邻端点反馈当作本端点效应。",
+      "feedback_parent": "93e98e27f31d1e192193",
+      "hypothesis_id": "c43016f2061aea0db20e",
+      "hypothesis_zh": "network_pair:Cont:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.869140625,
+      "model_evidence_ids": [
+        "E015",
+        "E019"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 8,
+          "round": 5,
+          "seed": 0
+        },
+        {
+          "origin_slot": 2,
+          "round": 3,
+          "seed": 1
+        }
+      ],
+      "origin_slot": 8,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019同时涉及双相与精神病网络内连接下降，E015补充精神病躯体感觉连接减弱；Cont-SomMot负向仅作跨网探索。",
+      "resampling_replicates": 512,
+      "score": 0.2997963451670836,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "SomMot",
+        "network_b": "Cont"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.05132871193642641,
+          "residual_RMS": 0.16255068454673027,
+          "standardized_beta": -0.3157705061627739
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.11210415786214485,
+          "residual_RMS": 0.15868413997667666,
+          "standardized_beta": -0.7064610103985306
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:098:SomMot",
+      "evidence_ids": [
+        "CLM:case3_manual_32688026_001",
+        "CLM:case3_manual_30837901_001",
+        "CLM:27bedef663cbaca0e92df92dd522f16d"
+      ],
+      "evidence_transfer_limit_zh": "证据来自局部回路、不同诊断和指标，未直接验证该ROI聚合边或TCP共同效应；不作特异性或因果推断。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接5d67548292b43a29fbd2的SalVentAttn:Vis低方向反馈，细化至ROI 098—SomMot继续探索。",
+      "feedback_parent": "5d67548292b43a29fbd2",
+      "hypothesis_id": "02ef10ac7980d2a6c859",
+      "hypothesis_zh": "ROI_to_network:098:SomMot；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.904296875,
+      "model_evidence_ids": [
+        "E087",
+        "E086",
+        "E010"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 1,
+          "round": 4,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 1,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E087、E086与E010涉及岛叶、感觉运动或视觉相关连接异常，检验该ROI—SomMot边的低方向。",
+      "resampling_replicates": 512,
+      "score": 0.2855502819401647,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 98
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.03703165826684747,
+          "residual_RMS": 0.10096985121574079,
+          "standardized_beta": -0.3667595606110429
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.03530056642443442,
+          "residual_RMS": 0.10228739628362224,
+          "standardized_beta": -0.3451115944583543
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:Default:Default",
+      "evidence_ids": [
+        "CLM:6904a238538c",
+        "CLM:CASE1MAN:37688285:2350",
+        "CLM:case3_manual_23851068_001"
+      ],
+      "evidence_transfer_limit_zh": "KG证据均为间接、异质且未独立复核的外部材料，未直接验证本TCP边；不能断言诊断特异性或因果关系。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "无既往反馈；本轮为初始探索，按固定全体病例—对照范围检验该方向。",
+      "feedback_parent": "",
+      "hypothesis_id": "61e6e04e540110fe754f",
+      "hypothesis_zh": "network_pair:Default:Default；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.810546875,
+      "model_evidence_ids": [
+        "E030",
+        "E053",
+        "E080"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 7,
+          "round": 0,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 7,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E030、E053和E080提供默认或全局连接降低/受损线索；检验两诊断默认网络内较低方向。",
+      "resampling_replicates": 512,
+      "score": 0.2797291244144864,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Default",
+        "network_b": "Default"
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "ADHD": {
+          "beta": -0.07099048799961265,
+          "residual_RMS": 0.21809322843089957,
+          "standardized_beta": -0.3255052369592722
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.07404828777055007,
+          "residual_RMS": 0.22340060758568742,
+          "standardized_beta": -0.331459652553309
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "ROI_to_network:208:SomMot",
+      "evidence_ids": [
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:d88d1976b6294434",
+        "CLM:25e889c5a1719707"
+      ],
+      "evidence_transfer_limit_zh": "证据混合局部、同伦和网络指标且方向相反，未直接验证该ROI边；不作共同效应或因果推断。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "承接a7ebd04f5fd82f432efa的SomMot:Vis低方向可排名反馈，转向ROI 208细化检验。",
+      "feedback_parent": "a7ebd04f5fd82f432efa",
+      "hypothesis_id": "98206c506bffe0dac66c",
+      "hypothesis_zh": "ROI_to_network:208:SomMot；TCP预定全部病例（ADHD、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.828125,
+      "model_evidence_ids": [
+        "E010",
+        "E096",
+        "E009"
+      ],
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 8,
+          "round": 4,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 8,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E010与E096提示精神病视觉或中央后回相关连接降低，E009提示ADHD局部连接升高，故仅探索ROI 208—SomMot低方向。",
+      "resampling_replicates": 512,
+      "score": 0.26955902435689727,
+      "spec": {
+        "kind": "ROI_to_network",
+        "network": "SomMot",
+        "roi": 208
+      }
+    },
+    {
+      "P_values_produced": false,
+      "calibrated_confidence_interval": false,
+      "components": {
+        "bipolar": {
+          "beta": -0.03240041041736103,
+          "residual_RMS": 0.10134235629249914,
+          "standardized_beta": -0.31971242432774527
+        },
+        "psychosis_SZ_SZA": {
+          "beta": -0.033128613797389204,
+          "residual_RMS": 0.09956170159849914,
+          "standardized_beta": -0.33274455202650544
+        }
+      },
+      "direction": -1,
+      "eligible_for_prospective_ranking": true,
+      "endpoint": "network_pair:Limbic:Vis",
+      "evidence_ids": [
+        "CLM:494a426b0a78",
+        "CLM:27bedef663cbaca0e92df92dd522f16d",
+        "CLM:CASE1MAN:39498275:6112"
+      ],
+      "evidence_transfer_limit_zh": "E019为动态网络内、E008为任务局部、E060未定向；均不等同Limbic-Vis全边均值，TCP效应量、P值和校准CI待估。",
+      "explanation_is_not_an_executable_filter": true,
+      "feedback_action_zh": "依据父卡4dab4a19cbde9c05e295的Vis内三诊断高方向稳定，改测Limbic-Vis并聚焦双相与精神病，检验跨网络迁移。",
+      "feedback_parent": "4dab4a19cbde9c05e295",
+      "hypothesis_id": "a1f1a727dd523265d698",
+      "hypothesis_zh": "network_pair:Limbic:Vis；TCP预定全部病例（双相障碍、精神分裂症/分裂情感性障碍）分别相对预定对照的平均Pearson r共同降低；不作疾病状态或其他亚组筛选。",
+      "joint_direction_stability": 0.806640625,
+      "model_evidence_ids": [
+        "E019",
+        "E008",
+        "E060"
+      ],
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "occurrences": [
+        {
+          "origin_slot": 8,
+          "round": 3,
+          "seed": 0
+        },
+        {
+          "origin_slot": 8,
+          "round": 3,
+          "seed": 2
+        }
+      ],
+      "origin_slot": 8,
+      "population_scope": "TCP_all_predeclared_cases_vs_controls",
+      "rationale_zh": "E019支持双相与精神病视觉网络内下降，E008给出精神病视觉相关连接降低，E060提示双相杏仁核—视觉网络异常，检验Limbic-Vis负向。",
+      "resampling_replicates": 512,
+      "score": 0.2578930297799977,
+      "spec": {
+        "kind": "network_pair",
+        "network_a": "Vis",
+        "network_b": "Limbic"
+      }
+    }
+  ],
+  "retested": false,
+  "seal_sha256": "3c51cf5a22902120fe447392c2f00ba21f8a4197d1972dcd42f549ddeae38c9e",
+  "summary": {
+    "all_low_redundancy_anchors": 18,
+    "combined_bootstrap_fits": 428000,
+    "combined_component_rows": 302,
+    "combined_hypotheses": 38,
+    "combined_metrics": 25,
+    "combined_unique_fits": 214,
+    "directionally_supported_metrics": 25,
+    "expansion_supported_low_redundancy_anchors": 3,
+    "expansion_supported_metrics": 6,
+    "expansion_supported_metrics_absent_historical_three": 2,
+    "external_subjects": 588,
+    "formal_confirmation": false,
+    "hypothesis_assessments": [
+      {
+        "COBRE": -0.5820574762299457,
+        "HCP_nonaffective": -0.6782521924342488,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.4201703951439138,
+          "psychosis_SZ_SZA": -0.5990029494041597
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:108:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "e3b5ea76fb92c756d9e3",
+        "joint_direction_frequency": 0.989,
+        "minimum_directional_standardized_beta": 0.4201703951439138,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.6719347086749652,
+        "HCP_nonaffective": -0.5722951922883922,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.28909469884859773,
+          "psychosis_SZ_SZA": -0.3881988422794179
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Vis:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "693bb1e22a6fff29c492",
+        "joint_direction_frequency": 0.9295,
+        "minimum_directional_standardized_beta": 0.28909469884859773,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.4918501272724766,
+        "HCP_nonaffective": -0.6175946278978639,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.4119699184848284,
+          "psychosis_SZ_SZA": -0.48546036873196885
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:254:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "c94c1f0143413b424323",
+        "joint_direction_frequency": 0.986,
+        "minimum_directional_standardized_beta": 0.4119699184848284,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.6262933701961823,
+        "HCP_nonaffective": -0.7046203059659669,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.21112403960598827,
+          "psychosis_SZ_SZA": -0.3950658227854447
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:DorsAttn:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "1956499df923d233e353",
+        "joint_direction_frequency": 0.8585,
+        "minimum_directional_standardized_beta": 0.21112403960598827,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.421649325892352,
+        "HCP_nonaffective": -0.6622028374528374,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.03926906873041918,
+          "psychosis_SZ_SZA": -0.1513292274970956
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Limbic:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "35b55341fad57c6ce37f",
+        "joint_direction_frequency": 0.5225,
+        "minimum_directional_standardized_beta": 0.03926906873041918,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.5760806459225779,
+        "HCP_nonaffective": -0.7911998037898511,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.33563587985993587,
+          "psychosis_SZ_SZA": -0.544785604607974
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "1c1c59c7fd87df6ec713",
+        "joint_direction_frequency": 0.971,
+        "minimum_directional_standardized_beta": 0.33563587985993587,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.5760806459225779,
+        "HCP_nonaffective": -0.7911998037898511,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11952251588837783,
+          "psychosis_SZ_SZA": -0.544785604607974
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "ef3c44c5b6e76a7452c0",
+        "joint_direction_frequency": 0.7295,
+        "minimum_directional_standardized_beta": 0.11952251588837783,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": null,
+        "HCP_nonaffective": null,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11952251588837783,
+          "bipolar": -0.33563587985993587
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "4ed33b618b2b423ff102",
+        "joint_direction_frequency": 0.715,
+        "minimum_directional_standardized_beta": 0.11952251588837783,
+        "named": [
+          "ADHD",
+          "bipolar"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.5760806459225779,
+        "HCP_nonaffective": -0.7911998037898511,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11952251588837783,
+          "bipolar": -0.33563587985993587,
+          "psychosis_SZ_SZA": -0.544785604607974
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "3d876479c52024fd703d",
+        "joint_direction_frequency": 0.7145,
+        "minimum_directional_standardized_beta": 0.11952251588837783,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.49184771633756036,
+        "HCP_nonaffective": -0.646337292178181,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.283587025712599,
+          "psychosis_SZ_SZA": -0.38017797376126433
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "e8a17ceaad7b88f56490",
+        "joint_direction_frequency": 0.915,
+        "minimum_directional_standardized_beta": 0.283587025712599,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.572003202642653,
+        "HCP_nonaffective": -0.5492216462950105,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.20538029052090034,
+          "psychosis_SZ_SZA": -0.19477669894708288
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:054:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "ab911271cb051c884457",
+        "joint_direction_frequency": 0.758,
+        "minimum_directional_standardized_beta": 0.19477669894708288,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.3893054910703128,
+        "HCP_nonaffective": -0.4685260111461542,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.07070580450875795,
+          "psychosis_SZ_SZA": -0.2867754618445584
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:317:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "ae86c17ae078a27d4363",
+        "joint_direction_frequency": 0.627,
+        "minimum_directional_standardized_beta": 0.07070580450875795,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.48714029995573604,
+        "HCP_nonaffective": -0.6661812417519339,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11431058107768417,
+          "psychosis_SZ_SZA": -0.2866044066991546
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "8f5cd5ee21caf245935f",
+        "joint_direction_frequency": 0.688,
+        "minimum_directional_standardized_beta": 0.11431058107768417,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.49184771633756036,
+        "HCP_nonaffective": -0.646337292178181,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.1520967043279136,
+          "psychosis_SZ_SZA": -0.38017797376126433
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "c9bc6cdd89105433e138",
+        "joint_direction_frequency": 0.7685,
+        "minimum_directional_standardized_beta": 0.1520967043279136,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": null,
+        "HCP_nonaffective": null,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.1520967043279136,
+          "bipolar": -0.283587025712599
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "f26d73de9e8572edba15",
+        "joint_direction_frequency": 0.751,
+        "minimum_directional_standardized_beta": 0.1520967043279136,
+        "named": [
+          "ADHD",
+          "bipolar"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.49184771633756036,
+        "HCP_nonaffective": -0.646337292178181,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.1520967043279136,
+          "bipolar": -0.283587025712599,
+          "psychosis_SZ_SZA": -0.38017797376126433
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "5275c5452b5aa4abea2f",
+        "joint_direction_frequency": 0.734,
+        "minimum_directional_standardized_beta": 0.1520967043279136,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.44045168694258663,
+        "HCP_nonaffective": -0.5912054229359496,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.14649461853954177,
+          "bipolar": -0.2781052530147402,
+          "psychosis_SZ_SZA": -0.36455474794131165
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:064:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "40162c8d78022fc4cb5e",
+        "joint_direction_frequency": 0.716,
+        "minimum_directional_standardized_beta": 0.14649461853954177,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.6084854426895102,
+        "HCP_nonaffective": -0.8119072090437857,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.23251556371697463,
+          "psychosis_SZ_SZA": -0.394019813525461
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "44cb2eeb8581a8b48b55",
+        "joint_direction_frequency": 0.8785,
+        "minimum_directional_standardized_beta": 0.23251556371697463,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.403778858334657,
+        "HCP_nonaffective": -0.6437020311615991,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.06418436585909612,
+          "psychosis_SZ_SZA": -0.25760348349398526
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:056:DorsAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "1b25538b74ff26c7842e",
+        "joint_direction_frequency": 0.596,
+        "minimum_directional_standardized_beta": 0.06418436585909612,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.48714029995573604,
+        "HCP_nonaffective": -0.6661812417519339,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.3225719677951105,
+          "psychosis_SZ_SZA": -0.2866044066991546
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "ecd2315312c2a46bce16",
+        "joint_direction_frequency": 0.893,
+        "minimum_directional_standardized_beta": 0.2866044066991546,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.403778858334657,
+        "HCP_nonaffective": -0.6437020311615991,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.06418436585909612,
+          "bipolar": -0.22744650812707484,
+          "psychosis_SZ_SZA": -0.25760348349398526
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:056:DorsAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "5a6ac33e386e6958aff0",
+        "joint_direction_frequency": 0.555,
+        "minimum_directional_standardized_beta": 0.06418436585909612,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": null,
+        "HCP_nonaffective": null,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11431058107768417,
+          "bipolar": -0.3225719677951105
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "e06d5de4bafd7680aeb8",
+        "joint_direction_frequency": 0.705,
+        "minimum_directional_standardized_beta": 0.11431058107768417,
+        "named": [
+          "ADHD",
+          "bipolar"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.48714029995573604,
+        "HCP_nonaffective": -0.6661812417519339,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11431058107768417,
+          "bipolar": -0.3225719677951105,
+          "psychosis_SZ_SZA": -0.2866044066991546
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "c974145dd9b0658c868d",
+        "joint_direction_frequency": 0.67,
+        "minimum_directional_standardized_beta": 0.11431058107768417,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.5167637347246357,
+        "HCP_nonaffective": -0.5452213542821459,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.23786425179302972,
+          "psychosis_SZ_SZA": -0.4815552131515727
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:109:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "052ddd08846e3922b07e",
+        "joint_direction_frequency": 0.895,
+        "minimum_directional_standardized_beta": 0.23786425179302972,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.31730355632300483,
+        "HCP_nonaffective": -0.31595429048886847,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.17633543806428068,
+          "bipolar": -0.21095744363421282,
+          "psychosis_SZ_SZA": -0.16088736605368975
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:314:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "91670f524eb41065896a",
+        "joint_direction_frequency": 0.632,
+        "minimum_directional_standardized_beta": 0.16088736605368975,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.6483590367251455,
+        "HCP_nonaffective": -0.681809067326617,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.05659936850863823,
+          "bipolar": -0.18983272235511245,
+          "psychosis_SZ_SZA": -0.23607428201842426
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:DorsAttn:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "27981a1d1ecac5af5013",
+        "joint_direction_frequency": 0.52,
+        "minimum_directional_standardized_beta": 0.05659936850863823,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": null,
+        "HCP_nonaffective": null,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.07675934281875496,
+          "bipolar": -0.23251556371697463
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "13a44159122f771d9512",
+        "joint_direction_frequency": 0.618,
+        "minimum_directional_standardized_beta": 0.07675934281875496,
+        "named": [
+          "ADHD",
+          "bipolar"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.11588118137499528,
+        "HCP_nonaffective": -0.3629139431491707,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.15273240362182902,
+          "bipolar": -0.39948752298889567,
+          "psychosis_SZ_SZA": -0.49434390130840183
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:261:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "e9803d03879b6f64c4b8",
+        "joint_direction_frequency": 0.781,
+        "minimum_directional_standardized_beta": 0.15273240362182902,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.6084854426895102,
+        "HCP_nonaffective": -0.8119072090437857,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.07675934281875496,
+          "psychosis_SZ_SZA": -0.394019813525461
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "a7ebd04f5fd82f432efa",
+        "joint_direction_frequency": 0.6555,
+        "minimum_directional_standardized_beta": 0.07675934281875496,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.6084854426895102,
+        "HCP_nonaffective": -0.8119072090437857,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.07675934281875496,
+          "bipolar": -0.23251556371697463,
+          "psychosis_SZ_SZA": -0.394019813525461
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "cb95ddc012fdf9f8248c",
+        "joint_direction_frequency": 0.607,
+        "minimum_directional_standardized_beta": 0.07675934281875496,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.5181504997350357,
+        "HCP_nonaffective": -0.6846636250427474,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.1647473139763804,
+          "psychosis_SZ_SZA": -0.24058820744655268
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:DorsAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "hypothesis_id": "51c580a6139404272c66",
+        "joint_direction_frequency": 0.743,
+        "minimum_directional_standardized_beta": 0.1647473139763804,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.5682771808207709,
+        "HCP_nonaffective": -0.7498554960098354,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.2600326103159404,
+          "psychosis_SZ_SZA": -0.15988366558458023
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "5d67548292b43a29fbd2",
+        "joint_direction_frequency": 0.7485,
+        "minimum_directional_standardized_beta": 0.15988366558458023,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": null,
+        "HCP_nonaffective": null,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.009483017198238203,
+          "bipolar": -0.25737504381952697
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:104:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "91db7740c66a41792684",
+        "joint_direction_frequency": 0.495,
+        "minimum_directional_standardized_beta": 0.009483017198238203,
+        "named": [
+          "ADHD",
+          "bipolar"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.3812538592697298,
+        "HCP_nonaffective": -0.6322739256735763,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.1862951207734779,
+          "psychosis_SZ_SZA": -0.2866738173159024
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Cont:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "c43016f2061aea0db20e",
+        "joint_direction_frequency": 0.798,
+        "minimum_directional_standardized_beta": 0.1862951207734779,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.4492038552187975,
+        "HCP_nonaffective": -0.6326349060623156,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.19727569871978584,
+          "psychosis_SZ_SZA": -0.27676367188559337
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:098:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "02ef10ac7980d2a6c859",
+        "joint_direction_frequency": 0.8035,
+        "minimum_directional_standardized_beta": 0.19727569871978584,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.3832556615796835,
+        "HCP_nonaffective": -0.6515106172089362,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.2560899026732999,
+          "psychosis_SZ_SZA": -0.20911783559048147
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Default:Default",
+        "formal_confirmation": false,
+        "hypothesis_id": "61e6e04e540110fe754f",
+        "joint_direction_frequency": 0.8085,
+        "minimum_directional_standardized_beta": 0.20911783559048147,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": true
+      },
+      {
+        "COBRE": -0.2438971231112217,
+        "HCP_nonaffective": -0.42584008000662066,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.019099395724891242,
+          "psychosis_SZ_SZA": -0.2915911736434168
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:208:SomMot",
+        "formal_confirmation": false,
+        "hypothesis_id": "98206c506bffe0dac66c",
+        "joint_direction_frequency": 0.5445,
+        "minimum_directional_standardized_beta": 0.019099395724891242,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      },
+      {
+        "COBRE": -0.4752000512971139,
+        "HCP_nonaffective": -0.7720100582094956,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.07214645905967601,
+          "psychosis_SZ_SZA": -0.04103423526856283
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Limbic:Vis",
+        "formal_confirmation": false,
+        "hypothesis_id": "a1f1a727dd523265d698",
+        "joint_direction_frequency": 0.459,
+        "minimum_directional_standardized_beta": 0.04103423526856283,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "pragmatic_triage_pass": false
+      }
+    ],
+    "metric_assessments": [
+      {
+        "COBRE": -0.5820574762299457,
+        "HCP_nonaffective": -0.6782521924342488,
+        "TCP_score": 0.6989320664007718,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.4201703951439138,
+          "psychosis_SZ_SZA": -0.5990029494041597
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:108:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:108:SomMot",
+        "historical_matches": [],
+        "hypothesis_id": "e3b5ea76fb92c756d9e3",
+        "joint_direction_frequency": 0.989,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.4201703951439138,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:108:SomMot",
+        "not_in_historical_three_inventories": true,
+        "phase": "initial_five",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 1.0,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.6719347086749652,
+        "HCP_nonaffective": -0.5722951922883922,
+        "TCP_score": 0.5491967902057269,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.28909469884859773,
+          "psychosis_SZ_SZA": -0.3881988422794179
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Vis:Vis",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:Vis:Vis",
+        "historical_matches": [
+          {
+            "hypothesis_id": "693bb1e22a6fff29c492",
+            "same_representative_id": true,
+            "stage": "external_replication_20260911"
+          },
+          {
+            "hypothesis_id": "693bb1e22a6fff29c492",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "693bb1e22a6fff29c492",
+        "joint_direction_frequency": 0.9295,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.28909469884859773,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:Vis:Vis",
+        "not_in_historical_three_inventories": false,
+        "phase": "initial_five",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 1.0,
+        "theme": "Vis—Vis"
+      },
+      {
+        "COBRE": -0.4918501272724766,
+        "HCP_nonaffective": -0.6175946278978639,
+        "TCP_score": 0.5438564572942288,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.4119699184848284,
+          "psychosis_SZ_SZA": -0.48546036873196885
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:254:SalVentAttn",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:254:SalVentAttn",
+        "historical_matches": [],
+        "hypothesis_id": "c94c1f0143413b424323",
+        "joint_direction_frequency": 0.986,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.4119699184848284,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:254:SalVentAttn",
+        "not_in_historical_three_inventories": true,
+        "phase": "initial_five",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 1.0,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.6262933701961823,
+        "HCP_nonaffective": -0.7046203059659669,
+        "TCP_score": 0.5417412601580696,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.21112403960598827,
+          "psychosis_SZ_SZA": -0.3950658227854447
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:DorsAttn:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:DorsAttn:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "1956499df923d233e353",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "d171b2baf51f908371bb",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "d022f817b2d0170e6b2b",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "b2aae1e076345da38355",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "1956499df923d233e353",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "1956499df923d233e353",
+        "joint_direction_frequency": 0.8585,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.21112403960598827,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:DorsAttn:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "initial_five",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 1.0,
+        "theme": "DorsAttn—SomMot"
+      },
+      {
+        "COBRE": -0.421649325892352,
+        "HCP_nonaffective": -0.6622028374528374,
+        "TCP_score": 0.484771488295258,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.03926906873041918,
+          "psychosis_SZ_SZA": -0.1513292274970956
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Limbic:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:Limbic:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "604ef8cd9e730efce7d5",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "4677ea47ca65007fa4db",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "604ef8cd9e730efce7d5",
+            "same_representative_id": false,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "35b55341fad57c6ce37f",
+        "joint_direction_frequency": 0.5225,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.03926906873041918,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:Limbic:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "initial_five",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 1.0,
+        "theme": "Limbic—SomMot"
+      },
+      {
+        "COBRE": -0.5760806459225779,
+        "HCP_nonaffective": -0.7911998037898511,
+        "TCP_score": 0.6491081333681153,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.33563587985993587,
+          "psychosis_SZ_SZA": -0.544785604607974
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:108:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "1c1c59c7fd87df6ec713",
+            "same_representative_id": true,
+            "stage": "external_replication_20260911"
+          },
+          {
+            "hypothesis_id": "1c1c59c7fd87df6ec713",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "1c1c59c7fd87df6ec713",
+        "joint_direction_frequency": 0.971,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.33563587985993587,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:108:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 0.9149752656958067,
+        "theme": "SomMot—SomMot"
+      },
+      {
+        "COBRE": -0.49184771633756036,
+        "HCP_nonaffective": -0.646337292178181,
+        "TCP_score": 0.5542096556510229,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.283587025712599,
+          "psychosis_SZ_SZA": -0.38017797376126433
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:108:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "e8a17ceaad7b88f56490",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "c9bc6cdd89105433e138",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "f26d73de9e8572edba15",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "5275c5452b5aa4abea2f",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "e8a17ceaad7b88f56490",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "e8a17ceaad7b88f56490",
+        "joint_direction_frequency": 0.915,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.283587025712599,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:108:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 0.9299459845453063,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.572003202642653,
+        "HCP_nonaffective": -0.5492216462950105,
+        "TCP_score": 0.46521420072033953,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.20538029052090034,
+          "psychosis_SZ_SZA": -0.19477669894708288
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:054:SalVentAttn",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:054:SalVentAttn",
+        "historical_matches": [],
+        "hypothesis_id": "ab911271cb051c884457",
+        "joint_direction_frequency": 0.758,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.19477669894708288,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:108:SomMot",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8429657343223739,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.3893054910703128,
+        "HCP_nonaffective": -0.4685260111461542,
+        "TCP_score": 0.4603541545494404,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.07070580450875795,
+          "psychosis_SZ_SZA": -0.2867754618445584
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:317:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:317:SomMot",
+        "historical_matches": [],
+        "hypothesis_id": "ae86c17ae078a27d4363",
+        "joint_direction_frequency": 0.627,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.07070580450875795,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:108:SomMot",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8931411124400735,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.48714029995573604,
+        "HCP_nonaffective": -0.6661812417519339,
+        "TCP_score": 0.44338221760275176,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.11431058107768417,
+          "psychosis_SZ_SZA": -0.2866044066991546
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:SalVentAttn:SalVentAttn",
+        "historical_matches": [
+          {
+            "hypothesis_id": "8f5cd5ee21caf245935f",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "ecd2315312c2a46bce16",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "e06d5de4bafd7680aeb8",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "c974145dd9b0658c868d",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "ecd2315312c2a46bce16",
+            "same_representative_id": false,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "8f5cd5ee21caf245935f",
+        "joint_direction_frequency": 0.688,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.11431058107768417,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:254:SalVentAttn",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8533424899217884,
+        "theme": "SalVentAttn—SalVentAttn"
+      },
+      {
+        "COBRE": -0.44045168694258663,
+        "HCP_nonaffective": -0.5912054229359496,
+        "TCP_score": 0.42655274519466985,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.14649461853954177,
+          "bipolar": -0.2781052530147402,
+          "psychosis_SZ_SZA": -0.36455474794131165
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:064:SalVentAttn",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:064:SalVentAttn",
+        "historical_matches": [],
+        "hypothesis_id": "40162c8d78022fc4cb5e",
+        "joint_direction_frequency": 0.716,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.14649461853954177,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:254:SalVentAttn",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8571481377133144,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.6084854426895102,
+        "HCP_nonaffective": -0.8119072090437857,
+        "TCP_score": 0.42504915630480233,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.23251556371697463,
+          "psychosis_SZ_SZA": -0.394019813525461
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SomMot:Vis",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:SomMot:Vis",
+        "historical_matches": [
+          {
+            "hypothesis_id": "44cb2eeb8581a8b48b55",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "13a44159122f771d9512",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "a7ebd04f5fd82f432efa",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "cb95ddc012fdf9f8248c",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "44cb2eeb8581a8b48b55",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "44cb2eeb8581a8b48b55",
+        "joint_direction_frequency": 0.8785,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.23251556371697463,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:Vis:Vis",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 0.7982824960038896,
+        "theme": "SomMot—Vis"
+      },
+      {
+        "COBRE": -0.403778858334657,
+        "HCP_nonaffective": -0.6437020311615991,
+        "TCP_score": 0.41976759852728557,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.06418436585909612,
+          "psychosis_SZ_SZA": -0.25760348349398526
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:056:DorsAttn",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:056:DorsAttn",
+        "historical_matches": [],
+        "hypothesis_id": "1b25538b74ff26c7842e",
+        "joint_direction_frequency": 0.596,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.06418436585909612,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:DorsAttn:SomMot",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8939757633705707,
+        "theme": "DorsAttn—SomMot"
+      },
+      {
+        "COBRE": -0.5167637347246357,
+        "HCP_nonaffective": -0.5452213542821459,
+        "TCP_score": 0.3823103705768746,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.23786425179302972,
+          "psychosis_SZ_SZA": -0.4815552131515727
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:109:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:108:SomMot",
+        "historical_matches": [],
+        "hypothesis_id": "052ddd08846e3922b07e",
+        "joint_direction_frequency": 0.895,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.23786425179302972,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:108:SomMot",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 0.9004083877939232,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.31730355632300483,
+        "HCP_nonaffective": -0.31595429048886847,
+        "TCP_score": 0.38102610290489414,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.17633543806428068,
+          "bipolar": -0.21095744363421282,
+          "psychosis_SZ_SZA": -0.16088736605368975
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:314:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:314:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "91670f524eb41065896a",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          }
+        ],
+        "hypothesis_id": "91670f524eb41065896a",
+        "joint_direction_frequency": 0.632,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.16088736605368975,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:317:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8734106763197702,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.6483590367251455,
+        "HCP_nonaffective": -0.681809067326617,
+        "TCP_score": 0.35512461983520494,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.05659936850863823,
+          "bipolar": -0.18983272235511245,
+          "psychosis_SZ_SZA": -0.23607428201842426
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:DorsAttn:Vis",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:SomMot:Vis",
+        "historical_matches": [
+          {
+            "hypothesis_id": "27981a1d1ecac5af5013",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "ca00b15a4a5e05fcb25e",
+            "same_representative_id": false,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "27981a1d1ecac5af5013",
+        "joint_direction_frequency": 0.52,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.05659936850863823,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:SomMot:Vis",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.9246164622696711,
+        "theme": "DorsAttn—Vis"
+      },
+      {
+        "COBRE": -0.11588118137499528,
+        "HCP_nonaffective": -0.3629139431491707,
+        "TCP_score": 0.35258165620705245,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.15273240362182902,
+          "bipolar": -0.39948752298889567,
+          "psychosis_SZ_SZA": -0.49434390130840183
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:261:SalVentAttn",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:261:SalVentAttn",
+        "historical_matches": [],
+        "hypothesis_id": "e9803d03879b6f64c4b8",
+        "joint_direction_frequency": 0.781,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.15273240362182902,
+        "named": [
+          "ADHD",
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:254:SalVentAttn",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8555033646970231,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.5181504997350357,
+        "HCP_nonaffective": -0.6846636250427474,
+        "TCP_score": 0.3167095850209612,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.1647473139763804,
+          "psychosis_SZ_SZA": -0.24058820744655268
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:DorsAttn:SalVentAttn",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:DorsAttn:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "51c580a6139404272c66",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "64e4a5dd55363aa4436b",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "51c580a6139404272c66",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "51c580a6139404272c66",
+        "joint_direction_frequency": 0.743,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.1647473139763804,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:DorsAttn:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.9305348727286419,
+        "theme": "DorsAttn—SalVentAttn"
+      },
+      {
+        "COBRE": -0.5682771808207709,
+        "HCP_nonaffective": -0.7498554960098354,
+        "TCP_score": 0.3159640731215302,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.2600326103159404,
+          "psychosis_SZ_SZA": -0.15988366558458023
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:SalVentAttn:Vis",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:SomMot:Vis",
+        "historical_matches": [
+          {
+            "hypothesis_id": "5d67548292b43a29fbd2",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "5d67548292b43a29fbd2",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "5d67548292b43a29fbd2",
+        "joint_direction_frequency": 0.7485,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.15988366558458023,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:SomMot:Vis",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.9289995509792335,
+        "theme": "SalVentAttn—Vis"
+      },
+      {
+        "COBRE": null,
+        "HCP_nonaffective": null,
+        "TCP_score": 0.305842234993864,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.009483017198238203,
+          "bipolar": -0.25737504381952697
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:104:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:104:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "91db7740c66a41792684",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "f24232017216bf3b374c",
+            "same_representative_id": false,
+            "stage": "discovery_expansion_20260912"
+          }
+        ],
+        "hypothesis_id": "91db7740c66a41792684",
+        "joint_direction_frequency": 0.495,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.009483017198238203,
+        "named": [
+          "ADHD",
+          "bipolar"
+        ],
+        "nearest_prior_anchor": "network_pair:SalVentAttn:SalVentAttn",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.77266181834533,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.3812538592697298,
+        "HCP_nonaffective": -0.6322739256735763,
+        "TCP_score": 0.2997963451670836,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.1862951207734779,
+          "psychosis_SZ_SZA": -0.2866738173159024
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Cont:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:DorsAttn:SomMot",
+        "historical_matches": [
+          {
+            "hypothesis_id": "c43016f2061aea0db20e",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "c43016f2061aea0db20e",
+        "joint_direction_frequency": 0.798,
+        "low_redundancy_anchor": false,
+        "minimum_directional_standardized_beta": 0.1862951207734779,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:DorsAttn:SomMot",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.9003535193984159,
+        "theme": "Cont—SomMot"
+      },
+      {
+        "COBRE": -0.4492038552187975,
+        "HCP_nonaffective": -0.6326349060623156,
+        "TCP_score": 0.2855502819401647,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.19727569871978584,
+          "psychosis_SZ_SZA": -0.27676367188559337
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:098:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:098:SomMot",
+        "historical_matches": [],
+        "hypothesis_id": "02ef10ac7980d2a6c859",
+        "joint_direction_frequency": 0.8035,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.19727569871978584,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "ROI_to_network:104:SomMot",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 0.8388903928367106,
+        "theme": "SalVentAttn—SomMot"
+      },
+      {
+        "COBRE": -0.3832556615796835,
+        "HCP_nonaffective": -0.6515106172089362,
+        "TCP_score": 0.2797291244144864,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.2560899026732999,
+          "psychosis_SZ_SZA": -0.20911783559048147
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Default:Default",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:Default:Default",
+        "historical_matches": [
+          {
+            "hypothesis_id": "61e6e04e540110fe754f",
+            "same_representative_id": true,
+            "stage": "discovery_expansion_20260912"
+          },
+          {
+            "hypothesis_id": "61e6e04e540110fe754f",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "61e6e04e540110fe754f",
+        "joint_direction_frequency": 0.8085,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.20911783559048147,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:SalVentAttn:SalVentAttn",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": true,
+        "signed_TCP_correlation_to_nearest": 0.8372932559293036,
+        "theme": "Default—Default"
+      },
+      {
+        "COBRE": -0.2438971231112217,
+        "HCP_nonaffective": -0.42584008000662066,
+        "TCP_score": 0.26955902435689727,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "ADHD": -0.019099395724891242,
+          "psychosis_SZ_SZA": -0.2915911736434168
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "ROI_to_network:208:SomMot",
+        "formal_confirmation": false,
+        "group_anchor": "ROI_to_network:208:SomMot",
+        "historical_matches": [],
+        "hypothesis_id": "98206c506bffe0dac66c",
+        "joint_direction_frequency": 0.5445,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.019099395724891242,
+        "named": [
+          "ADHD",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:SomMot:Vis",
+        "not_in_historical_three_inventories": true,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.7955281391590535,
+        "theme": "SomMot—Vis"
+      },
+      {
+        "COBRE": -0.4752000512971139,
+        "HCP_nonaffective": -0.7720100582094956,
+        "TCP_score": 0.2578930297799977,
+        "UCLA_all_named_same_direction": true,
+        "UCLA_components": {
+          "bipolar": -0.07214645905967601,
+          "psychosis_SZ_SZA": -0.04103423526856283
+        },
+        "UCLA_no_FD_all_same_direction": true,
+        "endpoint": "network_pair:Limbic:Vis",
+        "formal_confirmation": false,
+        "group_anchor": "network_pair:Limbic:Vis",
+        "historical_matches": [
+          {
+            "hypothesis_id": "a1f1a727dd523265d698",
+            "same_representative_id": true,
+            "stage": "no_discussion_expansion_20260913_r1"
+          }
+        ],
+        "hypothesis_id": "a1f1a727dd523265d698",
+        "joint_direction_frequency": 0.459,
+        "low_redundancy_anchor": true,
+        "minimum_directional_standardized_beta": 0.04103423526856283,
+        "named": [
+          "bipolar",
+          "psychosis_SZ_SZA"
+        ],
+        "nearest_prior_anchor": "network_pair:SomMot:Vis",
+        "not_in_historical_three_inventories": false,
+        "phase": "expansion",
+        "pragmatic_triage_pass": false,
+        "signed_TCP_correlation_to_nearest": 0.8169538140778364,
+        "theme": "Limbic—Vis"
+      }
+    ],
+    "new_bootstrap_fits": 348000,
+    "new_component_rows": 262,
+    "new_unique_fits": 174,
+    "novelty_certified": false,
+    "pragmatic_supported_anchor_themes": [
+      "Default—Default",
+      "DorsAttn—SomMot",
+      "SalVentAttn—SomMot",
+      "SomMot—Vis",
+      "Vis—Vis"
+    ],
+    "pragmatic_supported_low_redundancy_anchors": 7,
+    "pragmatic_supported_metrics": 10,
+    "prior_external_exposure_retained": true,
+    "supported_anchors_absent_historical_three": 3,
+    "supported_metrics_absent_historical_three": 4
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "papers": {
+    "33210798": {
+      "zh": "研究对 610 人的静息态 fMRI 进行动态连接分析，比较精神分裂症、双相障碍、抑郁症与健康对照。在最常出现的连接状态中，三类患者的视觉、感觉运动、显著性及额顶网络内部连接均较低。",
+      "en": "Dynamic resting-state connectivity was examined in 610 people with schizophrenia, bipolar disorder, depression or no psychiatric diagnosis. In the most frequent connectivity state, all three patient groups showed lower within-network connectivity in visual, sensorimotor, salience and frontoparietal networks."
+    },
+    "38665271": {
+      "zh": "这篇综述汇总多个精神疾病中左右脑同源区域的静息态连接研究。多种疾病在注意、显著性、感觉运动等网络出现同源连接降低，但 ADHD 的模式不同。",
+      "en": "This review compared resting-state connectivity between matching regions in the two hemispheres across psychiatric disorders. Several disorders showed reduced homotopic connectivity in attention, salience and sensorimotor networks, whereas ADHD showed a different pattern."
+    },
+    "29897593": {
+      "zh": "研究比较 512 名精神分裂症、双相障碍、抑郁症患者及健康对照的脑网络。三类患者均出现短距离连接降低，主要涉及感觉及联合皮层；中、长距离连接则升高，其前额叶分布随疾病而异。",
+      "en": "Brain networks were compared in 512 people with schizophrenia, bipolar disorder, depression or no psychiatric diagnosis. Short-range connectivity was reduced across patient groups, particularly in sensory and association cortex. Medium- and long-range connectivity increased, with different prefrontal distributions across disorders."
+    },
+    "35264921": {
+      "zh": "研究比较 18 名双相 I 型患者与 20 名健康对照的感觉运动网络，并评估执行功能。患者部分网络内连接升高、感觉运动与默认模式网络间连接降低，一些连接差异与躁狂症状及数字广度表现相关。",
+      "en": "Resting-state sensorimotor connectivity and executive function were studied in 18 people with bipolar I disorder and 20 controls. Patients showed increased connectivity in parts of the sensorimotor network but reduced connectivity with the default-mode network. Some differences related to mania symptoms and digit-span performance."
+    },
+    "30837901": {
+      "zh": "研究在 271 名参与者中比较精神分裂症、抑郁症、双相障碍与健康对照的静息态活动和连接。三类患者均有岛叶连接降低，以及部分额叶、扣带区域活动降低，同时也存在各疾病特有的改变。",
+      "en": "Resting-state activity and connectivity were compared across schizophrenia, depression, bipolar disorder and controls in 271 participants. The patient groups shared reduced insular connectivity and lower activity in some frontal and cingulate regions, alongside disorder-specific changes."
+    },
+    "28360829": {
+      "zh": "研究让 22 名精神分裂症患者和 16 名健康对照完成视觉言语提示任务。患者左后颞下回的任务激活较低，该区域与双侧中央沟盖、颞上回及左岛叶的连接也较弱。",
+      "en": "A visual-speech priming task was studied in 22 people with schizophrenia and 16 controls. Patients showed lower task-related activation of the left posterior inferior temporal gyrus and weaker connectivity from that region to the Rolandic operculum, superior temporal gyri and left insula."
+    },
+    "32688026": {
+      "zh": "研究比较 41 名未用药、处于抑郁发作期的双相 II 型患者与 68 名对照。患者右后岛叶与左中央后回连接降低，并与较高 IL-6 水平相关；另一些前岛叶连接则升高。",
+      "en": "The study compared 41 unmedicated patients with bipolar II depression and 68 controls. Right posterior insula–left postcentral connectivity was lower and related to higher IL-6 levels, while some anterior-insular connections were increased."
+    },
+    "34120907": {
+      "zh": "研究随访 211 名从 MCI 进展至阿尔茨海默病痴呆的 ADNI 参与者，比较不同 APOE 基因型的认知及脑体积变化。ε4 携带者在进入痴呆阶段后，全脑、海马、内嗅皮层和颞中回萎缩较快，脑室扩大也较快。",
+      "en": "The study followed 211 ADNI participants who progressed from MCI to Alzheimer's dementia, comparing cognitive and volumetric trajectories by APOE genotype. After dementia onset, ε4 carriers showed faster whole-brain, hippocampal, entorhinal and middle temporal atrophy, along with faster ventricular expansion."
+    },
+    "39903109": {
+      "zh": "研究分析 320,861 人的认知数据及 29,510 人的脑影像，考察 APOE、Klotho、年龄和性别。APOE ε4 纯合子表现出更明显的年龄相关认知下降，海马和杏仁核也较小。",
+      "en": "The study examined APOE, Klotho, age and sex using cognitive data from 320,861 people and imaging from 29,510. APOE ε4 homozygotes showed greater age-related cognitive decline and smaller hippocampi and amygdalae."
+    },
+    "17097769": {
+      "zh": "研究随访 60 名 MCI 参与者，平均随访 34 个月，13 人进展至痴呆，其中 9 人为阿尔茨海默病。基线右侧海马及内嗅皮层体积有助于预测痴呆进展，内嗅皮层体积还与阿尔茨海默病转归相关。",
+      "en": "Sixty participants with MCI were followed for an average of 34 months; 13 developed dementia, including nine with Alzheimer's disease. Baseline right hippocampal and entorhinal volumes predicted dementia progression, and entorhinal volume also predicted conversion to Alzheimer's disease."
+    },
+    "42115951": {
+      "zh": "研究对 947 名 ADNI MCI 参与者的 192 项 MRI 结构指标进行纵向分析，随访中 314 人进展至阿尔茨海默病。分析筛出包括右颞中回、海马、脑室及全脑体积在内的结构特征，其变化轨迹与进展风险相关。",
+      "en": "The study analyzed 192 longitudinal MRI structural measures in 947 ADNI participants with MCI, of whom 314 progressed to Alzheimer's disease. Selected features included right middle temporal, hippocampal, ventricular and whole-brain measures whose trajectories related to progression risk."
+    },
+    "24524014": {
+      "zh": "研究随访 139 名 ADNI MCI 参与者，将全脑、海马、脑室体积与遗传、脑脊液及认知指标联合用于预测进展。模型在不同随访时间的预测表现有所变化，认知指标在较晚随访阶段仍有预测价值。",
+      "en": "The study followed 139 ADNI participants with MCI and combined whole-brain, hippocampal and ventricular volumes with genetic, CSF and cognitive measures to predict progression. Predictive performance varied with follow-up duration, while cognitive measures remained informative later in follow-up."
+    }
+  },
+  "cases": {
+    "packet-01": {
+      "methods": {
+        "zh": "使用静息态 fMRI，计算右侧 ROI312 与显著性/腹侧注意网络的平均连接强度，分别比较两类患者与对照。内部使用 TCP，外部在 UCLA 重复两类诊断比较，并在 COBRE、HCP-EP 检查精神病性障碍相关结果。分析考虑年龄、性别和扫描站点，外部另检查头动影响；内部与外部分别进行 512 次和 2,000 次重复抽样，观察下降方向是否稳定。",
+        "en": "Resting-state fMRI was used to calculate mean connectivity between right ROI312 and the salience/ventral attention network, comparing each patient group with controls. TCP supplied the internal analysis; UCLA repeated both diagnostic comparisons, while COBRE and HCP-EP assessed psychosis-related findings. Analyses accounted for age, sex and site, with external checks for head motion. Internal and external analyses used 512 and 2,000 resamples, respectively, to assess directional stability."
+      },
+      "results": {
+        "zh": "TCP 中双相障碍与精神分裂症谱系的标准化效应分别为 −0.552 和 −0.619；UCLA 对应比较为 −0.594 和 −0.514，均呈连接降低。两类诊断同时保持下降方向的重复抽样比例，在 TCP 为 95.1%、UCLA 为 99.3%。COBRE 与 HCP-EP 的主要精神病性障碍比较也同向，标准化效应分别为 −0.472 和 −0.694。",
+        "en": "Standardized effects were −0.552 for bipolar disorder and −0.619 for the schizophrenia spectrum in TCP, and −0.594 and −0.514 in the corresponding UCLA comparisons. All indicated lower connectivity. Both diagnoses retained the decreasing direction together in 95.1% of TCP resamples and 99.3% of UCLA resamples. The primary psychosis comparisons in COBRE and HCP-EP also agreed, with standardized effects of −0.472 and −0.694."
+      },
+      "relations": {
+        "P1": {"zh": "该研究提供了显著性网络跨诊断低连接的线索。本案例把动态网络层面的观察具体化为右侧 ROI312 到该网络的静态平均连接，并检验双相与精神分裂症谱系是否同向。", "en": "The salience-network finding motivates a shared diagnostic pattern. This case turns a dynamic network-level observation into a specific static mean-connection test from right ROI312 in bipolar disorder and the schizophrenia spectrum."},
+        "P2": {"zh": "综述提示，连接降低可能跨越传统诊断分类。本案例进一步询问，这一共同方向能否出现在具体分区到显著性网络的连接中，而不仅是左右脑同源区域之间。", "en": "The review motivates a cross-diagnostic decrease. This case asks whether the shared direction also appears between a specific parcel and the salience network, rather than only between matching regions across hemispheres."},
+        "P3": {"zh": "共同的短程连接降低为跨诊断假设提供依据；同时存在的长程连接升高说明不能预设所有连接都下降。因此，本案例针对 ROI312 的指定连接单独检验方向。", "en": "Shared short-range decreases motivate the hypothesis, while long-range increases show that direction depends on the connection. The ROI312 connection therefore requires its own directional test."}
+      }
+    },
+    "packet-02": {
+      "methods": {
+        "zh": "从静息态 fMRI 提取左侧 ROI108 与感觉运动网络的平均连接强度，在 TCP 比较双相障碍、精神分裂症谱系患者与对照。UCLA 用于重复两类诊断比较，COBRE 与 HCP-EP 用于进一步检查精神病性障碍。模型考虑年龄、性别和站点，并检查头动影响；内部 512 次、外部 2,000 次重复抽样用于评估结果方向的稳定性。",
+        "en": "Mean resting-state connectivity between left ROI108 and the sensorimotor network was compared between patients and controls in TCP. UCLA repeated the bipolar and schizophrenia comparisons, while COBRE and HCP-EP provided additional psychosis comparisons. Models accounted for age, sex and site, with head-motion checks. Directional stability was assessed using 512 internal and 2,000 external resamples."
+      },
+      "results": {
+        "zh": "TCP 的双相障碍与精神分裂症谱系标准化效应为 −0.707 和 −0.759，UCLA 对应为 −0.420 和 −0.599。两类诊断同时下降的重复抽样比例分别为 98.8% 和 98.9%。COBRE 与 HCP-EP 的主要比较也呈下降，效应为 −0.582 和 −0.678；头动检查后方向未改变。",
+        "en": "Standardized effects for bipolar disorder and the schizophrenia spectrum were −0.707 and −0.759 in TCP, versus −0.420 and −0.599 in UCLA. Both diagnoses decreased together in 98.8% and 98.9% of resamples, respectively. The primary COBRE and HCP-EP comparisons also decreased, with effects of −0.582 and −0.678. Head-motion checks did not change the direction."
+      },
+      "relations": {
+        "P1": {"zh": "该研究把感觉运动连接异常与双相障碍的执行功能联系起来，说明值得在该网络中寻找表型。它同时报告升高与降低，本案例因此对左侧 ROI108 的指定连接及跨诊断方向另行检验。", "en": "The link with executive function motivates examining the sensorimotor network in bipolar disorder. Because the study found both increases and decreases, this case separately tests the specific ROI108 connection and its direction across diagnoses."},
+        "P2": {"zh": "三类疾病共享连接异常，为寻找共同脑表型提供背景。本案例把这一思路落到左侧 ROI108—感觉运动网络连接，集中比较双相与精神分裂症谱系。", "en": "Shared abnormalities across disorders motivate a common imaging phenotype. This case focuses that idea on left ROI108–sensorimotor connectivity in bipolar disorder and the schizophrenia spectrum."},
+        "P3": {"zh": "视觉、言语与感觉运动相关区域之间的低连接，为本案例提供局部回路线索。当前问题则检验静息状态下分区到整个感觉运动网络的平均连接，并增加双相障碍比较。", "en": "Weaker connections among visual, speech and sensorimotor-related regions provide a circuit-level clue. The current test concerns resting-state mean connectivity to the whole sensorimotor network and adds a bipolar comparison."}
+      }
+    },
+    "packet-03": {
+      "methods": {
+        "zh": "测量右侧 ROI254 到显著性/腹侧注意网络的静息态平均连接，在 TCP 分别比较两类患者与对照。随后在 UCLA 重复双相与精神分裂症比较，并在 COBRE、HCP-EP 检查精神病性障碍结果。分析调整年龄、性别和站点，另考察头动影响；通过内部 512 次、外部 2,000 次重复抽样，检查结果方向是否稳定。",
+        "en": "Mean resting-state connectivity from right ROI254 to the salience/ventral attention network was compared between each patient group and controls in TCP. UCLA repeated the bipolar and schizophrenia comparisons; COBRE and HCP-EP assessed psychosis-related results. Analyses adjusted for age, sex and site and examined head motion. Directional stability was checked with 512 internal and 2,000 external resamples."
+      },
+      "results": {
+        "zh": "TCP 中双相障碍与精神分裂症谱系的标准化效应分别为 −0.561、−0.806，UCLA 分别为 −0.412、−0.485，均为下降。两类诊断同时同向的重复抽样比例为 TCP 96.9%、UCLA 98.6%。COBRE 与 HCP-EP 的主要比较同样下降，效应分别为 −0.492、−0.618。",
+        "en": "Standardized effects were −0.561 and −0.806 for bipolar disorder and the schizophrenia spectrum in TCP, and −0.412 and −0.485 in UCLA. Both diagnoses retained the decreasing direction together in 96.9% of TCP and 98.6% of UCLA resamples. The primary COBRE and HCP-EP comparisons also decreased, with effects of −0.492 and −0.618."
+      },
+      "relations": {
+        "P1": {"zh": "岛叶及显著性网络的共同异常，是本案例选择显著性/腹侧注意网络的主要依据。当前实验进一步定位到右侧 ROI254，并检查两类诊断及外部队列是否呈同一方向。", "en": "Shared insular and salience-network abnormalities motivate selecting the salience/ventral attention network. The present test narrows this to right ROI254 and examines agreement across two diagnoses and external cohorts."},
+        "P2": {"zh": "该研究提供了精神分裂症中视觉相关区域与岛叶、感觉运动相关区域连接较弱的线索。本案例把局部任务回路问题扩展为静息态的分区—网络比较，并纳入双相障碍。", "en": "The study provides a clue about weaker visual-related connections to insular and sensorimotor-related regions in schizophrenia. This case extends the circuit question to a resting-state parcel-to-network comparison and includes bipolar disorder."},
+        "P3": {"zh": "岛叶—感觉运动连接降低为双相障碍一侧提供了具体线索，与显著性网络研究形成互补。本案例不测量炎症，而是检验指定 ROI—网络连接能否成为两类诊断共有的影像表现。", "en": "Reduced insula–sensorimotor connectivity provides a specific bipolar clue that complements the salience-network evidence. This case tests a shared imaging pattern in two diagnoses; it does not measure inflammation."}
+      }
+    },
+    "packet-05": {
+      "methods": {
+        "zh": "将静息态 fMRI 中感觉运动网络内部各分区之间的连接汇总为平均指标，在 TCP 分别比较双相障碍、精神分裂症谱系患者与对照。在 UCLA 重复两类诊断比较，再用 COBRE 和 HCP-EP 检查精神病性障碍。模型考虑年龄、性别和站点，并考察头动；内部 512 次、外部 2,000 次重复抽样用于检查共同下降方向。",
+        "en": "Connections among sensorimotor parcels were averaged into a network-level resting-state measure and compared between patient groups and controls in TCP. UCLA repeated both diagnostic comparisons, with COBRE and HCP-EP providing psychosis comparisons. Models accounted for age, sex and site and examined head motion. The shared decreasing direction was assessed with 512 internal and 2,000 external resamples."
+      },
+      "results": {
+        "zh": "TCP 中两类患者的标准化效应为 −0.687、−0.656，UCLA 为 −0.336、−0.545。两类诊断同时保持下降方向的重复抽样比例分别为 99.0% 与 97.1%。COBRE、HCP-EP 的主要比较也下降，效应为 −0.576、−0.791，说明观察到的同向模式也体现在网络整体指标上。",
+        "en": "Standardized effects for the two patient groups were −0.687 and −0.656 in TCP, versus −0.336 and −0.545 in UCLA. Both diagnoses retained the decreasing direction together in 99.0% and 97.1% of resamples, respectively. Primary comparisons in COBRE and HCP-EP also decreased, with effects of −0.576 and −0.791. The shared direction was therefore also seen in a network-wide measure."
+      },
+      "relations": {
+        "P1": {"zh": "这项研究直接提供了跨诊断感觉运动网络内部连接降低的线索。本案例沿用同一网络问题，但改用静态平均连接指标，并在多个外部队列中检查双相和精神分裂症谱系的结果方向。", "en": "This study directly motivates a shared decrease within the sensorimotor network. The current case uses static mean connectivity and checks the bipolar and schizophrenia-spectrum pattern across external cohorts."}
+      }
+    },
+    "packet-36": {
+      "methods": {
+        "zh": "将 APOE ε4 的 0、1、2 个拷贝与基线内嗅皮层体积进行关联分析，再在 ADNI3 重复检验。体积按颅内容积归一化，模型考虑年龄、性别、教育、遗传祖源和站点。每个队列均比较线性关联、秩关联和 Huber 稳健回归三种方法，并对多重检验进行 FDR 校正。",
+        "en": "APOE ε4 dosage of zero, one or two copies was related to baseline entorhinal volume and tested again in ADNI3. Volume was normalized to intracranial volume, and models accounted for age, sex, education, genetic ancestry and site. Linear, rank-based and robust Huber analyses were compared in each cohort, with FDR adjustment for multiple testing."
+      },
+      "results": {
+        "zh": "内部和外部均为 313 人。线性分析中，ε4 拷贝数更多对应内嗅皮层较小，内部 r = −0.141、q = 0.0446，外部 r = −0.158、q = 0.0145。两队列的稳健回归也通过校正标准；秩关联仅在外部通过。六组分析均为负向，其中五组通过原统计标准。",
+        "en": "Both cohorts included 313 participants. More ε4 copies were associated with smaller entorhinal volume in the linear analyses: internal r = −0.141, q = 0.0446; external r = −0.158, q = 0.0145. Robust regression also passed correction in both cohorts; rank-based association passed only externally. All six analyses were negative, and five met the original statistical criterion."
+      },
+      "relations": {
+        "P1": {"zh": "该研究将 ε4 与痴呆阶段更快的内嗅皮层萎缩联系起来。本案例把纵向变化线索转成基线剂量问题：ε4 拷贝数较多的人，入组时的内嗅皮层是否已经较小，并在另一批数据中检验。", "en": "The study links ε4 with faster entorhinal atrophy during dementia. This case asks a baseline dosage question: do people with more ε4 copies already have smaller entorhinal volumes at enrollment, and does the association recur in another dataset?"}
+      }
+    },
+    "packet-37": {
+      "methods": {
+        "zh": "利用基因型与基线结构 MRI，检验 APOE ε4 拷贝数是否随海马体积减小而增加，并在 ADNI3 重复分析。海马体积按颅内容积归一化，模型考虑年龄、性别、教育、遗传祖源和站点。除线性关联外，还使用秩关联和 Huber 稳健回归，并进行 FDR 多重检验校正。",
+        "en": "Genotype and baseline structural MRI were used to test whether higher APOE ε4 dosage accompanies smaller hippocampal volume, followed by an ADNI3 analysis. Volume was normalized to intracranial volume; models accounted for age, sex, education, genetic ancestry and site. Rank-based association and robust Huber regression complemented the linear analysis, with FDR adjustment."
+      },
+      "results": {
+        "zh": "内部 326 人、外部 313 人的线性分析均支持负向关联：r 分别为 −0.185、−0.160，q 分别为 0.0070、0.0145。稳健回归在两队列中也得到支持。六组分析中五组通过原统计标准；唯一未通过的是外部秩关联（q = 0.1186），其方向仍为负。",
+        "en": "Linear analyses in 326 internal and 313 external participants both supported a negative association: r = −0.185 and −0.160, with q = 0.0070 and 0.0145. Robust regression also supported the association in both cohorts. Five of the six analyses met the original statistical criterion; the external rank association did not (q = 0.1186), although its direction remained negative."
+      },
+      "relations": {
+        "P1": {"zh": "既有研究已观察到 ε4 纯合子海马较小，提供了基因型与脑结构的直接线索。本案例进一步按 0、1、2 个拷贝检验剂量关系，并在 ADNI 的两个数据批次中检查关联能否重现。", "en": "The observation of smaller hippocampi in ε4 homozygotes provides direct genotype–structure evidence. This case tests dosage across zero, one and two copies and examines whether the association recurs in two ADNI data phases."}
+      }
+    },
+    "packet-38": {
+      "methods": {
+        "zh": "使用 ADNI1/GO/2 和 ADNI3 的基因型与结构 MRI，分析 APOE ε4 拷贝数与基线颞中回体积。体积按颅内容积归一化，分析考虑年龄、性别、教育、遗传祖源及站点。每个队列分别使用线性、秩关联与 Huber 稳健回归三种方法，并进行 FDR 校正。",
+        "en": "Genotype and structural MRI from ADNI1/GO/2 and ADNI3 were used to relate APOE ε4 dosage to baseline middle temporal volume. Volume was normalized to intracranial volume, accounting for age, sex, education, genetic ancestry and site. Linear, rank-based and robust Huber analyses were performed separately in each cohort, with FDR adjustment."
+      },
+      "results": {
+        "zh": "两队列各 313 人，但支持程度不同。内部线性关联接近零（r = −0.034，q = 0.7579），外部关联较明显（r = −0.199，q = 0.0043）。内部三种分析均未通过原统计标准，外部三种均通过；所有分析方向一致，实验证据主要来自 ADNI3。",
+        "en": "Each cohort included 313 participants, but support differed. The internal linear association was close to zero (r = −0.034, q = 0.7579), while the external association was stronger (r = −0.199, q = 0.0043). None of the three internal analyses met the original statistical criterion; all three external analyses did. Directions agreed, with support mainly from ADNI3."
+      },
+      "relations": {
+        "P1": {"zh": "颞中回萎缩更快的观察使关注点从海马扩展到外侧颞叶。本案例检验的不是萎缩速度，而是一次基线扫描中的体积与 ε4 剂量关系，考察同一遗传线索能否体现在这一结构指标中。", "en": "The faster middle temporal atrophy finding extends attention beyond the hippocampus to lateral temporal cortex. This case tests volume from a single baseline scan rather than atrophy rate, asking whether ε4 dosage relates to that structural measure."}
+      }
+    },
+    "packet-42": {
+      "methods": {
+        "zh": "使用 MCI 参与者的基线内嗅皮层 MRI 体积和后续痴呆发生时间，在 ADNI1/GO/2 与 ADNI3 分别开展 Cox 生存分析。体积按颅内容积归一化，模型考虑年龄、性别、教育及 APOE ε4。分别查看 2 年、3 年、5 年窗口，并报告每个窗口的进展人数、风险比及校正后的统计结果。",
+        "en": "Baseline entorhinal MRI volume and time to dementia in participants with MCI were analyzed using Cox models in ADNI1/GO/2 and ADNI3. Volume was normalized to intracranial volume, with adjustment for age, sex, education and APOE ε4. Separate two-, three- and five-year windows report progression events, hazard ratios and multiplicity-adjusted results."
+      },
+      "results": {
+        "zh": "5 年窗口内，内部 140 人中 26 人、外部 98 人中 18 人进展至痴呆。内嗅皮层体积每增加一个标准差，内部风险比为 0.558（95% CI 0.366–0.849，q = 0.0211），外部为 0.617（0.366–1.040，q = 0.1048）。六组分析均为较大体积对应较低风险，但只有内部 5 年结果通过原统计标准。",
+        "en": "Within five years, 26 of 140 internal participants and 18 of 98 external participants progressed to dementia. Per standard-deviation increase in entorhinal volume, the internal hazard ratio was 0.558 (95% CI 0.366–0.849, q = 0.0211), versus 0.617 externally (0.366–1.040, q = 0.1048). All six analyses pointed toward lower risk with larger volume, but only the internal five-year result met the original statistical criterion."
+      },
+      "relations": {
+        "P1": {"zh": "该研究已经提示，基线内嗅皮层体积可提供 MCI 预后信息。本案例在 ADNI 的两个批次中重新检验这种关系，并比较 2、3、5 年窗口，观察关联在不同随访长度下是否一致。", "en": "The study establishes a rationale for baseline entorhinal volume as a prognostic measure. This case re-examines the relationship in two ADNI phases and compares two-, three- and five-year windows to assess consistency over follow-up."}
+      }
+    },
+    "packet-44": {
+      "methods": {
+        "zh": "把 MCI 参与者的基线颞中回体积与之后是否、何时出现痴呆相联系，分别在 ADNI1/GO/2 与 ADNI3 中使用 Cox 生存模型。体积按颅内容积归一化，模型调整年龄、性别、教育及 APOE ε4。比较 2 年、3 年和 5 年随访窗口，并进行多重检验校正。",
+        "en": "Baseline middle temporal volume was related to whether and when participants with MCI developed dementia, using Cox models separately in ADNI1/GO/2 and ADNI3. Volume was normalized to intracranial volume; models adjusted for age, sex, education and APOE ε4. Two-, three- and five-year windows were compared with multiple-testing adjustment."
+      },
+      "results": {
+        "zh": "5 年内，内部 140 人中有 26 例进展，外部 98 人中有 18 例。较大颞中回体积对应较低风险：内部 HR = 0.395（95% CI 0.240–0.650，q = 0.0023），外部 HR = 0.521（0.283–0.962，q = 0.0834）。内部 3 年、5 年分析得到支持；外部 5 年未通过校正，2 年窗口虽 q = 0.0343，但仅有 7 例进展，未达到原完整支持条件。",
+        "en": "Within five years, there were 26 progression events among 140 internal participants and 18 among 98 external participants. Larger middle temporal volume related to lower risk: internal HR = 0.395 (95% CI 0.240–0.650, q = 0.0023); external HR = 0.521 (0.283–0.962, q = 0.0834). Internal three- and five-year analyses were supported. The external five-year analysis did not pass correction; the two-year analysis had q = 0.0343 but only seven events and did not meet the original full support criteria."
+      },
+      "relations": {
+        "P1": {"zh": "这项研究把右颞中回的纵向萎缩轨迹与进展风险联系起来。本案例转而检验一次基线 MRI 中的颞中回体积是否已经包含预后信息，并在另一 ADNI 批次及不同随访窗口中比较。", "en": "The study links longitudinal right middle temporal atrophy to progression risk. This case asks whether volume from one baseline MRI already contains prognostic information and compares another ADNI phase and different follow-up windows."}
+      }
+    },
+    "packet-46": {
+      "methods": {
+        "zh": "研究基线全脑 MRI 体积与 MCI 后续进展至痴呆的时间关系，在 ADNI1/GO/2 和 ADNI3 中分别使用 Cox 模型。全脑体积按颅内容积归一化，并调整年龄、性别、教育及 APOE ε4。使用 2 年、3 年、5 年三个随访窗口，比较整体脑结构与近期、较长期风险的关联。",
+        "en": "Baseline whole-brain MRI volume was related to time from MCI to dementia using Cox models separately in ADNI1/GO/2 and ADNI3. Whole-brain volume was normalized to intracranial volume, adjusting for age, sex, education and APOE ε4. Two-, three- and five-year windows compared associations of global brain structure with nearer- and longer-term risk."
+      },
+      "results": {
+        "zh": "5 年内，内部 158 人中 29 人、外部 101 人中 18 人进展至痴呆。两队列都支持较大全脑体积与较低风险相关：内部 HR = 0.555（95% CI 0.361–0.854，q = 0.0211），外部 HR = 0.425（0.221–0.817，q = 0.0185）。外部 3 年结果也得到支持；其余较短窗口未在两队列一致通过原条件。",
+        "en": "Within five years, 29 of 158 internal participants and 18 of 101 external participants progressed to dementia. Both cohorts supported lower risk with larger whole-brain volume: internal HR = 0.555 (95% CI 0.361–0.854, q = 0.0211); external HR = 0.425 (0.221–0.817, q = 0.0185). The external three-year result was also supported; other shorter-window results did not consistently meet the original criteria in both cohorts."
+      },
+      "relations": {
+        "P1": {"zh": "既有模型已纳入全脑体积，但它与其他脑区、认知和生物标志物共同参与预测。本案例单独考察这一整体结构指标与进展时间的关联，并将观察窗口延伸到 5 年。", "en": "The earlier model included whole-brain volume together with regional, cognitive and biological measures. This case examines the global structural measure's association with time to progression and extends the observation window to five years."}
+      }
+    }
+  }
+}

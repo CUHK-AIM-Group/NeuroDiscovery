@@ -47,18 +47,11 @@ function normalizeTheme(value) {
   return String(value || '').toLowerCase() === 'dark' ? 'dark' : 'light';
 }
 
-function windowChromeOptions(platform = process.platform, dark = nativeTheme.shouldUseDarkColors) {
-  // Keep native caption buttons, but let the workbench header be the title bar.
-  if (platform !== 'win32') return { autoHideMenuBar: platform !== 'darwin' };
-  return {
-    autoHideMenuBar: true,
-    titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      color: dark ? '#171c1b' : '#fcfcfb',
-      symbolColor: dark ? '#e5ede8' : '#243531',
-      height: 48,
-    },
-  };
+function windowChromeOptions() {
+  // v1.0.0 uses the native window frame and its visible application menu.
+  // Keeping the web header out of the title bar also preserves normal pointer
+  // handling for controls such as the sidebar toggle.
+  return { autoHideMenuBar: false };
 }
 
 function applyNativeTheme(value) {
@@ -66,9 +59,6 @@ function applyNativeTheme(value) {
   nativeTheme.themeSource = theme;
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.setBackgroundColor(theme === 'dark' ? '#171c1b' : '#fcfcfb');
-    if (process.platform === 'win32') {
-      mainWindow.setTitleBarOverlay(windowChromeOptions('win32', theme === 'dark').titleBarOverlay);
-    }
   }
   return theme;
 }
@@ -1158,7 +1148,7 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
-  if (process.platform !== 'darwin') mainWindow.setMenuBarVisibility(false);
+  if (process.platform !== 'darwin') mainWindow.setMenuBarVisibility(true);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -1449,7 +1439,7 @@ function setApplicationMenu() {
     },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-  if (mainWindow && process.platform !== 'darwin') mainWindow.setMenuBarVisibility(false);
+  if (mainWindow && process.platform !== 'darwin') mainWindow.setMenuBarVisibility(true);
 }
 
 ipcMain.handle('neuroclaw:show-application-menu', (event) => {

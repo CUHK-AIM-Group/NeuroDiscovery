@@ -1,0 +1,514 @@
+{
+  "created": "2026-09-18",
+  "panel_size": 34,
+  "study_design_basis": "10 experts x 10 materials = 100 reviews; each material reviewed by 3 experts; ceil(100/3) = 34.",
+  "selection_rule_zh": "候选池为两批已完成发现活动中外部整理条件全部通过的假设（旧批 11 条、扩充批 27 条，共 38 条）；按最小方向标准化效应降序排列，并列时按联合方向频率降序，再并列按假设标识字典序；取前 34 条。未使用锚点、冗余分组或整理者偏好影响选取与排序。",
+  "source_hashes": {
+    "old_r1/candidate_index.json": "a16ff8cc00d87dcf2c1d6eeafb2d0ad4ae3ea8e55f7d8f061d2f7ad309ce1b74",
+    "r7/candidate_index.json": "40964c8ba056a2cc44615857030f48a177e24baff50a25a2a6b168bc2f74f19d",
+    "r7/inherited_baseline.json": "e0b42e64bd59fc7095bfd1d0657a0ca9ccde40d32a95729e2364fc2189c3bb29"
+  },
+  "pool_size": 38,
+  "selected": [
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "883a01a4ed23487912f8",
+      "endpoint": "ROI_to_network:312:SalVentAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.5136664902086491,
+      "joint_direction_frequency": 0.993,
+      "direction": -1,
+      "rank": 1
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "e3b5ea76fb92c756d9e3",
+      "endpoint": "ROI_to_network:108:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.4201703951439138,
+      "joint_direction_frequency": 0.989,
+      "direction": -1,
+      "rank": 2
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "c94c1f0143413b424323",
+      "endpoint": "ROI_to_network:254:SalVentAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.4119699184848284,
+      "joint_direction_frequency": 0.986,
+      "direction": -1,
+      "rank": 3
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "df6b74898d35d7868231",
+      "endpoint": "ROI_to_network:036:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.36810802751666477,
+      "joint_direction_frequency": 0.9635,
+      "direction": -1,
+      "rank": 4
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "1c1c59c7fd87df6ec713",
+      "endpoint": "network_pair:SomMot:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.33563587985993587,
+      "joint_direction_frequency": 0.971,
+      "direction": -1,
+      "rank": 5
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "6eca3136ec027225afd8",
+      "endpoint": "ROI_to_network:271:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.30485837865889676,
+      "joint_direction_frequency": 0.8915,
+      "direction": -1,
+      "rank": 6
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "98d2a96fc4346f259119",
+      "endpoint": "ROI_to_network:155:SalVentAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.3047620647235885,
+      "joint_direction_frequency": 0.8945,
+      "direction": -1,
+      "rank": 7
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "d35c4af72ec47db074ff",
+      "endpoint": "ROI_to_network:201:Vis",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.3042251390014003,
+      "joint_direction_frequency": 0.9105,
+      "direction": -1,
+      "rank": 8
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "693bb1e22a6fff29c492",
+      "endpoint": "network_pair:Vis:Vis",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.28909469884859773,
+      "joint_direction_frequency": 0.9295,
+      "direction": -1,
+      "rank": 9
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "ecd2315312c2a46bce16",
+      "endpoint": "network_pair:SalVentAttn:SalVentAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.2866044066991546,
+      "joint_direction_frequency": 0.893,
+      "direction": -1,
+      "rank": 10
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "382fec4646ea95fd23e5",
+      "endpoint": "ROI_to_network:255:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.284918920334331,
+      "joint_direction_frequency": 0.9105,
+      "direction": -1,
+      "rank": 11
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "e8a17ceaad7b88f56490",
+      "endpoint": "network_pair:SalVentAttn:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.283587025712599,
+      "joint_direction_frequency": 0.915,
+      "direction": -1,
+      "rank": 12
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "50a6a928c83f366ba632",
+      "endpoint": "ROI_to_network:312:Default",
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.26791370273377263,
+      "joint_direction_frequency": 0.91,
+      "direction": -1,
+      "rank": 13
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "0fdf6d8a44c69b16aa03",
+      "endpoint": "ROI_to_network:106:SalVentAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.26700588578573564,
+      "joint_direction_frequency": 0.913,
+      "direction": -1,
+      "rank": 14
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "ae7668444b9646ce3607",
+      "endpoint": "ROI_to_network:240:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.26490311399197863,
+      "joint_direction_frequency": 0.901,
+      "direction": -1,
+      "rank": 15
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "a93e510d550e22416d7f",
+      "endpoint": "ROI_to_network:237:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.25072351476246896,
+      "joint_direction_frequency": 0.911,
+      "direction": -1,
+      "rank": 16
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "2647703a7cba11c68f9e",
+      "endpoint": "ROI_to_network:316:Default",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.24875218996544507,
+      "joint_direction_frequency": 0.871,
+      "direction": -1,
+      "rank": 17
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "8019da90ae9257d2ad01",
+      "endpoint": "ROI_to_network:107:SalVentAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.24596698890411609,
+      "joint_direction_frequency": 0.8725,
+      "direction": -1,
+      "rank": 18
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "10dbfa6f5c70bbd2131e",
+      "endpoint": "ROI_to_network:270:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.24315393773098012,
+      "joint_direction_frequency": 0.8985,
+      "direction": -1,
+      "rank": 19
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "0d3cf66e20b70c4dbd3f",
+      "endpoint": "ROI_to_network:289:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.24055449037197116,
+      "joint_direction_frequency": 0.9015,
+      "direction": -1,
+      "rank": 20
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "21ad0adfd73bc040882a",
+      "endpoint": "ROI_to_network:315:Vis",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.23961515783635268,
+      "joint_direction_frequency": 0.861,
+      "direction": -1,
+      "rank": 21
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "052ddd08846e3922b07e",
+      "endpoint": "ROI_to_network:109:SomMot",
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.23786425179302972,
+      "joint_direction_frequency": 0.895,
+      "direction": -1,
+      "rank": 22
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "f889b881d1989b5fbdbd",
+      "endpoint": "ROI_to_network:041:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.2371876203419767,
+      "joint_direction_frequency": 0.9,
+      "direction": -1,
+      "rank": 23
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "44cb2eeb8581a8b48b55",
+      "endpoint": "network_pair:SomMot:Vis",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.23251556371697463,
+      "joint_direction_frequency": 0.8785,
+      "direction": -1,
+      "rank": 24
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "375fc2b46c9fadda003d",
+      "endpoint": "ROI_to_network:317:Default",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.22216538726012527,
+      "joint_direction_frequency": 0.8735,
+      "direction": -1,
+      "rank": 25
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "92850540a3429da96f46",
+      "endpoint": "ROI_to_network:155:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.2156007849500599,
+      "joint_direction_frequency": 0.8755,
+      "direction": -1,
+      "rank": 26
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "1956499df923d233e353",
+      "endpoint": "network_pair:DorsAttn:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.21112403960598827,
+      "joint_direction_frequency": 0.8585,
+      "direction": -1,
+      "rank": 27
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "61e6e04e540110fe754f",
+      "endpoint": "network_pair:Default:Default",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.20911783559048147,
+      "joint_direction_frequency": 0.8085,
+      "direction": -1,
+      "rank": 28
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "b12811728631df8fec59",
+      "endpoint": "ROI_to_network:152:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.19857233148261355,
+      "joint_direction_frequency": 0.867,
+      "direction": -1,
+      "rank": 29
+    },
+    {
+      "batch": "old_r1",
+      "hypothesis_id": "02ef10ac7980d2a6c859",
+      "endpoint": "ROI_to_network:098:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.19727569871978584,
+      "joint_direction_frequency": 0.8035,
+      "direction": -1,
+      "rank": 30
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "2d11da49e6b131f19e9a",
+      "endpoint": "ROI_to_network:266:SomMot",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.19560256020573913,
+      "joint_direction_frequency": 0.879,
+      "direction": -1,
+      "rank": 31
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "83e7754ecc7ed9d8e79b",
+      "endpoint": "ROI_to_network:297:Default",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.19445356359976748,
+      "joint_direction_frequency": 0.8695,
+      "direction": -1,
+      "rank": 32
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "cf4bf92b48c1af409a65",
+      "endpoint": "ROI_to_network:239:DorsAttn",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.19354598107233595,
+      "joint_direction_frequency": 0.86,
+      "direction": -1,
+      "rank": 33
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "88b684f68e54ed5093be",
+      "endpoint": "ROI_to_network:254:SomMot",
+      "named": [
+        "ADHD",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.17472151584318268,
+      "joint_direction_frequency": 0.824,
+      "direction": -1,
+      "rank": 34
+    }
+  ],
+  "dropped": [
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "baa422b9067de3db53b4",
+      "endpoint": "ROI_to_network:082:Default",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.17307370912874476,
+      "joint_direction_frequency": 0.8115,
+      "direction": -1,
+      "rank": 35,
+      "drop_reason": "rank_below_panel_size"
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "725a56e3e75919053440",
+      "endpoint": "ROI_to_network:011:Vis",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.1687760927798465,
+      "joint_direction_frequency": 0.8155,
+      "direction": -1,
+      "rank": 36,
+      "drop_reason": "rank_below_panel_size"
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "ccbefa9050c4cfa4bbb4",
+      "endpoint": "ROI_to_network:263:Default",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.16153738953570548,
+      "joint_direction_frequency": 0.807,
+      "direction": -1,
+      "rank": 37,
+      "drop_reason": "rank_below_panel_size"
+    },
+    {
+      "batch": "r7_expansion",
+      "hypothesis_id": "28c25663063e6ee4de03",
+      "endpoint": "ROI_to_network:229:Limbic",
+      "named": [
+        "bipolar",
+        "psychosis_SZ_SZA"
+      ],
+      "minimum_directional_standardized_beta": 0.15731313213181788,
+      "joint_direction_frequency": 0.818,
+      "direction": -1,
+      "rank": 38,
+      "drop_reason": "rank_below_panel_size"
+    }
+  ]
+}

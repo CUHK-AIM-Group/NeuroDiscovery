@@ -1,0 +1,224 @@
+{
+  "prior": {
+    "packet-01": {
+      "mode": "explicit_parent",
+      "source": {
+        "zh": "双相障碍和精神分裂症／分裂情感性障碍患者中，左侧控制网络分区 ROI139 与显著性／腹侧注意网络的平均功能连接，是否都低于各自对照组？",
+        "en": "Is mean functional connectivity between left control-network parcel ROI139 and the salience/ventral attention network lower in both bipolar disorder and schizophrenia/schizoaffective disorder than in their respective controls?"
+      },
+      "feedback": {
+        "zh": "TCP 中两类患者的效应均为负，但较弱；重复抽样时，两组同时保持降低方向的比例为 51.0%。这一结果随原假设一起被传入后轮。",
+        "en": "Both TCP patient groups had negative but relatively weak effects. The two groups simultaneously retained the decreasing direction in 51.0% of resamples. This result was supplied to a later round together with the original hypothesis."
+      },
+      "next": [{
+        "zh": "在相同两类患者中，改测右侧显著性／腹侧注意网络分区 ROI312 与该网络其余分区的平均功能连接，预测它在两组中均低于对照。",
+        "en": "In the same two diagnostic groups, test mean connectivity between right salience/ventral attention parcel ROI312 and the remaining parcels of that network, predicting lower connectivity than in controls in both groups."
+      }],
+      "change": {
+        "zh": "研究对象由左侧控制网络的 ROI139 换为右侧显著性／腹侧注意网络的 ROI312；目标网络、患者组和“共同降低”的方向保持不变。本例就是这一子假设的检验。",
+        "en": "The source parcel changed from left control-network ROI139 to right salience/ventral attention ROI312. The target network, patient groups and predicted shared decrease stayed the same. The present case tests this child hypothesis."
+      }
+    },
+    "packet-02": {
+      "mode": "explicit_parent",
+      "source": {
+        "zh": "双相障碍和精神分裂症／分裂情感性障碍患者的背侧注意网络与感觉运动网络之间，平均功能连接是否都低于各自对照组？",
+        "en": "Is mean connectivity between the dorsal attention and sensorimotor networks lower in both bipolar disorder and schizophrenia/schizoaffective disorder than in their respective controls?"
+      },
+      "feedback": {
+        "zh": "TCP 中两类患者均表现为连接降低；重复抽样中，两组共同保持降低方向的比例为 95.9%。系统随后把这一已测试的网络关系作为后轮输入。",
+        "en": "Connectivity was lower in both TCP patient groups, with both groups retaining the decreasing direction in 95.9% of resamples. The system subsequently supplied this tested network relationship to a later round."
+      },
+      "next": [{
+        "zh": "左侧 ROI108 与感觉运动网络的平均功能连接，在双相障碍及精神分裂症／分裂情感性障碍患者中是否也共同降低？ROI108 是显著性／腹侧注意网络中的一个分区。",
+        "en": "Is mean connectivity between left ROI108 and the sensorimotor network also reduced in both bipolar disorder and schizophrenia/schizoaffective disorder? ROI108 is a parcel of the salience/ventral attention network."
+      }],
+      "change": {
+        "zh": "一端由整个背侧注意网络换为左侧 ROI108，另一端仍为感觉运动网络；保留两类诊断和降低方向。本例检验的是新的“分区—网络”连接，而非再次计算原来的两个网络均值。",
+        "en": "One endpoint changed from the entire dorsal attention network to left ROI108; the other remained the sensorimotor network. The two diagnoses and decreasing direction were retained. This case tests a new parcel-to-network connection rather than recalculating the original network-to-network mean."
+      }
+    },
+    "packet-03": {
+      "mode": "explicit_parent",
+      "source": {
+        "zh": "左侧感觉运动分区 ROI054 与显著性／腹侧注意网络的平均功能连接，在双相障碍和精神分裂症／分裂情感性障碍患者中是否均低于对照？",
+        "en": "Is mean connectivity between left sensorimotor parcel ROI054 and the salience/ventral attention network lower than in controls in both bipolar disorder and schizophrenia/schizoaffective disorder?"
+      },
+      "feedback": {
+        "zh": "这一连接在 TCP 的两类患者中均降低；传入后轮的结果显示，两组同时维持降低方向的重复抽样比例为 94.9%。",
+        "en": "This connection was reduced in both TCP patient groups. The result supplied to the later round showed that both groups simultaneously retained the decreasing direction in 94.9% of resamples."
+      },
+      "next": [{
+        "zh": "将研究分区换为右侧感觉运动分区 ROI254，检验它与同一显著性／腹侧注意网络的平均功能连接，是否也在两类患者中共同降低。",
+        "en": "Change the source to right sensorimotor parcel ROI254 and test whether its mean connectivity with the same salience/ventral attention network is also reduced in both patient groups."
+      }],
+      "change": {
+        "zh": "从左侧 ROI054 转向右侧 ROI254；保留目标网络、两类诊断和降低方向，以考察另一处感觉运动分区是否出现相似连接变化。本例报告的是 ROI254 的检验。",
+        "en": "The source changed from left ROI054 to right ROI254, retaining the target network, two diagnoses and predicted decrease to examine another sensorimotor parcel. The present case reports the ROI254 test."
+      }
+    }
+  },
+  "forward": {
+    "packet-05": {
+      "mode": "explicit_parent",
+      "source": {
+        "zh": "感觉运动网络内部各分区之间的平均功能连接，在双相障碍和精神分裂症／分裂情感性障碍患者中均低于各自对照组。",
+        "en": "Mean connectivity among parcels within the sensorimotor network is lower in bipolar disorder and schizophrenia/schizoaffective disorder than in their respective controls."
+      },
+      "feedback": {
+        "zh": "本例 TCP 实验观察到两组均降低，联合方向稳定性为 99.0%；这个内部结果被提供给下一轮。",
+        "en": "The TCP experiment found a decrease in both groups, with joint direction stability of 99.0%. This internal result was supplied to the next round."
+      },
+      "next": [{
+        "zh": "ADHD、双相障碍及精神分裂症／分裂情感性障碍三类患者，是否都存在同一个感觉运动网络内部连接降低的模式？三组分别与对照比较。",
+        "en": "Do ADHD, bipolar disorder and schizophrenia/schizoaffective disorder all show the same reduction in within-sensorimotor-network connectivity, with each diagnostic group compared separately against controls?"
+      }],
+      "change": {
+        "zh": "保持同一网络及平均连接指标，在原来的两类诊断之外加入 ADHD，检验共同模式能否扩展到第三类疾病。",
+        "en": "Keep the same network and mean-connectivity measure, but add ADHD to the original two diagnoses to test whether the shared pattern extends to a third disorder."
+      },
+      "outcome": {
+        "zh": "子假设已完成 TCP 实验：三组效应均为负，联合方向稳定性为 98.2%。",
+        "en": "The child hypothesis was tested in TCP: effects were negative in all three groups, with joint direction stability of 98.2%."
+      }
+    },
+    "packet-36": {
+      "mode": "round_followup",
+      "source": {
+        "zh": "APOE ε4 等位基因剂量越高，基线经颅内容积归一化的内嗅皮层体积越小。",
+        "en": "Higher APOE ε4 allele dosage is associated with smaller baseline entorhinal volume normalized to intracranial volume."
+      },
+      "feedback": {
+        "zh": "本例内部主分析的关联为负（r = −0.141）。三种分析方法的结果，与 APOE ε4—海马及 APOE ε4—颞中回的结果，一同进入下一轮。",
+        "en": "The primary internal association was negative (r = −0.141). Results from all three analysis methods entered the next round together with the APOE ε4–hippocampal and APOE ε4–middle temporal results."
+      },
+      "next": [{
+        "zh": "在阿尔茨海默病谱系参与者中，GABA／谷氨酸通路的多基因风险评分越高，基线内嗅皮层体积是否越小？",
+        "en": "Among participants on the Alzheimer's disease spectrum, is a higher GABA/glutamate pathway polygenic risk score associated with smaller baseline entorhinal volume?"
+      }],
+      "change": {
+        "zh": "保留内嗅皮层体积及“风险越高、体积越小”的预期关系，将遗传因素由 APOE ε4 剂量换为汇总一组通路相关遗传变异的风险评分。",
+        "en": "Retain entorhinal volume and the expected higher-risk/smaller-volume relationship, but replace APOE ε4 dosage with a score summarizing genetic variants associated with a pathway."
+      },
+      "outcome": {
+        "zh": "该后轮候选可以映射到数据，但未被选入后续实验。",
+        "en": "The later candidate could be mapped to the data but was not selected for a subsequent experiment."
+      }
+    },
+    "packet-37": {
+      "mode": "round_followup",
+      "source": {
+        "zh": "APOE ε4 等位基因剂量越高，基线经颅内容积归一化的海马体积越小。",
+        "en": "Higher APOE ε4 allele dosage is associated with smaller baseline hippocampal volume normalized to intracranial volume."
+      },
+      "feedback": {
+        "zh": "海马的内部主分析显示负向关联（r = −0.185），另外两种分析方向相同。该结果连同内嗅皮层和颞中回的 APOE ε4 关联结果一起传入下一轮。",
+        "en": "The primary internal hippocampal analysis showed a negative association (r = −0.185), with the same direction in the other two analyses. These results entered the next round alongside the APOE ε4 associations with entorhinal and middle temporal volumes."
+      },
+      "next": [
+        {"zh": "孟德尔型阿尔茨海默病相关通路的多基因风险评分越高，基线脑室体积是否越大？", "en": "Is a higher polygenic risk score for a Mendelian Alzheimer's disease pathway associated with larger baseline ventricular volume?"},
+        {"zh": "GABA／谷氨酸通路的多基因风险评分越高，基线内嗅皮层体积是否越小？", "en": "Is a higher GABA/glutamate pathway polygenic risk score associated with smaller baseline entorhinal volume?"}
+      ],
+      "change": {
+        "zh": "后轮的遗传因素从 APOE ε4 剂量扩展为通路风险评分；影像对象从海马换为脑室或内嗅皮层，分别检验“风险越高、脑室越大”和“风险越高、内嗅皮层越小”。",
+        "en": "The later candidates replace APOE ε4 dosage with pathway risk scores and move from hippocampal volume to ventricular or entorhinal volume, testing higher-risk/larger-ventricle and higher-risk/smaller-entorhinal relationships, respectively."
+      },
+      "outcome": {
+        "zh": "两条候选均可映射到数据，但未被选入后续实验。",
+        "en": "Both candidates could be mapped to the data, but neither was selected for a subsequent experiment."
+      }
+    },
+    "packet-38": {
+      "mode": "round_followup",
+      "source": {
+        "zh": "APOE ε4 等位基因剂量越高，基线经颅内容积归一化的颞中回体积越小。",
+        "en": "Higher APOE ε4 allele dosage is associated with smaller baseline middle temporal volume normalized to intracranial volume."
+      },
+      "feedback": {
+        "zh": "内部主分析的关联接近零（r = −0.034）。这条未获明确支持的结果，与 APOE ε4—海马及 APOE ε4—内嗅皮层结果一起进入下一轮。",
+        "en": "The primary internal association was close to zero (r = −0.034). This result without clear support entered the next round together with the APOE ε4–hippocampal and APOE ε4–entorhinal results."
+      },
+      "next": [
+        {"zh": "在阿尔茨海默病谱系参与者中，APOE ε4 剂量越高，基线颞中回体积越小。", "en": "Among participants on the Alzheimer's disease spectrum, higher APOE ε4 dosage is associated with smaller baseline middle temporal volume."},
+        {"zh": "同轮还提出：孟德尔型 AD 通路风险越高，脑室体积越大；GABA／谷氨酸通路风险越高，内嗅皮层体积越小。", "en": "The same round also proposed higher Mendelian AD pathway risk with larger ventricular volume, and higher GABA/glutamate pathway risk with smaller entorhinal volume."}
+      ],
+      "change": {
+        "zh": "第一条提议只改变表述，没有改变 APOE ε4—颞中回这一测量组合；另外两条才更换了遗传因素和影像对象。",
+        "en": "The first proposal changed the wording but not the APOE ε4–middle temporal measurement pair. The other two proposals changed both the genetic factor and the imaging target."
+      },
+      "outcome": {
+        "zh": "重复的 APOE ε4—颞中回提议被识别为已测试项目，没有重复实验；两条通路候选也未继续实验。",
+        "en": "The repeated APOE ε4–middle temporal proposal was recognized as already tested and was not rerun. Neither pathway candidate proceeded to an experiment."
+      }
+    },
+    "packet-42": {
+      "mode": "round_followup",
+      "source": {
+        "zh": "轻度认知障碍（MCI）患者的基线内嗅皮层体积越小，随后进展为痴呆的风险越高。",
+        "en": "Smaller baseline entorhinal volume in people with mild cognitive impairment (MCI) is associated with a higher subsequent risk of progression to dementia."
+      },
+      "feedback": {
+        "zh": "2、3、5 年内部分析均为“体积越大、风险越低”的方向，5 年窗口中关联更清晰（每增加一个标准差，风险比 HR = 0.558）。这些分时间窗口的结果与海马、颞中回结果一起进入下一轮。",
+        "en": "The 2-, 3- and 5-year internal analyses all indicated lower risk with larger volume, with a clearer association in the 5-year window (hazard ratio per standard-deviation increase, HR = 0.558). These time-window-specific results entered the next round alongside the hippocampal and middle temporal results."
+      },
+      "next": [
+        {"zh": "基线内嗅皮层体积是否与 2、3、5 年内 MCI 进展为痴呆相关？不预先指定正负方向，由数据估计。", "en": "Is baseline entorhinal volume associated with MCI-to-dementia progression within 2, 3 and 5 years, with the direction estimated from data rather than specified in advance?"},
+        {"zh": "基线脑室体积是否与同一随访范围内的 MCI 至痴呆进展相关？方向同样由数据估计。", "en": "Is baseline ventricular volume associated with MCI-to-dementia progression within the same follow-up windows, also with the direction estimated from data?"}
+      ],
+      "change": {
+        "zh": "第一条保留内嗅皮层和临床结局，但不再预设降低体积对应更高风险；第二条把影像指标换成脑室体积，临床结局仍为 MCI 至痴呆的进展。",
+        "en": "The first retains the entorhinal measure and clinical outcome but no longer prespecifies higher risk with smaller volume. The second changes the imaging measure to ventricular volume while retaining MCI-to-dementia progression as the outcome."
+      },
+      "outcome": {
+        "zh": "内嗅皮层提议因测量组合已经测试而被去重；脑室候选可映射到数据，但未被选入新实验。",
+        "en": "The entorhinal proposal was deduplicated because its measurement pair had already been tested. The ventricular candidate could be mapped to the data but was not selected for a new experiment."
+      }
+    },
+    "packet-44": {
+      "mode": "round_followup",
+      "source": {
+        "zh": "MCI 患者的基线颞中回体积越小，随后进展为痴呆的风险越高。",
+        "en": "Smaller baseline middle temporal volume in people with MCI is associated with a higher subsequent risk of progression to dementia."
+      },
+      "feedback": {
+        "zh": "内部分析中，较大的颞中回体积对应较低进展风险，5 年风险比为每增加一个标准差 HR = 0.395。系统把 2、3、5 年的结果，与同轮海马和内嗅皮层结果一起传入下一轮。",
+        "en": "The internal analyses associated larger middle temporal volume with lower progression risk, with a 5-year hazard ratio per standard-deviation increase of HR = 0.395. The system supplied the 2-, 3- and 5-year results to the next round together with hippocampal and entorhinal results from the same round."
+      },
+      "next": [{
+        "zh": "基线经颅内容积归一化的脑室体积，是否与 MCI 患者随后进展为痴呆的风险相关？在预定随访窗口中检验，关联方向由数据估计。",
+        "en": "Is baseline ventricular volume normalized to intracranial volume associated with subsequent dementia progression in people with MCI, tested within the prespecified follow-up windows with direction estimated from data?"
+      }],
+      "change": {
+        "zh": "从局部脑组织的颞中回体积换到脑室体积；研究人群和痴呆进展结局不变，但后轮没有预设“大体积对应高风险还是低风险”。",
+        "en": "The imaging measure changes from regional middle temporal tissue volume to ventricular volume. The MCI population and dementia-progression outcome remain the same, but the later proposal does not prespecify whether larger volume implies higher or lower risk."
+      },
+      "outcome": {
+        "zh": "脑室体积这一后轮候选可映射到数据，但未被选入后续实验。",
+        "en": "The later ventricular-volume candidate could be mapped to the data but was not selected for a subsequent experiment."
+      }
+    },
+    "packet-46": {
+      "mode": "round_followup",
+      "source": {
+        "zh": "MCI 患者的基线全脑体积越大，随后进展为痴呆的风险越低。",
+        "en": "Larger baseline whole-brain volume in people with MCI is associated with a lower subsequent risk of progression to dementia."
+      },
+      "feedback": {
+        "zh": "内部分析的三个随访窗口均为体积越大、风险越低，5 年风险比为每增加一个标准差 HR = 0.555。全脑体积结果与同轮的海马、颞中回结果一起进入下一轮。",
+        "en": "All three internal follow-up windows indicated lower risk with larger volume, with a 5-year hazard ratio per standard-deviation increase of HR = 0.555. The whole-brain results entered the next round alongside hippocampal and middle temporal results from the same round."
+      },
+      "next": [
+        {"zh": "基线内嗅皮层体积是否与 MCI 进展为痴呆相关？", "en": "Is baseline entorhinal volume associated with progression from MCI to dementia?"},
+        {"zh": "基线颞中回体积是否与 MCI 进展为痴呆相关？", "en": "Is baseline middle temporal volume associated with progression from MCI to dementia?"}
+      ],
+      "change": {
+        "zh": "从全脑总体积转向内嗅皮层、颞中回两个局部结构；患者人群和进展结局不变。后轮两条原始提议只提出“有关联”，没有指定增大或减小的方向。",
+        "en": "The focus moves from total whole-brain volume to two regional structures, the entorhinal cortex and middle temporal gyrus, retaining the population and progression outcome. Both original later proposals ask about an association without specifying its direction."
+      },
+      "outcome": {
+        "zh": "两条提议均未通过实验执行前检查，没有产生新的实验结果。",
+        "en": "Neither proposal passed the pre-execution checks, so neither produced a new experimental result."
+      }
+    }
+  }
+}

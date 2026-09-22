@@ -1,0 +1,138 @@
+{
+  "packet-01": {
+    "zh": "若实验支持这一假设，研究者就能把两种诊断中共同的连接差异定位到显著性/腹侧注意网络的一个具体分区，进一步考察它是否与识别重要信息、排除干扰有关。临床研究可将这一连接指标与分心程度和注意转换测验配对，探索按认知困难而非仅按诊断标签组织注意训练的方式。",
+    "en": "If the experiments support this hypothesis, researchers could localize a shared connectivity difference to a specific parcel of the salience/ventral attention network, then test its relationship to recognizing important information and resisting distraction. Clinical studies could pair this measure with distractibility ratings and attention-switching tasks to explore attention training organized around cognitive difficulties rather than diagnosis alone."
+  },
+  "packet-02": {
+    "zh": "这条连接把显著性/腹侧注意网络中的左侧分区与感觉运动系统联系起来。两类患者若都出现降低，下一步就可以用反应选择和简单指敲任务，区分困难更接近“选择何时行动”还是“完成动作”。对临床评估，这提供了联合检查注意、动作启动与执行速度的思路，使康复目标更具体。",
+    "en": "This connection links a left salience/ventral attention parcel to the sensorimotor system. A shared decrease would motivate combining response-selection and simple finger-tapping tasks to distinguish difficulty deciding when to act from difficulty executing a movement. Clinically, it suggests assessing attention, movement initiation and execution speed together to define more specific rehabilitation goals."
+  },
+  "packet-03": {
+    "zh": "这里关注的是右侧一个感觉运动分区与显著性/腹侧注意网络的联系。若预期得到支持，可以进一步检验：面对突然出现的重要刺激时，这条连接是否与动作准备和反应迟缓有关。临床上可将它作为候选影像指标，配合反应时测验，研究双相障碍与精神病性障碍中相似的动作反应困难。",
+    "en": "The focus is a right sensorimotor parcel and its connection to the salience/ventral attention network. Support for the hypothesis would motivate testing whether this connection relates to motor preparation and delayed responses to unexpected, important stimuli. As a candidate imaging measure paired with reaction-time tests, it could help clinical researchers investigate similar response difficulties in bipolar and psychotic disorders."
+  },
+  "packet-04": {
+    "zh": "把注意指令转成动作，需要注意系统与感觉运动系统相互配合。若左侧 ROI036 的这条跨网络连接在两种诊断中均降低，就有理由用视觉提示下的动作任务，研究“看准目标”与“及时行动”之间的衔接。临床研究可据此把视觉注意和动作速度纳入同一评估，寻找反应迟缓更具体的来源。",
+    "en": "Turning an attentional instruction into an action requires coordination between attention and sensorimotor systems. A decrease in this connection from left ROI036 across both diagnoses would motivate visually cued movement tasks that examine the transition from locating a target to acting promptly. Clinical studies could assess visual attention and movement speed together to investigate the sources of slowed responses."
+  },
+    "packet-05": {
+    "zh": "这一假设把问题从单个脑区扩大到整个感觉运动网络：两类患者的网络内部连接是否都较低。若成立，研究者可以进一步比较指敲、双手协调和感觉辨别表现，考察共同的运动功能困难。临床上的潜在用途是为精神运动迟缓或协调障碍提供可配合行为测验追踪的指标，用于评估运动康复过程。",
+    "en": "This hypothesis moves from an individual region to the whole sensorimotor network, asking whether its internal connectivity is lower in both patient groups. If supported, it would motivate comparisons of finger tapping, bimanual coordination and sensory discrimination. A potential clinical use is a measure to track alongside behavioral tests of psychomotor slowing or coordination difficulties during motor rehabilitation."
+  },
+  "packet-08": {
+    "zh": "右侧 ROI201 提供了一个局部观察点：若它与其余视觉网络的连接确实在两类患者中降低，可以进一步检验这种差异是否对应形状、对比度或运动信息的辨别困难。对临床研究，这有助于把基础视觉加工纳入认知评估，避免把看不清或辨别慢一概归为注意不集中。",
+    "en": "Right ROI201 provides a local observation point. A shared decrease in its connectivity with the rest of the visual network would motivate testing associations with difficulty discriminating shapes, contrast or motion. For clinical research, this suggests including basic visual processing in cognitive assessments rather than attributing all slow or inaccurate visual responses to poor attention."
+  },
+  "packet-09": {
+    "zh": "与只看一个视觉分区不同，这项假设关注整个视觉网络的协同。如果网络内部连接的共同降低得到支持，就可进一步研究局部视觉信息如何被整合为完整物体，并比较轮廓辨认等行为表现。临床意义在于寻找跨诊断的视觉知觉评估线索，为需要视觉辨识的认知训练调整任务难度。",
+    "en": "Rather than examining one visual parcel, this hypothesis concerns coordination across the visual network. A shared decrease in internal connectivity would motivate research on integrating local visual information into whole objects, using measures such as contour recognition. Clinically, it could inform transdiagnostic assessment of visual perception and help investigate how to adapt the difficulty of visually demanding cognitive training."
+  },
+  "packet-10": {
+    "zh": "显著性/腹侧注意网络参与筛选值得关注的信息。这项假设若获支持，研究重点就可从某个局部异常转向网络整体组织，检验两类患者对重要刺激的反应是否与网络内部连接有关。临床研究可以同时追踪这一指标、分心表现及症状变化，评估它能否帮助识别需要注意干预的患者群体。",
+    "en": "The salience/ventral attention network helps prioritize information. Support for this hypothesis would shift the research focus from a local difference to network-wide organization, motivating tests of whether responses to important stimuli relate to internal connectivity in both groups. Clinical studies could track this measure alongside distractibility and symptoms to assess its potential for identifying groups that may benefit from attention-focused interventions."
+  },
+  "packet-12": {
+    "zh": "这里检验的是两套系统之间的联系：一套帮助识别重要刺激，另一套参与感觉与动作。若两类患者都表现出较低连接，研究者可进一步考察“注意到了，却没有及时作出反应”的行为是否与之相关。康复研究则可比较刺激识别训练和反应执行训练，判断哪一环节更值得针对性加强。",
+    "en": "This hypothesis examines the link between systems involved in identifying important stimuli and in sensation and action. Lower connectivity in both groups would motivate testing whether it relates to detecting a stimulus without responding promptly. Rehabilitation research could compare stimulus-recognition training with response-execution training to investigate which stage needs more targeted support."
+  },
+  "packet-13": {
+    "zh": "这项假设把显著性/腹侧注意网络的一个分区与默认网络联系起来，提出 ADHD 与精神病性障碍可能共享一种跨网络连接差异。若获支持，可结合走神报告和持续注意任务，研究注意在内在思绪与外部任务之间如何转换。临床研究的用途是比较不同诊断中相似的分心问题，并寻找可随注意训练变化的候选指标。",
+    "en": "This hypothesis links a salience/ventral attention parcel to the default network and proposes a shared connectivity difference in ADHD and psychotic disorders. Support would motivate combining mind-wandering reports with sustained-attention tasks to study shifts between internal thoughts and external demands. Clinically, it offers a way to compare similar distractibility problems across diagnoses and investigate candidate measures that might change with attention training."
+  },
+  "packet-17": {
+    "zh": "对双相障碍与精神病性障碍而言，这条连接可用来研究内在思维与外界信息处理之间的关系。若两组均出现预期变化，后续研究可在情绪或精神病性症状改善前后重复测量，区分它更接近症状状态还是持续的认知困难。临床上的潜在价值是补充症状量表，评估症状缓解后注意与思维功能是否也在恢复。",
+    "en": "In bipolar and psychotic disorders, this connection offers a way to study the relationship between internal thought and external information processing. If both groups show the predicted change, repeated measurements before and after symptom improvement could distinguish state-related differences from persistent cognitive difficulties. A potential clinical value is to complement symptom scales when studying whether attention and thought processes recover alongside symptom remission."
+  },
+  "packet-22": {
+    "zh": "ADHD 与精神病性障碍虽然诊断不同，却都可能伴有动作控制困难。若左侧 ROI109 与感觉运动网络的共同连接变化得到支持，可将其与平衡、协调和反应抑制测验联系起来，研究这些困难是否具有相似的脑网络表现。临床评估可因此更加重视运动功能，为有协调问题的患者设计相应的康复观察项目。",
+    "en": "ADHD and psychotic disorders can both involve difficulties with motor control. A shared connectivity change between left ROI109 and the sensorimotor network would motivate pairing this measure with balance, coordination and response-inhibition tests to investigate common network features. Clinically, it suggests giving motor function more attention and selecting rehabilitation assessments for patients with coordination difficulties."
+  },
+  "packet-24": {
+    "zh": "看见目标并准确完成动作，需要视觉与感觉运动系统配合。若它们之间的连接在两类患者中均降低，就可以用追踪移动目标、指向或抓取任务，研究视觉信息转化为动作的过程。对临床康复，这提供了评估手眼协调的具体方向，也为比较训练前后的视觉—动作配合提供候选影像读数。",
+    "en": "Seeing a target and acting accurately require cooperation between visual and sensorimotor systems. Lower connectivity between them in both groups would motivate target-tracking, pointing or reaching tasks to study how visual information guides action. For clinical rehabilitation, it suggests a concrete focus on eye–hand coordination and a candidate imaging readout to investigate alongside changes during training."
+  },
+  "packet-27": {
+    "zh": "这项假设关注“维持目标”与“执行动作”两套网络在整体上是否联系较弱。实验若支持它，研究者可比较单一动作和需要持续注意的双任务，考察注意负担增加时动作表现为何下降。临床研究可用这种设计区分注意负荷与单纯运动困难，为认知—运动联合训练选择更合适的任务。",
+    "en": "This hypothesis asks whether networks involved in maintaining goals and executing actions have lower overall connectivity. If supported, researchers could compare simple movements with attention-demanding dual tasks to investigate why performance deteriorates under attentional load. Clinical studies could use this design to distinguish attentional demands from motor difficulties and select tasks for combined cognitive–motor training."
+  },
+  "packet-28": {
+    "zh": "默认网络与回忆个人经历、内在思维等过程有关。若其内部连接在两种诊断中都降低，研究者可把这一整体指标与记忆测验、日常认知功能和症状缓解情况联系起来，研究持续存在的认知困难。临床随访的潜在用途，是在情绪或精神病性症状之外增加对认知恢复的观察。",
+    "en": "The default network is associated with remembering personal experiences and internally directed thought. Lower internal connectivity in both diagnoses would motivate relating this network-wide measure to memory tests, everyday cognitive function and symptom remission. Its potential clinical role is to support research on cognitive recovery during follow-up, alongside the usual assessment of mood or psychotic symptoms."
+  },
+  "packet-30": {
+    "zh": "左侧 ROI098 位于图谱的额盖—岛叶分区，这里检验的是该分区与感觉运动网络的联系。若共同降低得到支持，可以结合身体感觉报告、动作表现和炎症指标，继续研究身体状态与行为反应的关系。临床研究可据此联合评估躯体不适与精神运动表现，探索为何一些患者的身体症状会伴随明显的行动困难。",
+    "en": "Left ROI098 is an atlas-defined frontal opercular–insular parcel; the hypothesis concerns its link to the sensorimotor network. A shared decrease would motivate combining bodily-sensation reports, motor performance and inflammatory measures to investigate relationships between bodily state and behavior. Clinical research could jointly assess physical discomfort and psychomotor performance to explore why they occur together in some patients."
+  },
+  "packet-31": {
+    "zh": "这一问题把与情绪、动机相关的边缘网络和感觉运动网络放在一起。倘若 ADHD 与精神病性障碍中都存在预期连接差异，就可进一步检验情绪线索是否改变动作抑制和反应速度。临床上的应用方向是研究情绪诱发的冲动行为，将情绪调节与动作控制联合评估，而不是只记录总体症状分数。",
+    "en": "This question brings together the limbic network, associated with emotion and motivation, and the sensorimotor network. The predicted difference in both ADHD and psychotic disorders would motivate tests of whether emotional cues alter response inhibition and speed. A clinical application to investigate is emotion-triggered impulsive behavior, assessing emotion regulation and motor control together rather than relying only on total symptom scores."
+  },
+  "packet-32": {
+    "zh": "这项假设跨越三种诊断，聚焦视觉输入与目标导向注意之间的联系。若三组都出现预期变化，研究者可以在带有干扰物的视觉搜索任务中，检验它是否对应共同的目标筛选困难。临床研究可据此比较跨诊断的视觉注意需求，探索哪些患者更适合以抗干扰和目标选择为重点的认知训练。",
+    "en": "Spanning three diagnoses, this hypothesis focuses on the relationship between visual input and goal-directed attention. The predicted change in all three groups would motivate visual-search tasks with distractors to test for shared difficulties selecting targets. Clinical studies could compare visual-attention needs across diagnoses and investigate which patients might benefit from training focused on distractor resistance and target selection."
+  },
+  "packet-33": {
+    "zh": "ADHD 的冲动表现与双相障碍某些阶段的活动增多，可能需要从共同的动作控制问题来比较。若这个左侧额盖—岛叶分区与感觉运动网络的假设获支持，可结合停止反应任务及不同情绪状态下的重复测量，寻找相似与不同之处。临床研究可据此细化对冲动和活动水平的评估，观察情绪稳定后动作控制困难是否仍存在。",
+    "en": "Impulsivity in ADHD and heightened activity during some phases of bipolar disorder invite comparison of motor control. Support for this frontal opercular–insular connection hypothesis would motivate stop-signal tasks and repeated measurements across mood states to investigate similarities and differences. Clinically, this could refine assessment of impulsivity and activity levels, including whether motor-control difficulties persist after mood stabilization."
+  },
+  "packet-34": {
+    "zh": "这项假设关注看到的信息与情绪、动机加工之间的联系。若视觉—边缘网络连接在两类患者中都出现预期变化，后续可比较情绪图片与中性图片的识别和反应，研究视觉线索如何影响情绪判断。临床上的潜在用途，是为面部表情、社会线索理解等评估提供研究方向，并探索相应的社会认知训练。",
+    "en": "This hypothesis concerns the link between visual information and emotional or motivational processing. The predicted connectivity change in both groups would motivate comparing recognition and responses to emotional versus neutral images. A potential clinical direction is research on assessments of facial expressions and social cues, followed by investigation of related social-cognition training."
+  },
+  "packet-35": {
+    "zh": "多基因风险评分把许多遗传变异的影响汇总成一个数值；海马则是记忆相关的重要脑结构。若高评分与较小海马的关系得到支持，研究者可追踪遗传风险如何对应脑结构与记忆表现，并进一步比较它与 APOE 单一因素提供的信息。临床研究可据此探索遗传信息与 MRI 联合分层，识别值得加强认知随访的人群。",
+    "en": "A polygenic risk score combines information from many genetic variants, while the hippocampus is important for memory. Support for the higher-score–smaller-hippocampus association would motivate tracing links between genetic risk, brain structure and memory, and comparing the information with that provided by APOE alone. Clinical studies could explore joint genetic and MRI stratification to identify groups for closer cognitive follow-up."
+  },
+  "packet-36": {
+    "zh": "内嗅皮层是记忆系统中的重要连接环节。这项假设若成立，就能把 APOE ε4 的携带数量与这一结构的个体差异联系起来，推动按 0、1、2 个 ε4 拷贝比较记忆表现和后续结构变化。对临床研究，它提示在遗传风险评估中纳入内嗅皮层测量，考察能否更早识别需要持续记忆随访的参与者。",
+    "en": "The entorhinal cortex is an important connection within the memory system. Support for this hypothesis would link APOE ε4 copy number to structural differences and motivate comparing memory and subsequent structural change across people with zero, one or two copies. Clinical research could examine whether adding entorhinal measurements to genetic-risk assessment helps identify participants for sustained memory follow-up."
+  },
+  "packet-37": {
+    "zh": "这里把 APOE ε4 的 0、1、2 个拷贝与海马大小对应起来，将抽象的遗传风险转化为可测量的脑结构问题。若剂量关系得到支持，可进一步研究同样携带 ε4 的人为何表现出不同的记忆与脑结构状态。临床上的潜在意义是结合基因型、海马 MRI 和记忆测验设计随访分层，而不只依据是否携带 ε4。",
+    "en": "This case relates zero, one or two APOE ε4 copies to hippocampal size, translating genetic risk into a measurable brain-structure question. A supported dose relationship would motivate studying why carriers differ in memory and structural status. A potential clinical use is to investigate follow-up stratification that combines genotype, hippocampal MRI and memory testing rather than ε4 carrier status alone."
+  },
+  "packet-38": {
+    "zh": "颞中回使研究视野从海马扩展到外侧颞叶。若其体积也与 APOE ε4 剂量相关，就可进一步比较遗传风险在不同颞叶结构中的表现，并加入命名、词义理解等测验研究认知差异。临床研究的价值在于把语言与语义功能纳入随访，探索仅关注记忆表现时可能遗漏的变化。",
+    "en": "The middle temporal gyrus extends the focus beyond the hippocampus to lateral temporal cortex. A relationship with APOE ε4 dosage would motivate comparing genetic-risk associations across temporal structures and adding naming or word-meaning tests to study cognitive differences. Clinically, this suggests including language and semantic function in follow-up research to investigate changes that memory-focused assessments might miss."
+  },
+  "packet-39": {
+    "zh": "脑室是脑内容纳脑脊液的空间，提供了与海马等局部结构不同的观察角度。APOE ε4 剂量若与脑室大小相关，研究者可继续比较这种联系是否伴随全脑或局部体积差异，描绘遗传风险对应的结构模式。临床研究可将脑室测量作为 MRI 综合评估的候选补充，研究其是否增加对脑结构状态的认识。",
+    "en": "The ventricles are fluid-filled spaces that offer a different perspective from local structures such as the hippocampus. An association with APOE ε4 dosage would motivate testing whether it accompanies whole-brain or regional volume differences, helping characterize structural patterns linked to genetic risk. Clinical research could evaluate ventricular measurements as an additional component of a broader MRI assessment."
+  },
+  "packet-40": {
+    "zh": "这项评分聚焦 AD 风险 GWAS 所涉及的一组基因，而不是只看一个位点。若它与海马体积存在关系，研究者可进一步比较这组基因与全基因组评分、APOE 的信息是否重叠，并缩小后续功能研究的候选范围。临床应用的探索方向是更有针对性的遗传—影像分层，评估这组信息是否值得纳入认知下降风险研究。",
+    "en": "This score focuses on a gene set implicated by AD-risk GWAS rather than a single locus. An association with hippocampal volume would motivate comparing its information with genome-wide scores and APOE, while narrowing candidates for functional studies. The clinical direction is more targeted genetic–imaging stratification, testing whether this information merits inclusion in research on cognitive-decline risk."
+  },
+  "packet-41": {
+    "zh": "这项研究考察孟德尔型 AD 相关基因集合中的累积遗传评分，是否也对应海马大小的连续差异。若关系得到支持，可进一步研究经典 AD 相关基因的变异如何与常见人群中的记忆系统结构相联系。临床研究可结合家族史、这一评分及海马测量探索随访分组；这里的用途是风险分层研究，而非判定某人携带致病突变。",
+    "en": "This study asks whether an aggregate score for a Mendelian-AD-related gene set corresponds to continuous differences in hippocampal size. Support would motivate research on how variation in established AD-related genes relates to memory-system structure in broader populations. Clinical studies could explore follow-up groups defined by family history, this score and hippocampal measurements; this is risk-stratification research, not identification of a pathogenic mutation."
+  },
+  "packet-42": {
+    "zh": "同样被诊断为 MCI 的人，后续进展时间可能不同。若较大的内嗅皮层体积对应较低进展风险，研究者便可比较它在 2、3、5 年窗口中的信息，研究记忆相关结构与疾病进程的关系。临床研究可据此设计不同随访密度的分层方案，并考察哪些人更适合纳入较短观察期的干预研究。",
+    "en": "People with the same MCI diagnosis may progress over different timescales. If larger entorhinal volume relates to lower progression risk, researchers could compare its information over two-, three- and five-year windows to study how memory-related structure relates to disease course. Clinical studies could use this to investigate follow-up schedules and participant selection for interventions with shorter observation periods."
+  },
+  "packet-43": {
+    "zh": "海马体积若与 MCI 至痴呆的发生时间有关，就能把一次 MRI 的结构信息与后续病程联系起来。研究上可进一步检验它能否在记忆测验和其他临床信息之外，帮助区分相对稳定与较快进展的人群。对临床随访，这提供了联合使用影像与认知评估安排观察频率、开展病程沟通的研究依据。",
+    "en": "An association between hippocampal volume and time from MCI to dementia would link a single MRI measurement to subsequent disease course. Researchers could then test whether it helps distinguish relatively stable from faster-progressing groups beyond memory tests and other clinical information. For clinical follow-up, it motivates studying combined imaging and cognitive assessment to inform observation schedules and discussions of disease course."
+  },
+  "packet-44": {
+    "zh": "如果较大的颞中回体积与较低痴呆风险相一致，病程研究就获得了海马之外的一个候选结构指标。下一步可将其与内侧颞叶测量、命名和语义理解表现共同分析，考察外侧颞叶是否提供额外信息。临床上的潜在用途是让 MCI 随访同时关注记忆与语言功能，探索更完整的进展风险评估。",
+    "en": "If larger middle temporal volume is associated with lower dementia risk, disease-course research gains a candidate structural measure beyond the hippocampus. Joint analyses with medial temporal measurements, naming and semantic-comprehension performance could test whether lateral temporal structure adds information. A potential clinical use is MCI follow-up that considers language as well as memory, supporting research on more comprehensive progression-risk assessment."
+  },
+  "packet-45": {
+    "zh": "这项假设利用脑室这一脑脊液空间的大小来研究后续病程。若关联得到支持，可以进一步比较脑室与海马、全脑体积的信息，判断整体结构状态与局部结构差异各自贡献多少。临床研究可检验常规结构 MRI 中的脑室测量，是否能为 MCI 风险随访提供额外线索，而无需另设一种影像采集。",
+    "en": "This hypothesis uses the size of the fluid-filled ventricles to study subsequent disease course. A supported association would motivate comparisons with hippocampal and whole-brain volumes to assess the contributions of broader versus regional structural differences. Clinical research could test whether ventricular measurements from a routine structural MRI add useful information for MCI follow-up without requiring a separate imaging acquisition."
+  },
+  "packet-46": {
+    "zh": "全脑体积提供的是整体结构信息，而非某一个记忆脑区。若较大体积对应较低进展风险，可进一步比较整体与局部指标在不同随访窗口中的表现，研究哪类结构信息更贴近近期或较长期的病程。临床研究可借此优化短期复查与长期观察的分层设计，并帮助确定干预研究需要多长的随访。",
+    "en": "Whole-brain volume captures overall structure rather than one memory-related region. If larger volume relates to lower progression risk, researchers could compare global and regional measures across follow-up windows to investigate which are more informative about nearer- or longer-term course. Clinical studies could use this to refine short- and long-term follow-up strata and investigate appropriate observation periods for interventions."
+  },
+  "packet-47": {
+    "zh": "“更容易患病”与“已经出现 MCI 后进展更快”是两个不同问题。这项假设若得到支持，就把多基因风险从患病易感性研究推进到病程研究，可进一步检验其是否补充年龄、APOE 和基线认知信息。临床研究中，一次获得的遗传评分有望用于长期随访分层，或在干预试验分组时平衡参与者的遗传风险。",
+    "en": "Susceptibility to disease and faster progression after MCI are different questions. Support for this hypothesis would extend polygenic-risk research to disease course, motivating tests of information beyond age, APOE and baseline cognition. In clinical research, a genetic score obtained once could be investigated for long-term follow-up stratification or for balancing genetic risk between intervention-trial groups."
+  },
+  "packet-48": {
+    "zh": "这项假设把特定 AD 相关基因集合的累积评分与进展时间联系起来，追问遗传背景是否解释部分 MCI 病程差异。实验若支持这一关系，研究者可继续比较不同基因集合，并寻找值得深入研究的病程相关因素。临床上的探索用途是为随访队列和干预试验提供遗传分层变量，研究不同风险背景下的进展轨迹。",
+    "en": "This hypothesis links an aggregate score for a particular AD-related gene set to progression time, asking whether genetic background explains some differences in MCI course. Experimental support would motivate comparisons across gene sets and closer study of progression-related factors. A clinical research use is genetic stratification in follow-up cohorts and intervention trials to investigate trajectories across different risk backgrounds."
+  }
+}

@@ -42,6 +42,7 @@ jobs:
           core/web/test_hypothesis_controls.py
           core/web/test_workspace_theme.py
           core/web/test_oracle_workspace.py
+          core/web/test_study_workspace.py
           core/web/test_workbench.py
           core/web/test_autoresearch_help.py
           core/web/test_autoresearch_execution.py

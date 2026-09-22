@@ -1,0 +1,30 @@
+{
+  "packet-05": {
+    "zh": "本例在双相障碍和精神分裂症／分裂情感性障碍中观察到感觉运动网络内部连接降低，且方向较稳定。系统将这一内部实验结果带入下一轮，在保持同一网络测量的同时加入 ADHD，检验这种降低是否也出现在第三类疾病中。后续 TCP 实验中，三个诊断的效应方向均为降低，联合方向稳定性为 98.2%。研究由此从两类疾病的共同变化，推进到更广的跨诊断检验。",
+    "en": "This case found lower connectivity within the sensorimotor network in bipolar disorder and schizophrenia/schizoaffective disorder, with a stable direction. The system carried this internal result into the next round and added ADHD while retaining the same network measure, asking whether the reduction also occurred in a third diagnostic group. In the subsequent TCP experiment, effects were negative in all three groups, with joint direction stability of 98.2%. The research thus progressed from a shared change in two disorders to a broader transdiagnostic test."
+  },
+  "packet-36": {
+    "zh": "内嗅皮层与 APOE ε4 的内部分析结果，与海马和颞中回的结果一起进入了下一轮输入。后续候选中，系统继续关注内嗅皮层，但将遗传因素扩展为 GABA／谷氨酸通路的多基因风险，提出“该通路遗传风险越高，内嗅皮层体积越小”的假设。这一后续候选停留在提出阶段，未继续开展实验。",
+    "en": "The internal APOE ε4–entorhinal result entered the next round alongside the hippocampal and middle temporal results. Among the subsequent candidates, the system retained the entorhinal cortex as a target but extended the genetic factor to polygenic risk in the GABA/glutamate pathway, proposing that higher pathway risk would be associated with smaller entorhinal volume. This follow-up remained a proposed hypothesis and did not proceed to an experiment."
+  },
+  "packet-37": {
+    "zh": "海马体积较小与 APOE ε4 剂量较高的内部关联，被连同另外两个脑区的结果提供给下一轮。该轮随后提出了不同于单一 APOE 位点的研究问题，例如孟德尔型阿尔茨海默病相关通路的多基因风险是否与脑室扩大相关，以及 GABA／谷氨酸通路风险是否与内嗅皮层体积较小相关。这些通路层面的候选尚未进入实验检验。",
+    "en": "The internal association between higher APOE ε4 dosage and smaller hippocampal volume was supplied to the next round together with results from two other regions. That round then proposed questions beyond the single APOE locus, including whether polygenic risk in a Mendelian Alzheimer's disease pathway was associated with larger ventricles and whether GABA/glutamate pathway risk was associated with smaller entorhinal volume. These pathway-level candidates did not proceed to experimental testing."
+  },
+  "packet-38": {
+    "zh": "本例内部分析未显示 APOE ε4 与颞中回体积有明确关联，这一结果也被保留在下一轮输入中。下一轮再次提出了相同的 APOE ε4—颞中回关系；系统识别出它与已经测试的测量组合重复，因此没有重复开展实验。同轮还提出了通路多基因风险与脑室、内嗅皮层体积的候选关系，作为不同于当前组合的新研究问题。",
+    "en": "The internal analysis did not show a clear APOE ε4–middle temporal association, and this result was retained in the next round's input. The next round proposed the same relationship again; the system recognized the measurement pair as already tested and did not repeat the experiment. That round also proposed pathway polygenic-risk associations with ventricular and entorhinal volumes as research questions distinct from the current pair."
+  },
+  "packet-42": {
+    "zh": "系统将本例 2、3、5 年随访的内部结果一并提供给下一轮，使后续研究能够看到内嗅皮层体积与进展风险在不同时间窗口中的关系。下一轮再次提出内嗅皮层—痴呆进展问题，但改为由数据估计关联方向；由于测量组合已经测试，这一提议被识别为重复项。同时，该轮还提出了脑室体积与进展风险的候选关系，但没有开展新的实验。",
+    "en": "The system supplied this case's internal results for the 2-, 3- and 5-year follow-up windows to the next round, making the time-window-specific entorhinal–progression associations available for further research. The next round revisited the entorhinal question with the direction to be estimated from data; because the measurement pair had already been tested, it was identified as a duplicate. The same round also proposed a ventricular-volume association with progression risk, but no new experiment followed."
+  },
+  "packet-44": {
+    "zh": "颞中回体积与进展风险的内部结果，连同海马和内嗅皮层的分析一起传入下一轮，其中保留了不同随访窗口的效应和不确定性。下一轮除重新讨论已有脑区外，还提出脑室体积是否与轻度认知障碍进展为痴呆相关，将候选范围从脑组织体积拓展到脑室这一不同的结构指标。这个新增候选尚未进入实验检验。",
+    "en": "The internal middle temporal–progression results entered the next round alongside the hippocampal and entorhinal analyses, retaining the effects and uncertainty for each follow-up window. In addition to revisiting existing regions, the next round asked whether ventricular volume was associated with progression from mild cognitive impairment to dementia, extending the candidate set from brain tissue volumes to a different structural measure. The new candidate did not proceed to experimental testing."
+  },
+  "packet-46": {
+    "zh": "全脑体积与进展风险的内部分析结果，与海马、颞中回的结果一起成为下一轮的输入。后续提议转向局部结构，分别询问内嗅皮层和颞中回体积是否与轻度认知障碍进展为痴呆相关。这两条提议没有通过实验执行前的检查，因此这条研究链在提出后续问题后结束，未产生新的实验结果。",
+    "en": "The internal whole-brain volume–progression results became input to the next round together with the hippocampal and middle temporal results. Subsequent proposals focused on regional structures, asking separately whether entorhinal and middle temporal volumes were associated with progression from mild cognitive impairment to dementia. Neither proposal passed the pre-execution checks, so this research sequence ended after formulating the follow-up questions without producing new experimental results."
+  }
+}

@@ -5,7 +5,7 @@ const DESKTOP_VERSION = '1.0.0';
 contextBridge.exposeInMainWorld('neuroclawDesktop', {
   version: DESKTOP_VERSION,
   platform: process.platform,
-  titleBarOverlay: process.platform === 'win32',
+  titleBarOverlay: false,
   showApplicationMenu: () => ipcRenderer.invoke('neuroclaw:show-application-menu'),
   onMenuAction: (callback) => {
     if (typeof callback !== 'function') return () => {};

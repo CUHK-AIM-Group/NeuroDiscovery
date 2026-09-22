@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "pack_id": "neurodiscovery-multitopic-20260922-v15",
+  "pack_sha256": "32a6ff9280ccd22317190156756aaf14524ea64cb4303c1f334e3df945b58858",
+  "significance": {
+    "packet-01": {
+      "zh": "若实验支持这一假设，研究者就能把两种诊断中共同的连接差异定位到显著性/腹侧注意网络的一个具体分区，进一步考察它是否与识别重要信息、排除干扰有关。临床研究可将这一连接指标与分心程度和注意转换测验配对，探索按认知困难而非仅按诊断标签组织注意训练的方式。",
+      "en": "If the experiments support this hypothesis, researchers could localize a shared connectivity difference to a specific parcel of the salience/ventral attention network, then test its relationship to recognizing important information and resisting distraction. Clinical studies could pair this measure with distractibility ratings and attention-switching tasks to explore attention training organized around cognitive difficulties rather than diagnosis alone."
+    },
+    "packet-02": {
+      "zh": "这条连接把显著性/腹侧注意网络中的左侧分区与感觉运动系统联系起来。两类患者若都出现降低，下一步就可以用反应选择和简单指敲任务，区分困难更接近“选择何时行动”还是“完成动作”。对临床评估，这提供了联合检查注意、动作启动与执行速度的思路，使康复目标更具体。",
+      "en": "This connection links a left salience/ventral attention parcel to the sensorimotor system. A shared decrease would motivate combining response-selection and simple finger-tapping tasks to distinguish difficulty deciding when to act from difficulty executing a movement. Clinically, it suggests assessing attention, movement initiation and execution speed together to define more specific rehabilitation goals."
+    },
+    "packet-03": {
+      "zh": "这里关注的是右侧一个感觉运动分区与显著性/腹侧注意网络的联系。若预期得到支持，可以进一步检验：面对突然出现的重要刺激时，这条连接是否与动作准备和反应迟缓有关。临床上可将它作为候选影像指标，配合反应时测验，研究双相障碍与精神病性障碍中相似的动作反应困难。",
+      "en": "The focus is a right sensorimotor parcel and its connection to the salience/ventral attention network. Support for the hypothesis would motivate testing whether this connection relates to motor preparation and delayed responses to unexpected, important stimuli. As a candidate imaging measure paired with reaction-time tests, it could help clinical researchers investigate similar response difficulties in bipolar and psychotic disorders."
+    },
+    "packet-05": {
+      "zh": "这一假设把问题从单个脑区扩大到整个感觉运动网络：两类患者的网络内部连接是否都较低。若成立，研究者可以进一步比较指敲、双手协调和感觉辨别表现，考察共同的运动功能困难。临床上的潜在用途是为精神运动迟缓或协调障碍提供可配合行为测验追踪的指标，用于评估运动康复过程。",
+      "en": "This hypothesis moves from an individual region to the whole sensorimotor network, asking whether its internal connectivity is lower in both patient groups. If supported, it would motivate comparisons of finger tapping, bimanual coordination and sensory discrimination. A potential clinical use is a measure to track alongside behavioral tests of psychomotor slowing or coordination difficulties during motor rehabilitation."
+    },
+    "packet-36": {
+      "zh": "内嗅皮层是记忆系统中的重要连接环节。这项假设若成立，就能把 APOE ε4 的携带数量与这一结构的个体差异联系起来，推动按 0、1、2 个 ε4 拷贝比较记忆表现和后续结构变化。对临床研究，它提示在遗传风险评估中纳入内嗅皮层测量，考察能否更早识别需要持续记忆随访的参与者。",
+      "en": "The entorhinal cortex is an important connection within the memory system. Support for this hypothesis would link APOE ε4 copy number to structural differences and motivate comparing memory and subsequent structural change across people with zero, one or two copies. Clinical research could examine whether adding entorhinal measurements to genetic-risk assessment helps identify participants for sustained memory follow-up."
+    },
+    "packet-37": {
+      "zh": "这里把 APOE ε4 的 0、1、2 个拷贝与海马大小对应起来，将抽象的遗传风险转化为可测量的脑结构问题。若剂量关系得到支持，可进一步研究同样携带 ε4 的人为何表现出不同的记忆与脑结构状态。临床上的潜在意义是结合基因型、海马 MRI 和记忆测验设计随访分层，而不只依据是否携带 ε4。",
+      "en": "This case relates zero, one or two APOE ε4 copies to hippocampal size, translating genetic risk into a measurable brain-structure question. A supported dose relationship would motivate studying why carriers differ in memory and structural status. A potential clinical use is to investigate follow-up stratification that combines genotype, hippocampal MRI and memory testing rather than ε4 carrier status alone."
+    },
+    "packet-38": {
+      "zh": "颞中回使研究视野从海马扩展到外侧颞叶。若其体积也与 APOE ε4 剂量相关，就可进一步比较遗传风险在不同颞叶结构中的表现，并加入命名、词义理解等测验研究认知差异。临床研究的价值在于把语言与语义功能纳入随访，探索仅关注记忆表现时可能遗漏的变化。",
+      "en": "The middle temporal gyrus extends the focus beyond the hippocampus to lateral temporal cortex. A relationship with APOE ε4 dosage would motivate comparing genetic-risk associations across temporal structures and adding naming or word-meaning tests to study cognitive differences. Clinically, this suggests including language and semantic function in follow-up research to investigate changes that memory-focused assessments might miss."
+    },
+    "packet-42": {
+      "zh": "同样被诊断为 MCI 的人，后续进展时间可能不同。若较大的内嗅皮层体积对应较低进展风险，研究者便可比较它在 2、3、5 年窗口中的信息，研究记忆相关结构与疾病进程的关系。临床研究可据此设计不同随访密度的分层方案，并考察哪些人更适合纳入较短观察期的干预研究。",
+      "en": "People with the same MCI diagnosis may progress over different timescales. If larger entorhinal volume relates to lower progression risk, researchers could compare its information over two-, three- and five-year windows to study how memory-related structure relates to disease course. Clinical studies could use this to investigate follow-up schedules and participant selection for interventions with shorter observation periods."
+    },
+    "packet-44": {
+      "zh": "如果较大的颞中回体积与较低痴呆风险相一致，病程研究就获得了海马之外的一个候选结构指标。下一步可将其与内侧颞叶测量、命名和语义理解表现共同分析，考察外侧颞叶是否提供额外信息。临床上的潜在用途是让 MCI 随访同时关注记忆与语言功能，探索更完整的进展风险评估。",
+      "en": "If larger middle temporal volume is associated with lower dementia risk, disease-course research gains a candidate structural measure beyond the hippocampus. Joint analyses with medial temporal measurements, naming and semantic-comprehension performance could test whether lateral temporal structure adds information. A potential clinical use is MCI follow-up that considers language as well as memory, supporting research on more comprehensive progression-risk assessment."
+    },
+    "packet-46": {
+      "zh": "全脑体积提供的是整体结构信息，而非某一个记忆脑区。若较大体积对应较低进展风险，可进一步比较整体与局部指标在不同随访窗口中的表现，研究哪类结构信息更贴近近期或较长期的病程。临床研究可借此优化短期复查与长期观察的分层设计，并帮助确定干预研究需要多长的随访。",
+      "en": "Whole-brain volume captures overall structure rather than one memory-related region. If larger volume relates to lower progression risk, researchers could compare global and regional measures across follow-up windows to investigate which are more informative about nearer- or longer-term course. Clinical studies could use this to refine short- and long-term follow-up strata and investigate appropriate observation periods for interventions."
+    }
+  }
+}

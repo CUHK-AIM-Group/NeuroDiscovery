@@ -12,6 +12,15 @@ benchmark-env/
 .venv-academic-mcp/
 hcp_env/
 .tmp_*
+/.cache/
+/.codex_tmp/
+/.tmp/
+/tmp/
+/.venv*/
+/.coscientist_prompts/
+/.workbuddy/
+/desktop/dist-evaluation*/
+/desktop/build/webview2-sdk-*/
 
 # Data
 data/
@@ -54,6 +63,7 @@ node_modules/
 # Project-specific ignores
 .codegraph/
 .neuroclaw_checkpoints/
+.neurodiscovery/autoresearch/
 neuroclaw_environment.json
 installer/install_log.txt
 /scripts/
@@ -102,6 +112,8 @@ neuroclaw-project-checkpoint.png
 
 # Local figure/rendering scripts
 core/scripts/plot_*.py
+# Canonical manuscript source: a-i task panels plus panel k.
+!core/scripts/plot_case3_taskwise_hindcasting_figure.py
 core/scripts/draw_*.py
 core/scripts/render_*.py
 core/scripts/export_case1_*panel*.py
