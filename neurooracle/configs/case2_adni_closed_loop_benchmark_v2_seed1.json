@@ -1,0 +1,170 @@
+{
+  "schema_version": "neurooracle.case2_closed_loop_benchmark.v2",
+  "benchmark_id": "case2_adni_closed_loop_benchmark_v2_seed1",
+  "case_study_id": "case2_pathway_mediation",
+  "source_protocol_id": "case2_adni_formal_supplementary_v2",
+  "source_static_freeze_id": "229b941cddb0de87c727de7272a8fff1a366923d2b3e99457570ff8fdd9a1a0e",
+  "analysis_role": "supplemental post-result-design-freeze single-seed closed-loop sequential-discovery pilot",
+  "design_status": {
+    "formal_results_were_accessed_before_this_benchmark_was_designed": true,
+    "generator_inputs_are_result_isolated_before_round_0": true,
+    "feedback_is_revealed_selected-candidates-only_after_selection_commit": true,
+    "allowed_claim": "descriptive single-seed exploratory comparison of locked sequential discovery trajectories",
+    "forbidden_claims": [
+      "prospectively preregistered comparison",
+      "independent external validation",
+      "causal mediation",
+      "statistically significant superiority from one seed",
+      "clear SOTA"
+    ]
+  },
+  "data": {
+    "dataset": "ADNI",
+    "source_subject_count": 691,
+    "outcome_blind_eligible_subject_count": 683,
+    "candidate_count": 168,
+    "candidate_construction": "7 frozen pathway PRS x 8 imaging markers x 3 longitudinal outcomes",
+    "clinical_outcomes": ["ADAS13", "FAQ", "LDELTOTAL"],
+    "external_validation_required": false
+  },
+  "paths": {
+    "source_static_benchmark_root": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\method_benchmark\\case2_adni_formal_benchmark_v1",
+    "formal_results": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\formal_results\\run_46f16d63eac7\\FORMAL_RESULTS.csv",
+    "formal_results_lock": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\formal_results\\run_46f16d63eac7\\RESULTS.lock.json",
+    "pathway_catalog": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\postimputation\\case2_adni_common_dr2_0p8_v1\\features\\ad_pathway_prs_v1\\pathway_catalog.csv",
+    "kg_current_state": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\neurooracle\\data\\full_v2\\CURRENT_STATE.json",
+    "knowledge_graph": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\neurooracle\\data\\full_v2\\knowledge_graph.json",
+    "extracted_claims": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\neurooracle\\data\\full_v2\\extracted_claims.jsonl",
+    "keys_file": "C:\\Users\\45846\\Downloads\\keys.txt",
+    "baseline_repository_root": "C:\\Users\\45846\\Documents\\Code\\autoresearch_baselines",
+    "output_root": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\method_benchmark\\case2_adni_closed_loop_benchmark_v2_seed1"
+  },
+  "methods": {
+    "target": "neurodiscovery",
+    "baselines": [
+      "ai_scientist_v2",
+      "open_coscientist",
+      "sciagents",
+      "virtual_lab",
+      "brainpilot_native",
+      "biomni_native"
+    ],
+    "all": [
+      "ai_scientist_v2",
+      "open_coscientist",
+      "sciagents",
+      "virtual_lab",
+      "brainpilot_native",
+      "biomni_native",
+      "neurodiscovery"
+    ],
+    "repository_map": {
+      "ai_scientist_v2": "AI-Scientist-v2",
+      "open_coscientist": "open-coscientist",
+      "sciagents": "SciAgentsDiscovery",
+      "virtual_lab": "virtual-lab",
+      "brainpilot_native": "BrainPilot",
+      "biomni_native": "Biomni"
+    },
+    "native_retrieval_enabled": false,
+    "shared_feedback_adapter": "selected-results packet appended to each method's native/adapted round context",
+    "neurodiscovery": {
+      "kg_snapshot": "deterministic Case-2-scoped claim projection materialized from the canonical full_v2 extracted-claim store pinned by the verified v1 freeze",
+      "generation_stages": ["batch"],
+      "generation_target": 100,
+      "initial_ranking": "canonical result-blind Case-2 mapper",
+      "closed_loop_engine": "run-specific experimental KG overlay",
+      "feedback_projection": "all_factors",
+      "feedback_model": "beta_counts"
+    }
+  },
+  "sequential_design": {
+    "trial_count": 1,
+    "seed": 247629302,
+    "main_round_batch_sizes": [21, 21, 21, 21, 21, 21, 21, 21],
+    "primary_action_horizon": 168,
+    "recovery_round_batch_size": 21,
+    "max_recovery_rounds": 8,
+    "invalid_action_rule": "An invalid, duplicate, missing, or unmappable proposal consumes one action slot and receives zero utility.",
+    "completion_rule": "After the 168 main action slots, recovery rounds request only not-yet-selected candidates until all 168 real candidates have been selected by the method; no compiler or evaluator auto-completion is permitted.",
+    "selection_commit_rule": "Each round selection and its SHA256 lock are persisted before the evaluator reads outcomes for that round.",
+    "feedback_rule": "Only committed selected candidates receive feedback before the next round.",
+    "feedback_fields": [
+      "candidate_id",
+      "complete_case_n",
+      "a_path_std",
+      "a_path_hc3_p",
+      "b_path_std",
+      "b_path_hc3_p",
+      "indirect_effect_std",
+      "indirect_bootstrap_ci_lower",
+      "indirect_bootstrap_ci_upper",
+      "indirect_bootstrap_p",
+      "feedback_status"
+    ],
+    "forbidden_during_feedback": [
+      "indirect_bootstrap_q_family_8",
+      "indirect_bootstrap_q_global_168",
+      "supplemental_family_fdr_hit",
+      "global_fdr_hit",
+      "bootstrap_weakest_link_evidence",
+      "unselected_candidate_results"
+    ],
+    "feedback_status_definition": "supported iff a_path_hc3_p<0.05, b_path_hc3_p<0.05, and indirect_bootstrap_p<0.05; otherwise inconclusive. This single-candidate status uses no multiplicity result."
+  },
+  "model_backend": {
+    "logical_model": "deepseek-v4-pro",
+    "gateway_base_url": "http://127.0.0.1:18083/v1",
+    "reasoning_effort": "high",
+    "temperature": 0.0,
+    "max_output_tokens": 8192,
+    "stream": false,
+    "max_concurrent_api_requests": 1,
+    "framework_process_retries": 1,
+    "router_pause_latch": true,
+    "execution_channel": "ollama_cloud",
+    "opencode_go_enabled": false,
+    "ollama_cloud_key_count": 2,
+    "automatic_route": [
+      "ollama_cloud_key_1",
+      "ollama_cloud_key_2"
+    ],
+    "same_route_retry_delays_seconds": [2, 8, 30],
+    "deepseek_official_automatic_fallback": false,
+    "secrets_policy": "Read keys only from keys_file at runtime; never persist or print secret values."
+  },
+  "evaluation": {
+    "fixed_budgets": [5, 10, 20, 40, 80, 120, 168],
+    "primary_metric": {
+      "name": "random_oracle_normalized_cumulative_weakest_link_gain_auc_1_168",
+      "definition": "Discrete area under cumulative selected weakest-link evidence over the first 168 action slots, normalized so random-permutation expectation is 0 and the oracle order is 1."
+    },
+    "candidate_relevance": "min(50, -log10(max(a_path_hc3_p, b_path_hc3_p, indirect_bootstrap_p)))",
+    "graded_evidence_recovery_targets": [0.1, 0.25, 0.5, 0.75],
+    "family_hit_targets": [1, 3, 5],
+    "secondary_metrics": [
+      "cumulative_weakest_link_gain_at_budget",
+      "graded_evidence_recall_at_budget",
+      "ndcg_at_budget",
+      "supplemental_family_fdr_hits_at_budget",
+      "nominal_bootstrap_hits_at_budget",
+      "actions_to_graded_evidence_target",
+      "actions_to_family_hit_target",
+      "invalid_action_count",
+      "recovery_action_count",
+      "absolute_indirect_effect_gain_auc",
+      "neurodiscovery_closed_loop_lift_over_static"
+    ],
+    "single_seed_inference_rule": "Report descriptive values only. Do not calculate paired significance tests, confidence intervals across seeds, or Holm superiority claims."
+  },
+  "freeze_rules": {
+    "preserve_v1_static_freeze": true,
+    "verify_v1_freeze_before_v2_freeze_and_execution": true,
+    "hash_pin_new_protocol_and_source": true,
+    "separate_generator_and_evaluator_bundles": true,
+    "no_api_calls_during_preparation": true,
+    "no_external_validation_queue": true,
+    "no_retuning_after_freeze": true
+  },
+  "_last_updated_at": "2026-08-26 HKT"
+}

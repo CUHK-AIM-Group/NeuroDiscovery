@@ -1,0 +1,10 @@
+# Resolved on the frozen Windows CPython 3.13.9 benchmark runtime.
+numpy==2.3.5
+pandas==2.3.3
+scipy==1.16.3
+statsmodels==0.14.5
+pyarrow==21.0.0
+requests==2.32.5
+threadpoolctl==3.5.0
+pytest==8.4.2
+openai==2.51.0

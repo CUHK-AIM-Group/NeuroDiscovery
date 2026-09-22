@@ -440,6 +440,7 @@ def main() -> int:
     subjects = common_subjects_for_atlases(args.transdiag_root, atlases)
     target_shape = infer_target_shape(args.transdiag_root)
     meta, diseases = load_metadata(args.diagnosis, subjects, args.min_cases)
+    subjects = meta["subjectkey"].astype(str).tolist()
     covariates = build_covariates(meta)
     print(
         f"full_exhaustive subjects={len(subjects)} controls={int(meta['is_control'].sum())} "
@@ -458,18 +459,39 @@ def main() -> int:
             atlas_root=args.atlas_root,
             target_shape=target_shape,
         )
-        atlas_summary.append({"atlas": atlas, "subjects": len(atlas_subjects), "n_roi": int(roi_meta.shape[0])})
+        # ROI files may exist while one of the corresponding correlation
+        # matrices is missing.  ``build_atlas_feature_matrices`` therefore
+        # returns the subjects actually retained for this atlas; align both
+        # metadata and covariates to that exact order before evaluation.
+        atlas_meta, atlas_diseases = load_metadata(
+            args.diagnosis,
+            atlas_subjects,
+            args.min_cases,
+        )
+        atlas_covariates = build_covariates(atlas_meta)
+        atlas_summary.append(
+            {
+                "atlas": atlas,
+                "subjects": len(atlas_subjects),
+                "controls": int(atlas_meta["is_control"].sum()),
+                "diseases": "|".join(
+                    f"{item['disease']}:{item['n_case']}"
+                    for item in atlas_diseases
+                ),
+                "n_roi": int(roi_meta.shape[0]),
+            }
+        )
         for feature_idx, (feature_name, matrix) in enumerate(feature_matrices.items()):
             rows.extend(
                 evaluate_matrix_v2(
                     modality="fmri",
                     source=f"{atlas}_multiatlas",
                     feature_name=feature_name,
-                    meta=meta,
-                    diseases=diseases,
+                    meta=atlas_meta,
+                    diseases=atlas_diseases,
                     roi_meta=roi_meta,
                     matrix=matrix,
-                    covariates=covariates,
+                    covariates=atlas_covariates,
                     n_boot=args.n_boot,
                     seed=args.seed + atlas_idx * 1_000_003 + feature_idx * 100_003,
                 )

@@ -14,10 +14,10 @@ import json
 import math
 import re
 import shutil
-from collections import Counter, defaultdict
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import matplotlib
 
@@ -27,6 +27,56 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu
+
+try:
+    from core.scripts.canonical_kg_release import (
+        CURRENT_CANONICAL_SHA256,
+        validate_canonical_kg_release,
+        write_release_manifest,
+    )
+    from core.scripts.case1_kg_stream import load_case1_kg_index_payload
+    from core.scripts.case1_neurodiscovery_config import (
+        Case1NeuroDiscoveryConfig,
+        feature_terms,
+    )
+    from core.scripts.case1_policy_audit import write_policy_independence_audit
+    from core.scripts.case_study_closed_loop import write_kg_delta
+    from core.scripts.case_study_closed_loop_engine import ExperimentalOverlayGraph
+    from core.scripts.case_study_feedback_adapters import adapter_for
+    from core.scripts.case_study_score_components import (
+        embedded_score_component_audit,
+        load_score_component_bundle,
+    )
+    from core.scripts.case1_search_policy import (
+        SearchPolicy,
+        classify_observed_feedback,
+        compile_policy_order,
+        policy_from_mapped_hypotheses,
+        policy_from_payload,
+    )
+except ModuleNotFoundError:
+    from canonical_kg_release import (
+        CURRENT_CANONICAL_SHA256,
+        validate_canonical_kg_release,
+        write_release_manifest,
+    )
+    from case1_kg_stream import load_case1_kg_index_payload
+    from case1_neurodiscovery_config import Case1NeuroDiscoveryConfig, feature_terms
+    from case1_policy_audit import write_policy_independence_audit
+    from case_study_closed_loop import write_kg_delta
+    from case_study_closed_loop_engine import ExperimentalOverlayGraph
+    from case_study_feedback_adapters import adapter_for
+    from case_study_score_components import (
+        embedded_score_component_audit,
+        load_score_component_bundle,
+    )
+    from case1_search_policy import (
+        SearchPolicy,
+        classify_observed_feedback,
+        compile_policy_order,
+        policy_from_mapped_hypotheses,
+        policy_from_payload,
+    )
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -41,23 +91,22 @@ DEFAULT_OUT_DIR = Path(
 DEFAULT_SURFACE_PANEL = DEFAULT_OUT_DIR / "surface" / "fig_cs1_generator_surface_recovery_comparison.png"
 DEFAULT_COMPACT_SURFACE_PANEL = DEFAULT_OUT_DIR / "surface" / "fig_cs1_generator_surface_recovery_compact.png"
 DEFAULT_ATLAS_ICON = DEFAULT_OUT_DIR / "surface" / "case1_brain_atlas_map_icon.png"
-DEFAULT_CASE1_KG = (
-    REPO_ROOT
-    / "neurooracle"
-    / "data"
-    / "cs_runs"
-    / "phase2_case1_transdiagnostic_v1"
-    / "knowledge_graph.json"
-)
 DEFAULT_FULL_KG = REPO_ROOT / "neurooracle" / "data" / "full_v2" / "knowledge_graph.json"
+DEFAULT_FULL_CLAIMS = REPO_ROOT / "neurooracle" / "data" / "full_v2" / "extracted_claims.jsonl"
+DEFAULT_CURRENT_STATE = REPO_ROOT / "neurooracle" / "data" / "full_v2" / "CURRENT_STATE.json"
+CASE1_CASE_STUDY_ID = "case1_transdiagnostic"
+CASE1_GLOBAL_SUPPORT_WEIGHT = 0.80
+CASE1_SCOPED_SUPPORT_WEIGHT = 0.20
 
 PALETTE = {
     "exhaustive_gt": "#272727",
     "ai_scientist_v2": "#4C78A8",
-    "co_scientist_style": "#7E6AAE",
-    "data_to_paper_style": "#59A14F",
-    "sciagents_style": "#F28E2B",
-    "virtual_lab_style": "#9C755F",
+    "open_coscientist": "#7E6AAE",
+    "data_to_paper": "#59A14F",
+    "sciagents": "#F28E2B",
+    "virtual_lab": "#9C755F",
+    "brainpilot_native": "#B279A2",
+    "biomni_native": "#E15759",
     "openscholar_rag": "#76B7B2",
     "neurodiscovery": "#D9544D",
     "neurodiscovery_positive_only": "#D9544D",
@@ -68,10 +117,12 @@ PALETTE = {
 }
 BAND_ALPHA = {
     "ai_scientist_v2": 0.12,
-    "co_scientist_style": 0.11,
-    "data_to_paper_style": 0.12,
-    "sciagents_style": 0.12,
-    "virtual_lab_style": 0.11,
+    "open_coscientist": 0.11,
+    "data_to_paper": 0.12,
+    "sciagents": 0.12,
+    "virtual_lab": 0.11,
+    "brainpilot_native": 0.11,
+    "biomni_native": 0.11,
     "openscholar_rag": 0.11,
     "neurodiscovery": 0.13,
 }
@@ -80,11 +131,13 @@ PANEL_SVG_DIRNAME = "panel_svgs"
 METHOD_LABELS = {
     "exhaustive_gt": "Exhaustive GT",
     "ai_scientist_v2": "AI Scientist-v2",
-    "co_scientist_style": "Co-Scientist",
-    "data_to_paper_style": "data-to-paper",
-    "sciagents_style": "SciAgents",
-    "virtual_lab_style": "Virtual Lab-style",
-    "openscholar_rag": "OpenScholar-RAG",
+    "open_coscientist": "Open Co-Scientist",
+    "data_to_paper": "data-to-paper",
+    "sciagents": "SciAgents",
+    "virtual_lab": "Virtual Lab",
+    "brainpilot_native": "BrainPilot",
+    "biomni_native": "Biomni",
+    "openscholar_rag": "OpenScholar + fixed generator",
     "neurodiscovery": "NeuroDiscovery",
     "neurodiscovery_positive_only": "NeuroDiscovery positive-only",
     "neurodiscovery_negative_feature_only": "NeuroDiscovery + feature-only penalty",
@@ -95,28 +148,34 @@ METHOD_LABELS = {
 SHORT_METHOD_LABELS = {
     "exhaustive_gt": "GT",
     "ai_scientist_v2": "AI\nScientist",
-    "co_scientist_style": "Co-\nScientist",
-    "data_to_paper_style": "data-to-\npaper",
-    "sciagents_style": "SciAgents",
-    "virtual_lab_style": "Virtual\nLab",
+    "open_coscientist": "Open Co-\nScientist",
+    "data_to_paper": "data-to-\npaper",
+    "sciagents": "SciAgents",
+    "virtual_lab": "Virtual\nLab",
+    "brainpilot_native": "BrainPilot",
+    "biomni_native": "Biomni",
     "openscholar_rag": "Open-\nScholar",
     "neurodiscovery": "Neuro-\nDiscovery",
 }
 COMPACT_METHOD_LABELS = {
     "ai_scientist_v2": "AI Scientist",
-    "co_scientist_style": "Co-Scientist",
-    "data_to_paper_style": "data-to-paper",
-    "sciagents_style": "SciAgents",
-    "virtual_lab_style": "Virtual Lab",
+    "open_coscientist": "Open Co-Scientist",
+    "data_to_paper": "data-to-paper",
+    "sciagents": "SciAgents",
+    "virtual_lab": "Virtual Lab",
+    "brainpilot_native": "BrainPilot",
+    "biomni_native": "Biomni",
     "openscholar_rag": "OpenScholar",
     "neurodiscovery": "NeuroDiscovery",
 }
 MARKERS = {
     "ai_scientist_v2": "o",
-    "co_scientist_style": "s",
-    "data_to_paper_style": "^",
-    "sciagents_style": "D",
-    "virtual_lab_style": "v",
+    "open_coscientist": "s",
+    "data_to_paper": "^",
+    "sciagents": "D",
+    "virtual_lab": "v",
+    "brainpilot_native": "<",
+    "biomni_native": ">",
     "openscholar_rag": "X",
     "neurodiscovery": "P",
     "neurodiscovery_positive_only": "P",
@@ -125,15 +184,50 @@ MARKERS = {
     "neurodiscovery_negative_context_only": "s",
     "neurodiscovery_negative_hybrid": "X",
 }
-BASELINE_METHODS = (
+PRIMARY_BASELINE_METHODS = (
     "ai_scientist_v2",
-    "co_scientist_style",
-    "data_to_paper_style",
-    "sciagents_style",
-    "virtual_lab_style",
-    "openscholar_rag",
+    "open_coscientist",
+    "sciagents",
+    "virtual_lab",
+    "brainpilot_native",
+    "biomni_native",
 )
+SUPPLEMENTARY_BASELINE_METHODS = ("data_to_paper", "openscholar_rag")
+BASELINE_METHODS = PRIMARY_BASELINE_METHODS
 GENERATOR_METHODS = (*BASELINE_METHODS, "neurodiscovery")
+
+
+def configure_method_scope(include_supplementary: bool) -> None:
+    global BASELINE_METHODS, GENERATOR_METHODS
+    BASELINE_METHODS = (
+        (*PRIMARY_BASELINE_METHODS, *SUPPLEMENTARY_BASELINE_METHODS)
+        if include_supplementary
+        else PRIMARY_BASELINE_METHODS
+    )
+    GENERATOR_METHODS = (*BASELINE_METHODS, "neurodiscovery")
+
+
+def load_search_policies(path: Path) -> dict[tuple[str, int], SearchPolicy]:
+    """Load one strict SearchPolicy JSON object per line."""
+
+    policies: dict[tuple[str, int], SearchPolicy] = {}
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            payload = json.loads(line)
+            policy = policy_from_payload(payload)
+            key = (policy.method, policy.trial)
+            if key in policies:
+                raise ValueError(f"duplicate SearchPolicy at line {line_number}: {key}")
+            policies[key] = policy
+    return policies
+COMPACT_SURFACE_METHODS = (
+    "exhaustive_gt",
+    "open_coscientist",
+    "sciagents",
+    "neurodiscovery",
+)
 
 PUBLICATION_FIELDS = (
     "paper_title",
@@ -167,19 +261,20 @@ METHOD_PUBLICATIONS: dict[str, dict[str, object]] = {
             "closed-loop labels are not exposed."
         ),
     },
-    "co_scientist_style": {
-        "paper_title": "Accelerating scientific discovery with Co-Scientist",
+    "open_coscientist": {
+        "paper_title": "Open Co-Scientist",
         "paper_year": 2026,
-        "venue": "Nature",
-        "doi": "10.1038/s41586-026-10644-y",
-        "source_url": "https://www.nature.com/articles/s41586-026-10644-y",
-        "baseline_family": "multi-agent hypothesis generation",
+        "venue": "Open-source reproduction",
+        "doi": "",
+        "source_url": "https://github.com/jataware/open-coscientist",
+        "baseline_family": "open-source multi-agent hypothesis generation",
         "adaptation_note": (
-            "Adapts the generate-critique-refine/rank workflow to the Case Study 1 "
-            "schema; observed effect sizes and closed-loop labels are not exposed."
+            "Runs the open reproduction's generate-reflect-debate-rank-evolve graph "
+            "against the public Case Study 1 registry; this is not the proprietary "
+            "Google Co-Scientist system."
         ),
     },
-    "data_to_paper_style": {
+    "data_to_paper": {
         "paper_title": "Autonomous LLM-Driven Research - from Data to Human-Verifiable Research Papers",
         "paper_year": 2025,
         "venue": "NEJM AI",
@@ -192,7 +287,7 @@ METHOD_PUBLICATIONS: dict[str, dict[str, object]] = {
             "observed effect sizes and closed-loop labels are not exposed."
         ),
     },
-    "sciagents_style": {
+    "sciagents": {
         "paper_title": "SciAgents: Automating Scientific Discovery Through Bioinspired Multi-Agent Intelligent Graph Reasoning",
         "paper_year": 2025,
         "venue": "Advanced Materials",
@@ -205,7 +300,7 @@ METHOD_PUBLICATIONS: dict[str, dict[str, object]] = {
             "not exposed."
         ),
     },
-    "virtual_lab_style": {
+    "virtual_lab": {
         "paper_title": "The Virtual Lab of AI agents designs new SARS-CoV-2 nanobodies",
         "paper_year": 2025,
         "venue": "Nature",
@@ -218,17 +313,42 @@ METHOD_PUBLICATIONS: dict[str, dict[str, object]] = {
             "tools, observed effect sizes, and closed-loop labels are not exposed."
         ),
     },
+    "brainpilot_native": {
+        "paper_title": "BrainPilot",
+        "paper_year": 2026,
+        "venue": "arXiv",
+        "doi": "",
+        "source_url": "https://arxiv.org/abs/2607.15079",
+        "baseline_family": "multi-role autonomous research system",
+        "adaptation_note": (
+            "Runs the official BrainPilot runtime and its native specialist-agent "
+            "workflow, then projects delivered proposals onto exact public CS1 "
+            "candidate identifiers."
+        ),
+    },
+    "biomni_native": {
+        "paper_title": "Biomni",
+        "paper_year": 2025,
+        "venue": "Official implementation",
+        "doi": "",
+        "source_url": "https://github.com/snap-stanford/Biomni",
+        "baseline_family": "general-purpose biomedical research agent",
+        "adaptation_note": (
+            "Runs Biomni A1 with its native tool retriever enabled and no bulk data-lake "
+            "download, then projects proposals onto exact public CS1 candidate identifiers."
+        ),
+    },
     "openscholar_rag": {
         "paper_title": "Synthesizing scientific literature with retrieval-augmented language models",
         "paper_year": 2026,
         "venue": "Nature",
         "doi": "10.1038/s41586-025-10072-4",
         "source_url": "https://www.nature.com/articles/s41586-025-10072-4",
-        "baseline_family": "retrieval-augmented scientific literature synthesis",
+        "baseline_family": "retrieval followed by a fixed hypothesis generator",
         "adaptation_note": (
-            "Adapts retrieval-augmented literature synthesis to generate citation-backed "
-            "ranked Case Study 1 hypotheses from pre-freeze evidence proxies; observed "
-            "effect sizes and closed-loop labels are not exposed."
+            "Runs OpenScholar retrieval, freezes the retrieved evidence, then applies the "
+            "same exact-candidate generator contract. It is retained as a supplementary "
+            "retrieval baseline because OpenScholar itself is not a hypothesis generator."
         ),
     },
     "neurodiscovery": {
@@ -358,6 +478,13 @@ class KgIndex:
     name_to_ids: dict[str, tuple[str, ...]]
     name_to_degree: dict[str, int]
     adjacency: dict[str, set[str]]
+    directed_support: dict[tuple[str, str], float]
+    case_study_id: str = CASE1_CASE_STUDY_ID
+    scoped_degrees: dict[str, int] = field(default_factory=dict)
+    name_to_scoped_degree: dict[str, int] = field(default_factory=dict)
+    scoped_adjacency: dict[str, set[str]] = field(default_factory=dict)
+    scoped_directed_support: dict[tuple[str, str], float] = field(default_factory=dict)
+    stats: dict[str, object] = field(default_factory=dict)
 
 
 def normalize_text(value: object) -> str:
@@ -365,6 +492,14 @@ def normalize_text(value: object) -> str:
     text = text.replace("_", " ").replace("-", " ")
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def minmax(values: pd.Series) -> pd.Series:
@@ -376,44 +511,30 @@ def minmax(values: pd.Series) -> pd.Series:
     return (values - lo) / (hi - lo)
 
 
-def load_kg_index(path: Path | None) -> KgIndex:
-    if path is None or not path.exists():
-        return KgIndex({}, {}, {}, {})
-    with path.open("r", encoding="utf-8") as handle:
-        graph = json.load(handle)
-
-    concepts = graph.get("concepts", {})
-    edges = graph.get("edges", [])
-    degrees: Counter[str] = Counter()
-    adjacency: dict[str, set[str]] = defaultdict(set)
-    for edge in edges:
-        source = edge.get("source_id") or edge.get("source")
-        target = edge.get("target_id") or edge.get("target")
-        if not source or not target:
-            continue
-        degrees[source] += 1
-        degrees[target] += 1
-        adjacency[source].add(target)
-        adjacency[target].add(source)
-
-    name_to_ids: dict[str, set[str]] = defaultdict(set)
-    name_to_degree: dict[str, int] = {}
-    for cid, concept in concepts.items():
-        names = [concept.get("preferred_name", "")]
-        aliases = concept.get("aliases") or []
-        if isinstance(aliases, list):
-            names.extend(aliases[:30])
-        degree = int(degrees.get(cid, 0))
-        for name in names:
-            key = normalize_text(name)
-            if not key:
-                continue
-            name_to_ids[key].add(cid)
-            if degree > name_to_degree.get(key, 0):
-                name_to_degree[key] = degree
-
-    frozen_ids = {key: tuple(sorted(ids)) for key, ids in name_to_ids.items()}
-    return KgIndex(dict(degrees), frozen_ids, name_to_degree, dict(adjacency))
+def load_kg_index(
+    path: Path | None,
+    query_terms: Iterable[str] | None = None,
+) -> KgIndex:
+    if path is None:
+        return KgIndex({}, {}, {}, {}, {})
+    payload = load_case1_kg_index_payload(
+        path,
+        query_terms,
+        case_study_id=CASE1_CASE_STUDY_ID,
+    )
+    return KgIndex(
+        payload["degrees"],
+        payload["name_to_ids"],
+        payload["name_to_degree"],
+        payload["adjacency"],
+        payload["directed_support"],
+        case_study_id=payload["case_study_id"],
+        scoped_degrees=payload["scoped_degrees"],
+        name_to_scoped_degree=payload["name_to_scoped_degree"],
+        scoped_adjacency=payload["scoped_adjacency"],
+        scoped_directed_support=payload["scoped_directed_support"],
+        stats=payload["stats"],
+    )
 
 
 def candidate_region_terms(row: pd.Series) -> list[str]:
@@ -450,6 +571,36 @@ def disease_terms(name: str) -> list[str]:
     return terms
 
 
+def kg_query_terms_for_candidates(candidates: pd.DataFrame) -> tuple[str, ...]:
+    """Collect the finite disease, anatomy, and feature terms queried in CS1."""
+
+    terms: set[str] = set()
+    if "disease" in candidates:
+        for disease in candidates["disease"].dropna().astype(str).unique():
+            terms.update(disease_terms(disease))
+
+    if "feature" in candidates:
+        for feature in candidates["feature"].dropna().astype(str).unique():
+            terms.update(feature_terms(feature))
+
+    region_columns = [
+        column
+        for column in (
+            "anatomy_full",
+            "anatomy_key",
+            "roi_name",
+            "network",
+            "structure_class",
+        )
+        if column in candidates
+    ]
+    if region_columns:
+        unique_regions = candidates[region_columns].fillna("").drop_duplicates()
+        for _, row in unique_regions.iterrows():
+            terms.update(candidate_region_terms(row))
+    return tuple(sorted(term for term in terms if term))
+
+
 def method_publication(method: str) -> dict[str, object]:
     return {field: METHOD_PUBLICATIONS.get(method, {}).get(field, "") for field in PUBLICATION_FIELDS}
 
@@ -481,6 +632,14 @@ def resolve_degree(terms: Iterable[str], kg: KgIndex) -> int:
     return best
 
 
+def resolve_scoped_degree(terms: Iterable[str], kg: KgIndex) -> int:
+    best = 0
+    for term in terms:
+        norm = normalize_text(term)
+        best = max(best, kg.name_to_scoped_degree.get(norm, 0))
+    return best
+
+
 def resolve_ids(terms: Iterable[str], kg: KgIndex, max_ids: int = 8) -> tuple[str, ...]:
     ids: set[str] = set()
     for term in terms:
@@ -489,17 +648,30 @@ def resolve_ids(terms: Iterable[str], kg: KgIndex, max_ids: int = 8) -> tuple[st
     return tuple(ranked[:max_ids])
 
 
-def pair_support(disease_ids: tuple[str, ...], region_ids: tuple[str, ...], kg: KgIndex) -> float:
-    if not disease_ids or not region_ids or not kg.adjacency:
+def pair_support(
+    disease_ids: tuple[str, ...],
+    region_ids: tuple[str, ...],
+    kg: KgIndex,
+    *,
+    scoped: bool = False,
+) -> float:
+    adjacency = kg.scoped_adjacency if scoped else kg.adjacency
+    directed_support = (
+        kg.scoped_directed_support if scoped else kg.directed_support
+    )
+    if not disease_ids or not region_ids or not adjacency:
         return 0.0
     best = 0.0
     for did in disease_ids:
-        dn = kg.adjacency.get(did, set())
+        dn = adjacency.get(did, set())
         if not dn:
             continue
         for rid in region_ids:
-            rn = kg.adjacency.get(rid, set())
-            direct = 1.0 if rid in dn else 0.0
+            rn = adjacency.get(rid, set())
+            direct = max(
+                directed_support.get((did, rid), 0.0),
+                0.85 * directed_support.get((rid, did), 0.0),
+            )
             shared = len(dn & rn) if rn else 0
             score = direct + min(1.0, math.log1p(shared) / 4.0)
             best = max(best, score)
@@ -605,7 +777,12 @@ def load_results(path: Path, gt_top_frac: float) -> pd.DataFrame:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     if "abs_adjusted_residual_d" not in df.columns:
         df["abs_adjusted_residual_d"] = df["adjusted_residual_d"].abs()
-    df = df[np.isfinite(df["abs_adjusted_residual_d"])].copy()
+    finite_effect = np.isfinite(df["abs_adjusted_residual_d"].to_numpy(float))
+    finite_p = np.isfinite(df["p_value"].to_numpy(float))
+    # Freeze the candidate universe before observing whether an execution
+    # succeeds. Failed readouts stay in the registry and consume experiment
+    # budget instead of being removed retrospectively.
+    df["execution_succeeded"] = finite_effect & finite_p
     df["candidate_id"] = (
         df["modality"].astype(str)
         + "|"
@@ -618,14 +795,82 @@ def load_results(path: Path, gt_top_frac: float) -> pd.DataFrame:
         + df["roi_index"].astype(str)
     )
     df["gt_rank"] = df["abs_adjusted_residual_d"].rank(method="first", ascending=False)
-    n_gt = max(1, int(math.ceil(len(df) * gt_top_frac)))
+    n_valid = int(np.sum(finite_effect))
+    n_gt = max(1, int(math.ceil(n_valid * gt_top_frac)))
     df["is_gt_top"] = df["gt_rank"] <= n_gt
     df["is_strict_fdr"] = df["q_fdr_global"].fillna(1.0) < 0.05
     df["map_group"] = df.apply(map_group, axis=1)
     return df
 
 
-def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFrame:
+def neurodiscovery_score_arrays(
+    scored: pd.DataFrame,
+    config: Case1NeuroDiscoveryConfig,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Combine frozen outcome-blind score components for one search config."""
+
+    config.validate()
+    feature_weight = config.feature_support_weight
+    global_score = (
+        (1.0 - feature_weight)
+        * scored["score_neurodiscovery_global_base"].to_numpy(float)
+        + feature_weight * scored["score_feature_support_global"].to_numpy(float)
+    )
+    scoped_score = (
+        (1.0 - feature_weight)
+        * scored["score_case_study_support_base"].to_numpy(float)
+        + feature_weight * scored["score_feature_support_scoped"].to_numpy(float)
+    )
+    support_weight = config.global_support_weight + config.scoped_support_weight
+    combined = (
+        config.global_support_weight * global_score
+        + config.scoped_support_weight * scoped_score
+    ) / support_weight
+    combined += 0.01 * scored["score_random"].to_numpy(float)
+    return global_score, scoped_score, combined
+
+
+FROZEN_SCORE_COMPONENT_FIELDS = (
+    ("score_kge", "kge_weight"),
+    ("score_novelty", "novelty_weight"),
+    ("score_critic", "critic_weight"),
+)
+
+
+def frozen_auxiliary_exploration_score(
+    scored: pd.DataFrame,
+    config: Case1NeuroDiscoveryConfig,
+) -> np.ndarray | None:
+    """Combine frozen components for the diversity quota, not main exploitation."""
+
+    auxiliary = np.zeros(len(scored), dtype=float)
+    total_weight = 0.0
+    for column, weight_field in FROZEN_SCORE_COMPONENT_FIELDS:
+        weight = float(getattr(config, weight_field))
+        if weight <= 0:
+            continue
+        if column not in scored.columns:
+            raise ValueError(f"{column} is required when {weight_field} is non-zero")
+        values = pd.to_numeric(scored[column], errors="coerce")
+        if not np.isfinite(values.to_numpy(float)).all():
+            raise ValueError(f"{column} must be finite for every candidate")
+        auxiliary += weight * minmax(values).to_numpy(float)
+        total_weight += weight
+    if total_weight <= 0:
+        return None
+    return auxiliary / total_weight
+
+
+def add_generator_scores(
+    df: pd.DataFrame,
+    kg: KgIndex,
+    seed: int,
+    *,
+    use_handcrafted_feature_prior: bool = False,
+    config: Case1NeuroDiscoveryConfig | None = None,
+) -> pd.DataFrame:
+    config = config or Case1NeuroDiscoveryConfig()
+    config.validate()
     out = df.copy()
     rng = np.random.default_rng(seed)
     out["score_random"] = rng.random(len(out))
@@ -638,6 +883,23 @@ def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFra
         disease: resolve_ids(disease_terms(disease), kg)
         for disease in sorted(out["disease"].dropna().unique())
     }
+    scoped_disease_degree = {
+        disease: resolve_scoped_degree(disease_terms(disease), kg)
+        for disease in sorted(out["disease"].dropna().unique())
+    }
+    features = sorted(out["feature"].dropna().astype(str).unique())
+    feature_degree = {
+        feature: resolve_degree(feature_terms(feature), kg)
+        for feature in features
+    }
+    feature_ids = {
+        feature: resolve_ids(feature_terms(feature), kg)
+        for feature in features
+    }
+    scoped_feature_degree = {
+        feature: resolve_scoped_degree(feature_terms(feature), kg)
+        for feature in features
+    }
 
     roi_cols = ["modality", "source", "roi_index", "roi_name", "anatomy_key", "anatomy_full", "network", "structure_class"]
     rois = out[roi_cols].drop_duplicates().copy()
@@ -645,22 +907,42 @@ def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFra
     roi_degree: dict[str, int] = {}
     roi_ids: dict[str, tuple[str, ...]] = {}
     roi_prior: dict[str, float] = {}
+    scoped_roi_degree: dict[str, int] = {}
     for _, row in rois.iterrows():
         key = str(row["roi_key"])
         terms = candidate_region_terms(row)
         roi_degree[key] = resolve_degree(terms, kg)
+        scoped_roi_degree[key] = resolve_scoped_degree(terms, kg)
         roi_ids[key] = resolve_ids(terms, kg)
         roi_prior[key] = region_prior(row)
 
     out["roi_key"] = out["modality"].astype(str) + "|" + out["source"].astype(str) + "|" + out["roi_index"].astype(str)
     out["kg_disease_degree"] = out["disease"].map(disease_degree).fillna(0).astype(float)
     out["kg_region_degree"] = out["roi_key"].map(roi_degree).fillna(0).astype(float)
-    out["feature_prior"] = out["feature"].map(feature_prior).astype(float)
+    out["kg_scoped_disease_degree"] = (
+        out["disease"].map(scoped_disease_degree).fillna(0).astype(float)
+    )
+    out["kg_scoped_region_degree"] = (
+        out["roi_key"].map(scoped_roi_degree).fillna(0).astype(float)
+    )
+    out["kg_feature_degree"] = out["feature"].map(feature_degree).fillna(0).astype(float)
+    out["kg_scoped_feature_degree"] = (
+        out["feature"].map(scoped_feature_degree).fillna(0).astype(float)
+    )
+    if use_handcrafted_feature_prior:
+        out["feature_prior"] = out["feature"].map(feature_prior).astype(float)
+    else:
+        # Feature families are part of the search space, not privileged labels.
+        # Keeping this neutral prevents a manually selected family from
+        # dominating NeuroDiscovery before any candidate has been executed.
+        out["feature_prior"] = 0.5
     out["feature_family"] = out["feature"].map(feature_family).astype(str)
     out["region_prior"] = out["roi_key"].map(roi_prior).fillna(0.35).astype(float)
 
     pair_cache: dict[tuple[str, str], float] = {}
+    scoped_pair_cache: dict[tuple[str, str], float] = {}
     pair_scores: list[float] = []
+    scoped_pair_scores: list[float] = []
     for disease, roi_key in zip(out["disease"], out["roi_key"], strict=False):
         cache_key = (str(disease), str(roi_key))
         if cache_key not in pair_cache:
@@ -670,12 +952,87 @@ def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFra
                 kg,
             )
         pair_scores.append(pair_cache[cache_key])
+        if cache_key not in scoped_pair_cache:
+            scoped_pair_cache[cache_key] = pair_support(
+                disease_ids.get(str(disease), ()),
+                roi_ids.get(str(roi_key), ()),
+                kg,
+                scoped=True,
+            )
+        scoped_pair_scores.append(scoped_pair_cache[cache_key])
     out["kg_pair_support"] = pair_scores
+    out["kg_scoped_pair_support"] = scoped_pair_scores
+
+    disease_feature_cache: dict[tuple[str, str], float] = {}
+    scoped_disease_feature_cache: dict[tuple[str, str], float] = {}
+    for disease, feature in out[["disease", "feature"]].drop_duplicates().itertuples(index=False):
+        key = (str(disease), str(feature))
+        disease_feature_cache[key] = pair_support(
+            disease_ids.get(key[0], ()),
+            feature_ids.get(key[1], ()),
+            kg,
+        )
+        scoped_disease_feature_cache[key] = pair_support(
+            disease_ids.get(key[0], ()),
+            feature_ids.get(key[1], ()),
+            kg,
+            scoped=True,
+        )
+
+    region_feature_cache: dict[tuple[str, str], float] = {}
+    scoped_region_feature_cache: dict[tuple[str, str], float] = {}
+    for roi_key, feature in out[["roi_key", "feature"]].drop_duplicates().itertuples(index=False):
+        key = (str(roi_key), str(feature))
+        region_feature_cache[key] = pair_support(
+            roi_ids.get(key[0], ()),
+            feature_ids.get(key[1], ()),
+            kg,
+        )
+        scoped_region_feature_cache[key] = pair_support(
+            roi_ids.get(key[0], ()),
+            feature_ids.get(key[1], ()),
+            kg,
+            scoped=True,
+        )
+
+    disease_feature_keys = zip(out["disease"].astype(str), out["feature"].astype(str), strict=False)
+    region_feature_keys = zip(out["roi_key"].astype(str), out["feature"].astype(str), strict=False)
+    out["kg_disease_feature_support"] = [
+        disease_feature_cache[(disease, feature)]
+        for disease, feature in disease_feature_keys
+    ]
+    out["kg_region_feature_support"] = [
+        region_feature_cache[(roi_key, feature)]
+        for roi_key, feature in region_feature_keys
+    ]
+    scoped_disease_feature_keys = zip(
+        out["disease"].astype(str), out["feature"].astype(str), strict=False
+    )
+    scoped_region_feature_keys = zip(
+        out["roi_key"].astype(str), out["feature"].astype(str), strict=False
+    )
+    out["kg_scoped_disease_feature_support"] = [
+        scoped_disease_feature_cache[(disease, feature)]
+        for disease, feature in scoped_disease_feature_keys
+    ]
+    out["kg_scoped_region_feature_support"] = [
+        scoped_region_feature_cache[(roi_key, feature)]
+        for roi_key, feature in scoped_region_feature_keys
+    ]
 
     disease_degree_score = minmax(np.log1p(out["kg_disease_degree"]))
     region_degree_score = minmax(np.log1p(out["kg_region_degree"]))
     degree_score = minmax(np.log1p(out["kg_disease_degree"]) + np.log1p(out["kg_region_degree"]))
     pair_score = minmax(out["kg_pair_support"])
+    scoped_disease_score = minmax(np.log1p(out["kg_scoped_disease_degree"]))
+    scoped_region_score = minmax(np.log1p(out["kg_scoped_region_degree"]))
+    scoped_pair_score = minmax(out["kg_scoped_pair_support"])
+    feature_degree_score = minmax(np.log1p(out["kg_feature_degree"]))
+    disease_feature_score = minmax(out["kg_disease_feature_support"])
+    region_feature_score = minmax(out["kg_region_feature_support"])
+    scoped_feature_score = minmax(np.log1p(out["kg_scoped_feature_degree"]))
+    scoped_disease_feature_score = minmax(out["kg_scoped_disease_feature_support"])
+    scoped_region_feature_score = minmax(out["kg_scoped_region_feature_support"])
     out["score_kg_disease"] = disease_degree_score
     out["score_kg_region"] = region_degree_score
     out["score_kg_degree"] = degree_score + 0.03 * out["score_random"]
@@ -699,28 +1056,28 @@ def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFra
         + 0.16 * disease_degree_score
         + 0.10 * rng.random(len(out))
     )
-    out["score_co_scientist_style"] = (
+    out["score_open_coscientist"] = (
         0.30 * out["region_prior"]
         + 0.24 * out["feature_prior"]
         + 0.18 * disease_degree_score
         + 0.14 * region_degree_score
         + 0.14 * rng.random(len(out))
     )
-    out["score_data_to_paper_style"] = (
+    out["score_data_to_paper"] = (
         0.34 * source_size
         + 0.30 * interpretability
         + 0.20 * out["feature_prior"]
         + 0.08 * out["region_prior"]
         + 0.08 * rng.random(len(out))
     )
-    out["score_sciagents_style"] = (
+    out["score_sciagents"] = (
         0.32 * degree_score
         + 0.30 * pair_score
         + 0.16 * disease_degree_score
         + 0.14 * region_degree_score
         + 0.08 * rng.random(len(out))
     )
-    out["score_virtual_lab_style"] = (
+    out["score_virtual_lab"] = (
         0.24 * out["region_prior"]
         + 0.22 * out["feature_prior"]
         + 0.18 * source_size
@@ -736,15 +1093,39 @@ def add_generator_scores(df: pd.DataFrame, kg: KgIndex, seed: int) -> pd.DataFra
         + 0.10 * out["feature_prior"]
         + 0.06 * rng.random(len(out))
     )
-    out["score_neurodiscovery"] = (
+    out["score_neurodiscovery_global_base"] = (
         0.15 * disease_degree_score
         + 0.15 * region_degree_score
         + 0.30 * pair_score
         + 0.10 * out["region_prior"]
         + 0.30 * out["feature_prior"]
-        + 0.01 * out["score_random"]
     )
-    out["score_exhaustive_gt"] = out["abs_adjusted_residual_d"]
+    out["score_case_study_support_base"] = (
+        0.25 * scoped_disease_score
+        + 0.25 * scoped_region_score
+        + 0.50 * scoped_pair_score
+    )
+    out["score_feature_support_global"] = (
+        0.15 * feature_degree_score
+        + 0.45 * disease_feature_score
+        + 0.40 * region_feature_score
+    )
+    out["score_feature_support_scoped"] = (
+        0.15 * scoped_feature_score
+        + 0.50 * scoped_disease_feature_score
+        + 0.35 * scoped_region_feature_score
+    )
+    global_score, scoped_score, combined_score = neurodiscovery_score_arrays(out, config)
+    out["score_neurodiscovery_global"] = global_score
+    out["score_case_study_support"] = scoped_score
+    out["score_neurodiscovery"] = combined_score
+    # The static generator is also used to build frozen outcome-blind score
+    # components. Only expose the exhaustive oracle in offline evaluation
+    # frames that explicitly contain the hidden effect-size column.
+    if "abs_adjusted_residual_d" in out.columns:
+        out["score_exhaustive_gt"] = pd.to_numeric(
+            out["abs_adjusted_residual_d"], errors="coerce"
+        ).fillna(-np.inf)
     return out
 
 
@@ -768,43 +1149,43 @@ def stochastic_scores(scored: pd.DataFrame, method: str, rng: np.random.Generato
             + 0.07 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
             + 0.05 * rng.random(int(feature_codes.max()) + 1)[feature_codes]
         )
-    if method == "co_scientist_style":
-        # Multi-agent co-scientist adaptation: generator and reviewer priors
+    if method == "open_coscientist":
+        # Open Co-Scientist adaptation: generator and reviewer priors
         # are represented as independent disease/region/feature perturbations.
         disease_codes = factor_codes(scored["disease"])
         roi_codes = factor_codes(scored["roi_key"])
         group_codes = factor_codes(scored["map_group"])
         return (
-            0.68 * scored["score_co_scientist_style"].to_numpy(float)
+            0.68 * scored["score_open_coscientist"].to_numpy(float)
             + 0.12 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
             + 0.10 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
             + 0.06 * rng.random(int(group_codes.max()) + 1)[group_codes]
             + 0.04 * rng.random(n)
         )
-    if method == "data_to_paper_style":
+    if method == "data_to_paper":
         # Data-to-paper adaptation: favors auditable, well-supported analyses
         # and interpretable measurements, without using observed effect sizes.
         source_codes = factor_codes(scored["source"])
         feature_codes = factor_codes(scored["feature_family"])
         return (
-            0.76 * scored["score_data_to_paper_style"].to_numpy(float)
+            0.76 * scored["score_data_to_paper"].to_numpy(float)
             + 0.10 * rng.random(int(source_codes.max()) + 1)[source_codes]
             + 0.08 * rng.random(int(feature_codes.max()) + 1)[feature_codes]
             + 0.06 * rng.random(n)
         )
-    if method == "sciagents_style":
+    if method == "sciagents":
         # Graph-reasoning adaptation: KG degree and local pair support drive
         # discovery, with multi-agent exploration noise over graph neighborhoods.
         disease_codes = factor_codes(scored["disease"])
         roi_codes = factor_codes(scored["roi_key"])
         return (
-            0.70 * scored["score_sciagents_style"].to_numpy(float)
+            0.70 * scored["score_sciagents"].to_numpy(float)
             + 0.12 * scored["score_kg_degree"].to_numpy(float)
             + 0.08 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
             + 0.06 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
             + 0.04 * rng.random(n)
         )
-    if method == "virtual_lab_style":
+    if method == "virtual_lab":
         # Virtual-Lab adaptation: a PI/scientist-agent team balances dataset
         # feasibility, region salience, and cross-role diversity.
         disease_codes = factor_codes(scored["disease"])
@@ -812,7 +1193,7 @@ def stochastic_scores(scored: pd.DataFrame, method: str, rng: np.random.Generato
         group_codes = factor_codes(scored["map_group"])
         feature_codes = factor_codes(scored["feature_family"])
         return (
-            0.66 * scored["score_virtual_lab_style"].to_numpy(float)
+            0.66 * scored["score_virtual_lab"].to_numpy(float)
             + 0.10 * rng.random(int(disease_codes.max()) + 1)[disease_codes]
             + 0.08 * rng.random(int(roi_codes.max()) + 1)[roi_codes]
             + 0.08 * rng.random(int(group_codes.max()) + 1)[group_codes]
@@ -858,6 +1239,7 @@ def select_diverse_batch(
     disease_cap_fraction: float = 0.55,
     feature_cap_fraction: float = 0.46,
     group_cap_fraction: float = 0.68,
+    auxiliary_scores: np.ndarray | None = None,
 ) -> np.ndarray:
     remaining_idx = np.flatnonzero(remaining)
     if len(remaining_idx) <= batch_size:
@@ -884,7 +1266,12 @@ def select_diverse_batch(
         disease_counts[int(disease_codes[idx])] += 1
         feature_counts[int(feature_codes[idx])] += 1
         group_counts[int(group_codes[idx])] += 1
-    for idx in pool[exploit_n:]:
+    exploration_pool = pool[exploit_n:]
+    if auxiliary_scores is not None:
+        exploration_pool = exploration_pool[
+            np.argsort(-auxiliary_scores[exploration_pool], kind="mergesort")
+        ]
+    for idx in exploration_pool:
         d = int(disease_codes[idx])
         f = int(feature_codes[idx])
         g = int(group_codes[idx])
@@ -905,7 +1292,7 @@ def select_diverse_batch(
             break
 
     if len(selected) < batch_size:
-        for idx in pool[exploit_n:]:
+        for idx in exploration_pool:
             idx = int(idx)
             if idx in selected_set:
                 continue
@@ -951,7 +1338,6 @@ def select_balanced_warmup_batch(
     if selected:
         selected_mask[np.array(selected, dtype=np.int64)] = True
 
-    n_disease = len(disease_counts)
     while len(selected) < batch_size:
         progressed = False
         for disease in np.argsort(disease_counts):
@@ -987,16 +1373,287 @@ def closed_loop_neurodiscovery_order(
     negative_proxy_start: int = 0,
     negative_penalty_mode: str = "hybrid",
     return_audit: bool = False,
-) -> np.ndarray | tuple[np.ndarray, pd.DataFrame]:
+    seed: int = 0,
+    trial: int = 0,
+    overlay_path: Path | None = None,
+    return_overlay_manifest: bool = False,
+    config: Case1NeuroDiscoveryConfig | None = None,
+    batch_commit_callback: (
+        Callable[[Mapping[str, Any]], Mapping[str, Any] | None] | None
+    ) = None,
+    outcome_reveal_callback: (
+        Callable[[Sequence[str], Mapping[str, Any]], Any] | None
+    ) = None,
+) -> (
+    np.ndarray
+    | tuple[np.ndarray, pd.DataFrame]
+    | tuple[np.ndarray, dict[str, object]]
+    | tuple[np.ndarray, pd.DataFrame, dict[str, object]]
+):
+    if config is not None:
+        config.validate()
+        batch_size = config.batch_size
+        warmup_budget = config.warmup_budget
+        max_closed_loop_budget = config.max_closed_loop_budget
+        warmup_exploit_fraction = config.warmup_exploit_fraction
+        feedback_weight = config.feedback_weight
+        overlay_pair_feedback_weight = config.pair_feedback_weight
+        exploration_weight = config.exploration_weight
+        inconclusive_failure_weight = config.inconclusive_search_failure_weight
+        pre_pair_exploit_fraction = config.pre_pair_exploit_fraction
+        post_pair_exploit_fraction = config.post_pair_exploit_fraction
+        pair_feedback_start_fraction = config.pair_feedback_start_fraction
+        pair_feedback_force_fraction = config.pair_feedback_force_fraction
+        configured_min_pair_hits = config.min_hits_for_pair_feedback
+        feature_support_decay_budget = config.feature_support_decay_budget
+    else:
+        warmup_exploit_fraction = 0.40
+        feedback_weight = 0.10
+        overlay_pair_feedback_weight = 0.08
+        exploration_weight = 0.015
+        inconclusive_failure_weight = 0.0
+        pre_pair_exploit_fraction = 0.90
+        post_pair_exploit_fraction = 0.94
+        pair_feedback_start_fraction = 0.25
+        pair_feedback_force_fraction = 0.42
+        configured_min_pair_hits = 50
+        feature_support_decay_budget = 0
+    effective_search_config = {
+        "batch_size": int(batch_size),
+        "warmup_budget": int(warmup_budget),
+        "max_closed_loop_budget": int(max_closed_loop_budget),
+        "warmup_exploit_fraction": float(warmup_exploit_fraction),
+        "feedback_weight": float(feedback_weight),
+        "pair_feedback_weight": float(overlay_pair_feedback_weight),
+        "exploration_weight": float(exploration_weight),
+        "inconclusive_search_failure_weight": float(inconclusive_failure_weight),
+        "pre_pair_exploit_fraction": float(pre_pair_exploit_fraction),
+        "post_pair_exploit_fraction": float(post_pair_exploit_fraction),
+        "pair_feedback_start_fraction": float(pair_feedback_start_fraction),
+        "pair_feedback_force_fraction": float(pair_feedback_force_fraction),
+        "min_hits_for_pair_feedback": int(configured_min_pair_hits),
+        "feature_support_decay_budget": int(feature_support_decay_budget),
+        "kge_weight": float(config.kge_weight) if config is not None else 0.0,
+        "novelty_weight": float(config.novelty_weight) if config is not None else 0.0,
+        "critic_weight": float(config.critic_weight) if config is not None else 0.0,
+    }
     n = len(scored)
-    base = scored["score_neurodiscovery"].to_numpy(float).copy()
+    base_initial = scored["score_neurodiscovery"].to_numpy(float).copy()
+    if feature_support_decay_budget > 0 and config is not None:
+        support_weight = config.global_support_weight + config.scoped_support_weight
+        base_floor = (
+            config.global_support_weight
+            * scored["score_neurodiscovery_global_base"].to_numpy(float)
+            + config.scoped_support_weight
+            * scored["score_case_study_support_base"].to_numpy(float)
+        ) / support_weight
+        base_floor += 0.01 * scored["score_random"].to_numpy(float)
+    else:
+        base_floor = base_initial.copy()
+    auxiliary_scores = (
+        frozen_auxiliary_exploration_score(scored, config)
+        if config is not None
+        else None
+    )
+
+    def current_static_base(selected: int) -> np.ndarray:
+        if feature_support_decay_budget <= 0:
+            return base_initial
+        remaining_prior = max(
+            0.0,
+            1.0 - float(selected) / max(feature_support_decay_budget, 1),
+        )
+        return base_floor + remaining_prior * (base_initial - base_floor)
     candidate_ids = scored["candidate_id"].astype(str).to_numpy()
+    if len(set(candidate_ids.tolist())) != len(candidate_ids):
+        raise ValueError("candidate_id values must be unique")
+    candidate_index = {
+        candidate_id: index for index, candidate_id in enumerate(candidate_ids)
+    }
     disease_codes = factor_codes(scored["disease"])
     feature_codes = factor_codes(scored["feature_family"])
     group_codes = factor_codes(scored["map_group"])
     roi_codes = factor_codes(scored["roi_key"])
     source_codes = factor_codes(scored["source"])
-    gt = scored["is_gt_top"].to_numpy(dtype=bool)
+    # A formal run supplies outcomes through a vault callback. In that mode the
+    # scoring frame can contain no effect, P value, execution result, or GT
+    # column at all. Development/tuning callers retain the historical API, but
+    # even there outcome cells are read only for the already committed batch.
+    formal_outcome_vault = outcome_reveal_callback is not None
+    if formal_outcome_vault and batch_commit_callback is None:
+        raise ValueError(
+            "formal outcome reveal requires a batch selection commitment callback"
+        )
+    gt = (
+        scored["is_gt_top"].to_numpy(dtype=bool)
+        if "is_gt_top" in scored and not formal_outcome_vault
+        else None
+    )
+    observed_d = np.full(n, np.nan, dtype=float)
+    observed_p = np.full(n, np.nan, dtype=float)
+    expected_direction = np.full(n, "", dtype=object)
+    execution_succeeded = np.zeros(n, dtype=bool)
+    feedback = np.full(n, "unobserved", dtype=object)
+    feedback_available = np.zeros(n, dtype=bool)
+    supported = np.zeros(n, dtype=bool)
+    contradicted = np.zeros(n, dtype=bool)
+
+    def local_outcome_reveal(
+        selected_candidate_ids: Sequence[str],
+        _selection_commit: Mapping[str, Any],
+    ) -> list[dict[str, Any]]:
+        outcome_fields = (
+            "execution_succeeded",
+            "adjusted_residual_d",
+            "p_value",
+            "expected_direction",
+            "feedback_available",
+        )
+        rows: list[dict[str, Any]] = []
+        for candidate_id in selected_candidate_ids:
+            index = candidate_index[str(candidate_id)]
+            source = scored.iloc[index]
+            row: dict[str, Any] = {"candidate_id": str(candidate_id)}
+            for field_name in outcome_fields:
+                if field_name in scored:
+                    row[field_name] = source[field_name]
+            rows.append(row)
+        return rows
+
+    reveal_outcomes = outcome_reveal_callback or local_outcome_reveal
+
+    def coerce_execution_success(value: Any, *, default: bool) -> bool:
+        if value is None or (isinstance(value, float) and math.isnan(value)):
+            return default
+        if isinstance(value, str):
+            normalized = value.strip().casefold()
+            if normalized in {"true", "1", "yes", "y"}:
+                return True
+            if normalized in {"false", "0", "no", "n", ""}:
+                return False
+        return bool(value)
+
+    def reveal_selected_batch(
+        batch: np.ndarray,
+        selection_commit: Mapping[str, Any],
+    ) -> list[dict[str, Any]]:
+        selected_candidate_ids = candidate_ids[batch].astype(str).tolist()
+        raw = reveal_outcomes(selected_candidate_ids, selection_commit)
+        if isinstance(raw, pd.DataFrame):
+            records = raw.to_dict(orient="records")
+        elif isinstance(raw, Mapping):
+            records = []
+            for candidate_id in selected_candidate_ids:
+                value = raw.get(candidate_id)
+                if not isinstance(value, Mapping):
+                    raise ValueError(
+                        f"outcome vault omitted committed candidate {candidate_id}"
+                    )
+                records.append({"candidate_id": candidate_id, **dict(value)})
+        else:
+            records = [dict(value) for value in raw]
+        returned_ids = [str(value.get("candidate_id") or "") for value in records]
+        if returned_ids != selected_candidate_ids:
+            raise ValueError(
+                "outcome vault must return exactly the committed candidates in order"
+            )
+
+        revealed: list[dict[str, Any]] = []
+        for index, outcome in zip(batch, records, strict=True):
+            effect = pd.to_numeric(
+                outcome.get("adjusted_residual_d", outcome.get("effect_size_d")),
+                errors="coerce",
+            )
+            p_value = pd.to_numeric(
+                outcome.get("p_value", outcome.get("nominal_p_value")),
+                errors="coerce",
+            )
+            finite = bool(np.isfinite(effect) and np.isfinite(p_value))
+            succeeded = coerce_execution_success(
+                outcome.get("execution_succeeded"), default=finite
+            )
+            expected = str(outcome.get("expected_direction") or "")
+            available = coerce_execution_success(
+                outcome.get("feedback_available"),
+                default=True,
+            )
+            status = (
+                classify_observed_feedback(
+                    float(effect),
+                    float(p_value),
+                    expected_direction=expected,
+                    alpha=0.01,
+                    min_abs_d=0.15,
+                )
+                if succeeded and finite
+                else "execution_failed"
+            )
+            observed_d[int(index)] = float(effect) if finite else np.nan
+            observed_p[int(index)] = float(p_value) if finite else np.nan
+            expected_direction[int(index)] = expected
+            execution_succeeded[int(index)] = succeeded and finite
+            feedback[int(index)] = status
+            feedback_available[int(index)] = available
+            supported[int(index)] = available and status == "supported"
+            contradicted[int(index)] = available and status == "contradicted"
+            revealed.append(
+                {
+                    "candidate_id": str(outcome["candidate_id"]),
+                    "execution_succeeded": bool(succeeded and finite),
+                    "adjusted_residual_d": float(effect) if finite else None,
+                    "p_value": float(p_value) if finite else None,
+                    "expected_direction": expected,
+                    "feedback_status": status,
+                    "feedback_available": available,
+                }
+            )
+        return revealed
+
+    overlay_public = scored.copy()
+    if "atlas" not in overlay_public:
+        overlay_public["atlas"] = overlay_public.get("source", "")
+    if "anatomy" not in overlay_public:
+        overlay_public["anatomy"] = overlay_public.get(
+            "anatomy_full", overlay_public.get("roi_key", "")
+        )
+    overlay_factor_fields = (
+        "disease",
+        "feature_family",
+        "map_group",
+        "roi_key",
+        "source",
+    )
+    experimental_overlay = ExperimentalOverlayGraph(
+        overlay_public,
+        adapter=adapter_for(CASE1_CASE_STUDY_ID),
+        factor_fields=overlay_factor_fields,
+        seed=seed,
+        trial=trial,
+        stream_path=(
+            overlay_path
+            if overlay_path is not None and overlay_path.suffix.casefold() == ".gz"
+            else None
+        ),
+    )
+    overlay_round = 0
+
+    def append_overlay(batch: np.ndarray) -> None:
+        nonlocal overlay_round
+        for index in batch:
+            status = str(feedback[int(index)])
+            experimental_overlay.append(
+                candidate_index=int(index),
+                outcome={
+                    "validated": status == "supported",
+                    "feedback_status": status,
+                    "effect_size": observed_d[int(index)],
+                    "p_value": observed_p[int(index)],
+                    "expected_direction": expected_direction[int(index)],
+                    "feedback_available": bool(feedback_available[int(index)]),
+                },
+                round_index=overlay_round,
+            )
+        overlay_round += 1
 
     n_disease = int(disease_codes.max()) + 1
     n_feature = int(feature_codes.max()) + 1
@@ -1031,9 +1688,60 @@ def closed_loop_neurodiscovery_order(
     observed_negative_proxy = 0
     audit_rows: list[dict[str, float | int | str | bool]] = []
     pair_feedback_enabled = False
-    pair_feedback_start = max(warmup_budget, int(round(closed_loop_limit * 0.25)))
-    pair_feedback_force_start = max(pair_feedback_start, int(round(closed_loop_limit * 0.42)))
-    min_hits_for_pair_feedback = 50
+    pair_feedback_start = max(
+        warmup_budget,
+        int(round(closed_loop_limit * pair_feedback_start_fraction)),
+    )
+    pair_feedback_force_start = max(
+        pair_feedback_start,
+        int(round(closed_loop_limit * pair_feedback_force_fraction)),
+    )
+    min_hits_for_pair_feedback = configured_min_pair_hits
+    selection_commit_count = 0
+    outcome_reveal_count = 0
+
+    def commit_and_reveal(
+        stage: str,
+        batch: np.ndarray,
+        *,
+        overlay_read: Mapping[str, Any],
+        selection_changed: bool,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        nonlocal selection_commit_count, outcome_reveal_count
+        payload = {
+            "schema_version": "case1-neurodiscovery-batch-selection.v1",
+            "seed": int(seed),
+            "trial": int(trial),
+            "batch": int(overlay_round),
+            "stage": str(stage),
+            "start_rank": int(selected_total - len(batch) + 1),
+            "end_rank": int(selected_total),
+            "candidate_ids": candidate_ids[batch].astype(str).tolist(),
+            "overlay_records_available": int(
+                overlay_read.get("records_available", 0)
+            ),
+            "overlay_informative_records": int(
+                overlay_read.get("informative_records", 0)
+            ),
+            "overlay_score_nonzero": bool(overlay_read.get("nonzero", False)),
+            "selection_changed_by_overlay": bool(selection_changed),
+            "outcomes_read_before_commit": False,
+        }
+        selection_commit = (
+            dict(batch_commit_callback(payload) or {})
+            if batch_commit_callback is not None
+            else {}
+        )
+        if batch_commit_callback is not None:
+            selection_commit_count += 1
+        if formal_outcome_vault and not selection_commit:
+            raise RuntimeError(
+                "formal commitment callback must return verifiable commitment metadata"
+            )
+        revealed = reveal_selected_batch(batch, selection_commit)
+        outcome_reveal_count += 1
+        return selection_commit, revealed
+
     penalty_configs = {
         "feature_only": {
             "disease": 0.0,
@@ -1106,9 +1814,10 @@ def closed_loop_neurodiscovery_order(
         # Evidence-conditioned pair attention. These pair terms are collected
         # from the beginning, but they are only used after the adaptive trigger
         # below decides the coarse feedback has started to plateau.
-        disease_feature_boost[np.ix_(hit_d, hit_f)] += 0.024
-        group_feature_boost[np.ix_(hit_g, hit_f)] += 0.020
-        roi_feature_boost[np.ix_(hit_r, hit_f)] += 0.008
+        for index in hits:
+            disease_feature_boost[disease_codes[index], feature_codes[index]] += 0.024
+            group_feature_boost[group_codes[index], feature_codes[index]] += 0.020
+            roi_feature_boost[roi_codes[index], feature_codes[index]] += 0.008
 
         disease_boost[:] = np.clip(disease_boost, -0.02, 0.05)
         feature_boost[:] = np.clip(feature_boost, -0.02, 0.08)
@@ -1137,9 +1846,19 @@ def closed_loop_neurodiscovery_order(
         group_penalty[miss_g] += penalty_config["group"]
         roi_penalty[miss_r] += penalty_config["roi"]
         source_penalty[miss_s] += penalty_config["source"]
-        disease_feature_penalty[np.ix_(miss_d, miss_f)] += penalty_config["disease_feature"]
-        group_feature_penalty[np.ix_(miss_g, miss_f)] += penalty_config["group_feature"]
-        roi_feature_penalty[np.ix_(miss_r, miss_f)] += penalty_config["roi_feature"]
+        for index in misses:
+            disease_feature_penalty[
+                disease_codes[index],
+                feature_codes[index],
+            ] += penalty_config["disease_feature"]
+            group_feature_penalty[
+                group_codes[index],
+                feature_codes[index],
+            ] += penalty_config["group_feature"]
+            roi_feature_penalty[
+                roi_codes[index],
+                feature_codes[index],
+            ] += penalty_config["roi_feature"]
 
         disease_penalty[:] = np.clip(disease_penalty, 0.0, 0.018)
         feature_penalty[:] = np.clip(feature_penalty, 0.0, 0.028)
@@ -1150,10 +1869,18 @@ def closed_loop_neurodiscovery_order(
         group_feature_penalty[:] = np.clip(group_feature_penalty, 0.0, 0.040)
         roi_feature_penalty[:] = np.clip(roi_feature_penalty, 0.0, 0.025)
 
-    def append_audit(stage: str, batch: np.ndarray, pair_weight: float) -> None:
+    def append_audit(
+        stage: str,
+        batch: np.ndarray,
+        pair_weight: float,
+        *,
+        selection_commit: Mapping[str, Any],
+    ) -> None:
         if not return_audit:
             return
-        hits = int(gt[batch].sum())
+        gt_hits = int(gt[batch].sum()) if gt is not None else None
+        supported_hits = int(supported[batch].sum())
+        contradicted_hits = int(contradicted[batch].sum())
         audit_rows.append(
             {
                 "strategy": "negative_proxy_penalty" if negative_proxy_penalty else "positive_only",
@@ -1161,8 +1888,13 @@ def closed_loop_neurodiscovery_order(
                 "stage": stage,
                 "selected_total": int(selected_total),
                 "batch_n": int(len(batch)),
-                "batch_gt_hits": hits,
-                "batch_negative_proxy": int(len(batch) - hits),
+                "batch_gt_hits": gt_hits,
+                "batch_supported_feedback": supported_hits,
+                "batch_contradicted_feedback": contradicted_hits,
+                "batch_inconclusive_feedback": int(
+                    len(batch) - supported_hits - contradicted_hits
+                ),
+                "batch_negative_proxy": contradicted_hits,
                 "observed_hits": int(observed_hits),
                 "observed_negative_proxy": int(observed_negative_proxy),
                 "pair_feedback_enabled": bool(pair_feedback_enabled),
@@ -1175,6 +1907,10 @@ def closed_loop_neurodiscovery_order(
                 "mean_feature_penalty": float(np.mean(feature_penalty)),
                 "mean_group_penalty": float(np.mean(group_penalty)),
                 "mean_roi_penalty": float(np.mean(roi_penalty)),
+                "selection_commit_sha256": selection_commit.get("commit_sha256"),
+                "outcomes_revealed_after_commitment": bool(
+                    not formal_outcome_vault or selection_commit
+                ),
             }
         )
 
@@ -1203,9 +1939,27 @@ def closed_loop_neurodiscovery_order(
     # light quota so the first 10k tests do not collapse into one disorder.
     warmup_n = min(warmup_budget, closed_loop_limit, n)
     while selected_total < warmup_n and remaining.any():
-        warmup_scores = base + rng.normal(0.0, 0.001, size=n)
+        overlay_score, _overlay_read = experimental_overlay.score_candidates(
+            feedback_weight=feedback_weight,
+            pair_feedback_weight=overlay_pair_feedback_weight,
+            exploration_weight=exploration_weight,
+            inconclusive_failure_weight=inconclusive_failure_weight,
+        )
+        static_base = current_static_base(selected_total)
+        warmup_noise = rng.normal(0.0, 0.001, size=n)
+        warmup_scores = static_base + overlay_score + warmup_noise
         warmup_scores[~remaining] = -np.inf
         batch_n = min(batch_size, warmup_n - selected_total, int(remaining.sum()))
+        counterfactual_warmup = select_balanced_warmup_batch(
+            static_base + warmup_noise,
+            remaining,
+            disease_codes,
+            feature_codes,
+            group_codes,
+            warmup_disease_counts.copy(),
+            batch_n,
+            exploit_fraction=warmup_exploit_fraction,
+        )
         warmup_batch = select_balanced_warmup_batch(
             warmup_scores,
             remaining,
@@ -1214,17 +1968,35 @@ def closed_loop_neurodiscovery_order(
             group_codes,
             warmup_disease_counts,
             batch_n,
+            exploit_fraction=warmup_exploit_fraction,
         )
         if len(warmup_batch) == 0:
             break
         chosen.append(warmup_batch)
         remaining[warmup_batch] = False
         selected_total += len(warmup_batch)
-        hits = warmup_batch[gt[warmup_batch]]
+        selection_changed = bool(
+            _overlay_read.get("overlay_read", False)
+            and not np.array_equal(warmup_batch, counterfactual_warmup)
+        )
+        experimental_overlay.note_selection_change(selection_changed)
+        selection_commit, _revealed = commit_and_reveal(
+            "warmup",
+            warmup_batch,
+            overlay_read=_overlay_read,
+            selection_changed=selection_changed,
+        )
+        hits = warmup_batch[supported[warmup_batch]]
         record_verified_context(hits, cross_diagnostic=False)
-        record_negative_proxy(warmup_batch[~gt[warmup_batch]])
+        record_negative_proxy(warmup_batch[contradicted[warmup_batch]])
+        append_overlay(warmup_batch)
         update_recent_density(len(hits), len(warmup_batch))
-        append_audit("warmup", warmup_batch, 0.0)
+        append_audit(
+            "warmup",
+            warmup_batch,
+            0.0,
+            selection_commit=selection_commit,
+        )
 
     while selected_total < closed_loop_limit and remaining.any():
         recent_density = float(np.mean(recent_hit_density)) if recent_hit_density else 0.0
@@ -1239,8 +2011,17 @@ def closed_loop_neurodiscovery_order(
         ):
             pair_feedback_enabled = True
         pair_weight = pair_feedback_weight(recent_density)
+        overlay_score, _overlay_read = experimental_overlay.score_candidates(
+            feedback_weight=feedback_weight,
+            pair_feedback_weight=overlay_pair_feedback_weight,
+            exploration_weight=exploration_weight,
+            inconclusive_failure_weight=inconclusive_failure_weight,
+        )
+        static_base = current_static_base(selected_total)
+        dynamic_noise = rng.normal(0.0, 0.002, size=n)
         dynamic = (
-            base
+            static_base
+            + overlay_score
             + disease_boost[disease_codes]
             + feature_boost[feature_codes]
             + group_boost[group_codes]
@@ -1262,17 +2043,17 @@ def closed_loop_neurodiscovery_order(
                 + group_feature_penalty[group_codes, feature_codes]
                 + roi_feature_penalty[roi_codes, feature_codes]
             )
-            + rng.normal(0.0, 0.002, size=n)
+            + dynamic_noise
         )
         dynamic[~remaining] = -np.inf
         batch_n = min(batch_size, closed_loop_limit - selected_total, int(remaining.sum()))
         if pair_feedback_enabled:
-            exploit_fraction = 0.94
+            exploit_fraction = post_pair_exploit_fraction
             disease_cap_fraction = 0.62
             feature_cap_fraction = 0.60
             group_cap_fraction = 0.76
         else:
-            exploit_fraction = 0.90
+            exploit_fraction = pre_pair_exploit_fraction
             disease_cap_fraction = 0.46
             feature_cap_fraction = 0.46
             group_cap_fraction = 0.62
@@ -1287,27 +2068,116 @@ def closed_loop_neurodiscovery_order(
             disease_cap_fraction=disease_cap_fraction,
             feature_cap_fraction=feature_cap_fraction,
             group_cap_fraction=group_cap_fraction,
+            auxiliary_scores=auxiliary_scores,
         )
+        counterfactual_batch = select_diverse_batch(
+            static_base + dynamic_noise,
+            remaining,
+            disease_codes,
+            feature_codes,
+            group_codes,
+            batch_n,
+            exploit_fraction=exploit_fraction,
+            disease_cap_fraction=disease_cap_fraction,
+            feature_cap_fraction=feature_cap_fraction,
+            group_cap_fraction=group_cap_fraction,
+            auxiliary_scores=auxiliary_scores,
+        )
+        selection_changed = not np.array_equal(batch, counterfactual_batch)
+        experimental_overlay.note_selection_change(selection_changed)
         if len(batch) == 0:
             break
         chosen.append(batch)
         remaining[batch] = False
         selected_total += len(batch)
+        selection_commit, _revealed = commit_and_reveal(
+            "closed_loop",
+            batch,
+            overlay_read=_overlay_read,
+            selection_changed=selection_changed,
+        )
 
-        hits = batch[gt[batch]]
+        hits = batch[supported[batch]]
         record_verified_context(hits, cross_diagnostic=True)
-        record_negative_proxy(batch[~gt[batch]])
+        record_negative_proxy(batch[contradicted[batch]])
+        append_overlay(batch)
         update_recent_density(len(hits), len(batch))
-        append_audit("closed_loop", batch, pair_weight)
+        append_audit(
+            "closed_loop",
+            batch,
+            pair_weight,
+            selection_commit=selection_commit,
+        )
 
     if remaining.any():
-        tail_scores = base + rng.normal(0.0, 0.005, size=n)
+        tail_scores = current_static_base(selected_total) + rng.normal(0.0, 0.005, size=n)
         tail_idx = np.flatnonzero(remaining)
         tail_idx = tail_idx[np.lexsort((candidate_ids[tail_idx], -tail_scores[tail_idx]))]
         chosen.append(tail_idx)
     order = np.concatenate(chosen) if chosen else np.arange(n)
+    overlay_manifest = (
+        experimental_overlay.write(overlay_path)
+        if overlay_path is not None
+        else experimental_overlay.manifest()
+    )
+    overlay_manifest["score_components"] = {
+        "base_kg_support": {"active": True, "column": "score_neurodiscovery"},
+        "experimental_overlay": {"active": True},
+        "kge": {
+            "active": "score_kge" in scored.columns and config is not None and config.kge_weight > 0,
+            "weight": float(config.kge_weight) if config is not None else 0.0,
+        },
+        "novelty": {
+            "active": "score_novelty" in scored.columns and config is not None and config.novelty_weight > 0,
+            "weight": float(config.novelty_weight) if config is not None else 0.0,
+        },
+        "critic": {
+            "active": "score_critic" in scored.columns and config is not None and config.critic_weight > 0,
+            "weight": float(config.critic_weight) if config is not None else 0.0,
+        },
+    }
+    overlay_manifest["search_config"] = effective_search_config
+    hidden_outcome_columns = sorted(
+        {
+            "adjusted_residual_d",
+            "abs_adjusted_residual_d",
+            "p_value",
+            "q_fdr_global",
+            "q_fdr_disease",
+            "q_fdr_modality",
+            "execution_succeeded",
+            "is_gt_top",
+            "is_strict_fdr",
+            "gt_rank",
+        }
+        & set(scored.columns)
+    )
+    overlay_manifest["batch_selection_commits"] = {
+        "enabled": batch_commit_callback is not None,
+        "count": int(selection_commit_count),
+        "outcome_reveal_count": int(outcome_reveal_count),
+        "committed_before_selected_outcome_lookup": bool(
+            batch_commit_callback is not None
+            and selection_commit_count == outcome_reveal_count == overlay_round
+        ),
+    }
+    overlay_manifest["formal_outcome_vault"] = {
+        "enabled": bool(formal_outcome_vault),
+        "hidden_outcome_columns_in_scoring_frame": hidden_outcome_columns,
+        "scoring_frame_outcome_blind": bool(
+            formal_outcome_vault and not hidden_outcome_columns
+        ),
+        "outcomes_revealed_only_after_commitment": bool(
+            formal_outcome_vault
+            and selection_commit_count == outcome_reveal_count == overlay_round
+        ),
+    }
+    if return_audit and return_overlay_manifest:
+        return order, pd.DataFrame(audit_rows), overlay_manifest
     if return_audit:
         return order, pd.DataFrame(audit_rows)
+    if return_overlay_manifest:
+        return order, overlay_manifest
     return order
 
 
@@ -1320,8 +2190,12 @@ def curve_from_order(
     budgets: np.ndarray,
     n_gt: int,
 ) -> pd.DataFrame:
-    ordered_gt = gt[order]
-    ordered_strict = strict[order]
+    gt_with_failure_slot = np.concatenate([gt, np.array([False])])
+    strict_with_failure_slot = np.concatenate([strict, np.array([False])])
+    if np.any(order < 0) or np.any(order > len(gt)):
+        raise ValueError("Ranking contains an invalid candidate index")
+    ordered_gt = gt_with_failure_slot[order]
+    ordered_strict = strict_with_failure_slot[order]
     cum_gt = np.cumsum(ordered_gt)
     cum_strict = np.cumsum(ordered_strict)
     rows = []
@@ -1355,8 +2229,12 @@ def trial_summary_from_order(
 ) -> dict[str, float | int | str]:
     targets = [0.01, 0.05, 0.10, 0.20, 0.30, 0.50, 0.80]
     fixed_budgets = [10, 50, 100, 500, 1000, 5000, 10000, 50000]
-    ordered_gt = gt[order]
-    ordered_strict = strict[order]
+    gt_with_failure_slot = np.concatenate([gt, np.array([False])])
+    strict_with_failure_slot = np.concatenate([strict, np.array([False])])
+    if np.any(order < 0) or np.any(order > len(gt)):
+        raise ValueError("Ranking contains an invalid candidate index")
+    ordered_gt = gt_with_failure_slot[order]
+    ordered_strict = strict_with_failure_slot[order]
     gt_positions = np.flatnonzero(ordered_gt) + 1
     strict_positions = np.flatnonzero(ordered_strict) + 1
     cum_gt = np.cumsum(ordered_gt)
@@ -1394,9 +2272,16 @@ def aggregate_curves(trial_curves: pd.DataFrame) -> pd.DataFrame:
         }
         for metric in ("recall", "precision", "gt_hits", "strict_fdr_hits"):
             vals = sub[metric].to_numpy(float)
-            row[f"{metric}_mean"] = float(np.mean(vals))
-            row[f"{metric}_lo"] = float(np.quantile(vals, 0.025))
-            row[f"{metric}_hi"] = float(np.quantile(vals, 0.975))
+            mean = float(np.mean(vals))
+            variance = float(np.var(vals, ddof=1)) if len(vals) > 1 else 0.0
+            sd = math.sqrt(variance)
+            row[f"{metric}_mean"] = mean
+            row[f"{metric}_variance"] = variance
+            row[f"{metric}_sd"] = sd
+            # Plotting code keeps the historical lo/hi column contract, but
+            # these bounds now represent mean +/- one SD rather than quantiles.
+            row[f"{metric}_lo"] = mean - sd
+            row[f"{metric}_hi"] = mean + sd
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -1417,9 +2302,14 @@ def aggregate_summary(trial_summary: pd.DataFrame, oracle_summary: dict[str, flo
             vals = pd.to_numeric(sub[col], errors="coerce").dropna().to_numpy(float)
             if len(vals) == 0:
                 continue
-            row[f"{col}_mean"] = float(np.mean(vals))
-            row[f"{col}_lo"] = float(np.quantile(vals, 0.025))
-            row[f"{col}_hi"] = float(np.quantile(vals, 0.975))
+            mean = float(np.mean(vals))
+            variance = float(np.var(vals, ddof=1)) if len(vals) > 1 else 0.0
+            sd = math.sqrt(variance)
+            row[f"{col}_mean"] = mean
+            row[f"{col}_variance"] = variance
+            row[f"{col}_sd"] = sd
+            row[f"{col}_lo"] = mean - sd
+            row[f"{col}_hi"] = mean + sd
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -1431,31 +2321,24 @@ def generation_first_order_from_mapped(
     seed: int,
     trial: int,
 ) -> np.ndarray:
-    candidate_ids = scored["candidate_id"].astype(str).to_numpy()
-    id_to_idx = {candidate_id: i for i, candidate_id in enumerate(candidate_ids)}
-    sub = mapped[
-        (mapped["method"] == method)
-        & (mapped["mapping_status"] == "mapped")
-        & mapped["mapped_candidate_id"].notna()
-    ].copy()
-    if sub.empty:
-        prefix = np.array([], dtype=int)
-    else:
-        sub["mapped_candidate_id"] = sub["mapped_candidate_id"].astype(str)
-        sub = sub.sort_values(["seed", "generated_rank"], kind="mergesort")
-        sub = sub.drop_duplicates("mapped_candidate_id", keep="first")
-        prefix = np.array(
-            [id_to_idx[cid] for cid in sub["mapped_candidate_id"] if cid in id_to_idx],
-            dtype=int,
+    policy = policy_from_mapped_hypotheses(
+        mapped,
+        method=method,
+        trial=trial,
+        seed=seed,
+    )
+    if not policy.anchors:
+        raise ValueError(
+            f"{method} trial {trial} has no valid exact candidate anchors; "
+            "the trial must be retried or excluded as an infrastructure failure"
         )
-    used = np.zeros(len(scored), dtype=bool)
-    used[prefix] = True
-    tail = np.flatnonzero(~used)
-    method_seed = int.from_bytes(hashlib.blake2b(method.encode("utf-8"), digest_size=4).digest(), "little")
-    rng = np.random.default_rng(seed + 1009 * trial + method_seed)
-    tail_scores = rng.random(len(tail))
-    tail = tail[np.lexsort((candidate_ids[tail], tail_scores))]
-    return np.concatenate([prefix, tail])
+    return compile_policy_order(scored, policy)
+
+
+def candidate_only_order(order: np.ndarray, n_candidates: int) -> np.ndarray:
+    """Drop failure sentinels for candidate-level exports and map panels."""
+
+    return order[(order >= 0) & (order < n_candidates)]
 
 
 def run_benchmark(
@@ -1466,7 +2349,18 @@ def run_benchmark(
     seed: int,
     map_top_n: int,
     generation_first_mapped: pd.DataFrame | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, np.ndarray], dict[str, np.ndarray]]:
+    generation_policies: dict[tuple[str, int], SearchPolicy] | None = None,
+    allow_policy_emulation: bool = False,
+    overlay_dir: Path | None = None,
+    neurodiscovery_config: Case1NeuroDiscoveryConfig | None = None,
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    dict[str, np.ndarray],
+    dict[str, object],
+]:
     candidate_ids = scored["candidate_id"].astype(str).to_numpy()
     gt = scored["is_gt_top"].to_numpy(dtype=bool)
     strict = scored["is_strict_fdr"].to_numpy(dtype=bool)
@@ -1476,28 +2370,43 @@ def run_benchmark(
     curve_parts: list[pd.DataFrame] = []
     summary_rows: list[dict[str, float | int | str]] = []
     exemplar_orders = {"exhaustive_gt": oracle_order}
-    map_accumulator = {
-        method: np.zeros((0, 0), dtype=float)
-        for method in ("exhaustive_gt", *GENERATOR_METHODS)
-    }
-    map_counts: dict[str, int] = defaultdict(int)
-
+    overlay_manifests: list[dict[str, object]] = []
     for trial in range(n_trials):
         for method in GENERATOR_METHODS:
             rng = np.random.default_rng(seed + 1009 * trial + 7919 * (GENERATOR_METHODS.index(method) + 1))
             if method == "neurodiscovery":
-                order = closed_loop_neurodiscovery_order(scored, rng)
+                overlay_path = (
+                    overlay_dir / f"seed_{seed}_trial_{trial:02d}.jsonl"
+                    if overlay_dir is not None
+                    else None
+                )
+                order, overlay = closed_loop_neurodiscovery_order(
+                    scored,
+                    rng,
+                    seed=seed,
+                    trial=trial,
+                    overlay_path=overlay_path,
+                    return_overlay_manifest=True,
+                    config=neurodiscovery_config,
+                )
+                overlay_manifests.append(overlay)
+            elif generation_policies is not None and (method, trial) in generation_policies:
+                order = compile_policy_order(scored, generation_policies[(method, trial)])
             elif generation_first_mapped is not None and method in set(generation_first_mapped["method"].unique()):
                 order = generation_first_order_from_mapped(generation_first_mapped, scored, method, seed, trial)
+            elif not allow_policy_emulation:
+                raise ValueError(
+                    f"Missing native SearchPolicy output for {method}. "
+                    "Run case1_official_baseline_experiment.py first, or pass "
+                    "--allow-policy-emulation for a non-primary diagnostic run."
+                )
             else:
                 scores = stochastic_scores(scored, method, rng)
                 order = order_from_scores(scores, candidate_ids)
             if trial == 0:
-                exemplar_orders[method] = order
+                exemplar_orders[method] = candidate_only_order(order, len(scored))
             curve_parts.append(curve_from_order(method, trial, order, gt, strict, budgets, n_gt))
             summary_rows.append(trial_summary_from_order(method, trial, order, gt, strict, budgets, n_gt))
-            map_counts[method] += 1
-
     trial_curves = pd.concat(curve_parts, ignore_index=True)
     trial_summary = pd.DataFrame(summary_rows)
     curve_summary = aggregate_curves(trial_curves)
@@ -1505,6 +2414,7 @@ def run_benchmark(
     return trial_curves, curve_summary, method_summary, trial_summary, exemplar_orders, {
         "gt": gt,
         "strict": strict,
+        "experimental_overlays": overlay_manifests,
     }
 
 
@@ -1514,6 +2424,7 @@ def run_negative_feedback_ablation(
     n_gt: int,
     n_trials: int,
     seed: int,
+    neurodiscovery_config: Case1NeuroDiscoveryConfig | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     gt = scored["is_gt_top"].to_numpy(dtype=bool)
     strict = scored["is_strict_fdr"].to_numpy(dtype=bool)
@@ -1537,6 +2448,7 @@ def run_negative_feedback_ablation(
                 negative_proxy_start=negative_start,
                 negative_penalty_mode=penalty_mode,
                 return_audit=True,
+                config=neurodiscovery_config,
             )
             if not audit.empty:
                 audit["method"] = method
@@ -1562,9 +2474,14 @@ def run_negative_feedback_ablation(
             vals = pd.to_numeric(sub[col], errors="coerce").dropna().to_numpy(float)
             if len(vals) == 0:
                 continue
-            row[f"{col}_mean"] = float(np.mean(vals))
-            row[f"{col}_lo"] = float(np.quantile(vals, 0.025))
-            row[f"{col}_hi"] = float(np.quantile(vals, 0.975))
+            mean = float(np.mean(vals))
+            variance = float(np.var(vals, ddof=1)) if len(vals) > 1 else 0.0
+            sd = math.sqrt(variance)
+            row[f"{col}_mean"] = mean
+            row[f"{col}_variance"] = variance
+            row[f"{col}_sd"] = sd
+            row[f"{col}_lo"] = mean - sd
+            row[f"{col}_hi"] = mean + sd
         summary_parts.append(row)
     method_summary = pd.DataFrame(summary_parts)
     audit_summary = pd.concat(audit_parts, ignore_index=True) if audit_parts else pd.DataFrame()
@@ -1668,6 +2585,12 @@ def save_rankings(rankings: dict[str, pd.DataFrame], out_dir: Path, top_n: int) 
         "score_kg_degree",
         "score_kg_disease",
         "score_kg_region",
+        "score_neurodiscovery_global",
+        "score_neurodiscovery_global_base",
+        "score_case_study_support",
+        "score_case_study_support_base",
+        "score_feature_support_global",
+        "score_feature_support_scoped",
         "feature_family",
         "score_neurodiscovery",
         "abs_adjusted_residual_d",
@@ -1679,6 +2602,15 @@ def save_rankings(rankings: dict[str, pd.DataFrame], out_dir: Path, top_n: int) 
         "kg_disease_degree",
         "kg_region_degree",
         "kg_pair_support",
+        "kg_scoped_disease_degree",
+        "kg_scoped_region_degree",
+        "kg_scoped_pair_support",
+        "kg_feature_degree",
+        "kg_scoped_feature_degree",
+        "kg_disease_feature_support",
+        "kg_region_feature_support",
+        "kg_scoped_disease_feature_support",
+        "kg_scoped_region_feature_support",
         "region_prior",
         "feature_prior",
     ]
@@ -1706,11 +2638,17 @@ def save_exemplar_rankings(scored: pd.DataFrame, exemplar_orders: dict[str, np.n
         "score_kg_disease",
         "score_kg_region",
         "score_ai_scientist_v2",
-        "score_co_scientist_style",
-        "score_data_to_paper_style",
-        "score_sciagents_style",
-        "score_virtual_lab_style",
+        "score_open_coscientist",
+        "score_data_to_paper",
+        "score_sciagents",
+        "score_virtual_lab",
         "score_openscholar_rag",
+        "score_neurodiscovery_global",
+        "score_neurodiscovery_global_base",
+        "score_case_study_support",
+        "score_case_study_support_base",
+        "score_feature_support_global",
+        "score_feature_support_scoped",
         "score_neurodiscovery",
         "feature_family",
         "abs_adjusted_residual_d",
@@ -1722,6 +2660,15 @@ def save_exemplar_rankings(scored: pd.DataFrame, exemplar_orders: dict[str, np.n
         "kg_disease_degree",
         "kg_region_degree",
         "kg_pair_support",
+        "kg_scoped_disease_degree",
+        "kg_scoped_region_degree",
+        "kg_scoped_pair_support",
+        "kg_feature_degree",
+        "kg_scoped_feature_degree",
+        "kg_disease_feature_support",
+        "kg_region_feature_support",
+        "kg_scoped_disease_feature_support",
+        "kg_scoped_region_feature_support",
         "region_prior",
         "feature_prior",
     ]
@@ -2549,9 +3496,19 @@ def plot_generator_comparison_main(
     top_n: int,
 ) -> None:
     apply_style()
-    methods = list(GENERATOR_METHODS)
-    baseline_methods = list(BASELINE_METHODS)
-    best_baseline = "sciagents_style"
+    baseline_methods = list(PRIMARY_BASELINE_METHODS)
+    reference_budget = min(120000, int(curves["budget"].max()))
+    best_baseline = max(
+        baseline_methods,
+        key=lambda method: float(
+            curves[
+                (curves["method"] == method)
+                & (curves["budget"] <= reference_budget)
+            ]
+            .sort_values("budget")
+            .iloc[-1]["recall_mean"]
+        ),
+    )
     fig = plt.figure(figsize=(15.0, 11.8))
     gs = fig.add_gridspec(
         3,
@@ -2581,7 +3538,12 @@ def plot_generator_comparison_main(
             va="top",
         )
 
-    n_total = int(curves["budget"].max()) if not curves.empty else 426235
+    n_total = len(scored)
+    n_diseases = int(scored["disease"].nunique())
+    n_roi_readouts = int(
+        scored[["modality", "source", "roi_index"]].drop_duplicates().shape[0]
+    )
+    n_features = int(scored["feature"].nunique())
     gt_total = int(trial_summary["gt_total"].dropna().iloc[0]) if "gt_total" in trial_summary else 4263
 
     ax_a.axis("off")
@@ -2625,8 +3587,11 @@ def plot_generator_comparison_main(
     )
     ax_a.add_patch(arrow)
 
-    if DEFAULT_ATLAS_ICON.exists():
-        icon = plt.imread(DEFAULT_ATLAS_ICON)
+    atlas_icon = out_dir / "surface" / DEFAULT_ATLAS_ICON.name
+    if not atlas_icon.exists():
+        atlas_icon = DEFAULT_ATLAS_ICON
+    if atlas_icon.exists():
+        icon = plt.imread(atlas_icon)
         ax_a.imshow(
             icon,
             extent=(col_x[2] - 0.145, col_x[2] + 0.145, 0.595, 0.835),
@@ -2650,7 +3615,7 @@ def plot_generator_comparison_main(
 
     # Row 2: centered labels under each icon.
     row2 = [
-        (col_x[0], "525,030\ncombinations", "#272727", 11.2, "bold"),
+        (col_x[0], f"{n_total:,}\ncombinations", "#272727", 11.2, "bold"),
         (col_x[1], "validate\nand merge", "#555555", 10.6, "normal"),
         (col_x[2], f"brain-atlas map\n({gt_total:,} findings)", PALETTE["neurodiscovery"], 9.6, "bold"),
     ]
@@ -2669,9 +3634,9 @@ def plot_generator_comparison_main(
         )
 
     chip_specs = [
-        (col_x[0], "11\ndisorders"),
-        (col_x[1], "3,182\nROI readouts"),
-        (col_x[2], "15\nfeatures"),
+        (col_x[0], f"{n_diseases}\ndisorders"),
+        (col_x[1], f"{n_roi_readouts:,}\nROI readouts"),
+        (col_x[2], f"{n_features}\nfeatures"),
     ]
     # Row 3: the three dimensions that form the combination space.
     for x_center, text in chip_specs:
@@ -2701,8 +3666,8 @@ def plot_generator_comparison_main(
     ax_a.text(
         0.50,
         0.030,
-        "11 disorders x 3,182 ROI readouts x 15 features\n"
-        "= 525,030 disease-region-feature combinations",
+        f"{n_diseases} disorders x {n_roi_readouts:,} ROI readouts x up to {n_features} features\n"
+        f"= {n_total:,} evaluated disease-region-feature combinations",
         transform=ax_a.transAxes,
         fontsize=7.7,
         color="#555555",
@@ -2787,7 +3752,7 @@ def plot_generator_comparison_main(
         ax_b.text(
             early_budget_max * 0.985,
             float(best_last["recall_mean"]),
-            "Best published baseline (SciAgents)",
+            f"Best API baseline ({METHOD_LABELS[best_baseline]})",
             color="#555555",
             fontsize=9.8,
             ha="right",
@@ -2947,13 +3912,31 @@ def plot_generator_comparison_main(
     main_panel_label_at(ax_d, "d", row_cd_y, x_pad=0.075)
     main_panel_label_at(ax_e, "e", row_e_y)
 
-    save_generator_panel_svgs(curves, trial_summary, out_dir, surface_panel, gt_total)
+    save_generator_panel_svgs(
+        curves,
+        trial_summary,
+        out_dir,
+        surface_panel,
+        gt_total,
+        n_total,
+        n_diseases,
+        n_roi_readouts,
+        n_features,
+    )
     for ext in ("pdf", "png", "tiff"):
         fig.savefig(out_dir / f"case1_generator_comparison_main.{ext}", dpi=450, bbox_inches="tight")
     plt.close(fig)
 
 
-def draw_generator_panel_a(ax: plt.Axes, gt_total: int) -> None:
+def draw_generator_panel_a(
+    ax: plt.Axes,
+    gt_total: int,
+    n_total: int,
+    n_diseases: int,
+    n_roi_readouts: int,
+    n_features: int,
+    atlas_icon: Path | None = None,
+) -> None:
     ax.axis("off")
     ax.set_title("Transdiagnostic\nbrain-atlas discovery", loc="left", pad=8, fontweight="bold")
     col_x = [0.18, 0.50, 0.82]
@@ -2991,8 +3974,9 @@ def draw_generator_panel_a(ax: plt.Axes, gt_total: int) -> None:
         transform=ax.transAxes,
     )
     ax.add_patch(arrow)
-    if DEFAULT_ATLAS_ICON.exists():
-        icon = plt.imread(DEFAULT_ATLAS_ICON)
+    atlas_icon = atlas_icon or DEFAULT_ATLAS_ICON
+    if atlas_icon.exists():
+        icon = plt.imread(atlas_icon)
         ax.imshow(
             icon,
             extent=(col_x[2] - 0.145, col_x[2] + 0.145, 0.595, 0.835),
@@ -3014,7 +3998,7 @@ def draw_generator_panel_a(ax: plt.Axes, gt_total: int) -> None:
             )
         )
     row2 = [
-        (col_x[0], "525,030\ncombinations", "#272727", 11.2, "bold"),
+        (col_x[0], f"{n_total:,}\ncombinations", "#272727", 11.2, "bold"),
         (col_x[1], "validate\nand merge", "#555555", 10.6, "normal"),
         (col_x[2], f"brain-atlas map\n({gt_total:,} findings)", PALETTE["neurodiscovery"], 9.6, "bold"),
     ]
@@ -3031,7 +4015,11 @@ def draw_generator_panel_a(ax: plt.Axes, gt_total: int) -> None:
             va="center",
             linespacing=1.00,
         )
-    for x_center, text in [(col_x[0], "11\ndisorders"), (col_x[1], "3,182\nROI readouts"), (col_x[2], "15\nfeatures")]:
+    for x_center, text in [
+        (col_x[0], f"{n_diseases}\ndisorders"),
+        (col_x[1], f"{n_roi_readouts:,}\nROI readouts"),
+        (col_x[2], f"{n_features}\nfeatures"),
+    ]:
         box = patches.FancyBboxPatch(
             (x_center - 0.115, 0.175),
             0.23,
@@ -3057,8 +4045,8 @@ def draw_generator_panel_a(ax: plt.Axes, gt_total: int) -> None:
     ax.text(
         0.50,
         0.030,
-        "11 disorders x 3,182 ROI readouts x 15 features\n"
-        "= 525,030 disease-region-feature combinations",
+        f"{n_diseases} disorders x {n_roi_readouts:,} ROI readouts x up to {n_features} features\n"
+        f"= {n_total:,} evaluated disease-region-feature combinations",
         transform=ax.transAxes,
         fontsize=7.7,
         color="#555555",
@@ -3133,7 +4121,7 @@ def draw_generator_panel_b(ax: plt.Axes, curves: pd.DataFrame, baseline_methods:
         ax.text(
             early_budget_max * 0.985,
             float(best_last["recall_mean"]),
-            "Best published baseline (SciAgents)",
+            f"Best API baseline ({METHOD_LABELS[best_baseline]})",
             color="#555555",
             fontsize=9.8,
             ha="right",
@@ -3277,15 +4265,45 @@ def save_generator_panel_svgs(
     out_dir: Path,
     surface_panel: Path,
     gt_total: int,
+    n_total: int,
+    n_diseases: int,
+    n_roi_readouts: int,
+    n_features: int,
 ) -> None:
     panel_dir = out_dir / PANEL_SVG_DIRNAME
     panel_dir.mkdir(parents=True, exist_ok=True)
     for stale in panel_dir.glob("*.svg"):
         stale.unlink()
 
-    baseline_methods = list(BASELINE_METHODS)
-    best_baseline = "sciagents_style"
-    save_single_panel_svg(panel_dir / "a.svg", (4.0, 2.9), lambda ax: draw_generator_panel_a(ax, gt_total))
+    baseline_methods = list(PRIMARY_BASELINE_METHODS)
+    reference_budget = min(120000, int(curves["budget"].max()))
+    best_baseline = max(
+        baseline_methods,
+        key=lambda method: float(
+            curves[
+                (curves["method"] == method)
+                & (curves["budget"] <= reference_budget)
+            ]
+            .sort_values("budget")
+            .iloc[-1]["recall_mean"]
+        ),
+    )
+    atlas_icon = out_dir / "surface" / DEFAULT_ATLAS_ICON.name
+    if not atlas_icon.exists():
+        atlas_icon = DEFAULT_ATLAS_ICON
+    save_single_panel_svg(
+        panel_dir / "a.svg",
+        (4.0, 2.9),
+        lambda ax: draw_generator_panel_a(
+            ax,
+            gt_total,
+            n_total,
+            n_diseases,
+            n_roi_readouts,
+            n_features,
+            atlas_icon,
+        ),
+    )
     save_single_panel_svg(panel_dir / "b.svg", (7.4, 2.7), lambda ax: draw_generator_panel_b(ax, curves, baseline_methods, best_baseline))
     save_single_panel_svg(panel_dir / "c.svg", (7.3, 2.7), lambda ax: draw_generator_panel_c(ax, curves, baseline_methods, best_baseline))
     save_single_panel_svg(panel_dir / "d.svg", (4.0, 2.7), lambda ax: draw_generator_panel_d(ax, trial_summary, baseline_methods, best_baseline))
@@ -3486,7 +4504,27 @@ def write_manifest(
     seed: int,
     top_n: int,
     n_trials: int,
+    kg_index: KgIndex,
+    canonical_release: dict[str, object] | None = None,
+    experimental_delta: dict[str, object] | None = None,
+    score_component_audit: dict[str, object] | None = None,
+    neurodiscovery_config: Case1NeuroDiscoveryConfig | None = None,
+    candidate_total: int = 0,
+    execution_succeeded_total: int = 0,
+    execution_failed_total: int = 0,
 ) -> None:
+    neurodiscovery_config = neurodiscovery_config or Case1NeuroDiscoveryConfig()
+    config_payload = neurodiscovery_config.to_dict()
+    mapped_path = (
+        generation_first_dir / "generation_first_mapped_hypotheses.csv"
+        if generation_first_dir
+        else None
+    )
+    policy_path = (
+        generation_first_dir / "case1_search_policies.jsonl"
+        if generation_first_dir
+        else None
+    )
     method_configs = {
         method: {
             "label": METHOD_LABELS[method],
@@ -3496,8 +4534,66 @@ def write_manifest(
     }
     manifest = {
         "all_tests": str(all_tests),
+        "all_tests_sha256": sha256_file(all_tests),
         "kg_path": str(kg_path) if kg_path else None,
+        "kg_sha256": sha256_file(kg_path) if kg_path else None,
+        "canonical_kg_release": canonical_release,
+        "candidate_execution_audit": {
+            "candidate_total": int(candidate_total),
+            "execution_succeeded": int(execution_succeeded_total),
+            "execution_failed": int(execution_failed_total),
+            "failure_cost_policy": (
+                "Execution failures remain in the frozen candidate universe and "
+                "consume experiment budget, but cannot be counted as discoveries."
+            ),
+        },
+        "case_study_membership": {
+            "schema_version": "case_study_membership.v2",
+            "case_study_id": CASE1_CASE_STUDY_ID,
+            "canonical_claim_field": "claim_case_study_ids",
+            "general_corpus_role": "shared full-graph support channel",
+        },
+        "neurodiscovery_kg_support": {
+            "global_weight": config_payload["global_support_weight"],
+            "case_study_weight": config_payload["scoped_support_weight"],
+            "feature_support_weight": config_payload["feature_support_weight"],
+            "global_formula": (
+                "0.15*disease_degree + 0.15*region_degree + 0.30*pair_support "
+                "+ 0.10*region_prior + 0.30*neutral_feature_prior"
+            ),
+            "case_study_formula": (
+                "0.25*scoped_disease_degree + 0.25*scoped_region_degree "
+                "+ 0.50*scoped_pair_support"
+            ),
+            "feature_support_formula": {
+                "global": (
+                    "0.15*feature_degree + 0.45*disease_feature_support "
+                    "+ 0.40*region_feature_support"
+                ),
+                "case_study": (
+                    "0.15*scoped_feature_degree + "
+                    "0.50*scoped_disease_feature_support + "
+                    "0.35*scoped_region_feature_support"
+                ),
+            },
+            "note": (
+                "Task-specific membership augments rather than filters the full KG. "
+                "No exhaustive outcome, effect size, p-value, FDR, or GT label enters "
+                "the initial KG support score."
+            ),
+            "index_stats": kg_index.stats,
+        },
         "generation_first_dir": str(generation_first_dir) if generation_first_dir else None,
+        "generation_first_mapped_sha256": (
+            sha256_file(mapped_path)
+            if mapped_path is not None and mapped_path.exists()
+            else None
+        ),
+        "search_policies_sha256": (
+            sha256_file(policy_path)
+            if policy_path is not None and policy_path.exists()
+            else None
+        ),
         "gt_definition": {
             "primary": f"top {gt_top_frac:.4%} by abs_adjusted_residual_d from exhaustive results",
             "gt_total": gt_total,
@@ -3506,22 +4602,31 @@ def write_manifest(
         "methods": METHOD_LABELS,
         "method_configs": method_configs,
         "generator_methods": list(GENERATOR_METHODS),
-        "random_seed_base": seed,
-        "n_trials_per_stochastic_method": n_trials,
-        "curve_interval": "2.5th to 97.5th percentile across seeds",
+        "primary_baseline_methods": list(PRIMARY_BASELINE_METHODS),
+        "supplementary_baseline_methods": list(SUPPLEMENTARY_BASELINE_METHODS),
+        "neurodiscovery_random_seed_base": seed,
+        "neurodiscovery_config": config_payload,
+        "n_independent_trials": n_trials,
+        "score_component_bundle": score_component_audit,
+        "experimental_kg_delta": experimental_delta,
+        "curve_dispersion": (
+            "sample variance across independent trials; plotting bounds are "
+            "mean +/- one standard deviation"
+        ),
         "ranked_candidates_export_top_n": top_n,
         "panel_e": (
             "Cortical surface comparison of ROI-level GT recovery for "
-            + ", ".join(METHOD_LABELS[method] for method in ("exhaustive_gt", *GENERATOR_METHODS))
+            + ", ".join(METHOD_LABELS[method] for method in COMPACT_SURFACE_METHODS)
             + "."
         ),
         "baseline_policy": (
             "Exhaustive is a GT/oracle point, not a generator curve. When "
-            "generation_first_dir is set, published autoresearch baselines are evaluated "
-            "from LLM-generated hypotheses mapped back to the Case Study 1 universe, "
-            "then completed with a deterministic random tail; outcome labels, effect "
-            "sizes, FDR values, the full candidate table, and NeuroDiscovery feedback "
-            "are not exposed to baseline prompts."
+            "generation_first_dir is set, official autoresearch adapters are evaluated "
+            "from exact candidate anchors and factor rules compiled into a deterministic "
+            "full-space SearchPolicy. No random tail is appended. Outcome labels, effect "
+            "sizes, FDR values, and NeuroDiscovery feedback are never exposed to adapters. "
+            "Infrastructure failures are retried or excluded rather than counted as "
+            "scientific failures."
         ),
     }
     (out_dir / "case1_method_comparison_manifest.json").write_text(
@@ -3532,18 +4637,51 @@ def write_manifest(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--all-tests", type=Path, default=DEFAULT_ALL_TESTS)
-    parser.add_argument("--kg", type=Path, default=DEFAULT_CASE1_KG if DEFAULT_CASE1_KG.exists() else DEFAULT_FULL_KG)
+    parser.add_argument("--kg", type=Path, default=DEFAULT_FULL_KG)
+    parser.add_argument("--claims", type=Path, default=DEFAULT_FULL_CLAIMS)
+    parser.add_argument("--current-state", type=Path, default=DEFAULT_CURRENT_STATE)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument(
+        "--score-components",
+        type=Path,
+        help="Frozen candidate_id plus score_kge/score_novelty/score_critic CSV.",
+    )
+    parser.add_argument(
+        "--score-components-manifest",
+        type=Path,
+        help="Audit manifest paired with --score-components.",
+    )
     parser.add_argument("--gt-top-frac", type=float, default=0.01)
     parser.add_argument("--seed", type=int, default=260616)
-    parser.add_argument("--trials", type=int, default=30)
+    parser.add_argument("--trials", type=int, default=10)
     parser.add_argument("--export-top-n", type=int, default=5000)
+    parser.add_argument(
+        "--neurodiscovery-config",
+        type=Path,
+        help="Frozen JSON configuration selected without access to the formal test split.",
+    )
     parser.add_argument("--map-top-n", type=int, default=100000)
     parser.add_argument(
         "--generation-first-dir",
         type=Path,
         default=None,
         help="Directory containing generation_first_mapped_hypotheses.csv for stricter published-autoresearch baselines.",
+    )
+    parser.add_argument(
+        "--allow-policy-emulation",
+        action="store_true",
+        help=(
+            "Allow legacy hand-written score proxies when native SearchPolicy output is "
+            "missing. Never use this flag for the primary method comparison."
+        ),
+    )
+    parser.add_argument(
+        "--include-supplementary",
+        action="store_true",
+        help=(
+            "Also require and evaluate data-to-paper and OpenScholar policies. "
+            "They are omitted from the primary comparison by default."
+        ),
     )
     parser.add_argument(
         "--only-negative-feedback-ablation",
@@ -3575,19 +4713,63 @@ def remove_stale_outputs(out_dir: Path) -> None:
 
 def main() -> None:
     args = parse_args()
+    configure_method_scope(args.include_supplementary)
+    print("Validating canonical KG release...", flush=True)
+    canonical_release = validate_canonical_kg_release(
+        kg_path=args.kg,
+        claims_path=args.claims,
+        state_path=args.current_state,
+        case_study_id=CASE1_CASE_STUDY_ID,
+        expected_sha256=CURRENT_CANONICAL_SHA256,
+    )
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    write_release_manifest(
+        args.out_dir / "canonical_kg_release.json",
+        canonical_release,
+    )
     remove_stale_outputs(args.out_dir)
-    kg = load_kg_index(args.kg)
+    neurodiscovery_config = (
+        Case1NeuroDiscoveryConfig.from_json(args.neurodiscovery_config)
+        if args.neurodiscovery_config is not None
+        else Case1NeuroDiscoveryConfig()
+    )
     df = load_results(args.all_tests, args.gt_top_frac)
-    scored = add_generator_scores(df, kg, args.seed)
+    kg = load_kg_index(args.kg, kg_query_terms_for_candidates(df))
+    scored = add_generator_scores(df, kg, args.seed, config=neurodiscovery_config)
+    if bool(args.score_components) != bool(args.score_components_manifest):
+        raise ValueError(
+            "--score-components and --score-components-manifest must be provided together"
+        )
+    if args.score_components:
+        scored, score_component_audit = load_score_component_bundle(
+            scored,
+            table_path=args.score_components,
+            manifest_path=args.score_components_manifest,
+        )
+    else:
+        score_component_audit = embedded_score_component_audit(scored)
     generation_first_mapped = None
+    generation_policies: dict[tuple[str, int], SearchPolicy] | None = None
     if args.generation_first_dir is not None:
         mapped_path = args.generation_first_dir / "generation_first_mapped_hypotheses.csv"
-        if not mapped_path.exists():
-            raise FileNotFoundError(f"Missing generation-first mapped hypotheses: {mapped_path}")
-        generation_first_mapped = pd.read_csv(mapped_path)
+        policy_path = args.generation_first_dir / "case1_search_policies.jsonl"
+        if policy_path.exists():
+            generation_policies = load_search_policies(policy_path)
+        if mapped_path.exists():
+            generation_first_mapped = pd.read_csv(mapped_path)
+        if generation_policies is None and generation_first_mapped is None:
+            raise FileNotFoundError(
+                "Missing case1_search_policies.jsonl and "
+                f"generation_first_mapped_hypotheses.csv in {args.generation_first_dir}"
+            )
     n_gt = int(scored["is_gt_top"].sum())
     budgets = budget_grid(len(scored))
+    if generation_policies:
+        write_policy_independence_audit(
+            args.out_dir,
+            scored,
+            generation_policies.values(),
+        )
     if args.only_negative_feedback_ablation:
         (
             ablation_trial_curves,
@@ -3600,6 +4782,7 @@ def main() -> None:
             n_gt=n_gt,
             n_trials=args.trials,
             seed=args.seed,
+            neurodiscovery_config=neurodiscovery_config,
         )
         ablation_trial_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves_by_trial.csv", index=False)
         ablation_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves.csv", index=False)
@@ -3614,7 +4797,11 @@ def main() -> None:
                     "gt_definition": {
                         "primary": f"top {args.gt_top_frac:.4%} by abs_adjusted_residual_d from exhaustive results",
                         "gt_total": n_gt,
-                        "negative_proxy": "Executed hypotheses outside the GT-top set are treated as contradicted-result proxies for this ablation.",
+                        "feedback": (
+                            "Closed-loop updates use only executed p-values, effect sizes, "
+                            "and preregistered expected direction. GT-top labels are reserved "
+                            "for offline evaluation."
+                        ),
                     },
                     "strategies": {
                         method: {
@@ -3636,12 +4823,12 @@ def main() -> None:
             ),
             encoding="utf-8",
         )
-        print(f"Loaded {len(scored):,} executed exhaustive tests")
+        print(f"Loaded {len(scored):,} frozen exhaustive candidates")
         print(f"Primary GT discoveries: {n_gt:,} (top {args.gt_top_frac:.2%} by |d|)")
         print(f"Negative-feedback ablation output: {args.out_dir}")
         return
 
-    trial_curves, curve_summary, method_summary, trial_summary, exemplar_orders, _labels = run_benchmark(
+    trial_curves, curve_summary, method_summary, trial_summary, exemplar_orders, labels = run_benchmark(
         scored=scored,
         budgets=budgets,
         n_gt=n_gt,
@@ -3649,6 +4836,19 @@ def main() -> None:
         seed=args.seed,
         map_top_n=args.map_top_n,
         generation_first_mapped=generation_first_mapped,
+        generation_policies=generation_policies,
+        allow_policy_emulation=args.allow_policy_emulation,
+        overlay_dir=args.out_dir / "experimental_overlays",
+        neurodiscovery_config=neurodiscovery_config,
+    )
+    experimental_delta = write_kg_delta(
+        scored,
+        pd.DataFrame(),
+        [],
+        path=args.out_dir / "experimental_kg_delta.jsonl",
+        task=CASE1_CASE_STUDY_ID,
+        overlay_manifests=labels["experimental_overlays"],
+        factor_fields=("disease", "feature_family", "map_group", "roi_key", "source"),
     )
 
     trial_curves.to_csv(args.out_dir / "case1_discovery_curves_by_trial.csv", index=False)
@@ -3667,6 +4867,7 @@ def main() -> None:
             n_gt=n_gt,
             n_trials=args.trials,
             seed=args.seed,
+            neurodiscovery_config=neurodiscovery_config,
         )
         ablation_trial_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves_by_trial.csv", index=False)
         ablation_curves.to_csv(args.out_dir / "case1_negative_feedback_ablation_curves.csv", index=False)
@@ -3710,9 +4911,22 @@ def main() -> None:
         args.seed,
         args.export_top_n,
         args.trials,
+        kg,
+        canonical_release,
+        experimental_delta,
+        score_component_audit,
+        neurodiscovery_config,
+        len(scored),
+        int(scored["execution_succeeded"].sum()),
+        int((~scored["execution_succeeded"].astype(bool)).sum()),
     )
 
-    print(f"Loaded {len(scored):,} executed exhaustive tests")
+    print(f"Loaded {len(scored):,} frozen exhaustive candidates")
+    print(
+        "Execution outcomes: "
+        f"{int(scored['execution_succeeded'].sum()):,} succeeded, "
+        f"{int((~scored['execution_succeeded'].astype(bool)).sum()):,} failed"
+    )
     print(f"Primary GT discoveries: {n_gt:,} (top {args.gt_top_frac:.2%} by |d|)")
     print(f"Strict global-FDR discoveries: {int(scored['is_strict_fdr'].sum()):,}")
     print(f"Trials per stochastic method: {args.trials:,}")

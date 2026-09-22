@@ -48,6 +48,18 @@ def build_covariates(meta: pd.DataFrame) -> pd.DataFrame:
     site = meta.get("Site", pd.Series("", index=meta.index)).astype(str)
     site_dummies = pd.get_dummies(site, prefix="site", drop_first=True, dtype=float)
     cov = pd.concat([cov, site_dummies], axis=1)
+
+    mean_fd = pd.to_numeric(
+        meta.get("mean_fd", pd.Series(np.nan, index=meta.index)),
+        errors="coerce",
+    )
+    if mean_fd.notna().any():
+        fd_sd = float(mean_fd.std(ddof=0))
+        cov["mean_fd_z"] = (
+            (mean_fd - float(mean_fd.mean())) / fd_sd
+            if np.isfinite(fd_sd) and fd_sd > 0
+            else 0.0
+        )
     return cov.fillna(0.0)
 
 

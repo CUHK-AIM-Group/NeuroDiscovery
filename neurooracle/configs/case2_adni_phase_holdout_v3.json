@@ -1,0 +1,194 @@
+{
+  "schema_version": "neurooracle.case2_phase_holdout_protocol.v3",
+  "protocol_id": "case2_adni_phase_holdout_v3",
+  "supersedes_protocol_id": "case2_adni_endpoint_holdout_v2",
+  "supersession_reason": "The ADNI3 target endpoints and v2 results are already revealed. V3 therefore uses untouched ADNI1/GO/2 values as a cohort-phase-held-out replication and never describes them as a new endpoint-held-out analysis.",
+  "case_study_id": "case2_pathway_mediation",
+  "analysis_label": "prospectively frozen cohort-phase-held-out replication",
+  "causal_interpretation": false,
+  "scientific_question": "Which ADNI3 pathway-imaging-outcome chains replicate with the prespecified component directions in independently phase-held-out ADNI1/GO/2 participants?",
+  "cohort": {
+    "dataset": "ADNI",
+    "holdout_axis": "cohort_phase",
+    "include_column": "COLPROT",
+    "development_values": [
+      "ADNI3"
+    ],
+    "confirmation_values": [
+      "ADNI1",
+      "ADNIGO",
+      "ADNI2"
+    ],
+    "include_values": [
+      "ADNI1",
+      "ADNIGO",
+      "ADNI2"
+    ],
+    "independence_statement": "ADNI1/GO/2 subjects are disjoint from the ADNI3 development phase. Endpoint definitions are already known, but ADNI1/GO/2 association estimates have not been accessed.",
+    "external_validation": false
+  },
+  "development_data": {
+    "outcomes_previously_accessed": [
+      "MMSE",
+      "ADAS13",
+      "CDRSB",
+      "mPACCdigit",
+      "FAQ",
+      "LDELTOTAL"
+    ],
+    "allowed_uses": [
+      "lock the independent-replication family using the sealed ADNI3 v2 selection rule",
+      "lock the expected a-path, b-path, and indirect-effect directions",
+      "diagnostic testing of analysis code without ADNI1/GO/2 effect estimates"
+    ],
+    "forbidden_uses": [
+      "exposing development-selected candidate identities or directions to any generator",
+      "selection or tuning using ADNI1/GO/2 association strength",
+      "retuning thresholds after ADNI1/GO/2 outcomes are revealed"
+    ]
+  },
+  "confirmation_data": {
+    "outcomes": [
+      "mPACCdigit",
+      "FAQ",
+      "LDELTOTAL"
+    ],
+    "outcome_direction": "annualized_decline_score is oriented so that positive values indicate worsening",
+    "target_followup_days": 730,
+    "min_followup_days": 365,
+    "max_followup_days": 1095,
+    "minimum_complete_case_n": 100
+  },
+  "development_selection": {
+    "source_protocol_id": "case2_adni_endpoint_holdout_v2",
+    "result_path": "experiments/case2_adni_confirmatory_v1/a0bdc6a564ba/hidden_confirmation_results/case2_confirmation_results.parquet",
+    "seal_path": "experiments/case2_adni_confirmatory_v1/a0bdc6a564ba/FINAL_RESULT_SEAL.json",
+    "selection_rule": "nominal_chain_hit is true and a_path_p, b_path_p, and sobel_p are each below 0.05 in the sealed ADNI3 v2 result",
+    "required_boolean_column": "nominal_chain_hit",
+    "component_alpha": 0.05,
+    "expected_count": 4,
+    "expected_directions": [
+      "a_path_std",
+      "b_path_std",
+      "indirect_effect_std"
+    ],
+    "private_from_generators": true
+  },
+  "phase_heldout_audit": {
+    "path": "audits/case2_v3_outcome_access_and_sample_audit/AUDIT.json",
+    "required_no_pre_access_leak": true,
+    "required_all_candidates_minimum_n": true,
+    "audit_does_not_fit_association_models": true
+  },
+  "pathway_exposures": {
+    "source": "NeuroOracle curated",
+    "selection_rule": "one available score per pathway; prefer p1em03, then p5em02, then lexical score_name",
+    "expected_count": 7
+  },
+  "imaging_markers": [
+    "amyloid_pet::CENTILOIDS",
+    "fdg_pet::FDG_META_ROI_SUVR",
+    "tau_pet::META_TEMPORAL_SUVR",
+    "tau_pet::CTX_ENTORHINAL_SUVR",
+    "smri_adnimerge::Hippocampus",
+    "smri_adnimerge::Entorhinal",
+    "smri_adnimerge::Fusiform",
+    "smri_adnimerge::MidTemp",
+    "smri_adnimerge::WholeBrain",
+    "smri_adnimerge::Ventricles"
+  ],
+  "candidate_universe": {
+    "construction": "Cartesian product of selected pathway exposure, imaging marker, and target outcome",
+    "expected_count": 210,
+    "candidate_id": "exposure|modality|marker|outcome",
+    "public_registry_rule": "The 210 candidate identities are public to all methods; development labels, directions, effects, P values, and ranks are not.",
+    "exclusions_after_freeze": "Only prespecified non-estimability or minimum-sample exclusions are allowed; excluded candidates retain their original rank and count as unsuccessful for generator metrics."
+  },
+  "covariates": {
+    "numeric": [
+      "age_at_imaging",
+      "sex_binary",
+      "PTEDUCAT",
+      "baseline_value",
+      "followup_years",
+      "PC1-PC10"
+    ],
+    "categorical": [
+      "SITE",
+      "COLPROT",
+      "batch"
+    ],
+    "smri_only": [
+      "icv"
+    ]
+  },
+  "statistics": {
+    "model": "the unchanged standardized covariate-adjusted linear association-based indirect-effect model from v2",
+    "primary_scientific_endpoint": "For a registered replication candidate, a-path, b-path, and indirect-effect estimates must match all three frozen directions; each component one-sided P must be below 0.05; and the indirect-effect one-sided P must additionally pass Holm FWER below 0.05 across the four registered candidates.",
+    "replication_family_size_expected": 4,
+    "replication_multiplicity_method": "Holm family-wise error correction across the four frozen ADNI3-selected candidates",
+    "replication_alpha": 0.05,
+    "secondary_full_universe_endpoints": [
+      "two-sided pathway-outcome family-FDR chain hit across all 210 candidates",
+      "two-sided global-FDR chain hit across all 210 candidates",
+      "prespecified continuous held-out chain-evidence score for ranking evaluation"
+    ],
+    "fdr_method": "Benjamini-Hochberg",
+    "fdr_alpha": 0.05,
+    "family_definition": "all prespecified imaging-marker mediators within one pathway exposure and one clinical outcome",
+    "family_group_columns": [
+      "exposure",
+      "outcome"
+    ],
+    "family_size_expected": 10,
+    "scientific_reporting_rule": "The four-candidate directional Holm replication is the primary scientific test. Full-universe family/global FDR and graded ranking metrics are secondary and cannot replace a failed primary replication."
+  },
+  "generator_evaluation": {
+    "methods": [
+      "AI Scientist-v2",
+      "Open Co-Scientist",
+      "SciAgents",
+      "Virtual Lab",
+      "BrainPilot",
+      "Biomni",
+      "NeuroDiscovery"
+    ],
+    "independent_runs_per_method": 10,
+    "budgets": [
+      5,
+      10,
+      20,
+      50,
+      100,
+      210
+    ],
+    "data_boundary": "All generators receive only the public 210-candidate registry, the pinned KG snapshot, and method-native public context. The private four-candidate replication registry and every ADNI3/ADNI1/GO/2 result field are evaluator-only.",
+    "private_labels_visible": false,
+    "baseline_rule": "Each baseline produces and freezes a complete static SearchPolicy before any ADNI1/GO/2 association estimate is accessed.",
+    "neurodiscovery_rule": "NeuroDiscovery freezes its initial policy before access, then hash-commits each next batch using only outcomes from earlier executed ADNI1/GO/2 batches.",
+    "invalid_candidate_rule": "Invalid, duplicate, missing, or non-estimable candidates consume their generated or ranked slot and are scored as unsuccessful.",
+    "primary_metrics": [
+      "area under the cumulative recovery curve for independently replicated registered candidates",
+      "normalized discounted cumulative gain from the prespecified continuous held-out chain-evidence score"
+    ],
+    "secondary_metrics": [
+      "replicated Hit@K and recall@K",
+      "full-universe family-FDR and global-FDR Hit@K and recall@K",
+      "AUROC and AUPRC when the corresponding binary endpoint has both classes",
+      "experiments required to reach each attainable replication-recall target"
+    ],
+    "comparison": "paired across the ten prespecified run indices using confidence intervals and one-sided paired randomization P values, with Holm correction across NeuroDiscovery-versus-baseline comparisons",
+    "clear_sota_rule": "NeuroDiscovery is called clear SOTA only when it exceeds every baseline on both primary metrics with positive paired effects, lower 95% confidence bounds above zero, and Holm-adjusted one-sided paired-randomization P below 0.05. A metric with no identifiable variation cannot support a clear-SOTA claim."
+  },
+  "freeze_semantics": {
+    "temporal_kg_freeze": false,
+    "temporal_kg_freeze_definition": "Not applicable: this is a cohort-phase-held-out replication, not hindcasting, and no historical publication cutoff is imposed.",
+    "kg_snapshot_pinning": true,
+    "kg_snapshot_pinning_definition": "The current canonical KG and claim-store bytes are hash-pinned for reproducibility; this is snapshot pinning, not a temporal freeze.",
+    "initial_ranking_freeze": true,
+    "initial_ranking_freeze_definition": "Every method commits an initial SearchPolicy before ADNI1/GO/2 association estimates are evaluated.",
+    "sequential_batch_commit": true,
+    "sequential_batch_commit_definition": "For NeuroDiscovery, each adaptive next-batch ranking is committed using only outcomes from earlier executed batches."
+  },
+  "_last_updated_at": "2026-08-16 12:41 HKT"
+}

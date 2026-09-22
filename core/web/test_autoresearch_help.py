@@ -1,6 +1,8 @@
+import os
 import re
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -152,20 +154,13 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertGreater(len(translation_keys), 100)
         self.assertEqual([key for key in translation_keys if cjk.search(key)], [])
 
-    def test_user_study_requires_password_token(self):
-        locked = self.client.get("/api/studies/config")
-        self.assertEqual(locked.status_code, 401)
+    def test_user_study_is_open_without_a_configured_password(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("NEUROORACLE_STUDY_PASSWORD", None)
+            os.environ.pop("NEURODISCOVERY_STUDY_PASSWORD", None)
+            client = TestClient(create_app())
 
-        rejected = self.client.post("/api/studies/auth", json={"password": "wrong"})
-        self.assertEqual(rejected.status_code, 401)
-
-        accepted = self.client.post("/api/studies/auth", json={"password": "123456"})
-        self.assertEqual(accepted.status_code, 200)
-        token = accepted.json()["token"]
-        unlocked = self.client.get(
-            "/api/studies/config",
-            headers={"X-NeuroOracle-Study-Token": token},
-        )
+        unlocked = client.get("/api/studies/config")
         self.assertEqual(unlocked.status_code, 200)
         self.assertEqual(
             unlocked.json()["case_study"], "case1_tcp_external_validation"
@@ -176,12 +171,43 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
                 "completion_basis": "active_time",
                 "required_sessions": 6,
                 "active_seconds_per_session": 600,
-                "pair_pool_per_session": 20,
-                "assignment_policy": "fixed_shared_schedule",
+                "pair_pool_per_session": 40,
+                "assignment_policy": "expert_shares_v2",
                 "shared_random_seed": 0,
-                "same_questions_for_all_participants": True,
+                "same_questions_for_all_participants": False,
             },
         )
+
+        # The auth endpoint still hands out a token for legacy clients.
+        issued = client.post("/api/studies/auth", json={})
+        self.assertEqual(issued.status_code, 200)
+        self.assertTrue(issued.json()["token"])
+
+    def test_user_study_requires_password_token_when_configured(self):
+        with patch.dict(
+            os.environ,
+            {
+                "NEUROORACLE_STUDY_PASSWORD": "testpass",
+                "NEURODISCOVERY_STUDY_PASSWORD": "testpass",
+            },
+            clear=False,
+        ):
+            client = TestClient(create_app())
+
+        locked = client.get("/api/studies/config")
+        self.assertEqual(locked.status_code, 401)
+
+        rejected = client.post("/api/studies/auth", json={"password": "wrong"})
+        self.assertEqual(rejected.status_code, 401)
+
+        accepted = client.post("/api/studies/auth", json={"password": "testpass"})
+        self.assertEqual(accepted.status_code, 200)
+        token = accepted.json()["token"]
+        unlocked = client.get(
+            "/api/studies/config",
+            headers={"X-NeuroOracle-Study-Token": token},
+        )
+        self.assertEqual(unlocked.status_code, 200)
 
     def test_study_pages_are_native_menu_actions_not_neurooracle_tabs(self):
         static_root = Path(__file__).with_name("static")
@@ -194,15 +220,17 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn('id="expert-study-page"', index_html)
         self.assertIn('id="study-results-page"', index_html)
         self.assertIn("sendMenuAction('open-expert-study')", desktop_main)
-        self.assertIn("sendMenuAction('open-study-results')", desktop_main)
+        self.assertNotIn("sendMenuAction('open-study-results')", desktop_main)
         self.assertIn("normalized === 'open-expert-study'", index_html)
         self.assertIn("normalized === 'open-study-results'", index_html)
         self.assertNotIn("data-neurooracle-subview", index_html)
         self.assertNotIn("neurooracle-subnav", index_html)
-        self.assertIn("/study?embedded=1", index_html)
+        self.assertIn("/discovery-study?embedded=1", index_html)
         self.assertIn("/study?view=results&embedded=1", index_html)
         self.assertIn("body.embedded-route .tabs { display: none; }", study_html)
-        self.assertIn('<div class="brand"><strong data-i18n="expertStudy">Expert Study</strong></div>', study_html)
+        self.assertIn('<div class="brand"><strong data-i18n="expertStudy">Expert Study (Extension)</strong></div>', study_html)
+        self.assertIn("desktopText('Human Evaluation 1', 'Human Evaluation 1（专家研究）')", desktop_main)
+        self.assertIn("desktopText('Human Evaluation 2', 'Human Evaluation 2（扩展）')", desktop_main)
         self.assertNotIn("NeuroDiscovery</strong>", study_html)
         self.assertNotIn('class="brand-mark"', study_html)
 
@@ -212,13 +240,16 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         study_html = (static_root / "study.html").read_text(encoding="utf-8")
 
         self.assertIn('id="close-study-btn"', study_html)
-        self.assertIn('data-i18n="closeStudy">Close</span>', study_html)
-        self.assertIn("closeStudy:['Close','关闭']", study_html)
+        self.assertIn('data-i18n="closeStudy">Back to workbench</span>', study_html)
+        self.assertIn("closeStudy:['Back to workbench','返回工作台']", study_html)
         self.assertIn(
             "window.parent.postMessage({type:'neurodiscovery:close-study-workspace'}",
             study_html,
         )
-        self.assertIn("const STUDY_VIEW_NAMES = ['expert-study', 'study-results']", index_html)
+        self.assertIn(
+            "const STUDY_VIEW_NAMES = ['expert-study', 'hypothesis-ranking', 'study-results']",
+            index_html,
+        )
         self.assertIn("studyReturnView: 'chat'", index_html)
         self.assertIn("state.studyReturnView = previousView", index_html)
         self.assertIn("function resetStudyWorkspace(view)", index_html)
@@ -240,7 +271,62 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn(
             "payload?.type !== 'neurodiscovery:close-study-workspace'", index_html
         )
-        self.assertIn("if (trustedSource) closeStudyWorkspace();", index_html)
+        self.assertRegex(
+            index_html,
+            r"if \(trustedSource\) \{\s*(?:if \([^\n]+\) \{[^}]+\}\s*)?"
+            r"closeStudyWorkspace\(\);\s*\}",
+        )
+
+    def test_both_studies_offer_discard_or_save_when_closing(self):
+        static_root = Path(__file__).with_name("static")
+        study_html = (static_root / "study.html").read_text(encoding="utf-8")
+        discovery_html = (static_root / "discovery-study.html").read_text(
+            encoding="utf-8"
+        )
+        discovery_js = (static_root / "discovery-study.js").read_text(encoding="utf-8")
+        discovery_i18n = (static_root / "discovery-study-i18n.js").read_text(
+            encoding="utf-8"
+        )
+
+        # Ranking study (Human Evaluation 2)
+        self.assertIn('<dialog id="study-close-dialog"', study_html)
+        self.assertIn('id="close-discard-btn"', study_html)
+        self.assertIn('id="close-save-btn"', study_html)
+        self.assertIn("closeDiscard:['Discard my answers','放弃填写内容']", study_html)
+        self.assertIn("closeSave:['Save and continue later','保存，下次继续']", study_html)
+        self.assertIn("function studyCloseChoice()", study_html)
+        self.assertIn("finish('stay')", study_html)
+        self.assertIn("async function requestStudyClose(saveDirect=false)", study_html)
+        self.assertIn("const choice=saveDirect?'save':await studyCloseChoice()", study_html)
+        self.assertIn("{method:'DELETE'}", study_html)
+
+        # Complete-output review (Human Evaluation 1)
+        self.assertIn('<dialog id="close-dialog"', discovery_html)
+        self.assertIn('id="close-discard">放弃填写内容</button>', discovery_html)
+        self.assertIn('id="close-save">保存，下次继续</button>', discovery_html)
+        self.assertIn("function closeChoice()", discovery_js)
+        self.assertIn('finish("stay")', discovery_js)
+        self.assertIn('finish("discard")', discovery_js)
+        self.assertIn('{method:"DELETE"}', discovery_js)
+        self.assertIn('"放弃填写内容":"Discard my answers"', discovery_i18n)
+        self.assertIn('"保存，下次继续":"Save and continue later"', discovery_i18n)
+
+    def test_discovery_feedback_explains_parent_hypothesis_in_plain_terms(self):
+        discovery_js = (Path(__file__).with_name("static") / "discovery-study.js").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("function parentPlainHTML(fb)", discovery_js)
+        self.assertIn("function parentEndpointPlain(endpoint, isEn)", discovery_js)
+        self.assertIn("ROI_to_network:", discovery_js)
+        self.assertIn("network_pair:", discovery_js)
+        for network in ["Vis", "SomMot", "DorsAttn", "SalVentAttn", "Default"]:
+            self.assertIn(f'{network}: ["', discovery_js)
+        for domain in ["bipolar", "psychosis_SZ_SZA", "ADHD"]:
+            self.assertIn(f'{domain}:"', discovery_js)
+        self.assertIn("${parentPlainHTML(fb)}", discovery_js)
+        self.assertIn("父假设具体是什么", discovery_js)
+        self.assertIn("What the parent hypothesis actually is", discovery_js)
 
     def test_desktop_zoom_shortcuts_use_persistent_text_scale_and_sync_study(self):
         static_root = Path(__file__).with_name("static")
@@ -394,9 +480,11 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
             study_html,
         )
         self.assertIn(
-            '<button class="ghost" id="end-btn" data-i18n="endSession">End session</button>',
+            '<button class="secondary" id="save-exit" type="button" data-i18n="saveExit">Save and exit</button>',
             study_html,
         )
+        self.assertIn("$('save-exit').addEventListener('click',()=>{void requestStudyClose(true);})", study_html)
+        self.assertNotIn('id="end-btn"', study_html)
         self.assertNotIn(
             ".study-strip { height: 42px; flex: 0 0 42px;",
             study_html,
@@ -493,7 +581,8 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
             "const curated=String(lang==='zh'?(paper.relevanceReasonZh||''):(paper.relevanceReasonEn||'')).trim()",
             study_html,
         )
-        self.assertIn("if(curated)return curated", study_html)
+        self.assertIn("const autoMatched=String(paper.manualRelevanceStatus||'').trim().toLowerCase()==='auto_kg_match'", study_html)
+        self.assertIn("if(curated&&!autoMatched)return curated", study_html)
         self.assertIn("function paperEvidenceSummary(item,paper)", study_html)
         self.assertIn("function paperEvidenceHtml(item,paper)", study_html)
         self.assertIn("function paperStudySentence(value)", study_html)
@@ -510,7 +599,9 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn("diseaseRelation:['Disease','疾病']", study_html)
         self.assertIn("regionRelation:['Brain region','脑区']", study_html)
         self.assertIn("measureRelation:['Measure','指标']", study_html)
-        self.assertIn("directionRelation:['Direction','方向']", study_html)
+        self.assertIn("function paperReportedResult(item,paper)", study_html)
+        self.assertIn("'文献结果':'Reported finding'", study_html)
+        self.assertNotIn("chip(t('directionRelation'),analysis.directionRelation)", study_html)
         self.assertIn('class="paper-evidence-row', study_html)
         self.assertIn('class="paper-support-score ${tone}"', study_html)
         self.assertIn("supportScoreNotProbability:['Evidence-support score, not a replication probability.'", study_html)
@@ -588,7 +679,15 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
             "authToken:savedStudyToken, authenticated:Boolean(savedStudyToken)",
             study_html,
         )
-        self.assertIn("if(!state.authToken){showView('auth');return;}", study_html)
+        # Password-free by default: bootstrap tries the config directly and the
+        # 401 handler in api() is the only path back to the auth view.
+        self.assertNotIn("if(!state.authToken){showView('auth');return;}", study_html)
+        self.assertIn("async function bootstrapAuth(){", study_html)
+        bootstrap = study_html.split("async function bootstrapAuth(){", 1)[1]
+        bootstrap = bootstrap.split("bootstrapAuth();", 1)[0]
+        self.assertIn("state.authenticated=true;", bootstrap)
+        self.assertNotIn("showView('auth')", bootstrap)
+        self.assertIn("showView('auth');}", study_html)
         self.assertNotIn(
             "sessionStorage.removeItem('neurodiscoveryStudyToken');\n"
             "    const state",
@@ -849,8 +948,8 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn('header_sub: "NeuroOracle 图谱"', explore_html)
         self.assertIn("NeuroRuntime", index_html)
         self.assertNotIn("NeuroClaw", index_html)
-        self.assertIn("const APP_NAME = 'NeuroDiscovery'", desktop_main)
-        self.assertIn("const LEGACY_USER_DATA_NAME = 'NeuroClaw'", desktop_main)
+        self.assertIn("const APP_NAME = DEMO_BUILD ? 'NeuroDiscovery Demo' : 'NeuroDiscovery'", desktop_main)
+        self.assertIn("const LEGACY_USER_DATA_NAME = DEMO_BUILD ? 'NeuroDiscovery-Demo' : 'NeuroClaw'", desktop_main)
         self.assertIn('"productName": "NeuroDiscovery"', desktop_package)
         self.assertIn('FastAPI(title="NeuroDiscovery Web UI"', server_source)
         self.assertIn("You are NeuroRuntime, the execution agent inside NeuroDiscovery", soul)
@@ -955,31 +1054,26 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn("mediumPair:['Medium','中等']", study_html)
         self.assertIn("hardPair:['Hard','困难']", study_html)
 
-    def test_expert_study_has_localized_first_launch_introduction(self):
+    def test_expert_study_setup_page_has_localized_introduction(self):
         study_html = (Path(__file__).with_name("static") / "study.html").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn('id="study-intro" hidden', study_html)
-        self.assertIn('data-i18n="introTaskTitle">Your task</', study_html)
-        self.assertIn('data-i18n="introHowTitle">How to complete the study</', study_html)
-        self.assertIn('data-i18n="introSetupTitle">Check the session setup</', study_html)
-        self.assertIn('data-i18n="introDirectoryTitle">Use the question directory</', study_html)
-        self.assertIn('data-i18n="introDontShow">Don\'t show again</', study_html)
-        self.assertIn('data-i18n="introGotIt">Got it</', study_html)
-        self.assertIn("const INTRO_DISMISS_KEY =", study_html)
-        self.assertIn("localStorage.setItem(INTRO_DISMISS_KEY,'1')", study_html)
-        self.assertIn("if (name === 'setup') showStudyIntroIfNeeded();", study_html)
-        self.assertIn("el.inert=true;el.setAttribute('aria-hidden','true')", study_html)
-        self.assertIn("el.inert=false;el.removeAttribute('aria-hidden')", study_html)
-        self.assertIn("introDontShow:[\"Don't show again\",'不再提示']", study_html)
-        self.assertIn("introGotIt:['Got it','我已知晓']", study_html)
-        self.assertIn('<div class="intro-tier easy"><strong>6</strong>', study_html)
-        self.assertIn('<div class="intro-tier medium"><strong>10</strong>', study_html)
-        self.assertIn('<div class="intro-tier hard"><strong>3</strong>', study_html)
-        intro_markup = study_html.split(
-            '<div class="study-intro-layer" id="study-intro" hidden>', 1
-        )[1].split('<section class="view auth active"', 1)[0]
+        # The modal first-launch intro was retired; the setup page intro panel
+        # is now the localized orientation shown before every session.
+        self.assertNotIn('id="study-intro"', study_html)
+        self.assertIn('<div class="setup-intro">', study_html)
+        self.assertIn(
+            'data-i18n="caseStudyOne">Human Evaluation 2 · HYPOTHESIS RANKING</',
+            study_html,
+        )
+        self.assertIn('data-i18n="introSystem">NeuroDiscovery is', study_html)
+        self.assertIn('data-i18n="triageTitle">Six timed sessions</', study_html)
+        self.assertIn('data-i18n="refineTitle">Three difficulty levels</', study_html)
+        self.assertIn('data-i18n="submitTitle">Independent judgment</', study_html)
+        intro_markup = study_html.split('<div class="setup-intro">', 1)[1].split(
+            '<form class="setup-form"', 1
+        )[0]
         self.assertIsNone(re.search(r"[\u3400-\u9fff]", intro_markup))
 
     def test_expert_study_language_can_switch_without_reloading_the_session(self):
@@ -987,8 +1081,8 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         study_html = (static_root / "study.html").read_text(encoding="utf-8")
         index_html = (static_root / "index.html").read_text(encoding="utf-8")
 
-        self.assertEqual(study_html.count('data-study-language="en"'), 2)
-        self.assertEqual(study_html.count('data-study-language="zh"'), 2)
+        self.assertEqual(study_html.count('data-study-language="en"'), 1)
+        self.assertEqual(study_html.count('data-study-language="zh"'), 1)
         self.assertIn("let lang =", study_html)
         self.assertIn("function setStudyLanguage(nextLanguage", study_html)
         self.assertIn("applyLocalizedStaticText();", study_html)
@@ -1016,6 +1110,7 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         )
         self.assertIn(
             "if (refreshStudyWorkspace && (state.activeView === 'expert-study' "
+            "|| state.activeView === 'hypothesis-ranking' "
             "|| state.activeView === 'study-results'))",
             index_html,
         )
@@ -1030,7 +1125,7 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         )
         self.assertNotIn("location.reload()", study_html)
 
-    def test_case_study_desktop_has_localized_first_launch_workflow_guide(self):
+    def test_case_study_desktop_keeps_study_opt_in_without_startup_prompt(self):
         index_html = (Path(__file__).with_name("static") / "index.html").read_text(
             encoding="utf-8"
         )
@@ -1058,7 +1153,10 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn("window.neuroclawDesktop.saveConfig", index_html)
         self.assertIn("const CASE_STUDY_WELCOME_KEY =", index_html)
         self.assertIn("localStorage.setItem(CASE_STUDY_WELCOME_KEY, '1')", index_html)
-        self.assertIn("loadDesktopSettings().finally(showCaseStudyWelcomeIfNeeded)", index_html)
+        self.assertNotIn("loadDesktopSettings().finally(showCaseStudyWelcomeIfNeeded)", index_html)
+        self.assertIn("loadDesktopSettings();", index_html)
+        self.assertNotIn("caseStudyWelcomeEl.hidden = false", index_html)
+        self.assertIn("'/discovery-study?embedded=1'", index_html)
         self.assertIn("setActiveView('expert-study', { focus: false })", index_html)
         self.assertIn("中途离开前请先暂停", index_html)
         self.assertIn("Paused time is excluded from active answering time.", index_html)
@@ -1122,7 +1220,16 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         desktop_main = (desktop_root / "main.js").read_text(encoding="utf-8")
         desktop_preload = (desktop_root / "preload.js").read_text(encoding="utf-8")
 
-        self.assertIn('data-i18n="participantId">Name / ID</span>', study_html)
+        self.assertIn('data-i18n="participantId">Name / code</span>', study_html)
+        self.assertIn('id="participant-experience"', study_html)
+        self.assertNotIn('id="participant-consent"', study_html)
+        self.assertIn('class="setup-advanced"', study_html)
+        self.assertIn(
+            "schema_version:'neurodiscovery-expert-study-results-v2'", study_html
+        )
+        self.assertIn(
+            "experience_years:state.session.participant_experience", study_html
+        )
         self.assertNotIn('id="seed"', study_html)
         self.assertNotIn("Random seed", study_html)
         self.assertIn("random_seed:0", study_html)
@@ -1153,21 +1260,19 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn("total_app_open_time: formatDurationMs", desktop_main)
         self.assertIn("exportUserStudyResults", desktop_preload)
 
-    def test_expert_study_uses_binary_generator_score_visibility_condition(self):
+    def test_expert_study_hides_generator_scores_for_all_participants(self):
         study_html = (Path(__file__).with_name("static") / "study.html").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn(
-            'data-i18n="condition">Show generator scores</span>', study_html
-        )
-        self.assertIn(
-            '<option value="manual" data-i18n="manual">No</option>', study_html
-        )
-        self.assertIn(
-            '<option value="assisted" data-i18n="assisted">Yes</option>', study_html
-        )
+        # Generator scores are hidden from participants: the setup form offers
+        # no visibility choice and every session is created as 'manual'. The
+        # manual/assisted labels remain for analysing historical sessions.
+        self.assertNotIn('data-i18n="condition">Show generator scores</span>', study_html)
+        self.assertNotIn('<option value="manual" data-i18n="manual">No</option>', study_html)
+        self.assertNotIn('<option value="assisted" data-i18n="assisted">Yes</option>', study_html)
         self.assertNotIn('<option value="generator"', study_html)
+        self.assertIn("condition:'manual',", study_html)
         self.assertIn(
             "condition:['Show generator scores','显示生成器打分']", study_html
         )
@@ -1182,7 +1287,7 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
             study_html,
         )
         self.assertIn(
-            "$('condition-label').textContent=`${t('condition')}: ${t(session.condition)}`",
+            "$('condition-label').textContent=`${t('condition')}: ${t(state.session.condition)}`",
             study_html,
         )
         self.assertIn(

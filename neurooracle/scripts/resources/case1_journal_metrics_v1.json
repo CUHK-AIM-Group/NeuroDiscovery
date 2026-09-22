@@ -1,0 +1,382 @@
+{
+  "schema_version": "case1-journal-metrics-v1",
+  "retrieved_at": "2026-08-01",
+  "metric_note_en": "Journal Impact Factor (JIF) is a journal-level citation metric and must not be interpreted as the quality of an individual article.",
+  "metric_note_zh": "期刊影响因子（JIF）是期刊层面的引文指标，不能替代对单篇论文质量的判断。",
+  "journals": [
+    {
+      "canonical_name": "Advances in Experimental Medicine and Biology",
+      "aliases": ["Advances in experimental medicine and biology"],
+      "publication_type": "book_series",
+      "impact_factor": {
+        "value": null,
+        "metric_year": null,
+        "status": "not_applicable",
+        "source_url": "https://link.springer.com/bookseries/5584"
+      }
+    },
+    {
+      "canonical_name": "Asian Journal of Psychiatry",
+      "aliases": ["Asian journal of psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 4.5,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/asian-journal-of-psychiatry"
+      }
+    },
+    {
+      "canonical_name": "BMC Psychiatry",
+      "aliases": ["BMC Psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.6,
+        "metric_year": 2024,
+        "status": "verified_primary",
+        "source_url": "https://bmcpsychiatry.biomedcentral.com/"
+      }
+    },
+    {
+      "canonical_name": "Biological Psychiatry",
+      "aliases": ["Biological psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 9.0,
+        "metric_year": 2024,
+        "status": "verified_primary",
+        "source_url": "https://www.sciencedirect.com/journal/biological-psychiatry"
+      }
+    },
+    {
+      "canonical_name": "Biological Psychiatry: Cognitive Neuroscience and Neuroimaging",
+      "aliases": ["Biological psychiatry. Cognitive neuroscience and neuroimaging"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 4.7,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/biological-psychiatry-cognitive-neuroscience-and-neuroimaging"
+      }
+    },
+    {
+      "canonical_name": "Brain Imaging and Behavior",
+      "aliases": ["Brain imaging and behavior"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 2.8,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://link.springer.com/journal/11682"
+      }
+    },
+    {
+      "canonical_name": "Brain Sciences",
+      "aliases": ["Brain sciences"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.4,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.mdpi.com/journal/brainsci/imprint"
+      }
+    },
+    {
+      "canonical_name": "Brain Stimulation",
+      "aliases": ["Brain Stimulation"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 8.4,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/brain-stimulation"
+      }
+    },
+    {
+      "canonical_name": "Chronic Diseases and Translational Medicine",
+      "aliases": ["Chronic diseases and translational medicine"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": null,
+        "metric_year": null,
+        "status": "not_available",
+        "source_url": "https://onlinelibrary.wiley.com/journal/25890514"
+      }
+    },
+    {
+      "canonical_name": "European Psychiatry",
+      "aliases": ["European psychiatry : the journal of the Association of European Psychiatrists"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 7.9,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.cambridge.org/core/journals/european-psychiatry"
+      }
+    },
+    {
+      "canonical_name": "Frontiers in Neuroimaging",
+      "aliases": ["Frontiers in neuroimaging"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 2.5,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.frontiersin.org/journals/neuroimaging/about"
+      }
+    },
+    {
+      "canonical_name": "Frontiers in Neuroscience",
+      "aliases": ["Frontiers in neuroscience"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 4.0,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.frontiersin.org/journals/neuroscience/about"
+      }
+    },
+    {
+      "canonical_name": "Frontiers in Psychiatry",
+      "aliases": ["Frontiers in psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.8,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.frontiersin.org/journals/psychiatry/about"
+      }
+    },
+    {
+      "canonical_name": "International Journal of Neural Systems",
+      "aliases": ["International journal of neural systems"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": null,
+        "metric_year": null,
+        "status": "unverified",
+        "source_url": "https://www.worldscientific.com/worldscinet/ijns"
+      }
+    },
+    {
+      "canonical_name": "Journal of Neuroimaging",
+      "aliases": ["Journal of neuroimaging : official journal of the American Society of Neuroimaging"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 2.3,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://onlinelibrary.wiley.com/journal/15526569"
+      }
+    },
+    {
+      "canonical_name": "Journal of Psychiatric Research",
+      "aliases": ["Journal of psychiatric research"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.2,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/journal-of-psychiatric-research"
+      }
+    },
+    {
+      "canonical_name": "Molecular Psychiatry",
+      "aliases": ["Molecular psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 10.4,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.nature.com/mp/journal-information"
+      }
+    },
+    {
+      "canonical_name": "NeuroImage: Clinical",
+      "aliases": ["NeuroImage. Clinical"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.6,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/neuroimage-clinical"
+      }
+    },
+    {
+      "canonical_name": "NeuroImage: Reports",
+      "aliases": ["Neuroimage. Reports"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": null,
+        "metric_year": null,
+        "status": "unverified",
+        "source_url": "https://www.sciencedirect.com/journal/neuroimage-reports"
+      }
+    },
+    {
+      "canonical_name": "Neuropsychobiology",
+      "aliases": ["Neuropsychobiology"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.7,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://karger.com/nps"
+      }
+    },
+    {
+      "canonical_name": "Neuroscience",
+      "aliases": ["Neuroscience"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 2.8,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/neuroscience"
+      }
+    },
+    {
+      "canonical_name": "Neuroscience & Biobehavioral Reviews",
+      "aliases": ["Neuroscience and biobehavioral reviews"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 7.9,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/neuroscience-and-biobehavioral-reviews"
+      }
+    },
+    {
+      "canonical_name": "Progress in Neuro-Psychopharmacology & Biological Psychiatry",
+      "aliases": ["Progress in neuro-psychopharmacology & biological psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.9,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/progress-in-neuro-psychopharmacology-and-biological-psychiatry"
+      }
+    },
+    {
+      "canonical_name": "Psychiatry and Clinical Neurosciences",
+      "aliases": ["Psychiatry and clinical neurosciences"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 6.2,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://onlinelibrary.wiley.com/journal/14401819"
+      }
+    },
+    {
+      "canonical_name": "Psychiatry Investigation",
+      "aliases": ["Psychiatry investigation"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": null,
+        "metric_year": null,
+        "status": "unverified",
+        "source_url": "https://www.psychiatryinvestigation.org/"
+      }
+    },
+    {
+      "canonical_name": "Psychiatry Research",
+      "aliases": ["Psychiatry research"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.9,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/psychiatry-research"
+      }
+    },
+    {
+      "canonical_name": "Psychiatry Research: Neuroimaging",
+      "aliases": ["Psychiatry research. Neuroimaging"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 2.1,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/psychiatry-research-neuroimaging"
+      }
+    },
+    {
+      "canonical_name": "Psychological Medicine",
+      "aliases": ["Psychological medicine", "Psychological Medicine"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 5.2,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.cambridge.org/core/journals/psychological-medicine"
+      }
+    },
+    {
+      "canonical_name": "Schizophrenia",
+      "aliases": ["Schizophrenia (Heidelberg, Germany)"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 4.5,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.nature.com/npjschz/journal-information"
+      }
+    },
+    {
+      "canonical_name": "Schizophrenia Bulletin",
+      "aliases": ["Schizophrenia bulletin"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 5.7,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://academic.oup.com/schizophreniabulletin/pages/about"
+      }
+    },
+    {
+      "canonical_name": "Schizophrenia Research",
+      "aliases": ["Schizophrenia research"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.5,
+        "metric_year": null,
+        "status": "publisher_current",
+        "source_url": "https://www.sciencedirect.com/journal/schizophrenia-research"
+      }
+    },
+    {
+      "canonical_name": "Scientific Reports",
+      "aliases": ["Scientific reports"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 4.9,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.nature.com/srep/about/aims"
+      }
+    },
+    {
+      "canonical_name": "Journal of Sichuan University (Medical Science Edition)",
+      "aliases": ["Sichuan da xue xue bao. Yi xue ban = Journal of Sichuan University. Medical science edition"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": null,
+        "metric_year": null,
+        "status": "unverified",
+        "source_url": "https://ykxb.scu.edu.cn/"
+      }
+    },
+    {
+      "canonical_name": "World Journal of Psychiatry",
+      "aliases": ["World journal of psychiatry"],
+      "publication_type": "journal",
+      "impact_factor": {
+        "value": 3.0,
+        "metric_year": 2025,
+        "status": "verified_primary",
+        "source_url": "https://www.wjgnet.com/bpg/journals.htm"
+      }
+    }
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "schema_version": "neurooracle.case2_formal_supplementary_protocol.v1",
+  "protocol_id": "case2_adni_formal_supplementary_v1",
+  "case_study_id": "case2_pathway_mediation",
+  "analysis_role": "formal supplementary case study",
+  "causal_interpretation": false,
+  "scientific_question": "Are prespecified Alzheimer pathway polygenic scores associated with later clinical status through prespecified ADNI imaging markers?",
+  "cohort": {
+    "dataset": "ADNI",
+    "dataset_snapshot": "case2_adni_multimodal_v1",
+    "primary_genetic_subject_count": 691,
+    "primary_cohort_rule": "Use the frozen 691-subject post-imputation cohort and its existing pathway PRS without recomputing scores.",
+    "future_721_subject_analysis": "Optional sensitivity analysis only; it is outside this primary protocol and requires a separately frozen protocol.",
+    "external_validation_required": false,
+    "external_validation_reason": "Case Study 2 is supplementary; independent external validation is reserved for Case Study 1."
+  },
+  "pathway_exposures": [
+    {
+      "pathway_id": "curated__ad_risk_gwas",
+      "pathway_name": "AD_risk_GWAS",
+      "threshold_label": "p1em03",
+      "score_name": "pathway_prs__curated__ad_risk_gwas__p1em03"
+    },
+    {
+      "pathway_id": "curated__cholinergic",
+      "pathway_name": "Cholinergic",
+      "threshold_label": "p1em03",
+      "score_name": "pathway_prs__curated__cholinergic__p1em03"
+    },
+    {
+      "pathway_id": "curated__gaba_glutamate",
+      "pathway_name": "GABA_glutamate",
+      "threshold_label": "p1em03",
+      "score_name": "pathway_prs__curated__gaba_glutamate__p1em03"
+    },
+    {
+      "pathway_id": "curated__mendelian_ad",
+      "pathway_name": "Mendelian_AD",
+      "threshold_label": "p1em03",
+      "score_name": "pathway_prs__curated__mendelian_ad__p1em03"
+    },
+    {
+      "pathway_id": "curated__microglia_immune",
+      "pathway_name": "Microglia_immune",
+      "threshold_label": "p1em03",
+      "score_name": "pathway_prs__curated__microglia_immune__p1em03"
+    },
+    {
+      "pathway_id": "curated__myelin",
+      "pathway_name": "Myelin",
+      "threshold_label": "p5em02",
+      "score_name": "pathway_prs__curated__myelin__p5em02"
+    },
+    {
+      "pathway_id": "curated__synaptic",
+      "pathway_name": "Synaptic",
+      "threshold_label": "p5em02",
+      "score_name": "pathway_prs__curated__synaptic__p5em02"
+    }
+  ],
+  "imaging_markers": [
+    {
+      "modality": "amyloid_pet",
+      "marker": "CENTILOIDS"
+    },
+    {
+      "modality": "fdg_pet",
+      "marker": "FDG_META_ROI_SUVR"
+    },
+    {
+      "modality": "tau_pet",
+      "marker": "META_TEMPORAL_SUVR"
+    },
+    {
+      "modality": "tau_pet",
+      "marker": "CTX_ENTORHINAL_SUVR"
+    },
+    {
+      "modality": "smri_adnimerge",
+      "marker": "Hippocampus"
+    },
+    {
+      "modality": "smri_adnimerge",
+      "marker": "Entorhinal"
+    },
+    {
+      "modality": "smri_adnimerge",
+      "marker": "WholeBrain"
+    },
+    {
+      "modality": "smri_adnimerge",
+      "marker": "Ventricles"
+    }
+  ],
+  "clinical_outcomes": [
+    {
+      "outcome": "ADAS13",
+      "domain": "global cognition",
+      "higher_is_worse_multiplier": 1.0
+    },
+    {
+      "outcome": "FAQ",
+      "domain": "function",
+      "higher_is_worse_multiplier": 1.0
+    },
+    {
+      "outcome": "LDELTOTAL",
+      "domain": "episodic memory",
+      "higher_is_worse_multiplier": -1.0
+    }
+  ],
+  "timing": {
+    "baseline_outcome_window_days": 90,
+    "future_min_days_from_baseline": 365,
+    "future_max_days_from_baseline": 1095,
+    "target_followup_days_from_baseline": 730,
+    "row_selection_priority": [
+      "smallest absolute distance between exact follow-up and 730 days",
+      "smallest absolute distance between baseline outcome and imaging",
+      "earliest imaging date",
+      "earliest future outcome date",
+      "earliest baseline outcome date",
+      "lexical visit_id"
+    ],
+    "followup_interval_definition": "future_outcome_date minus baseline_outcome_date"
+  },
+  "candidate_universe": {
+    "construction": "Cartesian product of 7 frozen pathway scores, 8 primary imaging markers, and 3 clinical outcomes",
+    "expected_count": 168,
+    "candidate_id": "score_name|modality|marker|outcome",
+    "master_registry_is_fixed": true
+  },
+  "readiness_gate": {
+    "audit_is_outcome_blind": true,
+    "permitted_outcome_fields": [
+      "subject_id",
+      "outcome",
+      "outcome_date"
+    ],
+    "forbidden_during_audit": [
+      "outcome values",
+      "model coefficients",
+      "effect estimates",
+      "P values",
+      "q values"
+    ],
+    "family_definition": "one imaging marker and one clinical outcome across all seven pathway scores",
+    "minimum_complete_case_n": 300,
+    "family_action_below_minimum": "Drop the complete seven-pathway marker-outcome family from execution while retaining all candidates in the master registry."
+  },
+  "model": {
+    "interpretation": "association-based indirect-effect analysis; not causal mediation",
+    "outcome_orientation": "All clinical outcomes are transformed so higher values indicate worse status.",
+    "path_a": "M_z ~ X_z + age_at_imaging_z + sex_binary + PTEDUCAT_z + PC1_z-PC10_z + SITE + COLPROT + batch + ICV_z (sMRI only)",
+    "path_b_and_direct": "Y_future_z ~ M_z + X_z + Y_baseline_z + exact_followup_days_z + age_at_imaging_z + sex_binary + PTEDUCAT_z + PC1_z-PC10_z + SITE + COLPROT + batch + ICV_z (sMRI only)",
+    "path_a_forbidden_covariates": [
+      "Y_baseline",
+      "exact_followup_days"
+    ],
+    "standardization": "Continuous exposure, mediator, outcome, and continuous covariates are z-scored within each complete-case candidate sample; categorical indicators are not standardized.",
+    "component_path_covariance": "HC3 heteroskedasticity-robust",
+    "indirect_effect": "standardized path_a multiplied by standardized path_b",
+    "primary_indirect_inference": "subject-level nonparametric percentile bootstrap",
+    "bootstrap_replicates": 5000,
+    "bootstrap_seed": 20260826,
+    "bootstrap_confidence_interval": 0.95,
+    "bootstrap_two_sided_p": "twice the smaller sign-tail probability with a plus-one finite-sample correction",
+    "sobel_test_role": "sensitivity analysis only"
+  },
+  "multiplicity": {
+    "method": "Benjamini-Hochberg",
+    "global_primary_family_size": 168,
+    "global_primary_endpoint": "bootstrap indirect-effect P value",
+    "supplemental_family_definition": "eight imaging markers within one pathway-outcome family",
+    "supplemental_family_size": 8,
+    "excluded_candidate_handling": "Untested candidates remain in the fixed multiplicity denominator and are treated as P=1 for adjustment."
+  },
+  "sensitivity_analyses_outside_master_registry": [
+    "tau PVC markers corresponding to the two primary non-PVC tau markers",
+    "APOE-region-excluded pathway PRS after separate score construction and freeze",
+    "721-subject six-array cohort after successful post-imputation harmonization"
+  ],
+  "freeze_semantics": {
+    "historical_210_registry_is_immutable": true,
+    "historical_5265_registry_is_immutable": true,
+    "formal_results_may_be_accessed_only_after_readiness_lock": true,
+    "readiness_lock_contains_no_observed_outcome_values_or_association_statistics": true
+  },
+  "_last_updated_at": "2026-08-26 HKT"
+}

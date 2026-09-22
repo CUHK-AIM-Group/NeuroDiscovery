@@ -1,0 +1,52 @@
+{
+  "schema_version": "case1-evidence-sentence-gold-v1",
+  "source": "Expert feedback supplied for the Left Temporal Pole ROI ALFF example",
+  "associations": [
+    {
+      "candidate_id": "fmri|cc400_multiatlas|psychosis_SZ_SZA|roi_alff_proxy|108",
+      "paper_id": "41621353",
+      "sentences": [
+        "Here, resting-state functional MRI data were collected from a sample of patients with SZ, BD, and ADHD as well as healthy controls.",
+        "Kendall's W was utilized to calculate volume-wise and voxel-wise concordance between fALFF and ReHo, followed by performance of group comparisons.",
+        "Additionally, direct comparisons between disorders revealed that SZ exhibited decreased voxel-wise concordance in the prefrontal and occipital cortex relative to BD, and widespread voxel-wise concordance decrease in the prefrontal, occipital and temporal regions relative to ADHD."
+      ]
+    },
+    {
+      "candidate_id": "fmri|cc400_multiatlas|psychosis_SZ_SZA|roi_alff_proxy|108",
+      "paper_id": "42044686",
+      "sentences": [
+        "Static and dynamic regional homogeneity (s/dReHo) and fractional amplitude of low-frequency fluctuations (s/dfALFF) were calculated.",
+        "SCZ patients exhibited reduced static and dynamic local activity in sensorimotor, visual, and middle temporal regions, alongside increased activity in the striatum, superior frontal gyrus, hippocampus, and temporal pole (all pvoxel < 0.001, pcluster < 0.05, GRF corrected).",
+        "General psychopathology was positively associated with sfALFF in the putamen (r = 0.287, p = 0.048) and both sReHo (r = 0.314, p = 0.048) and dReHo (r = 0.312, p = 0.048) in the temporal pole.",
+        "Additionally, sReHo in the middle temporal gyrus was positively associated with visual learning (r = 0.330, p = 0.042), while dReHo in the temporal pole was negatively associated with verbal learning (r = -0.398, p = 0.042)."
+      ]
+    },
+    {
+      "candidate_id": "fmri|cc400_multiatlas|psychosis_SZ_SZA|roi_alff_proxy|108",
+      "paper_id": "40016773",
+      "sentences": [
+        "Resting-state functional magnetic resonance images were obtained from 62 schizophrenia patients, 57 bipolar disorder (BD) patients, and 45 healthy controls (HCs), and analyzed for fractional amplitude of low-frequency fluctuations (fALFF) as a measure of basal neural activity and for whole-brain FC based on the hippocampal subregions.",
+        "The schizophrenia group exhibited greater fALFF in bilateral cHipp (the caudal part of hippocampus) and rHipp (the rostral part of hippocampus) subregions compared to BD and HC groups as well as increased FC between the bilateral cHipp and multiple brain regions, including the thalamus, putamen, middle frontal gyrus, parietal cortex, and precuneus."
+      ]
+    },
+    {
+      "candidate_id": "fmri|cc400_multiatlas|psychosis_SZ_SZA|roi_alff_proxy|108",
+      "paper_id": "39675131",
+      "sentences": [
+        "100 patients with chronic schizophrenia were enrolled and divided into the real group (50 subjects) and sham group (50 subjects).",
+        "The real group was given real stimulation of TBS for 4 weeks, and the sham group was sham-stimulated with the same site.",
+        "fNIRS was used to detect the amplitude of low frequency fluctuation (ALFF) of cortical hemoglobin before and after TBS.",
+        "Furthermore, the zALFF of oxyhemoglobin was increased in the right and left frontal pole regions, and decreased in the right superior temporal gyrus in the real group compared to the sham group after TBS."
+      ]
+    },
+    {
+      "candidate_id": "fmri|cc400_multiatlas|psychosis_SZ_SZA|roi_alff_proxy|108",
+      "paper_id": "40268245",
+      "sentences": [
+        "Fractional amplitude of low-frequency fluctuation (fALFF) is a validated measure of resting-state spontaneous brain activity.",
+        "fALFF from 495 participants (185 TDCs, 68 with autism, and 242 with SSDs) was computed using functional magnetic resonance imaging as signal power within 2 frequency bands (i.e., slow-4 and slow-5), normalized by the power in the remaining frequency spectrum.",
+        "Associations between slow-4 fALFF and higher-level social cognitive scores across the whole sample were observed in the lateral occipitotemporal and temporoparietal junction."
+      ]
+    }
+  ]
+}

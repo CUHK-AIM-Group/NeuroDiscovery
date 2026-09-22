@@ -1,0 +1,140 @@
+{
+  "schema_version": "neurooracle.case2_confirmatory_protocol.v1",
+  "protocol_id": "case2_adni_endpoint_holdout_v1",
+  "case_study_id": "case2_pathway_mediation",
+  "analysis_label": "retrospective phase-stratified and endpoint-held-out confirmation",
+  "causal_interpretation": false,
+  "scientific_question": "Which prespecified pathway polygenic scores are associated with later clinical decline through a prespecified imaging marker?",
+  "cohort": {
+    "dataset": "ADNI",
+    "include_column": "COLPROT",
+    "include_values": [
+      "ADNI3"
+    ],
+    "independence_statement": "ADNI3 subjects may overlap the earlier method-development screen; the confirmation endpoints were not used to fit or tune the final generator policy.",
+    "external_validation": false
+  },
+  "development_data": {
+    "outcomes_previously_accessed": [
+      "MMSE",
+      "ADAS13",
+      "CDRSB"
+    ],
+    "allowed_uses": [
+      "NeuroDiscovery policy-family selection",
+      "batch-size and diversity-hyperparameter selection",
+      "diagnostic testing of the analysis implementation"
+    ],
+    "forbidden_uses": [
+      "selection of confirmation outcomes using association strength",
+      "selection of confirmation candidates using hidden confirmation statistics",
+      "retuning after confirmation outcomes are revealed"
+    ]
+  },
+  "confirmation_data": {
+    "outcomes": [
+      "mPACCdigit",
+      "FAQ",
+      "LDELTOTAL"
+    ],
+    "outcome_direction": "annualized_decline_score is oriented so that positive values indicate worsening",
+    "target_followup_days": 730,
+    "min_followup_days": 365,
+    "max_followup_days": 1095,
+    "minimum_complete_case_n": 100
+  },
+  "pathway_exposures": {
+    "source": "NeuroOracle curated",
+    "selection_rule": "one available score per pathway; prefer p1em03, then p5em02, then lexical score_name",
+    "expected_count": 7
+  },
+  "imaging_markers": [
+    "amyloid_pet::CENTILOIDS",
+    "fdg_pet::FDG_META_ROI_SUVR",
+    "tau_pet::META_TEMPORAL_SUVR",
+    "tau_pet::CTX_ENTORHINAL_SUVR",
+    "smri_adnimerge::Hippocampus",
+    "smri_adnimerge::Entorhinal",
+    "smri_adnimerge::Fusiform",
+    "smri_adnimerge::MidTemp",
+    "smri_adnimerge::WholeBrain",
+    "smri_adnimerge::Ventricles"
+  ],
+  "candidate_universe": {
+    "construction": "Cartesian product of selected pathway exposure, imaging marker, and confirmation outcome",
+    "expected_count": 210,
+    "candidate_id": "exposure|modality|marker|outcome",
+    "exclusions_after_freeze": "Only prespecified non-estimability or minimum-sample exclusions are allowed; excluded candidates retain their original rank and count as unsuccessful for generator metrics."
+  },
+  "covariates": {
+    "numeric": [
+      "age_at_imaging",
+      "sex_binary",
+      "PTEDUCAT",
+      "baseline_value",
+      "followup_years",
+      "PC1-PC10"
+    ],
+    "categorical": [
+      "SITE",
+      "COLPROT",
+      "batch"
+    ],
+    "smri_only": [
+      "icv"
+    ]
+  },
+  "statistics": {
+    "model": "covariate-adjusted linear association-based indirect-effect screen",
+    "primary_scientific_endpoint": "sobel_q_global < 0.05 and a_path_p < 0.05 and b_path_p < 0.05",
+    "primary_generator_endpoint": "sobel_q_family < 0.05 and a_path_p < 0.05 and b_path_p < 0.05",
+    "secondary_endpoint": "sobel_p < 0.05 and a_path_p < 0.05 and b_path_p < 0.05",
+    "fdr_method": "Benjamini-Hochberg",
+    "fdr_alpha": 0.05,
+    "family_definition": "confirmation outcome",
+    "scientific_reporting_rule": "Global-FDR results determine confirmatory scientific claims; family-FDR results evaluate search efficiency and are explicitly labelled benchmark discoveries."
+  },
+  "generator_evaluation": {
+    "methods": [
+      "AI Scientist-v2",
+      "Open Co-Scientist",
+      "SciAgents",
+      "Virtual Lab",
+      "BrainPilot",
+      "Biomni",
+      "NeuroDiscovery"
+    ],
+    "independent_runs_per_method": 10,
+    "budgets": [
+      5,
+      10,
+      20,
+      50,
+      100,
+      210
+    ],
+    "baseline_rule": "Each baseline produces and freezes a complete static SearchPolicy before confirmation outcomes are accessed.",
+    "neurodiscovery_rule": "NeuroDiscovery freezes its initial policy before access, then commits each next batch ordering before outcomes for that batch are revealed.",
+    "invalid_candidate_rule": "Invalid, duplicate, missing, or non-estimable candidates consume their generated or ranked slot and are scored as unsuccessful.",
+    "primary_metric": "area under the family-FDR discovery-recall curve over prespecified budgets",
+    "secondary_metrics": [
+      "family-FDR Hit@K and recall@K",
+      "global-FDR Hit@K and recall@K",
+      "AUROC",
+      "AUPRC",
+      "experiments required to reach each attainable recall target"
+    ],
+    "comparison": "paired across the ten prespecified run indices with percentile bootstrap confidence intervals and paired randomization P values"
+  },
+  "freeze_semantics": {
+    "temporal_kg_freeze": false,
+    "temporal_kg_freeze_definition": "Not applicable: this is not a hindcasting experiment and no historical publication cutoff is imposed.",
+    "kg_snapshot_pinning": true,
+    "kg_snapshot_pinning_definition": "The current canonical KG and claim-store bytes are hash-pinned for reproducibility.",
+    "initial_ranking_freeze": true,
+    "initial_ranking_freeze_definition": "Every method commits an initial SearchPolicy before hidden confirmation outcomes are evaluated.",
+    "sequential_batch_commit": true,
+    "sequential_batch_commit_definition": "For NeuroDiscovery, each adaptive next-batch ranking is committed using only outcomes from earlier executed batches."
+  },
+  "_last_updated_at": "2026-08-16 00:59 HKT"
+}

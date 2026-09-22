@@ -1,0 +1,211 @@
+{
+  "schema_version": "neurooracle.case2_formal_generator_benchmark.v1",
+  "benchmark_id": "case2_adni_formal_benchmark_v1",
+  "case_study_id": "case2_pathway_mediation",
+  "source_protocol_id": "case2_adni_formal_supplementary_v2",
+  "analysis_role": "supplemental post-result-design-freeze hypothesis-generator ranking benchmark",
+  "design_status": {
+    "formal_results_were_accessed_before_this_benchmark_was_designed": true,
+    "generator_inputs_are_result_isolated": true,
+    "allowed_claim": "supplemental benchmark comparison on the locked formal 168-candidate universe",
+    "forbidden_claims": [
+      "prospectively preregistered generator comparison",
+      "pre-result benchmark design",
+      "independent external validation",
+      "causal mediation",
+      "clear SOTA based on an unregistered or post-hoc endpoint"
+    ],
+    "manuscript_note": "The current manuscript states that no revised 168-candidate method comparison is reported. If this benchmark is later reported, the manuscript and Supplementary baseline registry must be updated to describe this exact Case-2-specific method suite and DeepSeek V4 Pro backend."
+  },
+  "data": {
+    "dataset": "ADNI",
+    "source_subject_count": 691,
+    "outcome_blind_eligible_subject_count": 683,
+    "candidate_count": 168,
+    "candidate_construction": "7 frozen pathway PRS x 8 imaging markers x 3 longitudinal outcomes",
+    "clinical_outcomes": ["ADAS13", "FAQ", "LDELTOTAL"],
+    "external_validation_required": false,
+    "external_validation_reason": "Case Study 2 is supplementary; independent external validation is reserved for Case Study 1."
+  },
+  "paths": {
+    "readiness_root": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\readiness_freeze_code_pinned_r2",
+    "master_candidate_registry": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\readiness_freeze_code_pinned_r2\\MASTER_CANDIDATE_REGISTRY.csv",
+    "readiness_lock": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\readiness_freeze_code_pinned_r2\\READINESS.lock.json",
+    "readiness_summary": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\readiness_freeze_code_pinned_r2\\READINESS_SUMMARY.json",
+    "score_manifest": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\postimputation\\case2_adni_common_dr2_0p8_v1\\features\\ad_pathway_prs_v1\\score_manifest.csv",
+    "pathway_catalog": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\postimputation\\case2_adni_common_dr2_0p8_v1\\features\\ad_pathway_prs_v1\\pathway_catalog.csv",
+    "formal_results": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\formal_results\\run_46f16d63eac7\\FORMAL_RESULTS.csv",
+    "formal_results_lock": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\formal_results\\run_46f16d63eac7\\RESULTS.lock.json",
+    "kg_current_state": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\neurooracle\\data\\full_v2\\CURRENT_STATE.json",
+    "knowledge_graph": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\neurooracle\\data\\full_v2\\knowledge_graph.json",
+    "extracted_claims": "C:\\Users\\45846\\Documents\\Code\\NeuroClaw\\neurooracle\\data\\full_v2\\extracted_claims.jsonl",
+    "keys_file": "C:\\Users\\45846\\Downloads\\keys.txt",
+    "baseline_repository_root": "C:\\Users\\45846\\Documents\\Code\\autoresearch_baselines",
+    "output_root": "\\\\192.168.3.61\\data\\Dataset\\genetics\\ADNI\\derived\\qc\\case2_adni_genetics_v1\\experiments\\case2_adni_formal_supplementary_v2\\method_benchmark\\case2_adni_formal_benchmark_v1"
+  },
+  "candidate_input_contract": {
+    "public_columns": [
+      "candidate_id",
+      "exposure",
+      "pathway_id",
+      "pathway_name",
+      "pathway_source",
+      "threshold_label",
+      "gene_count",
+      "modality",
+      "marker",
+      "outcome"
+    ],
+    "candidate_id": "exposure|modality|marker|outcome",
+    "forbidden_generator_fields": [
+      "complete_case_n",
+      "n",
+      "a_path_std",
+      "a_path_hc3_p",
+      "b_path_std",
+      "b_path_hc3_p",
+      "indirect_effect_std",
+      "indirect_bootstrap_p",
+      "indirect_bootstrap_q_global_168",
+      "indirect_bootstrap_q_family_8",
+      "result_tier",
+      "biological_results",
+      "formal_results"
+    ],
+    "invalid_output_rule": "Every invalid, duplicate, missing, or unmappable proposal consumes its requested slot and receives no anchor credit; no manual repair is permitted."
+  },
+  "methods": {
+    "target": "neurodiscovery",
+    "baselines": [
+      "ai_scientist_v2",
+      "open_coscientist",
+      "sciagents",
+      "virtual_lab",
+      "brainpilot_native",
+      "biomni_native"
+    ],
+    "repository_map": {
+      "ai_scientist_v2": "AI-Scientist-v2",
+      "open_coscientist": "open-coscientist",
+      "sciagents": "SciAgentsDiscovery",
+      "virtual_lab": "virtual-lab",
+      "brainpilot_native": "BrainPilot",
+      "biomni_native": "Biomni"
+    },
+    "suite_reason": "Continuity with the sealed historical Case Study 2 seven-method comparison; this is a Case-2-specific suite and is not silently substituted for the manuscript's generic six-family baseline table.",
+    "shared_anchor_slots": 80,
+    "compiled_ranking_size": 168,
+    "ranking_compiler": "case2-policy-compiler-v1-pathway-marker-outcome-max",
+    "completion_rule": "Take at most 80 valid ordered anchors, ignore uncalibrated self-reported confidence, place valid unique anchors first in extracted order, place one zero-relevance sentinel for every invalid/duplicate/missing slot through slot 80, then append the same deterministic compiler order for every not-yet-ranked candidate. Every real candidate appears exactly once; the auditable experiment stream therefore has 168 plus the number of failed generation slots, and ties are broken lexically by candidate_id.",
+    "native_retrieval_enabled": false,
+    "native_retrieval_reason": "Freeze supplied evidence and prevent time-varying live retrieval or accidental access to local result artifacts. Baselines are transparent frozen-input workflow adaptations, not claims of full native internet-enabled reproduction.",
+    "neurodiscovery": {
+      "kg_snapshot": "current canonical full_v2 snapshot pinned by bytes and SHA256; not a temporal hindcasting freeze",
+      "generation_stages": ["batch"],
+      "generation_target_per_task": 100,
+      "feedback_enabled": false,
+      "ranking_mode": "static initial ranking only",
+      "ranking_profile": "canonical_result_blind_mapping_order",
+      "ranking_keys": [
+        "mapping_score descending",
+        "primary_chain_alignment descending",
+        "primary_kg_score descending",
+        "meaningful_support_count descending",
+        "candidate coordinates lexical"
+      ],
+      "policy_rule": "Use the canonical deterministic Case 2 mapper directly. Do not transfer the historical 210-candidate policy weights, because those weights were selected using development outcomes that overlap the present formal outcome set."
+    }
+  },
+  "model_backend": {
+    "logical_model": "deepseek-v4-pro",
+    "gateway_base_url": "http://127.0.0.1:18082/v1",
+    "reasoning_effort": "high",
+    "temperature": 0.0,
+    "max_output_tokens": 8192,
+    "stream": false,
+    "max_concurrent_api_requests": 1,
+    "automatic_route": [
+      "opencode_go_key_1",
+      "opencode_go_key_2",
+      "opencode_go_key_3",
+      "ollama_cloud",
+      "opencode_go_key_1_final_pass",
+      "opencode_go_key_2_final_pass",
+      "opencode_go_key_3_final_pass"
+    ],
+    "route_switch_rule": "Switch route only after confirmed quota exhaustion.",
+    "same_route_retry_delays_seconds": [2, 8, 30],
+    "same_route_retry_conditions": ["network_timeout", "HTTP_500", "HTTP_502", "HTTP_503", "HTTP_504"],
+    "final_go_pass_limit": 1,
+    "deepseek_official_automatic_fallback": false,
+    "secrets_policy": "Read channel keys only from keys_file at runtime; never place secret values in prompts, logs, checkpoints, manifests, environment snapshots, or command-line arguments."
+  },
+  "trials": {
+    "count": 10,
+    "pairing": "matched trial index across all seven methods",
+    "seed_derivation": "little-endian uint32 from the first four SHA256 digest bytes of 'case2_adni_formal_benchmark_v1:trial:<index>'",
+    "seeds": [
+      247629302,
+      951355745,
+      2387594356,
+      3326672284,
+      4240997843,
+      2165602161,
+      2653667879,
+      1516410883,
+      4031887929,
+      2023097512
+    ]
+  },
+  "evaluation": {
+    "budgets": [5, 10, 20, 50, 100, 168],
+    "primary_metric": {
+      "name": "bootstrap_weakest_link_evidence_ndcg",
+      "definition": "Full-ranking NDCG with candidate relevance min(50, -log10(max(a_path_hc3_p, b_path_hc3_p, indirect_bootstrap_p))).",
+      "higher_is_better": true,
+      "reason": "The formal global binary endpoint has zero positives, so a prespecified continuous ranking endpoint is required for an identifiable primary comparison."
+    },
+    "secondary_metrics": [
+      "bootstrap_weakest_link_evidence_ndcg_at_k",
+      "supplemental_family_fdr_hits_at_k",
+      "supplemental_family_fdr_recall_at_k",
+      "supplemental_family_fdr_auroc",
+      "supplemental_family_fdr_auprc",
+      "first_supplemental_family_fdr_hit_rank",
+      "nominal_bootstrap_hits_at_k_exploratory"
+    ],
+    "structurally_non_identifiable_metrics": [
+      "global_fdr_recall",
+      "global_fdr_auroc",
+      "global_fdr_auprc"
+    ],
+    "multiplicity_labels": {
+      "nominal_bootstrap_p_lt_0_05": "exploratory",
+      "supplemental_family_q_lt_0_05": "secondary",
+      "primary_global_q_lt_0_05": "formal biological primary label but non-identifiable as a generator-ranking metric because there are zero positives"
+    },
+    "comparison": {
+      "target": "neurodiscovery",
+      "pairing": "matched trial index 0-9",
+      "test": "one-sided exact paired sign-flip test on the primary metric",
+      "confidence_interval": "95% percentile bootstrap interval for the paired mean difference",
+      "bootstrap_resamples": 10000,
+      "bootstrap_seed": 20260826,
+      "multiplicity": "Holm correction across the six NeuroDiscovery-versus-baseline comparisons"
+    },
+    "reporting_rule": "Report all seven methods and all ten trials, including invalid slots and negative or null results. This post-result-design-freeze benchmark cannot by itself support a prospective or preregistered superiority claim."
+  },
+  "freeze_rules": {
+    "hash_pin_current_kg_and_claim_store": true,
+    "hash_pin_formal_result_lock_and_table": true,
+    "hash_pin_public_candidate_registry": true,
+    "hash_pin_baseline_repository_heads_and_dirty_source_state": true,
+    "separate_generator_and_evaluator_bundles": true,
+    "generator_bundle_must_not_contain_forbidden_fields": true,
+    "no_api_calls_during_preparation": true,
+    "fail_closed_on_changed_input_or_nonempty_new_run_directory": true,
+    "no_retuning_after_freeze": true,
+    "no_external_validation_queue": true
+  },
+  "_last_updated_at": "2026-08-26 HKT"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": "neurooracle.case2_generator_evaluation_plan.v3",
+  "protocol_id": "case2_adni_phase_holdout_v3",
+  "methods": [
+    "ai_scientist_v2",
+    "open_coscientist",
+    "sciagents",
+    "virtual_lab",
+    "brainpilot_native",
+    "biomni_native",
+    "neurodiscovery"
+  ],
+  "independent_runs_per_method": 10,
+  "neurodiscovery_seed_base": 20260816,
+  "budgets": [5, 10, 20, 50, 100, 210],
+  "primary_endpoints": [
+    "directional_replication_hit",
+    "heldout_chain_evidence_score"
+  ],
+  "primary_metrics": [
+    {
+      "name": "normalized_replication_recall_auc",
+      "definition": "Trapezoidal area under cumulative recall of the four frozen ADNI3-selected candidates that independently pass the prespecified directional component tests and Holm family-wise correction in ADNI1/GO/2.",
+      "higher_is_better": true
+    },
+    {
+      "name": "heldout_chain_evidence_ndcg",
+      "definition": "Full-ranking normalized discounted cumulative gain using heldout_chain_evidence_score as the non-negative relevance gain.",
+      "higher_is_better": true
+    }
+  ],
+  "continuous_evidence": {
+    "name": "heldout_chain_evidence_score",
+    "definition": "min(50, -log10(max(a_path_p, b_path_p, sobel_p))) for an estimable candidate; zero for a non-estimable candidate. This weakest-link score is direction-agnostic and requires all three mediation components to be strong.",
+    "cap": 50.0,
+    "non_estimable_value": 0.0,
+    "frozen_before_phase_heldout_association_access": true
+  },
+  "secondary_metrics": [
+    "replicated_hits_at_k",
+    "replicated_recall_at_k",
+    "heldout_chain_evidence_ndcg_at_k",
+    "family_fdr_chain_hits_at_k",
+    "global_fdr_chain_hits_at_k",
+    "replication_auroc_when_identifiable",
+    "replication_auprc_when_identifiable",
+    "experiments_to_attainable_replication_recall"
+  ],
+  "recall_targets": [0.25, 0.5, 0.75, 1.0],
+  "feedback": {
+    "supported": "candidate is estimable and a_path_p, b_path_p, and sobel_p are each below 0.05 in the already executed ADNI1/GO/2 batch",
+    "execution_failed": "candidate is non-estimable",
+    "inconclusive": "candidate is estimable but does not meet the frozen weakest-link nominal threshold",
+    "contradicted": "not used because no direction is public for the full 210-candidate universe",
+    "private_replication_labels_used_for_feedback": false,
+    "continuous_evidence_used_to_retune_thresholds": false
+  },
+  "comparison": {
+    "pairing": "matched run index 0-9",
+    "test": "one-sided exact paired sign-flip test on each primary metric",
+    "multiplicity": "Holm correction across the six baseline comparisons separately for each primary metric",
+    "confidence_interval": "95% percentile bootstrap interval for paired mean difference",
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 20260816
+  },
+  "clear_sota_rule": "NeuroDiscovery must exceed every baseline on both primary metrics. For every metric-baseline pair, the paired mean difference and its 95% bootstrap lower bound must be positive and the Holm-adjusted one-sided exact sign-flip P value must be below 0.05. If no registered candidate independently replicates, the recall metric is non-identifiable and clear SOTA cannot be claimed.",
+  "freeze_rules": {
+    "baseline_static_orders_committed_before_phase_heldout_access": true,
+    "neurodiscovery_initial_order_committed_before_phase_heldout_access": true,
+    "neurodiscovery_batch_order_committed_before_batch_outcome_reveal": true,
+    "no_retuning_after_phase_heldout_access": true,
+    "temporal_kg_freeze": false,
+    "kg_snapshot_pinning": true,
+    "holdout_axis": "cohort_phase"
+  },
+  "_last_updated_at": "2026-08-16 13:58 HKT"
+}
