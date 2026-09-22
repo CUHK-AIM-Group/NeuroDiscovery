@@ -1,0 +1,33 @@
+{
+  "name": "论文知识层重建",
+  "mode": "paper_source_reextraction",
+  "release_label": null,
+  "parent_release": null,
+  "legacy_claim_patch_route": "retired",
+  "old_claims_are_extraction_input": false,
+  "old_claims_usage": "read_only_audit_archive",
+  "fixed_neuroscience_layer": {
+    "policy": "preserve_existing_nodes_edges_ids_metadata_and_weights",
+    "reingest": false,
+    "renormalize": false,
+    "allow_writes": false,
+    "partition_method": "source_provenance; never infer from DATASET tag alone",
+    "ambiguous_provenance": "preserve_and_hold_for_partition_review"
+  },
+  "paper_materials": {
+    "corpus": "tmp/kg_rebuild_full_20260920_v1/CORPUS.sqlite",
+    "integrity_manifest": "tmp/kg_rebuild_full_20260920_v1/FROZEN_ARTIFACTS.json",
+    "use": "original_bibliography_and_source_snapshots_only",
+    "copy_full_corpus_again": false
+  },
+  "execution": {
+    "actor": "root_direct_source_reading",
+    "external_models": false,
+    "agents": false,
+    "ollama": false,
+    "output_directory": "tmp/kg_paper_reconstruction_20260920",
+    "authorization": "tmp/kg_paper_reconstruction_20260920/ROOT_MANUAL_AUTHORIZATION_20260922.json"
+  },
+  "extraction_contract": "docs/KG_PAPER_EXTRACTION_CONTRACT.md",
+  "end_to_end_plan": "docs/KG_PAPER_RECONSTRUCTION.md"
+}
