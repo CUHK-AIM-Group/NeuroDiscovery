@@ -6,12 +6,12 @@ the small receipt/catalog are SHA-checked. A changed graph must be reindexed.
 import hashlib
 import json
 from pathlib import Path
+from .kg_storage import stat_matches, storage_path
 
 
 def check_file(fingerprint, *, full_hash=False):
-    path = Path(fingerprint["path"])
-    stat = path.stat()
-    if stat.st_size != fingerprint["bytes"] or stat.st_mtime_ns != fingerprint["mtime_ns"]:
+    path = storage_path(fingerprint["path"])
+    if not stat_matches(fingerprint, path):
         raise ValueError("stale KG relation index: file fingerprint changed")
     if full_hash:
         digest = hashlib.sha256()
