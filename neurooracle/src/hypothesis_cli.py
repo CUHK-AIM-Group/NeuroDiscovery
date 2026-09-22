@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Optional
 
 from .storage import load_graph
+from .graph_paths import resolve_graph_path
 from .hypothesis_engine import (
     HypothesisEngine, Hypothesis, Contradiction, Gap,
 )
@@ -1514,8 +1515,8 @@ def main():
     p_im = sub.add_parser("im-brainstorm",
                             help="Brainstorm imaging markers (IMs) from KG primitives")
     p_im.add_argument("--graph", dest="im_graph", default=None,
-                        help="KG path (default: --graph or neurooracle/data/full_snapshot_v2/knowledge_graph.json)")
-    p_im.add_argument("--output", default="neurooracle/data/full_snapshot_v2/imaging_markers.json")
+                        help="KG path (default: --graph or current published graph)")
+    p_im.add_argument("--output", default="neurooracle/data/build_artifacts/markers/imaging_markers.json")
     p_im.add_argument("--n", type=int, default=50, help="Number of IMs to brainstorm")
     p_im.add_argument("--model", default=None, help="LLM model override")
     p_im.add_argument("--batch-size", type=int, default=30,
@@ -1527,8 +1528,8 @@ def main():
     p_gm = sub.add_parser("gm-brainstorm",
                             help="Brainstorm genetic markers (GMs) from KG primitives")
     p_gm.add_argument("--graph", dest="gm_graph", default=None,
-                        help="KG path (default: --graph or neurooracle/data/full_snapshot_v2/knowledge_graph.json)")
-    p_gm.add_argument("--output", default="neurooracle/data/full_snapshot_v2/genetic_markers.json")
+                        help="KG path (default: --graph or current published graph)")
+    p_gm.add_argument("--output", default="neurooracle/data/build_artifacts/markers/genetic_markers.json")
     p_gm.add_argument("--n", type=int, default=50, help="Number of GMs to brainstorm")
     p_gm.add_argument("--model", default=None, help="LLM model override")
     p_gm.add_argument("--batch-size", type=int, default=30,
@@ -1553,8 +1554,8 @@ def main():
         help="Override the registered generation-pool target for batch generation.",
     )
     p_cs.add_argument("--kge",
-                      default="neurooracle/data/full_snapshot_v2/kge_complex.pt",
-                      help="Trained KGE checkpoint for stage [4/4]")
+                      default=None,
+                      help="Explicit graph-matched KGE checkpoint, required for the plausibility stage")
     p_cs.add_argument("--kg-for-plausibility",
                       default=None,
                       help="KG path passed to plausibility stage (default: --graph)")
@@ -1583,8 +1584,8 @@ def main():
                            help="Directory for host-agent run_state, tasks, and outputs")
     p_ha_init.add_argument("--graph", dest="ha_graph", default=None,
                            help="KG path for deterministic NeuroOracle support stages")
-    p_ha_init.add_argument("--kge", default="neurooracle/data/full_snapshot_v2/kge_complex.pt",
-                           help="KGE checkpoint for deterministic plausibility support")
+    p_ha_init.add_argument("--kge", default=None,
+                           help="Explicit graph-matched KGE checkpoint for plausibility support")
     p_ha_init.add_argument("--max-rounds", type=int, default=5,
                            help="Maximum host-agent autoresearch rounds")
     p_ha_init.add_argument("--deterministic-stages", default="batch,novelty",
@@ -1615,7 +1616,9 @@ def main():
 
     if args.command == "host-agent-init":
         from .host_agent_autoresearch import init_run
-        graph_p = args.ha_graph or args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
+        if "plausibility" in {s.strip() for s in args.deterministic_stages.split(",")} and not args.kge:
+            parser.error("--kge is required for plausibility; an old graph's checkpoint cannot be reused implicitly")
+        graph_p = str(resolve_graph_path(args.ha_graph or args.graph))
         result = init_run(
             case_study=args.case_study,
             output_dir=args.output_dir,
@@ -1675,19 +1678,21 @@ def main():
         return
 
     if args.command == "im-brainstorm":
-        graph_p = args.im_graph or args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
+        graph_p = str(resolve_graph_path(args.im_graph or args.graph))
         cmd_im_brainstorm(graph_path=graph_p, output=args.output, n=args.n,
                           model=args.model, batch_size=args.batch_size, seed=args.seed)
         return
 
     if args.command == "gm-brainstorm":
-        graph_p = args.gm_graph or args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
+        graph_p = str(resolve_graph_path(args.gm_graph or args.graph))
         cmd_gm_brainstorm(graph_path=graph_p, output=args.output, n=args.n,
                           model=args.model, batch_size=args.batch_size, seed=args.seed)
         return
 
     if args.command == "case-study":
-        graph_p = args.graph or "neurooracle/data/full_snapshot_v2/knowledge_graph.json"
+        if "plausibility" in {s.strip() for s in args.stages.split(",")} and not args.kge:
+            parser.error("--kge is required for plausibility; supply a checkpoint matched to --graph")
+        graph_p = str(resolve_graph_path(args.graph))
         kg_for_plaus = args.kg_for_plausibility or graph_p
         cmd_case_study(
             case_study_name=args.name,
@@ -1723,7 +1728,7 @@ def main():
         subprocess.run(command, check=True)
         return
 
-    graph_path = Path(args.graph) if args.graph else Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json")
+    graph_path = resolve_graph_path(args.graph)
     kg = load_graph(graph_path)
     engine = HypothesisEngine(kg)
     if args.feedback_state:

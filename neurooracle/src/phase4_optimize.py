@@ -18,11 +18,9 @@ import networkx as nx
 
 from .graph_manager import KnowledgeGraph
 from .storage import load_graph, save_graph
+from .graph_paths import resolve_graph_path, separate_graph_output
 
 logger = logging.getLogger(__name__)
-
-DATA_DIR = Path(__file__).parent.parent / "data"
-GRAPH_FILE = DATA_DIR / "knowledge_graph.json"
 
 SAFE_SAME_PREFIX_DEDUP_PREFIXES = {"COGAT_TASK", "COGAT_CONCEPT"}
 SAFE_SAME_PREFIX_DEDUP_VOCABS = {"CognitiveAtlas", "Cognitive Atlas", "COGAT"}
@@ -578,8 +576,12 @@ def apply_evidence_weighting(kg: KnowledgeGraph) -> int:
 
 # ── Main ─────────────────────────────────────────────────────────────
 
-def run_phase4(graph_file: Path = GRAPH_FILE):
-    """Run full Phase 4 optimization pipeline."""
+def run_phase4(graph_file: Path | None = None, output_file: Path | None = None):
+    """Optimize a graph into a separate output, without republishing it."""
+    if output_file is None:
+        raise ValueError("Specify output_file; optimization must not overwrite the published graph")
+    graph_file = resolve_graph_path(graph_file)
+    output_file = separate_graph_output(graph_file, output_file)
     logger.info("=" * 60)
     logger.info("PHASE 4: QUALITY OPTIMIZATION")
     logger.info("=" * 60)
@@ -619,7 +621,7 @@ def run_phase4(graph_file: Path = GRAPH_FILE):
     weighted = apply_evidence_weighting(kg)
 
     # Save
-    save_graph(kg, graph_file)
+    save_graph(kg, output_file)
     stats_after = kg.stats()
     components_after = len(list(nx.weakly_connected_components(kg.G)))
     isolated_after = len([n for n in kg.G.nodes() if kg.G.degree(n) == 0])
@@ -663,7 +665,9 @@ if __name__ == "__main__":
         datefmt="%H:%M:%S",
     )
     parser = argparse.ArgumentParser(description="Phase 4: KG quality optimization")
-    parser.add_argument("--graph", type=Path, default=GRAPH_FILE,
-                        help="Path to knowledge_graph.json (default: neurooracle/data/full_snapshot_v2/knowledge_graph.json)")
+    parser.add_argument("--graph", type=Path, default=None,
+                        help="Input path (default: current published graph)")
+    parser.add_argument("--output", type=Path, required=True,
+                        help="Separate output graph path")
     args = parser.parse_args()
-    run_phase4(args.graph)
+    run_phase4(args.graph, args.output)

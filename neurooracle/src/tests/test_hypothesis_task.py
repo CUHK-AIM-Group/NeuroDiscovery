@@ -1,6 +1,6 @@
 """Integration test: task-aware hypothesis generation on the real KG.
 
-Uses the pipeline-ready snapshot if available; falls back to skipping if
+Uses the current published graph if available; falls back to skipping if
 the dataset isn't present locally (e.g. on CI). The point is to verify
 end-to-end that ``batch_generate_for_task`` produces hypotheses tagged
 with the source task and that the strict ``require_atom_touch`` filter
@@ -31,20 +31,14 @@ from neurooracle.src.graph_manager import KnowledgeGraph
 from neurooracle.src.feedback_state import FeedbackRecord, FeedbackState, SUPPORTED
 from neurooracle.src.hypothesis_engine import Hypothesis, HypothesisLink
 from neurooracle.src.schema import ConceptNode, Edge
-
-
-KG_CANDIDATES = [
-    Path("neurooracle/data/full_v2/knowledge_graph.json"),
-    Path("neurooracle/data/full_snapshot_v2/knowledge_graph.json"),
-    Path("neurooracle/data/quick/knowledge_graph.json"),
-]
+from neurooracle.src.graph_paths import current_graph_path
 
 
 def _find_kg() -> Path | None:
-    for p in KG_CANDIDATES:
-        if p.exists():
-            return p
-    return None
+    try:
+        return current_graph_path()
+    except FileNotFoundError:
+        return None
 
 
 @pytest.fixture(scope="module")

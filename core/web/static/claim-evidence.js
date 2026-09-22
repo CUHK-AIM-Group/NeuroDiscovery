@@ -155,9 +155,11 @@
   }
   function renderDetail(data) {
     const c = data.claim;
+    const originalCount = data.original_observation_count ?? data.original_claim_ids.length;
+    const supplementalCount = data.supplemental_observation_ids?.length ?? Math.max(0, data.observation_count - originalCount);
     $("ceDetail").innerHTML = `<p class="ce-muted">${tr("Current shared scientific claim", "当前共同科学主张")}</p>
       <div class="ce-triple"><div class="ce-endpoint">${esc(c.subject_name)}</div><div class="ce-relation">${esc(c.predicate)}<span>→</span></div><div class="ce-endpoint">${esc(c.object_name)}</div></div>
-      <div class="ce-summary">${badge(tr(`${data.reviewed_supporting_article_count} reviewed supporting papers`, `${data.reviewed_supporting_article_count} 篇获审支持论文`), "ce-support")}${badge(tr(`${data.article_count} source works total`, `共 ${data.article_count} 项来源`))}${badge(tr(`${data.observation_count} original observations`, `${data.observation_count} 条原始观察`))}</div>
+      <div class="ce-summary">${badge(tr(`${data.reviewed_supporting_article_count} reviewed supporting papers`, `${data.reviewed_supporting_article_count} 篇获审支持论文`), "ce-support")}${badge(tr(`${data.article_count} source works total`, `共 ${data.article_count} 项来源`))}${badge(tr(`${originalCount} original observations`, `${originalCount} 条原始观察`))}${supplementalCount ? badge(tr(`${supplementalCount} supplemental source records`, `${supplementalCount} 条补充来源记录`)) : ""}</div>
       <p class="ce-muted">${tr("Counts combine reviewed support from results, reviews and background assertions. Paper count does not establish independent replication or consensus.", "支持篇数包含经审核的研究结果、综述和背景陈述。论文篇数不代表独立重复验证或科学共识。")}</p>
       ${data.canonical_scope_note ? `<details><summary>${tr("Scope of this shared claim", "这一共同主张的支持范围")}</summary><p class="ce-muted">${esc(data.canonical_scope_note)}</p></details>` : ""}
       <details class="ce-ids"><summary>${tr("Shared ID and original claim IDs", "共同 ID 与原 claim ID")}</summary><code>${esc(data.shared_claim_id)}</code>${data.original_claim_ids.map(id => `<code>${esc(id)}</code>`).join("")}</details>

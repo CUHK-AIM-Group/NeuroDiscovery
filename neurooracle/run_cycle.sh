@@ -14,9 +14,11 @@ fi
 CYCLE_ID="${1:-001}"
 SEED_FROM="${2:-}"
 PY="${PYTHON:-python}"
-KG=neurooracle/data/full_snapshot_v2/knowledge_graph.json
-KGE=neurooracle/data/full_snapshot_v2/kge_complex.pt
-NOV_CACHE=neurooracle/data/full_snapshot_v2/novelty_cache.json
+KG_ARGS=()
+if [ -n "${NEUROCLAW_GRAPH_PATH:-}" ]; then KG_ARGS=(--graph "$NEUROCLAW_GRAPH_PATH"); fi
+KG=$("$PY" -m neurooracle.current_graph "${KG_ARGS[@]}")
+KGE="${NEUROCLAW_KGE_CHECKPOINT:?Set NEUROCLAW_KGE_CHECKPOINT to a checkpoint matched to the selected graph}"
+NOV_CACHE="${NEUROCLAW_NOVELTY_CACHE:-neurooracle/data/cache/novelty_cache.json}"
 OUT_DIR="neurooracle/data/cycles/cycle_${CYCLE_ID}"
 mkdir -p "$OUT_DIR"
 LOG="$OUT_DIR/cycle.log"

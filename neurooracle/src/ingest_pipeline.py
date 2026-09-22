@@ -1,11 +1,11 @@
 """Unified ingestion pipeline for building the neuroscience knowledge graph.
 
 Usage:
-    python -m neurooracle.phase1 --data-dir ./data/raw --output ./data/full_snapshot_v2/knowledge_graph.json
+    python -m neurooracle.phase1 --data-dir ./data/raw --output ./data/build_artifacts/knowledge_graph.json
 
     Or programmatically:
         from neurooracle.phase1 import run_full_ingestion
-        kg = run_full_ingestion(data_dir=Path("./data/raw"))
+        kg = run_full_ingestion(data_dir=Path("./data/raw"), output_path=Path("./data/build_artifacts/knowledge_graph.json"))
 """
 
 from __future__ import annotations
@@ -53,13 +53,15 @@ def run_full_ingestion(
 
     Args:
         data_dir: Directory containing raw data files.
-        output_path: Where to save the graph JSON. Defaults to data/knowledge_graph.json.
+        output_path: Explicit destination for the newly built graph JSON.
         sources: Which sources to ingest. None = all available.
                  Options: 'neuronames', 'mesh', 'disgenet', 'brainmap'.
 
     Returns:
         Populated KnowledgeGraph.
     """
+    if output_path is None:
+        raise ValueError("An explicit output_path is required for a new graph build")
     data_dir = Path(data_dir)
     kg = KnowledgeGraph()
     results = {}
@@ -206,10 +208,7 @@ def run_full_ingestion(
     logger.info(f"  Relations: {stats['relations']}")
     logger.info(f"  Connected components: {stats['connected_components']}")
 
-    if output_path:
-        save_graph(kg, output_path)
-    else:
-        save_graph(kg)
+    save_graph(kg, output_path)
 
     return kg
 
@@ -227,8 +226,8 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=None,
-        help="Output JSON path (default: data/knowledge_graph.json)",
+        required=True,
+        help="Explicit output JSON path for this new build (not the published graph)",
     )
     parser.add_argument(
         "--sources",
