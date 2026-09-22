@@ -4,8 +4,13 @@ import csv
 import json
 from pathlib import Path
 
-from neurooracle.scripts.build_temporal_kg_snapshot import build_snapshot
-from neurooracle.scripts.run_case3_general_hindcasting import DEFAULT_WINDOWS
+from neurooracle.scripts.build_temporal_kg_snapshot import (
+    TEMPORAL_SNAPSHOT_SCHEMA_VERSION,
+    _is_claim_endpoint_node,
+    build_snapshot,
+    snapshot_matches_input,
+)
+from neurooracle.scripts.run_case_study_hindcasting import DEFAULT_WINDOWS
 
 
 def _node(node_id: str, *, source_vocab: str = "claim_extraction", metadata=None) -> dict:
@@ -18,7 +23,7 @@ def _node(node_id: str, *, source_vocab: str = "claim_extraction", metadata=None
         "definition": "",
         "aliases": [],
         "external_ids": {},
-        "atlas_mapping": {},
+        "spatial_mapping": {},
         "metadata": metadata or {},
     }
 
@@ -48,7 +53,22 @@ def test_default_windows_are_five_consecutive_five_year_forecasts() -> None:
     ]
 
 
-def test_snapshot_removes_post_cutoff_claim_and_curated_evidence(tmp_path: Path) -> None:
+def test_all_claim_anchor_vocabularies_are_temporally_scoped() -> None:
+    for source_vocab in (
+        "claim_extraction",
+        "claim_extraction_anchor",
+        "manual_claim_anchor",
+        "manual_claim_anchor_repair",
+        "manual_general_claim_anchor",
+        "replay_anchor_mint",
+    ):
+        assert _is_claim_endpoint_node(_node("ENDPOINT", source_vocab=source_vocab))
+    assert not _is_claim_endpoint_node(_node("CURATED", source_vocab="ClinicalOutcomes"))
+
+
+def test_snapshot_removes_post_cutoff_claim_and_curated_evidence(
+    tmp_path: Path, monkeypatch
+) -> None:
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "snapshot"
     input_dir.mkdir()
@@ -67,8 +87,8 @@ def test_snapshot_removes_post_cutoff_claim_and_curated_evidence(tmp_path: Path)
 
     concepts = {
         "A": _node("A"),
-        "B": _node("B"),
-        "C": _node("C"),
+        "B": _node("B", source_vocab="manual_claim_anchor"),
+        "C": _node("C", source_vocab="manual_general_claim_anchor"),
         "STATIC:1": _node("STATIC:1", source_vocab="ontology"),
         "STATIC:2": _node("STATIC:2", source_vocab="ontology"),
         "ATLAS:Schaefer400": _node(
@@ -125,15 +145,36 @@ def test_snapshot_removes_post_cutoff_claim_and_curated_evidence(tmp_path: Path)
             "evidence_ref": "",
             "metadata": {},
         },
+        {
+            "source_id": "C",
+            "target_id": "ATLAS:Schaefer400",
+            "relation_type": "maps_to",
+            "source": "ontology",
+            "confidence": 0.9,
+            "evidence_ref": "",
+            "metadata": {},
+        },
     ]
     graph = {"metadata": {}, "concepts": concepts, "edges": edges}
     (input_dir / "knowledge_graph.json").write_text(json.dumps(graph), encoding="utf-8")
 
-    manifest = build_snapshot(input_dir, output_dir, 2016)
+    # Production releases are multi-gigabyte JSON documents. The builder must
+    # stream them instead of materializing the whole graph with json.load().
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            json,
+            "load",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                AssertionError("full-file json.load is prohibited")
+            ),
+        )
+        manifest = build_snapshot(input_dir, output_dir, 2016)
     snapshot = json.loads((output_dir / "knowledge_graph.json").read_text(encoding="utf-8"))
 
     assert "CLM:historical" in snapshot["concepts"]
     assert "CLM:future" not in snapshot["concepts"]
+    assert "B" in snapshot["concepts"]
+    assert "C" not in snapshot["concepts"]
     assert "ATLAS:Schaefer400" not in snapshot["concepts"]
     assert {(edge["source_id"], edge["target_id"]) for edge in snapshot["edges"]} == {
         ("A", "B"),
@@ -142,7 +183,22 @@ def test_snapshot_removes_post_cutoff_claim_and_curated_evidence(tmp_path: Path)
     assert manifest["removed_future_claim_edges"] == 1
     assert manifest["removed_future_dated_non_claim_edges"] == 1
     assert manifest["removed_future_dated_curated_nodes"] == 1
-    assert manifest["kept_undated_non_claim_edges"] == 2
+    assert manifest["removed_orphan_claim_endpoint_concepts"] == 1
+    assert manifest["removed_orphan_claim_endpoint_concepts_after_edge_filter"] == 0
+    assert manifest["kept_undated_non_claim_edges"] == 3
+    assert manifest["snapshot_schema_version"] == TEMPORAL_SNAPSHOT_SCHEMA_VERSION
+    assert snapshot_matches_input(manifest, input_dir, 2016)
+
+    stale_manifest = dict(manifest)
+    stale_manifest["snapshot_schema_version"] = "temporal_kg_snapshot.v1"
+    assert not snapshot_matches_input(stale_manifest, input_dir, 2016)
+
+    with (input_dir / "extracted_claims.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write("\n")
+    assert not snapshot_matches_input(manifest, input_dir, 2016)
 
     retained_papers = list(csv.DictReader((output_dir / "papers_metadata.csv").open(encoding="utf-8")))
     assert [row["year"] for row in retained_papers] == ["2016"]
+
+
+# Last updated: 2026-08-12 18:00 HKT - cover manual claim anchors and snapshot schema invalidation.

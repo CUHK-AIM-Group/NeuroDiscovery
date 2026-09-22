@@ -1,4 +1,5 @@
 *.sh text eol=lf
+neurooracle/configs/case2_luna_response_envelope.schema.json text eol=lf
 
 # These policy files are byte-hashed by sealed claim membership records.
 neurooracle/src/CASE_STUDY_MEMBERSHIP_RUBRIC_V2.md -text

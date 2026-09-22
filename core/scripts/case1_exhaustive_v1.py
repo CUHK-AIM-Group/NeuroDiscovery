@@ -54,11 +54,15 @@ def subject_from_roi_path(path: Path) -> str:
 
 
 def load_metadata(path: Path, subjects: Iterable[str], min_cases: int) -> tuple[pd.DataFrame, list[dict[str, object]]]:
-    meta = pd.read_csv(path)
+    # Keep identifiers such as ADHD-200's ``0010001`` byte-for-byte aligned
+    # with ROI filenames instead of allowing pandas to coerce them to integers.
+    meta = pd.read_csv(path, dtype={"subjectkey": "string"})
     meta["subjectkey"] = meta["subjectkey"].astype(str)
-    subjects = list(subjects)
+    subjects = [str(subject) for subject in subjects]
     meta = meta[meta["subjectkey"].isin(subjects)].copy()
-    meta = meta.set_index("subjectkey", drop=False).loc[subjects].reset_index(drop=True)
+    available = set(meta["subjectkey"].astype(str))
+    ordered_subjects = [subject for subject in subjects if subject in available]
+    meta = meta.set_index("subjectkey", drop=False).loc[ordered_subjects].reset_index(drop=True)
     meta["is_control"] = (
         meta.get("is_genpop", "").astype(str).isin({"1", "True", "true"})
         | (meta.get("Group", "").astype(str).str.casefold() == "genpop")

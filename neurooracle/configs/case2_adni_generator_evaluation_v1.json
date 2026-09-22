@@ -1,0 +1,57 @@
+{
+  "schema_version": "neurooracle.case2_generator_evaluation_plan.v1",
+  "protocol_id": "case2_adni_endpoint_holdout_v2",
+  "methods": [
+    "ai_scientist_v2",
+    "open_coscientist",
+    "sciagents",
+    "virtual_lab",
+    "brainpilot_native",
+    "biomni_native",
+    "neurodiscovery"
+  ],
+  "independent_runs_per_method": 10,
+  "neurodiscovery_seed_base": 20260816,
+  "budgets": [5, 10, 20, 50, 100, 210],
+  "primary_endpoint": "family_fdr_chain_hit",
+  "scientific_endpoint": "global_fdr_chain_hit",
+  "primary_metric": {
+    "name": "normalized_family_discovery_recall_auc",
+    "definition": "Trapezoidal area under cumulative family-FDR recall versus executed fraction, including the fixed origin (0,0) and all prespecified budgets.",
+    "higher_is_better": true
+  },
+  "secondary_metrics": [
+    "family_fdr_chain_hits_at_k",
+    "family_fdr_chain_recall_at_k",
+    "global_fdr_chain_hits_at_k",
+    "global_fdr_chain_recall_at_k",
+    "family_fdr_auroc",
+    "family_fdr_auprc",
+    "experiments_to_attainable_recall"
+  ],
+  "recall_targets": [0.25, 0.5, 0.75, 1.0],
+  "feedback": {
+    "supported": "family_fdr_chain_hit is true",
+    "execution_failed": "candidate is non-estimable",
+    "inconclusive": "candidate is estimable but not a family-FDR chain hit",
+    "contradicted": "not used because direction was not preregistered"
+  },
+  "comparison": {
+    "pairing": "matched run index 0-9",
+    "test": "one-sided exact paired sign-flip test on the primary metric",
+    "multiplicity": "Holm correction across the six baseline comparisons",
+    "confidence_interval": "95% percentile bootstrap interval for paired mean difference",
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 20260816
+  },
+  "clear_sota_rule": "NeuroDiscovery must have the highest mean primary metric and, versus every baseline, a positive mean difference, a positive 95% bootstrap lower bound, and Holm-adjusted one-sided P < 0.05.",
+  "freeze_rules": {
+    "baseline_static_orders_committed_before_confirmation_access": true,
+    "neurodiscovery_initial_order_committed_before_confirmation_access": true,
+    "neurodiscovery_batch_order_committed_before_batch_outcome_reveal": true,
+    "no_retuning_after_confirmation_access": true,
+    "temporal_kg_freeze": false,
+    "kg_snapshot_pinning": true
+  },
+  "_last_updated_at": "2026-08-16 02:01 HKT"
+}

@@ -1,10 +1,8 @@
-"""Run generation-first Case Study 1 baselines.
+"""Legacy prompt-emulation diagnostics for Case Study 1.
 
-Unlike the strong ranking baselines in case1_method_comparison.py, this script
-asks each published-autoresearch baseline to generate hypotheses first, then
-maps those hypotheses back to the pre-enumerated Case Study 1 candidate universe
-for evaluation. The prompt never includes outcome labels, effect sizes, FDR
-values, or NeuroDiscovery closed-loop feedback.
+Primary comparisons must use case1_official_baseline_experiment.py and exact
+SearchPolicy outputs. This script is retained only to reproduce older prompt
+emulations and cannot run unless explicitly enabled.
 """
 
 from __future__ import annotations
@@ -22,15 +20,28 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from case1_method_comparison import DEFAULT_ALL_TESTS, DEFAULT_OUT_DIR, METHOD_LABELS, load_results
+try:
+    from core.scripts.case1_method_comparison import (
+        DEFAULT_ALL_TESTS,
+        DEFAULT_OUT_DIR,
+        METHOD_LABELS,
+        load_results,
+    )
+except ModuleNotFoundError:
+    from case1_method_comparison import (
+        DEFAULT_ALL_TESTS,
+        DEFAULT_OUT_DIR,
+        METHOD_LABELS,
+        load_results,
+    )
 
 
 METHODS = (
     "ai_scientist_v2",
-    "co_scientist_style",
-    "data_to_paper_style",
-    "sciagents_style",
-    "virtual_lab_style",
+    "open_coscientist",
+    "data_to_paper",
+    "sciagents",
+    "virtual_lab",
     "openscholar_rag",
 )
 
@@ -40,23 +51,23 @@ METHOD_INSTRUCTIONS = {
         "neuroimaging hypotheses that could plausibly reveal cross-diagnostic findings. "
         "Prioritize novelty, clear experimental tests, and diverse disease-feature-region ideas."
     ),
-    "co_scientist_style": (
+    "open_coscientist": (
         "Act like a co-scientist system with generator, critic, and ranker roles. First "
         "favor plausible mechanisms, then critique them for testability and redundancy, "
         "and return the final ranked hypotheses."
     ),
-    "data_to_paper_style": (
+    "data_to_paper": (
         "Act like a data-to-paper research workflow. Generate hypotheses that are likely "
         "to be statistically analyzable, interpretable, and easy to turn into a concise "
         "data-driven result."
     ),
-    "sciagents_style": (
+    "sciagents": (
         "Act like a KG/graph-reasoning scientific agent. Use only general biomedical and "
         "neuroanatomical knowledge from the prompt and your pretrained knowledge; do not "
         "assume access to our internal KG. Favor disease-region-feature links that would "
         "be supported by graph-neighborhood reasoning."
     ),
-    "virtual_lab_style": (
+    "virtual_lab": (
         "Act like a virtual lab meeting with PI, neuroimaging scientist, psychiatrist, "
         "and statistician roles. Generate a ranked consensus list of experimentally "
         "testable disease-region-feature hypotheses."
@@ -214,19 +225,22 @@ def call_openai_json(
     method: str,
     messages: list[dict[str, str]],
     model: str,
+    reasoning_effort: str,
     seed: int,
     base_url: str | None,
     timeout_s: float,
     api: str,
     max_retries: int = 3,
 ) -> dict[str, Any]:
-    from openai import OpenAI
-
     api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("SUB2API_OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("Missing OPENAI_API_KEY or SUB2API_OPENAI_API_KEY")
     resolved_base_url = base_url or os.environ.get("OPENAI_BASE_URL") or os.environ.get("SUB2API_OPENAI_BASE_URL") or None
-    client = OpenAI(api_key=api_key, base_url=resolved_base_url, timeout=timeout_s)
+    client = None
+    if api == "chat":
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key, base_url=resolved_base_url, timeout=timeout_s)
     last_error: Exception | None = None
     for attempt in range(max_retries):
         try:
@@ -240,6 +254,7 @@ def call_openai_json(
                         {"role": "system", "content": messages[0]["content"]},
                         {"role": "user", "content": messages[1]["content"]},
                     ],
+                    "reasoning": {"effort": reasoning_effort},
                     "store": False,
                 }
                 response = httpx.post(
@@ -251,19 +266,31 @@ def call_openai_json(
                 response.raise_for_status()
                 body = response.text
                 content_parts: list[str] = []
-                for line in body.splitlines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = json.loads(line[6:])
-                    if data.get("type") == "response.content_part.done":
-                        part = data.get("part") or {}
-                        if part.get("type") == "output_text":
-                            content_parts.append(str(part.get("text") or ""))
+                if "application/json" in response.headers.get("content-type", ""):
+                    data = response.json()
+                    if data.get("output_text"):
+                        content_parts.append(str(data["output_text"]))
+                    for item in data.get("output") or []:
+                        if not isinstance(item, dict) or item.get("type") != "message":
+                            continue
+                        for part in item.get("content") or []:
+                            if isinstance(part, dict) and part.get("type") == "output_text":
+                                content_parts.append(str(part.get("text") or ""))
+                else:
+                    for line in body.splitlines():
+                        if not line.startswith("data: "):
+                            continue
+                        data = json.loads(line[6:])
+                        if data.get("type") == "response.content_part.done":
+                            part = data.get("part") or {}
+                            if part.get("type") == "output_text":
+                                content_parts.append(str(part.get("text") or ""))
                 if content_parts:
                     content = "".join(content_parts)
                 else:
                     content = body
             else:
+                assert client is not None
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
@@ -292,6 +319,7 @@ def load_or_generate(
     batch_size: int,
     seed: int,
     model: str,
+    reasoning_effort: str,
     base_url: str | None,
     timeout_s: float,
     api: str,
@@ -328,7 +356,16 @@ def load_or_generate(
                 "_dry_run": True,
             }
         else:
-            payload = call_openai_json(method, messages, model, seed, base_url, timeout_s, api)
+            payload = call_openai_json(
+                method,
+                messages,
+                model,
+                reasoning_effort,
+                seed,
+                base_url,
+                timeout_s,
+                api,
+            )
         path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         return payload
 
@@ -377,7 +414,16 @@ def load_or_generate(
                     "_dry_run": True,
                 }
             else:
-                batch_payload = call_openai_json(method, messages, model, seed + start_rank, base_url, timeout_s, api)
+                batch_payload = call_openai_json(
+                    method,
+                    messages,
+                    model,
+                    reasoning_effort,
+                    seed + start_rank,
+                    base_url,
+                    timeout_s,
+                    api,
+                )
             batch_payload["_rank_start"] = start_rank
             batch_payload["_rank_end"] = end_rank
             batch_path.write_text(json.dumps(batch_payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -550,17 +596,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n-hypotheses", type=int, default=80)
     parser.add_argument("--batch-size", type=int, default=80, help="Generate API hypotheses in resumable batches.")
     parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"))
+    parser.add_argument("--reasoning-effort", default=os.environ.get("OPENAI_REASONING_EFFORT", "high"))
     parser.add_argument("--base-url", default=None, help="OpenAI-compatible base URL, for example https://provider.example/v1")
     parser.add_argument("--api", choices=("responses", "chat"), default="chat")
     parser.add_argument("--api-timeout-s", type=float, default=120.0)
     parser.add_argument("--methods", nargs="*", choices=METHODS, default=list(METHODS))
     parser.add_argument("--force-api", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--allow-prompt-emulation",
+        action="store_true",
+        help="Acknowledge that this is a non-primary legacy diagnostic.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if not args.allow_prompt_emulation:
+        raise RuntimeError(
+            "Prompt-style method emulation is disabled for primary CS1 comparisons. "
+            "Use case1_official_baseline_experiment.py, or pass "
+            "--allow-prompt-emulation only to reproduce a legacy diagnostic."
+        )
     args.out_dir.mkdir(parents=True, exist_ok=True)
     raw_dir = args.out_dir / "raw_api"
     scored = load_results(args.all_tests, args.gt_top_frac)
@@ -578,6 +636,7 @@ def main() -> None:
             batch_size=args.batch_size,
             seed=args.seed,
             model=args.model,
+            reasoning_effort=args.reasoning_effort,
             base_url=args.base_url,
             timeout_s=args.api_timeout_s,
             api=args.api,
@@ -600,6 +659,7 @@ def main() -> None:
         "n_hypotheses": args.n_hypotheses,
         "batch_size": args.batch_size,
         "model": args.model,
+        "reasoning_effort": args.reasoning_effort,
         "base_url": args.base_url or os.environ.get("OPENAI_BASE_URL") or os.environ.get("SUB2API_OPENAI_BASE_URL") or "default_openai",
         "api": args.api,
         "methods": list(args.methods),
