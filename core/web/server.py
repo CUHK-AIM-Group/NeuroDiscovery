@@ -885,7 +885,7 @@ def create_app() -> Any:
 
     app = FastAPI(title="NeuroDiscovery Web UI", docs_url=None, redoc_url=None)
     from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
-    from core.web.claim_layer_v5 import AcceptedClaimLayer
+    from core.web.claim_layer_v8 import AcceptedClaimLayer, validate_queries
     accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))
     app.state.accepted_claim_evidence = accepted_evidence
     study_service = None if demo_build else UserStudyService()
@@ -2856,6 +2856,16 @@ def create_app() -> Any:
         if bool(claim_id) == bool(relation_id) or len(value) > 300 or not value.startswith("CLM:" if claim_id else "REL:"):
             return JSONResponse({"error": "Provide exactly one original CLM ID or shared REL ID"}, status_code=422)
         return await _accepted_evidence_response("query", claim_id=claim_id or None, relation_id=relation_id or None)
+
+    @app.post("/api/kg/claim-evidence-batch")
+    async def kg_claim_evidence_batch(payload: dict[str, Any]) -> Any:
+        try:
+            if set(payload) != {"queries"}:
+                raise ValueError("Provide a queries array")
+            queries = validate_queries(payload["queries"])
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=422)
+        return await _accepted_evidence_response("query_batch", queries=queries)
 
     @app.get("/api/kg/stats")
     async def kg_stats() -> Any:

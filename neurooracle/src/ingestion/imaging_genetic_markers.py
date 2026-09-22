@@ -44,6 +44,7 @@ from typing import Optional
 from ..graph_manager import KnowledgeGraph
 from ..schema import ConceptNode, Edge
 from ..storage import load_graph, save_graph
+from ..graph_paths import resolve_graph_path, separate_graph_output
 from .outcome_im_bridges import IM_TO_SCALE_EDGES
 
 logger = logging.getLogger(__name__)
@@ -464,13 +465,11 @@ __all__ = ["ingest_imaging_genetic_markers"]
 
 def main():
     ap = argparse.ArgumentParser(description="Inject IM/GM/GENESET into KG")
-    ap.add_argument("--kg", type=Path, default=REPO_DATA / "knowledge_graph.json")
+    ap.add_argument("--kg", type=Path, default=None, help="Input graph (default: current published graph)")
     ap.add_argument("--im", type=Path, default=DEFAULT_IM)
     ap.add_argument("--gm", type=Path, default=DEFAULT_GM)
-    ap.add_argument("--in-place", action="store_true",
-                    help="write back to --kg path (default: also writes to --kg)")
-    ap.add_argument("--output", type=Path, default=None,
-                    help="optional explicit output path; overrides --in-place")
+    ap.add_argument("--output", type=Path, required=True,
+                    help="Separate output graph path; publishing is a separate operation")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
 
@@ -480,13 +479,14 @@ def main():
         datefmt="%H:%M:%S",
     )
 
-    kg = load_graph(args.kg)
+    graph_path = resolve_graph_path(args.kg)
+    out = separate_graph_output(graph_path, args.output)
+    kg = load_graph(graph_path)
     pre_n_concepts = len(kg._index)
     pre_n_edges = kg.G.number_of_edges()
 
     counts = ingest_imaging_genetic_markers(kg, args.im, args.gm)
 
-    out = args.output or args.kg
     save_graph(kg, out)
 
     print()

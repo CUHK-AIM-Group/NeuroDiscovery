@@ -285,7 +285,7 @@ python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic -
 Optional:
 
 ```bash
-python -m neurooracle.src.hypothesis_cli host-agent-init case2_pathway_mediation --output-dir neurooracle/data/host_agent_runs/case2 --graph neurooracle/data/full_snapshot_v2/knowledge_graph.json --kge neurooracle/data/full_snapshot_v2/kge_complex.pt --deterministic-stages batch,novelty
+python -m neurooracle.src.hypothesis_cli host-agent-init case2_pathway_mediation --output-dir neurooracle/data/host_agent_runs/case2 --deterministic-stages batch,novelty
 ```
 
 ## Per-Round Loop

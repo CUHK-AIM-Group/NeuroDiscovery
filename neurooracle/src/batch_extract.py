@@ -57,7 +57,8 @@ YEAR_END = 2026
 PAPERS_PER_YEAR = 20
 NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "").strip()
 
-DATA_DIR = Path(__file__).parent.parent / "data" / "full_snapshot_v2"
+# Mutable extraction outputs are not a published graph release.
+DATA_DIR = Path(__file__).parent.parent / "data" / "build_artifacts" / "claim_extraction"
 CHECKPOINT_FILE = DATA_DIR / "batch_checkpoint.json"
 PAPERS_CSV = DATA_DIR / "papers_metadata.csv"
 GRAPH_FILE = DATA_DIR / "knowledge_graph.json"
@@ -483,7 +484,7 @@ def run_batch_extraction(
         broad: Use broader PubMed query.
         max_workers: Number of parallel LLM workers. Default 24.
         data_dir: Output directory for KG/checkpoint/CSV/JSONL. Defaults to
-            ``neurooracle/data/full_snapshot_v2``. Pass a different path to run
+            ``neurooracle/data/build_artifacts/claim_extraction``. Pass a different path to run
             isolated streams (e.g. quick 20-papers/year vs full 500-papers/year
             in parallel).
 
@@ -501,13 +502,14 @@ def run_batch_extraction(
         graph_file = data_dir / "knowledge_graph.json"
         claims_file = data_dir / "extracted_claims.jsonl"
     else:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         checkpoint_file = CHECKPOINT_FILE
         papers_csv = PAPERS_CSV
         graph_file = GRAPH_FILE
         claims_file = CLAIMS_FILE
 
     # load graph
-    kg = load_graph(graph_file)
+    kg = load_graph(graph_file, allow_missing=True)
     logger.info(f"loaded graph: {kg.stats()['n_concepts']} concepts, {kg.stats()['n_edges']} edges")
 
     # load checkpoint
@@ -527,7 +529,7 @@ def run_batch_extraction(
 
     # Abstract cache: persists fetched abstracts so re-runs can skip PubMed.
     # One cache file per data_dir; lookups are pmid-keyed.
-    cache_path = default_cache_path(data_dir if data_dir is not None else None)
+    cache_path = default_cache_path(graph_file.parent)
     abstract_cache = AbstractCache(cache_path)
 
     # init extractor
@@ -791,7 +793,7 @@ def main():
     parser.add_argument("--max-workers", type=int, default=24, help="Number of parallel LLM workers (default: 8)")
     parser.add_argument("--data-dir", type=str, default=None,
                         help="Output directory for KG/checkpoint/CSV/JSONL "
-                             "(default: neurooracle/data/full_snapshot_v2). "
+                              "(default: neurooracle/data/build_artifacts/claim_extraction). "
                              "Use a unique path to run isolated streams in "
                              "parallel (quick vs full).")
     parser.add_argument("-v", "--verbose", action="store_true")

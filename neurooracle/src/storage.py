@@ -17,11 +17,9 @@ from .graph_manager import KnowledgeGraph
 from .schema import ConceptNode, DISPLAY_TIERS_DEFAULT, Edge
 from .kg_metadata_compaction import compact_layout_enabled, compact_record
 from .correlation_grouping import enabled as correlation_grouping_enabled
+from .graph_paths import resolve_graph_path
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_PATH = Path(__file__).parent.parent / "data" / "full_snapshot_v2" / "knowledge_graph.json"
-
 
 def _resolve_read_path(path: Path) -> Path:
     """If `path` doesn't exist but `path.gz` does, return the gz variant."""
@@ -54,7 +52,9 @@ def save_graph(kg: KnowledgeGraph, path: Optional[Path] = None) -> Path:
     Atomic: writes to ``<path>.tmp`` then os.replace()s into place. A SIGTERM
     or crash mid-write leaves the previous good file untouched.
     """
-    path = Path(path) if path else DEFAULT_PATH
+    if path is None:
+        raise ValueError("An explicit output path is required; the current published graph is not a default write target")
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     graph_metadata = deepcopy(kg.serialization_metadata)
     # This export is not the independently validated campaign snapshot. A
@@ -123,16 +123,23 @@ def save_graph(kg: KnowledgeGraph, path: Optional[Path] = None) -> Path:
     return path
 
 
-def load_graph(path: Optional[Path] = None) -> KnowledgeGraph:
-    """Load knowledge graph from JSON file. Auto-detects .gz fallback."""
-    path = Path(path) if path else DEFAULT_PATH
-    path = _resolve_read_path(path)
-    if not path.exists():
-        logger.info(f"no graph file at {path}, returning empty graph")
+def load_graph(path: Optional[Path] = None, *, allow_missing: bool = False) -> KnowledgeGraph:
+    """Load the published graph or an explicit frozen input, with .gz support.
+
+    Only callers explicitly creating a new graph may request an empty graph.
+    A missing published default must never be mistaken for an empty dataset.
+    """
+    if allow_missing and path is not None and not _resolve_read_path(Path(path)).exists():
         return KnowledgeGraph()
+    path = resolve_graph_path(path)
+    input_stat = path.stat()
 
     with _open_for_read(path) as f:
         data = json.load(f)
+
+    after_stat = path.stat()
+    if (input_stat.st_size, input_stat.st_mtime_ns) != (after_stat.st_size, after_stat.st_mtime_ns):
+        raise ValueError("Knowledge graph changed while loading; retry from a stable input")
 
     from .verified_entity_terms import load_graph_terms
     identities = load_graph_terms(path, data)
