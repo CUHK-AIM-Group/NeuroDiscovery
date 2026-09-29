@@ -1,17 +1,35 @@
 /* Shared application palette: the workbench and NeuroOracle use one source. */
 html[data-theme="light"] {
-  --bg: #fcfcfb; --surface: #f3f4f2; --surface-elev: #fff; --surface-soft: #e9edea;
-  --border: #dfe4e1; --text: #243531; --text-muted: #606f68; --text-soft: #606f68;
-  --accent: #28766b; --accent-strong: #205f57; --accent-wash: #e8f1ed;
-  --user-bg: #edf2ef; --user-text: #243531; --user-border: #e0e8e3;
-  --shadow-card: 0 2px 5px rgb(26 45 38 / 3%);
-  --shadow-soft: 0 12px 40px rgb(26 45 38 / 9%);
+  --bg: #fff; --surface: #f9fafb; --surface-elev: #fff; --surface-soft: #ebeef2;
+  --border: #0000001a; --text: #0f1115; --text-muted: #61666b; --text-soft: #81858c;
+  --accent: #4176e6; --accent-strong: #285dc5; --accent-wash: #edf3fe;
+  --user-bg: #ebeef2; --user-text: #0f1115; --user-border: #e5e5e6;
+  --control-bg: #f5f6f7; --popover-bg: #fff; --input-bg: #fff;
+  --hover-bg: #2631480f; --selected-bg: #f1f3f5; --border-strong: #0000001f;
+  --placeholder: #adb2b8; --scrollbar: #e1e5ee; --mask: #0000003d;
+  --danger: #ec1313; --danger-wash: #fef2f2;
 }
 html[data-theme="dark"] {
-  --bg: #171c1b; --surface: #1e2523; --surface-elev: #242c29; --surface-soft: #2d3833;
-  --border: #37443d; --text: #e5ede8; --text-muted: #a3b3a9; --text-soft: #a3b3a9;
-  --accent: #8acdb4; --accent-strong: #addcc9; --accent-wash: #273e34;
-  --user-bg: #2c3832; --user-text: #e5ede8; --user-border: #3a4940;
-  --shadow-card: 0 1px 3px rgb(0 0 0 / 10%);
-  --shadow-soft: 0 12px 36px rgb(0 0 0 / 24%);
+  --bg: #151517; --surface: #1b1b1c; --surface-elev: #232324; --surface-soft: #43454a;
+  --border: #ffffff1f; --text: #f9fafb; --text-muted: #cfd3d6; --text-soft: #adb2b8;
+  --accent: #679efe; --accent-strong: #8ab5ff; --accent-wash: #283142;
+  --user-bg: #43454a; --user-text: #f9fafb; --user-border: #323235;
+  --control-bg: #353638; --popover-bg: #353638; --input-bg: #2c2c2e;
+  --hover-bg: #ffffff14; --selected-bg: #2c2c2e; --border-strong: #ffffff29;
+  --placeholder: #81858c; --scrollbar: #43454a; --mask: #00000080;
+  --danger: #f25a5a; --danger-wash: #570c0c;
+}
+html[data-theme] {
+  --panel: var(--surface-elev); --muted: var(--text-muted);
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ui-code-font: "SF Mono", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  --ui-font-body: 16px;
+  --ui-font-control: 14px;
+  --ui-font-secondary: 13px;
+  --ui-font-caption: 12px;
+  --radius-control: 18px; --radius-input: 10px; --radius-menu: 14px;
+  --radius-item: 8px; --radius-dialog: 24px;
+  --shadow-card: 0 4px 12px 0 #00000005, 0 2px 8px 0 #0000000a;
+  --shadow-soft: 0 0 1px 0 #0003, 0 0 4px 0 #00000005, 0 12px 32px 0 #00000014;
+  --ui-ease: cubic-bezier(.4, 0, .2, 1);
 }

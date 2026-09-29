@@ -36,7 +36,7 @@ html[data-study-ui] dialog {
   max-width: calc(100vw - 32px);
   border-radius: 14px; padding: 24px; box-shadow: var(--shadow-soft); max-height: calc(100dvh - 40px); overflow: auto;
 }
-html[data-study-ui] dialog::backdrop { background: rgb(10 20 16 / 38%); backdrop-filter: blur(3px); }
+html[data-study-ui] dialog::backdrop { background: rgb(0 0 0 / 38%); backdrop-filter: blur(3px); }
 html[data-study-ui] .toast { background: var(--surface-elev); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-soft); }
 html[data-study-ui] * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
@@ -45,9 +45,9 @@ html[data-study-ui="discovery"] body { font-size: calc(14px * var(--study-text-s
 html[data-study-ui="discovery"] .topbar { height: auto; min-height: 52px; padding: 6px 18px; gap: 12px; flex-wrap: wrap; }
 html[data-study-ui="discovery"] button { border-radius: 7px; font-size: inherit; padding: 7px 12px; font-weight: 500; }
 html[data-study-ui="discovery"] button:not(.secondary):not([data-discovery-language]):not(.nav-card) {
-  background: var(--accent-strong); border-color: var(--accent-strong); color: var(--surface-elev);
+  background: #4176e6; border-color: transparent; color: #fff;
 }
-html[data-study-ui="discovery"][data-theme="dark"] button:not(.secondary):not([data-discovery-language]):not(.nav-card) { color: var(--bg); }
+html[data-study-ui="discovery"][data-theme="dark"] button:not(.secondary):not([data-discovery-language]):not(.nav-card) { color: #fff; }
 html[data-study-ui="discovery"] h1 { font-size: calc(24px * var(--study-text-scale, 1)); font-weight: 550; line-height: 1.35; letter-spacing: -.035em; }
 html[data-study-ui="discovery"] h2 { font-size: calc(18px * var(--study-text-scale, 1)); font-weight: 600; line-height: 1.5; }
 html[data-study-ui="discovery"] h3 { font-size: calc(15px * var(--study-text-scale, 1)); }

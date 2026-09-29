@@ -29,6 +29,51 @@ def test_unique_dom_ids():
     assert not {name: count for name, count in counts.items() if count != 1}
 
 
+def test_shared_blue_palette_has_no_shell_specific_override():
+    palette = (STATIC / "workspace-tokens.css").read_text(encoding="utf-8")
+    shell = (STATIC / "harness.css").read_text(encoding="utf-8")
+    widgets = (STATIC / "client-workbench.css").read_text(encoding="utf-8")
+    assert "--accent: #4176e6" in palette
+    assert "--accent: #679efe" in palette
+    assert "--accent:" not in shell
+    for old_color in ("#28766b", "#8acdb4", "#326951", "#448965", "#18271f"):
+        assert old_color not in palette + shell + widgets
+
+
+def test_evaluation_landing_uses_shared_palette():
+    landing = (STATIC / "evaluation-home.html").read_text(encoding="utf-8")
+    styles = (STATIC / "evaluation-home.css").read_text(encoding="utf-8")
+    assert 'data-theme="light"' in landing
+    assert '/static/workspace-tokens.css' in landing
+    assert 'var(--accent)' in styles
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", styles)
+
+
+@pytest.mark.parametrize("page", ["index", "explore", "study", "discovery-study", "evaluation-home"])
+def test_shared_controls_loaded_after_page_styles(page):
+    markup = (STATIC / f"{page}.html").read_text(encoding="utf-8")
+    styles = re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', markup)
+    assert styles[-1] == "/static/workspace-controls.css"
+    assert styles.index("/static/workspace-tokens.css") < len(styles) - 1
+
+
+def test_custom_selects_and_accessible_control_states():
+    styles = (STATIC / "workspace-controls.css").read_text(encoding="utf-8")
+    for contract in ("appearance: base-select", "::picker(select)", "option::checkmark",
+                     ":focus-visible", ":disabled", "prefers-reduced-motion",
+                     "var(--popover-bg)", "var(--radius-control)", "var(--radius-menu)"):
+        assert contract in styles
+
+
+def test_settings_sections_all_have_decorative_svg_icons():
+    sections = re.search(r"const SETTINGS_SECTIONS = \[([\s\S]+?)\n  \];", HTML)[1]
+    icons = re.search(r"const SETTINGS_SECTION_ICONS = \{([\s\S]+?)\n  \};", HTML)[1]
+    section_ids = re.findall(r"\bid: '([^']+)'", sections)
+    assert "usage" in section_ids
+    for section_id in section_ids:
+        assert re.search(rf"\b{re.escape(section_id)}: '<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">", icons)
+
+
 @pytest.mark.parametrize("name", [
     "nav-new-chat", "nav-search", "nav-skills", "nav-neurooracle", "nav-settings",
     "project-list", "chat-list", "checkpoints-section", "msg-input", "upload-btn",
@@ -74,7 +119,7 @@ def test_navigation_and_input_accessibility():
 
 
 def test_modes_and_legacy_storage_are_preserved():
-    for mode in ("strict", "novelty_first", "weighted"):
+    for mode in ("novelty_first", "balanced"):
         assert f'name="novelty-mode" value="{mode}"' in HTML
     assert HTML.count("novelty_mode: noveltyMode") == 2
     assert "neuroclaw.web.sessions.v1" in HTML

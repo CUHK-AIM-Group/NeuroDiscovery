@@ -1,6 +1,6 @@
 .claim-evidence-view { height: calc(100vh - var(--header-h)); display: grid; grid-template-columns: minmax(290px, 360px) minmax(0, 1fr); background: var(--bg); color: var(--text); }
 .claim-evidence-view[hidden], body.claim-evidence-active .layout { display: none !important; }
-body.claim-evidence-active #coldStartBanner, body.claim-evidence-active #graphUpdateStatus, body.claim-evidence-active #graphCheckUpdateBtn, body.claim-evidence-active #graphUpdateBtn { display: none !important; }
+body.claim-evidence-active #coldStartBanner { display: none !important; }
 .ce-sidebar { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--surface); }
 .ce-search { padding: 20px; border-bottom: 1px solid var(--border); }
 .ce-search h2 { font-size: 19px; margin-bottom: 8px; }

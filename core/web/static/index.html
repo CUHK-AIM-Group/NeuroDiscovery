@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NeuroDiscovery</title>
   <script>
+    if (window.location.pathname === '/harness') document.documentElement.dataset.harness = 'true';
     if (window.neuroclawDesktop?.titleBarOverlay && window.parent === window) {
       document.documentElement.dataset.desktopTitlebar = 'true';
     }
@@ -3396,6 +3397,8 @@
   </style>
   <link rel="stylesheet" href="/static/workspace-tokens.css">
   <link rel="stylesheet" href="/static/research-workspace.css">
+  <link rel="stylesheet" href="/static/harness.css">
+  <script src="/static/harness.js"></script>
 </head>
 <body>
 <div id="app">
@@ -3603,7 +3606,7 @@
       <div class="input-area">
         <div class="attach-list" id="attach-list"></div>
         <div class="input-row">
-          <div class="slash-menu" id="slash-menu" role="listbox" aria-label="AutoResearch help commands" hidden></div>
+          <div class="slash-menu" id="slash-menu" role="listbox" aria-label="Conversation commands" hidden></div>
           <div class="file-drop-hint" id="file-drop-hint" aria-hidden="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
             <span id="file-drop-hint-text">Drop files to attach</span>
@@ -3611,23 +3614,31 @@
           <button id="upload-btn" class="upload-btn" title="Attach local files" aria-label="Attach local files" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           </button>
+          <div class="composer-permissions">
+            <button id="composer-permission" class="permission-trigger" type="button" data-permission-trigger aria-haspopup="menu" aria-expanded="false" aria-controls="permission-menu">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4 4 7 8 9 4-2 8-5 8-9V6Z"/></svg>
+              <span data-permission-label>Ask before acting</span>
+              <svg class="permission-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="permission-menu" class="permission-menu" data-permission-menu role="menu" aria-label="Permissions" hidden></div>
+          </div>
           <textarea id="msg-input" rows="1" placeholder="Ask NeuroDiscovery... (Enter to send, Shift+Enter for newline)" aria-controls="slash-menu" aria-expanded="false"></textarea>
           <div class="model-badge">
             <span id="model-label">Model</span>
-            <button id="model-menu-btn" class="model-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" title="Select model">
+            <button id="model-menu-btn" class="model-trigger" type="button" aria-haspopup="dialog" aria-controls="model-menu" aria-expanded="false" title="Select model">
               <svg class="model-trigger-autoresearch" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M17.8 6.3A7.5 7.5 0 0 0 4.7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.2 17.7A7.5 7.5 0 0 0 19.3 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17.8 3.6v2.9h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.2 20.4v-2.9h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="model-trigger-main" id="model-trigger-main">Model</span>
               <span class="model-trigger-meta" id="model-trigger-meta">Ready</span>
               <svg class="model-trigger-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
-            <div class="model-menu" id="model-menu" role="listbox" aria-label="Select model"></div>
+            <div class="model-menu" id="model-menu" role="dialog" aria-label="Model and execution options"></div>
             <select id="model-select" class="model-select" aria-label="Select model" tabindex="-1">
               <option value="">Loading model...</option>
             </select>
           </div>
-          <button id="generation-parameters-btn" class="generation-parameters" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="generation-parameters-dialog" title="Generation parameters">
+          <button id="generation-parameters-btn" class="generation-parameters" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="generation-parameters-dialog" title="Hypothesis selection">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--surface-elev)"/><circle cx="15" cy="17" r="3" fill="var(--surface-elev)"/></svg>
-            <span data-parameter-button-label>Generation parameters</span><span data-parameter-current>Strict</span>
+            <span data-parameter-button-label>Hypothesis selection</span><span data-parameter-current>Balanced</span>
           </button>
           <button id="send-btn" title="Send" type="button">➤</button>
         </div>
@@ -3726,13 +3737,12 @@
 
 <dialog id="generation-parameters-dialog" class="generation-dialog" aria-labelledby="generation-parameters-title" aria-describedby="generation-parameters-note">
   <div class="generation-eyebrow" data-parameter-copy="eyebrow">HYPOTHESIS GENERATOR</div>
-  <h2 id="generation-parameters-title" data-parameter-copy="title">Generation parameters</h2>
+  <h2 id="generation-parameters-title" data-parameter-copy="title">Hypothesis selection</h2>
   <p class="generation-intro" data-parameter-copy="intro">Choose how reviewed hypotheses are selected.</p>
   <fieldset class="novelty-options">
     <legend data-parameter-copy="label">Novelty strategy</legend>
-    <label class="novelty-option"><input type="radio" name="novelty-mode" value="strict" checked><span><strong>Strict</strong><span data-mode-description>Only evidence-backed novelty; fewer or no candidates is valid.</span></span></label>
-    <label class="novelty-option"><input type="radio" name="novelty-mode" value="novelty_first"><span><strong>Novelty first</strong><span data-mode-description>Novel candidates first, then uncertain exploration, then replication.</span></span></label>
-    <label class="novelty-option"><input type="radio" name="novelty-mode" value="weighted"><span><strong>Weighted</strong><span data-mode-description>Balance novelty, structure, GNN, and scientific review.</span></span></label>
+    <label class="novelty-option"><input type="radio" name="novelty-mode" value="novelty_first"><span><strong>Novelty first</strong><span data-mode-description>Only evidence-backed novelty; fewer or no candidates is valid.</span></span></label>
+    <label class="novelty-option"><input type="radio" name="novelty-mode" value="balanced" checked><span><strong>Balanced</strong><span data-mode-description>Fill the budget from every valid candidate, ranking novelty against graph/GNN evidence and scientific review.</span></span></label>
   </fieldset>
   <div class="novelty-weights" hidden>
     <div><b>40%</b><span data-weight-label>Novelty</span></div><div><b>20%</b><span data-weight-label>Structure</span></div><div><b>20%</b><span data-weight-label>GNN</span></div><div><b>20%</b><span data-weight-label>Review</span></div>
@@ -3741,8 +3751,17 @@
   <footer><p data-parameter-copy="scope">Saved for this chat. Applies to new workflows, not frozen or running experiments.</p><button type="button" data-parameter-done data-parameter-copy="done">Done</button></footer>
 </dialog>
 <script src="/static/hypothesis-controls.js"></script>
-<link rel="stylesheet" href="/static/client-workbench.css">
+  <link rel="stylesheet" href="/static/client-workbench.css">
+  <link rel="stylesheet" href="/static/artifact-panel.css">
+  <link rel="stylesheet" href="/static/code-blocks.css">
+  <link rel="stylesheet" href="/static/evidence-graph.css">
+  <link rel="stylesheet" href="/static/workspace-controls.css">
 <script src="/static/client-workbench.js"></script>
+<script src="/static/code-blocks.js"></script>
+<script src="/static/evidence-graph.js"></script>
+<script src="/static/artifact-panel.js"></script>
+<script src="/static/permission-menu.js"></script>
+<script src="/static/composer-commands.js"></script>
 <script src="/static/model-library.js"></script>
 <script>
   function escapeHtml(str) {
@@ -3871,18 +3890,22 @@
   const textScaleValueEl = document.getElementById('text-scale-value');
 
   const SESSION_KEY = 'neuroclaw.web.sessions.v1';
+  // Stored novelty-mode values are only unambiguous when paired with the schema
+  // that wrote them: v1 `novelty_first` meant the permissive composite mode,
+  // while v2 `novelty_first` means the conservative one. Migrate once, on load.
+  const SESSION_SCHEMA_VERSION = 2;
   const PROJECTS_KEY = 'neuroclaw.web.projects.v1';
   const PREF_KEY = 'neuroclaw.web.prefs.v1';
   const SETTINGS_KEY = 'neuroclaw.desktop.preferences.v1';
   const UI_LANGUAGE_KEY = 'neuroclaw.web.language.v1';
-  const TEXT_SCALE_DEFAULT_MIGRATION_KEY = 'neuroclaw.web.text_scale_default_1_1_applied';
+  const TEXT_SCALE_DEFAULT_MIGRATION_KEY = 'neuroclaw.web.camellia_typography_v1_applied';
   const CASE_STUDY_WELCOME_KEY = 'neurooracle.case_study_welcome.v1.seen';
   const PREF_LAYOUT_VERSION = 2;
   const TEXT_SCALE_MIN = 0.8;
   const TEXT_SCALE_MAX = 1.5;
   const TEXT_SCALE_STEP = 0.1;
-  const TEXT_SCALE_DEFAULT = 1.1;
-  const SIDEBAR_WIDTH_DEFAULT = 292;
+  const TEXT_SCALE_DEFAULT = 1;
+  const SIDEBAR_WIDTH_DEFAULT = window.location.pathname === '/harness' ? 260 : 292;
   const SIDEBAR_WIDTH_MIN = 200;
   const SIDEBAR_WIDTH_MAX = 520;
   const AUTO_RESEARCH_MODE_OFF = 'off';
@@ -3898,6 +3921,7 @@
     AUTO_RESEARCH_MODE_END_TO_END,
   ];
   const SLASH_HELP_COMMANDS = [
+    ...window.ComposerCommands.commands,
     {
       command: '/help data', icon: 'D', en: 'Process data only', zh: '只处理数据',
       templateEn: '/help data I only want to process data. What information should I provide?',
@@ -4705,8 +4729,11 @@
   }
 
   function applyLanguage(persist = false, { refreshStudyWorkspace = true } = {}) {
+    window.neuroArtifactPanel?.sync();
     const lang = currentUiLanguage();
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    window.NeuroCodeBlocks?.refresh();
+    window.NeuroDiscoveryHarness?.sync(document, { language: lang, view: state.activeView, mode: state.autoResearchMode });
     syncHypothesisControls();
     if (persist) {
       localStorage.setItem(UI_LANGUAGE_KEY, lang === 'zh' ? 'Simplified Chinese' : 'English');
@@ -4861,7 +4888,7 @@
     renderCheckpoints(_checkpointsCache);
     syncModelTrigger();
     if (state.modelMenuOpen) renderModelMenu();
-    if (slashMenuEl) slashMenuEl.setAttribute('aria-label', tr('AutoResearch help commands'));
+    if (slashMenuEl) slashMenuEl.setAttribute('aria-label', uiText('Conversation commands','会话指令'));
     if (uploadBtnEl) {
       uploadBtnEl.title = tr('Attach local files');
       uploadBtnEl.setAttribute('aria-label', tr('Attach local files'));
@@ -4934,6 +4961,13 @@
     return state.autoResearchMode !== AUTO_RESEARCH_MODE_OFF;
   }
 
+  // Hypothesis selection only applies to the idea and end-to-end (Full) modes,
+  // because data and model runs cannot change how hypotheses are selected.
+  function supportsHypothesisSelection() {
+    return state.autoResearchMode === AUTO_RESEARCH_MODE_IDEA
+      || state.autoResearchMode === AUTO_RESEARCH_MODE_END_TO_END;
+  }
+
   function autoResearchLabel(mode = state.autoResearchMode) {
     const labels = {
       [AUTO_RESEARCH_MODE_OFF]: uiText('Off', '关闭'),
@@ -4957,6 +4991,7 @@
   }
 
   function syncModelTrigger() {
+    window.NeuroDiscoveryHarness?.sync(document, { language: currentUiLanguage(), view: state.activeView, mode: state.autoResearchMode });
     const choice = currentModelChoice();
     const model = String(choice.model || '').trim();
     const provider = String(choice.provider || '').trim();
@@ -4973,7 +5008,7 @@
 
   function setModelMenuOpen(open) {
     state.modelMenuOpen = Boolean(open);
-    if (state.modelMenuOpen && !['root', 'models', 'autoresearch'].includes(state.modelMenuPanel)) {
+    if (state.modelMenuOpen && !['root', 'models', 'autoresearch', 'generation'].includes(state.modelMenuPanel)) {
       state.modelMenuPanel = 'root';
     }
     if (modelMenuEl) modelMenuEl.classList.toggle('open', state.modelMenuOpen);
@@ -5013,6 +5048,8 @@
 
   function renderModelMenu() {
     if (!modelMenuEl) return;
+    if (!['root', 'models', 'autoresearch', 'generation'].includes(state.modelMenuPanel)) state.modelMenuPanel = 'root';
+    if (!supportsHypothesisSelection() && state.modelMenuPanel === 'generation') state.modelMenuPanel = 'root';
     const items = sortedAvailableModels();
     const current = currentModelChoice();
     const currentModel = String(current.model || '').trim();
@@ -5035,11 +5072,19 @@
             </span>
             <span class="model-menu-chevron">›</span>
           </button>
+          ${supportsHypothesisSelection() ? `<button class="model-menu-route" type="button" data-model-panel="generation"><span><span class="model-menu-name">${escapeHtml(uiText('Hypothesis selection','假设筛选偏好'))}</span><span class="model-menu-sub">${escapeHtml(generationModeLabel(getHypothesisMode()))}</span></span><span class="model-menu-chevron">›</span></button>` : ''}
         </div>
       `;
       return;
     }
 
+    if (state.modelMenuPanel === 'generation') {
+      modelMenuEl.innerHTML = `<button class="model-menu-back" type="button" data-model-panel="root">‹ ${escapeHtml(tr('Back'))}</button>
+        <div class="model-menu-title">${escapeHtml(uiText('Hypothesis selection','假设筛选偏好'))}</div>
+        <div class="model-menu-list">${window.HypothesisControls.MODES.map(mode=>`<button class="model-menu-item" type="button" data-generation-mode="${mode}" aria-pressed="${getHypothesisMode()===mode}"><span class="model-menu-name">${escapeHtml(generationModeLabel(mode))}</span><span class="model-menu-check">${getHypothesisMode()===mode?'✓':''}</span></button>`).join('')}</div>
+        <p class="composer-menu-note">${escapeHtml(uiText('Selection never changes evidence or scientific acceptance criteria.','筛选策略不改变证据与科学验收标准。'))}</p>`;
+      return;
+    }
     if (state.modelMenuPanel === 'autoresearch') {
       const options = [
         AUTO_RESEARCH_MODE_OFF,
@@ -5065,6 +5110,7 @@
             `;
           }).join('')}
         </div>
+        <label class="composer-menu-toggle"><input type="checkbox" data-repair-limit ${getActiveSession()?.repairLimit?'checked':''}>${escapeHtml(uiText('One correction after rejected review','验收失败后自动纠错一次'))}</label>
       `;
       return;
     }
@@ -5100,6 +5146,20 @@
       </div>
       <button class="model-menu-route model-manage-link" type="button" data-manage-models>${escapeHtml(uiText('Manage models in Settings', '前往设置管理模型'))}<span>↗</span></button>
     `;
+  }
+
+  function generationModeLabel(mode) {
+    return ({novelty_first:uiText('Novelty first','新颖优先'),balanced:uiText('Balanced','均衡')})[mode] || mode;
+  }
+
+  async function composerReasoningEffort() {
+    const choice = currentModelChoice();
+    try {
+      const response = await fetch('/api/llm/composer-capabilities?provider='+encodeURIComponent(choice.provider || '')+'&model='+encodeURIComponent(choice.model || ''));
+      if (response.ok && (await response.json()).reasoning_efforts?.includes('high')) return 'high';
+    } catch(_error) {}
+    // Providers without a supported high control keep their native setting.
+    return 'default';
   }
 
   function renderModelOptions(selectedProvider, selectedModel) {
@@ -5155,6 +5215,8 @@
     }
     state.availableModels = Array.isArray(data.available_models) ? data.available_models : state.availableModels;
     renderModelOptions(data.provider, data.model);
+    state.lastModelChoice = {provider:data.provider, model:data.model};
+    saveSessions();
     setStatus('connected', `${tr('Ready')} · ${data.provider} / ${data.model}`);
   }
 
@@ -5214,8 +5276,34 @@
   }
 
   let workbenchHistory = null;
+  function composerSettings(source = {}) {
+    return {
+      researchMode: AUTO_RESEARCH_MODES.includes(source.researchMode) ? source.researchMode : AUTO_RESEARCH_MODE_OFF,
+      permissionMode: ['ask', 'risk', 'never', 'read_only'].includes(source.permissionMode) ? source.permissionMode : 'ask',
+      reasoningEffort: 'high',
+      noveltyMode: window.HypothesisControls.normalize(source.noveltyMode),
+      repairLimit: [0, 1, 2, 3].includes(source.repairLimit) ? source.repairLimit : 0,
+    };
+  }
+
+  function lastComposerSettings() {
+    return composerSettings(state.composerDefaults || getActiveSession() || {});
+  }
+
+  // Only pre-v2 stores need the legacy mode names translated; a store written by
+  // this client already holds v2 names (its `novelty_first` is the new one).
+  function migrateComposerMode(source, needsMigration) {
+    if (!source || typeof source !== 'object') return source;
+    const translate = needsMigration ? window.HypothesisControls.migrateStored : window.HypothesisControls.normalize;
+    return { ...source, noveltyMode: translate(source.noveltyMode) };
+  }
+
+  function rememberComposerSettings(session = getActiveSession()) {
+    if (session) state.composerDefaults = composerSettings(session);
+  }
+
   function saveSessions() {
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ sessions: state.sessions, activeSessionId: state.activeSessionId })); }
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ schemaVersion: SESSION_SCHEMA_VERSION, sessions: state.sessions, activeSessionId: state.activeSessionId, composerDefaults: lastComposerSettings(), lastModelChoice: state.lastModelChoice })); }
     catch (_error) { /* The durable workbench store remains authoritative beyond browser quota. */ }
     workbenchHistory?.schedule();
   }
@@ -5223,13 +5311,17 @@
   function normalizeSessionState(session) {
     if (!session) return null;
     if (!Array.isArray(session.messages)) session.messages = [];
+    if (!Array.isArray(session.messageQueue)) session.messageQueue = [];
+    session.reasoningEffort = 'high';
+    if (!AUTO_RESEARCH_MODES.includes(session.researchMode)) session.researchMode = AUTO_RESEARCH_MODE_OFF;
     session.messages.forEach(message => {
       if (Array.isArray(message.workspaceChanges) && message.workspaceChanges.length && message.workspaceChangeScope !== 'turn') {
         message.workspaceChanges = [];
       }
     });
     if (typeof session.draft !== 'string') session.draft = '';
-    session.noveltyMode = window.HypothesisControls.normalize(session.noveltyMode);
+    session.noveltyMode = window.HypothesisControls[
+      state.sessionsPendingModeMigration ? 'migrateStored' : 'normalize'](session.noveltyMode);
     if (!Array.isArray(session.selectedSkills)) session.selectedSkills = [];
     if (typeof session.autoTitlePending !== 'boolean') {
       const userCount = session.messages.filter(message => message.role === 'user').length;
@@ -5252,6 +5344,7 @@
           const session = getActiveSession();
           if (!session || isSessionWaiting(session.id)) return;
           session.noveltyMode = mode;
+          rememberComposerSettings(session);
           saveSessions();
         },
       });
@@ -5330,11 +5423,19 @@
       const raw = localStorage.getItem(SESSION_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
+        // Pre-v2 stores (or stores with no recorded version) used the old mode
+        // names; migrate them exactly once before normalizing.
+        state.sessionsPendingModeMigration = (parsed.schemaVersion || 1) < SESSION_SCHEMA_VERSION;
         state.sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
         state.activeSessionId = parsed.activeSessionId || null;
+        state.composerDefaultsSource = parsed.composerDefaults || null;
+        state.composerDefaults = parsed.composerDefaults
+          ? composerSettings(migrateComposerMode(parsed.composerDefaults, state.sessionsPendingModeMigration)) : null;
+        state.lastModelChoice = parsed.lastModelChoice || null;
       }
     } catch (_e) {}
     normalizeAllSessions();
+    state.sessionsPendingModeMigration = false;
 
     try {
       const raw = localStorage.getItem(PROJECTS_KEY);
@@ -5396,14 +5497,13 @@
     let shouldPersist = false;
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
+      const parsed = raw ? JSON.parse(raw) : {textScale:state.textScale};
       if (parsed && typeof parsed === 'object') {
         state.localSettings = { ...DEFAULT_LOCAL_SETTINGS, ...parsed };
         if (Number.isFinite(Number(state.localSettings.textScale))) {
           const storedScale = clampTextScale(Number(state.localSettings.textScale));
           const migratedDefault = localStorage.getItem(TEXT_SCALE_DEFAULT_MIGRATION_KEY) === 'done';
-          state.textScale = !migratedDefault && storedScale === 1 ? TEXT_SCALE_DEFAULT : storedScale;
+          state.textScale = !migratedDefault && storedScale === 1.1 ? TEXT_SCALE_DEFAULT : storedScale;
           if (!migratedDefault) {
             localStorage.setItem(TEXT_SCALE_DEFAULT_MIGRATION_KEY, 'done');
             shouldPersist = state.textScale !== storedScale;
@@ -5783,6 +5883,7 @@
   const SETTINGS_SECTION_ICONS = {
     general: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.1h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1z"></path></svg>',
     llm: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="M12 8v8"></path><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M20 9h3M1 15h3M20 15h3"></path></svg>',
+    usage: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16M8 16v-5M12 16V7M16 16v-8"></path></svg>',
     runtime: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="m7 9 3 3-3 3M13 15h4"></path></svg>',
     advanced: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="13" cy="18" r="2"></circle></svg>',
   };
@@ -6467,14 +6568,14 @@
             ${s.pinned ? '<span aria-label="Pinned">⌖</span>' : ''}
             ${running ? `<span class="chat-running-indicator" title="${escapeAttr(uiText('Running', '运行中'))}" aria-label="${escapeAttr(uiText('Running', '运行中'))}"></span>` : ''}
             <span class="chat-menu-wrap">
-              <button class="chat-menu-btn" data-menu-toggle-id="${escapeHtml(s.id)}" type="button" title="${escapeAttr(tr('Session menu'))}" aria-label="${escapeAttr(tr('Session menu'))}" aria-expanded="${menuOpen}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
-              <span class="chat-menu ${menuOpen ? 'open' : ''}" ${menuOpen && state.menuPosition ? `style="top:${state.menuPosition.top}px;left:${state.menuPosition.left}px;"` : ''}>
-                <button class="chat-menu-item" data-menu-action="export-json" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export JSON'))}</button>
-                <button class="chat-menu-item" data-menu-action="export-markdown" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export Markdown'))}</button>
+              <button class="chat-menu-btn" data-menu-toggle-id="${escapeHtml(s.id)}" type="button" title="${escapeAttr(tr('Session menu'))}" aria-label="${escapeAttr(tr('Session menu'))}" aria-haspopup="menu" aria-expanded="${menuOpen}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+              <span class="chat-menu ${menuOpen ? 'open' : ''}" role="menu" aria-label="${escapeAttr(tr('Session menu'))}" ${menuOpen && state.menuPosition ? `style="top:${state.menuPosition.top}px;left:${state.menuPosition.left}px;"` : ''}>
                 <button class="chat-menu-item" data-menu-action="rename" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Rename'))}</button>
                 <button class="chat-menu-item" data-menu-action="pin" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(s.pinned ? uiText('Unpin','取消置顶') : uiText('Pin','置顶'))}</button>
                 <button class="chat-menu-item" data-menu-action="move" data-menu-id="${escapeHtml(s.id)}" type="button" ${running?'disabled':''}>${escapeHtml(uiText('Move to workspace','移动到工作区'))}</button>
                 <button class="chat-menu-item" data-menu-action="archive" data-menu-id="${escapeHtml(s.id)}" type="button" ${running?'disabled':''}>${escapeHtml(s.archived ? uiText('Unarchive','取消归档') : uiText('Archive','归档'))}</button>
+                <button class="chat-menu-item" data-menu-action="export-json" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export JSON'))}</button>
+                <button class="chat-menu-item" data-menu-action="export-markdown" data-menu-id="${escapeHtml(s.id)}" type="button">${escapeHtml(tr('Export Markdown'))}</button>
                 <button class="chat-menu-item wb-danger" data-menu-action="delete" data-menu-id="${escapeHtml(s.id)}" type="button" ${running?'disabled':''}>${escapeHtml(tr('Delete'))}</button>
               </span>
             </span>
@@ -6485,17 +6586,33 @@
     `;
   }
 
+  function positionSessionMenu() {
+    const menu = document.querySelector('.chat-menu.open');
+    if (!menu || !state.openSessionMenuId) return;
+    const trigger = document.querySelector(`[data-menu-toggle-id="${CSS.escape(state.openSessionMenuId)}"]`);
+    if (!trigger) return;
+    const anchor = trigger.getBoundingClientRect();
+    const left = Math.max(12, Math.min(anchor.left, window.innerWidth - menu.offsetWidth - 12));
+    const top = Math.max(12, Math.min(anchor.bottom + 4, window.innerHeight - menu.offsetHeight - 12));
+    menu.style.left = `${left}px`; menu.style.top = `${top}px`;
+    state.menuPosition = {left, top};
+    menu.querySelectorAll('button').forEach(button => button.setAttribute('role', 'menuitem'));
+  }
+
   function renderSidebarLists() {
     const focused = document.activeElement;
     const menuId = focused?.dataset.menuToggleId || focused?.dataset.menuId;
     const action = focused?.dataset.menuAction;
     renderProjectList();
     renderChatList();
+    positionSessionMenu();
     if (menuId) {
       const selector = state.openSessionMenuId === menuId
         ? `[data-menu-id="${CSS.escape(menuId)}"]${action ? `[data-menu-action="${CSS.escape(action)}"]` : ''}`
         : `[data-menu-toggle-id="${CSS.escape(menuId)}"]`;
       document.querySelector(selector)?.focus({preventScroll:true});
+    } else if (state.openSessionMenuId) {
+      document.querySelector('.chat-menu.open button:not(:disabled)')?.focus({preventScroll:true});
     }
   }
 
@@ -6639,7 +6756,8 @@
 
   function createSession(title, projectId = null, options = {}) {
     if (options.saveDraft !== false) saveActiveDraft();
-    state.autoResearchMode = AUTO_RESEARCH_MODE_OFF;
+    const defaults = lastComposerSettings();
+    state.autoResearchMode = defaults.researchMode;
     const id = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     const s = {
       id,
@@ -6651,7 +6769,7 @@
       draft: '',
       selectedSkills: [],
       autoTitlePending: true,
-      noveltyMode: 'strict',
+      ...defaults,
     };
     state.sessions.unshift(s);
     state.activeSessionId = id;
@@ -6709,7 +6827,8 @@
   function startFreshSession(projectId = null, options = {}) {
     if (options.saveDraft !== false) saveActiveDraft();
     const targetProjectId = isKnownProjectId(projectId) ? projectId : null;
-    state.autoResearchMode = AUTO_RESEARCH_MODE_OFF;
+    const defaults = lastComposerSettings();
+    state.autoResearchMode = defaults.researchMode;
     state.activeProjectId = targetProjectId;
     state.selectedSkills = [];
     state.editingMessageId = null;
@@ -6720,6 +6839,7 @@
     removeExecutionIndicator();
     const reusable = findReusableEmptySession(targetProjectId);
     if (reusable) {
+      Object.assign(reusable, defaults);
       state.sessions = state.sessions.filter(session => (
         session.id === reusable.id
         || !isCompletelyEmptySessionForProject(session, targetProjectId)
@@ -7128,7 +7248,7 @@
     const archived = state.sessions.filter(s=>s.archived);
     const heading = title => `<li class="wb-sidebar-heading">${escapeHtml(title)}</li>`;
     chatListEl.innerHTML = (pinned.length ? heading(uiText('Pinned','置顶')) + pinned.map(s=>renderSessionListItem(s)).join('') : '')
-      + (recent.length ? heading(uiText('Recent','最近')) + recent.slice(0,state.workbenchChatLimit || 60).map(s=>renderSessionListItem(s)).join('') : '')
+      + recent.slice(0,state.workbenchChatLimit || 60).map(s=>renderSessionListItem(s)).join('')
       + (recent.length > (state.workbenchChatLimit || 60) ? `<li><button class="project-show-more" data-wb-more type="button">${escapeHtml(tr('Show more'))}</button></li>` : '')
       + (archived.length ? `<li><details class="wb-archive"><summary class="wb-sidebar-heading">${escapeHtml(uiText('Archived','已归档'))} · ${archived.length}</summary><ul>${archived.map(s=>renderSessionListItem(s)).join('')}</ul></details></li>` : '');
   }
@@ -7600,8 +7720,41 @@
 
   function actionButton(action, msgId, tip, iconName) {
     const label = tr(tip);
-    const disabled = isSessionWaiting() ? ' disabled aria-disabled="true"' : '';
-    return `<button class="msg-action-btn" data-msg-action="${escapeHtml(action)}" data-msg-id="${escapeHtml(msgId)}" data-tip="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" type="button"${disabled}>${actionIcon(iconName)}</button>`;
+    const busy = isSessionWaiting() && action !== 'copy';
+    const disabled = busy ? ' disabled aria-disabled="true"' : '';
+    const hint = busy ? uiText('Wait for the current response to finish', '请等待当前回复结束后操作') : label;
+    return `<button class="msg-action-btn" data-msg-action="${escapeHtml(action)}" data-msg-id="${escapeHtml(msgId)}" data-action-label="${escapeHtml(label)}" data-tip="${escapeHtml(hint)}" aria-label="${escapeHtml(label)}" title="${escapeHtml(hint)}" type="button"${disabled}>${actionIcon(iconName)}</button>`;
+  }
+
+  async function copyMessageWithFeedback(button, text) {
+    if (button.dataset.feedback === 'pending') return;
+    clearTimeout(button._feedbackTimer);
+    const original = button.dataset.actionLabel || tr('Copy');
+    const feedback = (kind, label) => {
+      button.dataset.feedback = kind;
+      button.dataset.tip = label;
+      button.setAttribute('aria-label', label);
+      button.title = label;
+      button.querySelector('.msg-action-feedback')?.remove();
+      const status = document.createElement('span');
+      status.className = 'msg-action-feedback'; status.setAttribute('role', 'status');
+      status.textContent = label; button.append(status);
+    };
+    feedback('pending', uiText('Copying…', '正在复制…'));
+    try {
+      await navigator.clipboard.writeText(text);
+      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>';
+      feedback('success', tr('Copied'));
+    } catch (_error) {
+      button.innerHTML = actionIcon('copy');
+      feedback('error', uiText('Copy failed — try again', '复制失败，请重试'));
+    }
+    button._feedbackTimer = setTimeout(() => {
+      if (!button.isConnected) return;
+      delete button.dataset.feedback; button.dataset.tip = original;
+      button.title = original; button.setAttribute('aria-label', original);
+      button.innerHTML = actionIcon('copy');
+    }, 2400);
   }
 
   function addUserBubble(message, index) {
@@ -7714,16 +7867,39 @@
     return `<div class="tool-timeline">${eventHtml}${changeHtml}</div>`;
   }
 
+  function assistantIdentityMarkup() {
+    return `<div class="assistant-identity"><img src="${ASSISTANT_AVATAR_SRC}" alt="" width="26" height="26"><span>NeuroDiscovery</span></div>`;
+  }
+
+  function renderMarkdownBubble(bubble, text) {
+    const scrollPositions = Array.from(bubble.querySelectorAll('.message-table-scroll'), el => el.scrollLeft);
+    const codeStates = window.NeuroCodeBlocks?.capture(bubble);
+    const graphViews = window.NeuroEvidenceGraph?.capture(bubble);
+    try { bubble.innerHTML = window.marked.parse(String(text || '')); }
+    catch (_) { bubble.innerHTML = fallbackMarkdown(String(text || '')); }
+    window.NeuroCodeBlocks?.enhance(bubble, codeStates);
+    window.NeuroEvidenceGraph?.enhance(bubble, graphViews);
+    bubble.querySelectorAll('table').forEach((table, index) => {
+      const scroller = document.createElement('div');
+      scroller.className = 'message-table-scroll';
+      scroller.tabIndex = 0;
+      scroller.setAttribute('role', 'region');
+      scroller.setAttribute('aria-label', uiText('Table · scroll horizontally to see all columns', '表格 · 可左右滚动查看全部列'));
+      table.querySelectorAll('td').forEach(cell => {
+        if (cell.textContent.trim().length > 36) cell.classList.add('message-table-prose');
+      });
+      table.replaceWith(scroller);
+      scroller.appendChild(table);
+      scroller.scrollLeft = scrollPositions[index] || 0;
+    });
+  }
+
   function addAssistantBubble(message, index) {
     const wrapper = document.createElement('div');
     wrapper.className = 'msg assistant';
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
-    try {
-      bubble.innerHTML = window.marked.parse(String(message.content || ''));
-    } catch (_e) {
-      bubble.innerHTML = fallbackMarkdown(String(message.content || ''));
-    }
+    renderMarkdownBubble(bubble, message.content);
     bubble.setAttribute('data-msg-index', String(index));
     const actions = `
       <div class="msg-actions">
@@ -7734,11 +7910,28 @@
     `;
     const main = document.createElement('div');
     main.className = 'msg-main';
-    main.appendChild(bubble);
+    main.insertAdjacentHTML('beforeend', assistantIdentityMarkup());
     if (message.execution) {
       const execution = document.createElement('div');
       main.appendChild(execution);
       window.ClientWorkbench.executionView(execution, message.execution, {zh:isChineseUi()});
+    }
+    main.appendChild(bubble);
+    if (message.autoresearch?.state_path && !['completed','running'].includes(message.autoresearch.status)) {
+      const resume=document.createElement('button'); resume.type='button'; resume.className='wb-chip';
+      resume.textContent=uiText('Resume AutoResearch from checkpoint', '从检查点继续 AutoResearch');
+      resume.disabled=isSessionWaiting();
+      resume.onclick=async()=>{
+        const session=getActiveSession();
+        const runId=message.autoresearch.state_path.replace(/\\/g,'/').split('/').at(-2);
+        if (!/^[a-f0-9]{32}$/.test(runId || '')) return;
+        const confirmed=await workbenchDialog({title:uiText('Resume research?', '继续研究？'),message:uiText('Starts a new paid turn using the saved checkpoint. Earlier tools are not replayed automatically.', '将使用保存的检查点开始新一轮执行，可能产生模型费用；不会自动重放之前的工具。'),confirm:uiText('Resume','继续'),submit:()=>true});
+        if (!confirmed || getActiveSession()!==session || isSessionWaiting()) return;
+        const text=message.autoresearch.objective || message.autoresearch.summary || 'Continue the incomplete research';
+        const item={id:newMessageId(),text,finalText:text,displayText:uiText('Resume AutoResearch','继续 AutoResearch'),selectedSkills:[],noveltyMode:getHypothesisMode(session),researchMode:message.autoresearch.mode,resumeId:runId};
+        session.messageQueue ||= []; session.messageQueue.unshift(item); saveSessions(); void sendMessage(item);
+      };
+      main.append(resume);
     }
     const timeline = renderToolTimeline(message.execution?.tools?.length ? [] : message.toolEvents, message.workspaceChanges);
     if (timeline) main.insertAdjacentHTML('beforeend', timeline);
@@ -7750,7 +7943,6 @@
     main.insertAdjacentHTML('beforeend', actions);
     wrapper.appendChild(main);
     messagesEl.appendChild(wrapper);
-    addCopyButtons(bubble);
     try { window.hljs.highlightAll(); } catch (_e) {}
   }
 
@@ -7760,6 +7952,8 @@
     clearMessages();
     messagesEl.classList.toggle('static-message-render', preserveScroll);
     const session = getActiveSession();
+    state.autoResearchMode = session?.researchMode || AUTO_RESEARCH_MODE_OFF;
+    syncModelTrigger();
     syncWorkbenchContext();
     syncSelectedSkillsFromSession(session);
     restoreActiveDraft();
@@ -7812,16 +8006,10 @@
     div.className = 'msg assistant';
     div.id = 'typing-indicator';
     div.innerHTML = `
-      <div class="bubble">
-        <div class="thinking-card">
-          <div class="thinking-head">
-            <span class="thinking-orbit" aria-hidden="true"></span>
-            <span>${escapeHtml(uiText('Processing request', '正在处理请求'))}</span>
-          </div>
-          <div class="thinking-detail">${escapeHtml(uiText('Waiting for the model or tool call to return.', '等待模型或工具调用返回。'))}</div>
-        </div>
-      </div>
+      ${assistantIdentityMarkup()}
+      <div class="assistant-execution"></div>
     `;
+    window.ClientWorkbench.executionView(div.querySelector('.assistant-execution'), {status:'running', blocks:[], tools:[]}, {zh:isChineseUi(), live:true});
     messagesEl.appendChild(div);
   }
 
@@ -7853,9 +8041,10 @@
   function beginSessionRequest(sessionId, controller) {
     if (!sessionId || !controller || isSessionWaiting(sessionId)) return false;
     const requestId = globalThis.crypto?.randomUUID?.() || `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    state.sessionRequests[sessionId] = { controller, requestId, researchMode: state.autoResearchMode };
     const session = state.sessions.find(s=>s.id===sessionId);
-    if (session) { session.pendingRequest = {requestId, researchMode:state.autoResearchMode}; session.archived = null; saveSessions(); }
+    const researchMode = session?.researchMode || AUTO_RESEARCH_MODE_OFF;
+    state.sessionRequests[sessionId] = { controller, requestId, researchMode };
+    if (session) { session.pendingRequest = {requestId, researchMode}; session.archived = null; saveSessions(); }
     if (sessionId === state.activeSessionId) state.editingMessageId = null;
     return true;
   }
@@ -7899,7 +8088,8 @@
     const busy = isSessionWaiting();
     syncHypothesisControls();
     const runningCount = Object.keys(state.sessionRequests).length;
-    inputEl.disabled = busy;
+    inputEl.disabled = false;
+    renderMessageQueue();
     setMessageActionsDisabled(busy);
     setSendButtonMode(busy ? 'stop' : 'send');
     sendBtn.disabled = Boolean(sessionRequestFor()?.stopping);
@@ -7924,8 +8114,13 @@
 
   function setMessageActionsDisabled(disabled) {
     document.querySelectorAll('.msg-action-btn').forEach((button) => {
-      button.disabled = Boolean(disabled);
-      button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+      const blocked = Boolean(disabled) && button.dataset.msgAction !== 'copy';
+      button.disabled = blocked;
+      button.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+      if (!button.dataset.feedback) {
+        button.dataset.tip = blocked ? uiText('Wait for the current response to finish', '请等待当前回复结束后操作') : button.dataset.actionLabel;
+        button.title = button.dataset.tip;
+      }
     });
   }
 
@@ -7940,6 +8135,7 @@
       el.className = 'msg assistant';
       el.id = 'execution-indicator';
       el.innerHTML = `
+        ${assistantIdentityMarkup()}
         <div class="bubble">
           <div class="exec-live">
             <div class="exec-live-head">
@@ -8015,32 +8211,10 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  function addCopyButtons(bubble) {
-    bubble.querySelectorAll('pre').forEach(pre => {
-      if (pre.querySelector('.copy-btn')) return;
-      const btn = document.createElement('button');
-      btn.className = 'copy-btn';
-      btn.type = 'button';
-      btn.textContent = tr('Copy');
-      btn.addEventListener('click', () => {
-        const code = pre.querySelector('code');
-        const txt = code ? code.textContent : pre.textContent;
-        navigator.clipboard.writeText(txt || '').then(() => {
-          btn.textContent = tr('Copied');
-          setTimeout(() => { btn.textContent = tr('Copy'); }, 1400);
-        }).catch(() => {
-          btn.textContent = tr('Failed');
-          setTimeout(() => { btn.textContent = tr('Copy'); }, 1400);
-        });
-      });
-      pre.appendChild(btn);
-    });
-  }
-
   function matchingSlashCommands(value = inputEl.value) {
     const query = String(value || '').trimStart().toLowerCase();
     if (!query.startsWith('/') || query.includes('\n')) return [];
-    return SLASH_HELP_COMMANDS.filter(item => item.command.startsWith(query));
+    return SLASH_HELP_COMMANDS.filter(item => item.command.startsWith(query) && (query !== '/' || !item.command.startsWith('/help')));
   }
 
   function closeSlashMenu() {
@@ -8072,12 +8246,12 @@
     slashMenuEl.innerHTML = `
       <div class="slash-menu-header">
         <div class="slash-menu-title">${uiText(
-          'Usage: <code>/help &lt;scope&gt; + task description</code>',
-          '用法：<code>/help &lt;范围&gt; + 任务描述</code>',
+          'Commands',
+          '快捷指令',
         )}</div>
         <div class="slash-menu-help">${escapeHtml(uiText(
-          'Choose a scope, then describe your goal. NeuroDiscovery will list the materials you need to provide.',
-          '选择范围后继续描述目标，NeuroDiscovery 会列出你需要提供的资料。',
+          'Research commands select a scope. Add a task and send to start; /tasks opens management.',
+          '研究指令选择模式，补充任务并发送才开始执行；/tasks 打开任务管理。',
         ))}</div>
       </div>
       <div class="slash-menu-list">
@@ -8093,7 +8267,7 @@
       </div>
       <div class="slash-menu-footer" aria-hidden="true">
         <span><kbd>↑↓</kbd>${escapeHtml(uiText('Select', '选择'))}</span>
-        <span><kbd>Enter</kbd>${escapeHtml(uiText('Insert', '插入'))}</span>
+        <span><kbd>Enter</kbd>${escapeHtml(uiText('Select', '选择'))}</span>
         <span><kbd>Esc</kbd>${escapeHtml(uiText('Close', '关闭'))}</span>
       </div>
     `;
@@ -8104,16 +8278,25 @@
       const menuWidth = Math.min(rowRect.width, window.innerWidth - (viewportGap * 2));
       slashMenuEl.style.width = `${menuWidth}px`;
       slashMenuEl.style.left = `${Math.max(viewportGap, Math.min(rowRect.left, window.innerWidth - menuWidth - viewportGap))}px`;
+      const list=slashMenuEl.querySelector('.slash-menu-list');
+      list.style.maxHeight=`${Math.max(90,Math.min(340,rowRect.top-viewportGap-100))}px`;
       slashMenuEl.style.top = `${Math.max(viewportGap, rowRect.top - slashMenuEl.offsetHeight - 8)}px`;
     }
     inputEl.setAttribute('aria-expanded', 'true');
     inputEl.setAttribute('aria-activedescendant', `slash-command-${state.slashMenuIndex}`);
+    slashMenuEl.querySelector('.slash-command.active')?.scrollIntoView({block:'nearest'});
   }
 
   function chooseSlashCommand(index = state.slashMenuIndex) {
     const items = matchingSlashCommands();
     const item = items[index];
     if (!item) return;
+    if(item.mode || item.action) {
+      inputEl.value=item.command;
+      closeSlashMenu();
+      void handleComposerCommand(item.command,getActiveSession());
+      return;
+    }
     inputEl.value = isChineseUi() ? item.templateZh : item.templateEn;
     inputEl.style.height = 'auto';
     inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + 'px';
@@ -8121,6 +8304,97 @@
     closeSlashMenu();
     inputEl.focus();
     inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+  }
+
+  async function handleComposerCommand(value, session) {
+    const command=window.ComposerCommands.parse(value);
+    if(!command || !session) return {handled:false,text:value};
+    if(command.mode) {
+      session.researchMode=command.mode;
+      state.autoResearchMode=command.mode;
+      rememberComposerSettings(session);
+      syncModelTrigger();renderModelMenu();saveSessions();
+      if(command.text) return {handled:false,text:command.text};
+      inputEl.value='';session.draft='';saveSessions();closeSlashMenu();inputEl.focus();
+      setStatus('connected',`${tr('AutoResearch')} · ${autoResearchLabel(command.mode)} · ${uiText('Describe a task to begin','请输入任务后发送')}`);
+      return {handled:true};
+    }
+    if(command.text) {showError(uiText('This command takes no arguments. Open its panel to configure it.','此指令不接受附加文字，请在打开的面板中配置。'));return {handled:true};}
+    if(command.action==='compact') {await compactConversation(session);return {handled:true};}
+    inputEl.value='';session.draft='';saveSessions();closeSlashMenu();
+    if(command.action==='usage') {state.settingsSection='usage';setActiveView('settings',{focus:false});}
+    if(command.action==='tasks') await openScheduledTasks(session);
+    return {handled:true};
+  }
+
+  async function openScheduledTasks(session) {
+    const dialog=document.createElement('dialog');dialog.className='wb-dialog wb-tasks';
+    const title=document.createElement('h2');title.id='scheduled-tasks-title';title.textContent=uiText('Scheduled checks','定时检查');
+    dialog.setAttribute('aria-labelledby',title.id);
+    const note=document.createElement('p');note.className='wb-note';
+    note.textContent=uiText('Read-only checks of a small workspace status file. No model calls, job launches or repairs. The backend must stay running; restart pauses tasks. A reported completion is not independent acceptance.',
+      '只读检查工作区中的小型状态文件，不调用模型、不启动实验、不自动修复。后端需保持运行；重启后暂停，须手动恢复。状态文件报告完成不等于独立验收。');
+    const list=document.createElement('div'),error=document.createElement('p');error.className='wb-inline-error';error.hidden=true;
+    const footer=document.createElement('footer'),create=document.createElement('button'),reload=document.createElement('button'),close=document.createElement('button');
+    create.type=reload.type=close.type='button';create.textContent=uiText('Create check','创建检查');close.textContent=uiText('Close','关闭');reload.textContent=uiText('Refresh','刷新');
+    close.onclick=()=>dialog.close();footer.append(create,reload,close);dialog.append(title,note,list,error,footer);
+    async function refresh() {
+      const response=await fetch('/api/chat/tasks/'+encodeURIComponent(session.id));const data=await response.json();
+      if(!response.ok) throw new Error(data.message || 'Unable to load tasks');
+      list.replaceChildren();
+      if(!data.items.length) {const empty=document.createElement('p');empty.className='wb-note';empty.textContent=uiText('No scheduled checks. Opening this panel does not create a task.','暂无定时检查。打开此面板不会创建任务。');list.append(empty);}
+      for(const task of data.items) {
+        const card=document.createElement('section');card.className='wb-task';
+        const name=document.createElement('strong'),status=document.createElement('p'),detail=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('pre');
+        name.textContent=task.relative_path;
+        const label=({active:uiText('Scheduled','等待检查'),checking:uiText('Checking','检查中'),paused:uiText('Paused','已暂停'),completed:uiText('Checks ended','检查已结束'),cancelled:uiText('Cancelled','已取消')})[task.status] || task.status;
+        status.textContent=`${label} · ${task.checks}/${task.max_checks} · ${task.interval_seconds/60} min`;
+        summary.textContent=uiText('Last observation','最近检查记录');body.textContent=JSON.stringify(task.result,null,2);detail.append(summary,body);card.append(name,status,detail);
+        for(const action of task.status==='paused'?['resume','cancel']:['active','checking'].includes(task.status)?['pause','cancel']:[]) {
+          const button=document.createElement('button');button.type='button';button.textContent=({resume:uiText('Resume','恢复'),pause:uiText('Pause','暂停'),cancel:uiText('Cancel','取消')})[action];
+          button.onclick=async()=>{button.disabled=true;try{const response=await fetch('/api/chat/tasks/'+encodeURIComponent(task.id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:session.id,action,confirmed:true})});if(!response.ok)throw new Error((await response.json()).message);await refresh();}catch(exc){error.hidden=false;error.textContent=exc.message;}finally{button.disabled=false;}};
+          card.append(button);
+        }
+        list.append(card);
+      }
+    }
+    create.onclick=async()=>{
+      create.disabled=true;
+      try {
+        const values=await workbenchDialog({title:uiText('Create read-only check','创建只读检查'),message:uiText('Choose an existing experiment status file relative to this workspace. No experiment will be started.','填写此工作区内的实验状态文件相对路径，不会启动实验。'),confirm:uiText('Confirm and schedule','确认创建定时检查'),fields:[
+          {name:'path',label:uiText('Status file','状态文件'),placeholder:'results/status.json'},
+          {name:'interval',label:uiText('Interval (minutes, 1–1440)','间隔（分钟，1–1440）'),value:'10'},
+          {name:'checks',label:uiText('Maximum checks (1–144)','最多检查次数（1–144）'),value:'24'},
+          {name:'hours',label:uiText('Maximum hours (1–24)','最多持续小时（1–24）'),value:'24'}],submit:async values=>{
+            const response=await fetch('/api/chat/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:session.id,workspace_path:workspacePathForSession(session),path:values.path,interval_minutes:Number(values.interval),max_checks:Number(values.checks),max_hours:Number(values.hours),max_repairs:0,confirmed:true})});
+            const data=await response.json();if(!response.ok)throw new Error(data.message);return data;
+          }});
+        if(values) await refresh();
+      } catch(exc) {error.hidden=false;error.textContent=exc.message;} finally {create.disabled=false;}
+    };
+    const previous=document.activeElement;
+    reload.onclick=async()=>{reload.disabled=true;try{await refresh();error.hidden=true;}catch(exc){error.hidden=false;error.textContent=exc.message;}finally{reload.disabled=false;}};
+    dialog.addEventListener('close',()=>{dialog.remove();if(previous?.isConnected)previous.focus();},{once:true});
+    document.body.append(dialog);dialog.showModal();close.focus();
+    try {await refresh();} catch(exc) {error.hidden=false;error.textContent=exc.message;create.disabled=true;}
+  }
+
+  async function compactConversation(session) {
+    if(!session || session.compacting) return;
+    if(isSessionWaiting(session.id) || state.pendingFiles.length) {showError(uiText('Finish the active turn and remove attachments before /compact.','请等待当前任务结束并移除附件后再执行 /compact。'));return;}
+    session.compacting=true;
+    try {
+      const response=await fetch('/api/chat/compact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        chat_id:session.id,workspace_path:workspacePathForSession(session),history:session.messages.filter(message=>['user','assistant'].includes(message.role)).map(message=>({role:message.role,content:message.promptContent || message.content}))})});
+      const result=await response.json();
+      if(!response.ok) throw new Error(result.message || 'Context compaction failed');
+      session.contextCheckpoint=result;
+      if(getActiveSession()===session && inputEl.value.trim()==='/compact') {inputEl.value='';session.draft='';closeSlashMenu();}
+      saveSessions();
+      await workbenchDialog({title:uiText('Context compaction','上下文压缩'),message:result.status==='compacted'
+        ? uiText(`Context reduced: ~${result.before} → ~${result.after} tokens. Full conversation archived locally. Chat display is unchanged; future turns use the compacted context.`,`上下文已压缩：约 ${result.before} → ${result.after} tokens。完整记录已在本地归档，聊天显示不变，后续请求使用压缩后的上下文。`)
+        : uiText('No safe, smaller context could be produced. Current context remains unchanged.','当前没有可安全缩减的历史，上下文保持不变。'),confirm:uiText('Done','完成')});
+    } catch(error) {showError(error.message);} finally {delete session.compacting;}
   }
 
   async function ensureChatLlmConfigured() {
@@ -8155,40 +8429,36 @@
     const request = sessionRequestFor();
     if (!request?.execution) return;
     let host = document.getElementById('wb-live-execution');
-    if (!host) { host = document.createElement('div'); host.id='wb-live-execution'; messagesEl.appendChild(host); }
-    window.ClientWorkbench.executionView(host, request.execution, {zh:isChineseUi(),live:true});
+    if (!host) {
+      host = document.createElement('div'); host.id='wb-live-execution';
+      host.innerHTML = `${assistantIdentityMarkup()}<div class="assistant-execution"></div>`;
+      messagesEl.appendChild(host);
+    }
+    const execution = request.stopping ? {...request.execution, status:'stopping'} : request.execution;
+    window.ClientWorkbench.executionView(host.querySelector('.assistant-execution'), execution, {zh:isChineseUi(),live:true});
+    // Render streamed text with the same bubble used for completed replies.
+    let output = host.querySelector('.bubble');
+    if (!output) { output = document.createElement('div'); output.className = 'bubble'; host.append(output); }
+    const text = (execution.blocks || []).map(block => block.text || '').filter(Boolean).join('\n\n');
+    if (output.dataset.text !== text) {
+      const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 110;
+      renderMarkdownBubble(output, text);
+      output.dataset.text = text;
+      if (nearBottom) scrollToBottom();
+    }
   }
 
+  let composerPermissionMenu=null;
   function syncWorkbenchContext() {
-    let row = document.getElementById('wb-context-row');
-    if (!row) {
-      row=document.createElement('div'); row.id='wb-context-row'; row.className='wb-context-row';
-      inputEl.closest('.input-row').insertAdjacentElement('afterend',row);
-      row.innerHTML='<button class="wb-chip" id="wb-workspace-chip" type="button"></button><button class="wb-chip" id="wb-usage-chip" type="button"></button>';
-      row.querySelector('#wb-workspace-chip').onclick=()=>void workbenchSessionAction('move',state.activeSessionId);
-      row.querySelector('#wb-usage-chip').onclick=async()=>{
-        const sessionId=state.activeSessionId;
-        try {
-          const response=await fetch('/api/workbench/usage?chat_id='+encodeURIComponent(sessionId)); const data=await response.json();
-          if (!response.ok) throw new Error(data.message || 'Unable to read usage');
-          if (sessionId !== state.activeSessionId) return;
-          await workbenchDialog({title:uiText('Conversation usage','会话累计用量'), message:uiText(
-            `Input: ${window.ClientWorkbench.countLabel(data,'input_tokens')} · Output: ${window.ClientWorkbench.countLabel(data,'output_tokens')} · API calls: ${data.totals.requests}. Includes retries and delegated calls; not context occupancy. Full details are in Settings → Usage.`,
-            `输入：${window.ClientWorkbench.countLabel(data,'input_tokens',true)} · 输出：${window.ClientWorkbench.countLabel(data,'output_tokens',true)} · API 调用：${data.totals.requests} 次。包含重试和子任务，不代表上下文占用。完整明细见 设置 → 使用量。`), confirm:uiText('Open usage','查看使用量'),submit:()=>{state.settingsSection='usage';setActiveView('settings',{focus:false});}});
-        } catch(error) { showError(error.message); }
-      };
-    }
-    const session=getActiveSession(), project=state.projects.find(p=>p.id===session?.projectId);
-    const workspace=row.querySelector('#wb-workspace-chip');
-    const path=workspacePathForSession(session) || state.defaultWorkbenchPath || '';
-    workspace.textContent='⌂ '+(project?.name || uiText('Independent conversation','独立会话'));
-    workspace.title=path || uiText('Default runtime workspace','运行时默认工作区');
-    workspace.setAttribute('aria-label',workspace.textContent+' · '+workspace.title);
-    workspace.disabled=isSessionWaiting(session?.id);
-    const latest=sessionRequestFor()?.execution ? window.ClientWorkbench.executionUsage(sessionRequestFor().execution) : session?.messages.findLast(m=>m.role==='assistant' && m.usage)?.usage;
-    const usage=row.querySelector('#wb-usage-chip');
-    usage.textContent=latest ? `${window.ClientWorkbench.countLabel(latest,'input_tokens',isChineseUi())} ↑ / ${window.ClientWorkbench.countLabel(latest,'output_tokens',isChineseUi())} ↓` : uiText('Usage','使用量');
-    usage.title=uiText('Latest turn · click for conversation totals','最近一轮 · 点击查看会话累计');
+    window.neuroArtifactPanel?.sync();
+    if(!composerPermissionMenu) composerPermissionMenu=window.PermissionMenu.mount({
+      host:document.querySelector('.composer-permissions'),
+      getMode:()=>getActiveSession()?.permissionMode || 'ask',
+      onChange:mode=>{const session=getActiveSession();if(session){session.permissionMode=mode;rememberComposerSettings(session);saveSessions();}},
+      language:currentUiLanguage,
+      onOpen:()=>setModelMenuOpen(false),
+    });
+    composerPermissionMenu.sync();
   }
 
   async function followWorkbenchRequest(session, controller) {
@@ -8212,11 +8482,26 @@
 
   async function performWorkbenchChat(payload, session, controller) {
     await workbenchHistory?.flush();
+    if (workbenchHistory && !workbenchHistory.saved) return {type:'error',message:uiText('History is not durably saved. Resolve the connection or revision conflict before sending.', '会话尚未持久保存，请先解决连接或版本冲突再发送。')};
+    {
+      try {
+        const response = await fetch('/api/harness', {cache:'no-store'});
+        const capabilities = await response.json();
+        if (!response.ok || capabilities.runtime_contract !== 'autoresearch-v1' || !capabilities.runtime_features?.server_queue || !capabilities.runtime_features?.tool_approval) {
+          return {type:'error',message:uiText('The running backend is outdated. Restart the development app before using AutoResearch; no research request was sent.', '当前后端版本过旧，请重启开发版后使用 AutoResearch；本次未发送研究请求。')};
+        }
+      } catch (_error) { return {type:'error',message:uiText('Cannot verify AutoResearch runtime; no research request was sent.', '无法确认 AutoResearch 后端，本次未发送研究请求。')}; }
+    }
     try {
       const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
-        body:JSON.stringify({...payload,stream_events:true,project_id:session.projectId || ''})});
+        body:JSON.stringify({...payload,server_queue:true,stream_events:true,project_id:session.projectId || '',
+          permission_mode:session.permissionMode || 'ask',reasoning_effort:await composerReasoningEffort(),repair_limit:session.repairLimit || 0})});
       const data=await response.json();
       if (!response.ok || data.type !== 'accepted') return data;
+      if (payload.autoresearch_mode !== 'off' && data.autoresearch_mode !== payload.autoresearch_mode) {
+        await fetch('/api/chat/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:payload.request_id})});
+        showError(uiText('Backend mode mismatch. Stop requested; inspect the preserved output.', '后端模式不一致，已请求停止；请检查保留的输出。'));
+      }
     } catch (_error) {
       // POST delivery may be unknown. Query the request ID; never resend it automatically.
     }
@@ -8240,20 +8525,139 @@
     } finally { finishSessionRequest(session.id,controller); }
   }
 
-  async function sendMessage() {
-    const text = inputEl.value.trim();
+  let refreshingServerQueue=false;
+  async function refreshServerQueue() {
+    const session=getActiveSession();
+    if (!session || refreshingServerQueue) return;
+    refreshingServerQueue=true;
+    try {
+      const response=await fetch(`/api/chat/queue/${encodeURIComponent(session.id)}`,{cache:'no-store'});
+      if(!response.ok) return;
+      const data=await response.json();
+      const queueChanged=JSON.stringify(session.serverQueue)!==JSON.stringify(data.items || []);
+      session.serverQueue=data.items || [];
+      let changed=false;
+      for(const item of session.serverQueue) {
+        if(!item.result || sessionRequestFor(session.id)?.requestId===item.request_id || session.messages.some(message=>message.requestId===item.request_id)) continue;
+        if(!session.messages.some(message=>message.queueRequestId===item.request_id)) session.messages.push({id:newMessageId(),role:'user',content:item.message,queueRequestId:item.request_id,time:nowISO()});
+        session.messages.push({id:newMessageId(),role:'assistant',content:item.result.content || item.result.message || '',requestId:item.request_id,
+          execution:item.result.execution,usage:item.result.usage,autoresearch:item.result.autoresearch,toolEvents:item.result.tool_events || [],time:nowISO()});
+        changed=true;
+      }
+      const running=session.serverQueue.find(item=>item.status==='running');
+      if(running && !isSessionWaiting(session.id)) {
+        if(!session.messages.some(message=>message.queueRequestId===running.request_id)) {
+          session.messages.push({id:newMessageId(),role:'user',content:running.message,queueRequestId:running.request_id,time:nowISO()});
+          changed=true;
+        }
+        session.pendingRequest={requestId:running.request_id,researchMode:session.researchMode || 'off'};
+        void resumeWorkbenchRequest(session);
+      }
+      if(changed) {saveSessions(); if(getActiveSession()===session) renderActiveSession();}
+      if(getActiveSession()===session && (queueChanged || changed)) renderMessageQueue();
+    } catch(_error) {} finally {refreshingServerQueue=false;}
+  }
+
+  function renderMessageQueue() {
+    let panel = document.getElementById('message-queue');
+    if (!panel) {
+      panel = document.createElement('div'); panel.id = 'message-queue'; panel.className = 'wb-message-queue';
+      inputEl.closest('.input-row').insertAdjacentElement('beforebegin', panel);
+    }
     const session = getActiveSession();
-    const hasFiles = state.pendingFiles.length > 0;
-    const selectedSkills = [...getSessionSelectedSkills(session)];
+    const queue = session?.messageQueue || [];
+    panel.replaceChildren();
+    for (const item of session?.serverQueue || []) {
+      if (!['queued','paused'].includes(item.status)) continue;
+      const row=document.createElement('div'), label=document.createElement('span'), cancel=document.createElement('button');
+      label.textContent=`${item.status} · ${item.message}`;
+      cancel.textContent=uiText('Dismiss', '移除'); cancel.type='button';
+      cancel.onclick=async()=>{await fetch('/api/chat/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:item.request_id})}); await refreshServerQueue();};
+      row.append(label,cancel); panel.append(row);
+    }
+    if (session?.serverQueue?.some(item=>['queued','paused'].includes(item.status))) {
+      const proceed=document.createElement('button'); proceed.type='button'; proceed.textContent=uiText('Resume server queue','继续服务端队列');
+      proceed.onclick=async()=>{const response=await fetch(`/api/chat/queue/${encodeURIComponent(session.id)}/continue`,{method:'POST'}); if(!response.ok) showError((await response.json()).message); await refreshServerQueue();};
+      panel.append(proceed);
+    }
+    if (isSessionWaiting() && inputEl.value.trim()) {
+      const add = document.createElement('button'); add.type='button'; add.textContent=uiText('Queue message (Enter)', '加入队列（Enter）');
+      add.onclick=()=>void sendMessage(); panel.append(add);
+      const steer=document.createElement('button'); steer.type='button'; steer.textContent=uiText('Steer at next safe boundary', '在下一安全边界插入指令');
+      steer.disabled=Boolean(sessionRequestFor()?.stopping);
+      steer.onclick=async()=>{
+        const message=inputEl.value.trim(), request=sessionRequestFor();
+        if (!request || !message || state.pendingFiles.length || getSessionSelectedSkills(session).length) {
+          showError(uiText('Steering accepts text only; queue attachments and skills instead.', '中途指令仅支持文字；附件和技能请加入队列。')); return;
+        }
+        steer.disabled=true;
+        try {
+          const response=await fetch('/api/chat/steer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:request.requestId,chat_id:session.id,message})});
+          const data=await response.json();
+          if (!response.ok) throw new Error(data.message || 'Steering failed');
+          session.messages.push({id:newMessageId(),role:'user',content:message,time:nowISO()});
+          if (getActiveSession()===session && inputEl.value.trim()===message) {inputEl.value='';session.draft='';}
+          saveSessions(); renderMessageQueue();
+        } catch(error) {showError(error.message);}
+        finally {steer.disabled=false;}
+      };
+      panel.append(steer);
+    }
+    for (const item of queue) {
+      const row=document.createElement('div'), label=document.createElement('span'), remove=document.createElement('button');
+      label.textContent=item.displayText; remove.type='button'; remove.textContent=uiText('Remove', '移除');
+      remove.onclick=()=>{session.messageQueue=session.messageQueue.filter(entry=>entry.id!==item.id); saveSessions(); renderMessageQueue();};
+      row.append(label,remove); panel.append(row);
+    }
+    if (queue.length && !isSessionWaiting()) {
+      const next=document.createElement('button'); next.type='button'; next.textContent=uiText('Continue queue', '继续队列');
+      next.onclick=()=>void sendMessage(queue[0]); panel.append(next);
+    }
+    panel.hidden=!panel.childElementCount;
+  }
+
+  async function sendMessage(queued = null) {
+    let text = queued ? queued.text || queued.displayText : inputEl.value.trim();
+    const session = getActiveSession();
+    if(!queued && text.trim()==='/compact') {await compactConversation(session);return;}
+    if(!queued && /^\/(?:autoresearch|data|model|idea|tasks|usage)(?:\s|$)/i.test(text)) {
+      const command=await handleComposerCommand(text,session);
+      if(command.handled) return;
+      text=command.text;
+    }
+    const hasFiles = !queued && state.pendingFiles.length > 0;
+    const selectedSkills = queued ? queued.selectedSkills : [...getSessionSelectedSkills(session)];
     const hasSkills = selectedSkills.length > 0;
-    if ((!text && !hasFiles && !hasSkills) || !session || isSessionWaiting(session.id)) return;
+    if ((!text && !hasFiles && !hasSkills) || !session) return;
+    if (queued && (isSessionWaiting(session.id) || session.messageQueue?.[0]?.id !== queued.id)) return;
+    if (queued?.workspacePath && queued.workspacePath !== workspacePathForSession(session)) {
+      showError(uiText('Queued message belongs to a different workspace. Remove and submit it again.', '队列消息属于其他工作区，请移除后重新提交。')); return;
+    }
     if (!(await ensureChatLlmConfigured())) return;
-    const noveltyMode = getHypothesisMode(session);
+    if (getActiveSession() !== session) return;
+    if (queued && (isSessionWaiting(session.id) || session.messageQueue?.[0]?.id !== queued.id)) return;
+    const noveltyMode = queued ? queued.noveltyMode : getHypothesisMode(session);
 
     const skillText = buildSkillInstruction(selectedSkills);
     const attachmentText = buildAttachmentText(state.pendingFiles);
-    const finalText = [text, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
-    const displayText = text || (hasFiles ? uiText('Attached local files', '已附加本地文件') : tr('Use selected skills'));
+    const finalText = queued ? queued.finalText : [text, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
+    const displayText = queued ? queued.displayText : text || (hasFiles ? uiText('Attached local files', '已附加本地文件') : tr('Use selected skills'));
+    if (isSessionWaiting(session.id)) {
+      const requestId=crypto.randomUUID();
+      try {
+        const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          server_queue:true,request_id:requestId,chat_id:session.id,message:finalText,history:[],selected_skills:selectedSkills,
+          novelty_mode:noveltyMode,autoresearch_mode:session.researchMode || 'off',workspace_path:workspacePathForSession(session),language:currentUiLanguage(),
+          permission_mode:session.permissionMode || 'ask',reasoning_effort:await composerReasoningEffort(),repair_limit:session.repairLimit || 0,
+          client_surface:state.desktopPlatform ? 'desktop' : 'web',project_id:session.projectId || ''})});
+        const data=await response.json(); if(!response.ok) throw new Error(data.message || 'Queue submission failed');
+      } catch(error) {showError(`${error.message} (${requestId})`); return;}
+      inputEl.value=''; session.draft=''; session.selectedSkills=[]; state.selectedSkills=[]; clearPendingFiles();
+      saveSessions(); await refreshServerQueue(); return;
+    }
+    if (queued) session.messageQueue.shift();
+    const preservedDraft = queued ? session.draft : null;
+    const preservedSkills = queued ? [...session.selectedSkills] : null;
     const userMsgTime = nowISO();
 
     chatPanelEl.classList.remove('is-empty');
@@ -8263,19 +8667,29 @@
     session.draft = '';
     session.selectedSkills = [];
     state.selectedSkills = [];
-    clearPendingFiles();
+    if (!queued) clearPendingFiles();
     session.updatedAt = nowISO();
     state.sessions.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     saveSessions();
 
     const controller = new AbortController();
     if (!beginSessionRequest(session.id, controller)) return;
+    session.messages[session.messages.length-1].queueRequestId=sessionRequestFor(session.id).requestId;
+    if (queued) {
+      sessionRequestFor(session.id).researchMode=queued.researchMode;
+      session.pendingRequest.researchMode=queued.researchMode;
+      session.researchMode=queued.researchMode;
+      session.draft=preservedDraft;
+      session.selectedSkills=preservedSkills;
+      state.selectedSkills=[...preservedSkills];
+      saveSessions();
+    }
     renderSidebarLists();
     renderActiveSession();
     loadCheckpoints();
     scrollToBottom();
 
-    inputEl.value = '';
+    inputEl.value = queued ? preservedDraft : '';
     inputEl.style.height = 'auto';
     closeSlashMenu();
 
@@ -8283,6 +8697,7 @@
       .filter(m => m.role === 'user' || m.role === 'assistant')
       .map(m => ({ role: m.role, content: m.promptContent || m.content }));
 
+    let queueMayContinue = false;
     try {
       const data = await performWorkbenchChat({
           message: finalText,
@@ -8290,6 +8705,7 @@
           request_id: sessionRequestFor(session.id).requestId,
           history: priorHistory,
           selected_skills: selectedSkills,
+          resume_autoresearch_id: queued?.resumeId || null,
           autoresearch_mode: sessionRequestFor(session.id).researchMode,
           language: currentUiLanguage(),
           client_surface: state.desktopPlatform ? 'desktop' : 'web',
@@ -8302,6 +8718,7 @@
         saveSessions();
         showError(data.message || tr('Chat request failed'));
       } else {
+        queueMayContinue = data.execution?.status === 'completed' && !sessionRequestFor(session.id)?.stopping;
         const reply = String(data.content || '');
         const modelUsed = String(data.model_used || '').trim();
         if (data.autoresearch_mode && AUTO_RESEARCH_MODES.includes(data.autoresearch_mode)) {
@@ -8341,6 +8758,7 @@
       }
     } finally {
       finishSessionRequest(session.id, controller);
+      if (queueMayContinue && state.activeSessionId===session.id && session.messageQueue?.length) void sendMessage(session.messageQueue[0]);
     }
   }
 
@@ -8536,6 +8954,8 @@
       } else resetStudyWorkspace(previousView);
     }
     state.activeView = nextView;
+    window.neuroArtifactPanel?.sync();
+    window.NeuroDiscoveryHarness?.sync(document, { language: currentUiLanguage(), view: nextView, mode: state.autoResearchMode });
     if (opts.focus !== false && window.matchMedia('(max-width: 780px)').matches) {
       state.mobileSidebarOpen = false;
       applySidebarCollapsed(false);
@@ -9462,6 +9882,7 @@
         return;
       }
       if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.isComposing) return;
         e.preventDefault();
         sendMessage();
       }
@@ -9473,6 +9894,7 @@
       saveActiveDraft();
       state.slashMenuIndex = 0;
       renderSlashMenu();
+      renderMessageQueue();
     });
 
     slashMenuEl.addEventListener('mousedown', (e) => {
@@ -9756,7 +10178,7 @@
 
       if (action === 'copy') {
         const textToCopy = String(msg.content || '');
-        navigator.clipboard.writeText(textToCopy).catch(() => {});
+        void copyMessageWithFeedback(actionBtn, textToCopy);
         return;
       }
 
@@ -9914,15 +10336,27 @@
     });
 
     modelMenuEl.addEventListener('click', async (e) => {
+      const session=getActiveSession();
+      const generation=e.target.closest('[data-generation-mode]');
+      const repair=e.target.closest('[data-repair-limit]');
+      if(generation || repair) {
+        e.stopPropagation();
+        if(!session) return;
+        if(generation && !supportsHypothesisSelection()) return;
+        if(generation) {session.noveltyMode=generation.dataset.generationMode;syncHypothesisControls();}
+        if(repair) session.repairLimit=repair.checked?1:0;
+        rememberComposerSettings(session);saveSessions();renderModelMenu();return;
+      }
       if (e.target.closest('[data-manage-models]')) { openModelSettings(); return; }
       const panelBtn = e.target.closest('[data-model-panel]');
       if (panelBtn) {
         e.preventDefault();
         e.stopPropagation();
         const panel = panelBtn.dataset.modelPanel;
-        if (['root', 'models', 'autoresearch'].includes(panel)) {
+        if (['root', 'models', 'autoresearch', 'generation'].includes(panel)) {
           state.modelMenuPanel = panel;
           renderModelMenu();
+          modelMenuEl.querySelector('button')?.focus();
         }
         return;
       }
@@ -9936,6 +10370,8 @@
           ? requestedMode
           : AUTO_RESEARCH_MODE_OFF;
         state.autoResearchMode = mode;
+        const session = getActiveSession();
+        if (session) { session.researchMode = mode; rememberComposerSettings(session); saveSessions(); }
         savePrefs();
         syncModelTrigger();
         renderModelMenu();
@@ -9973,7 +10409,7 @@
       if (state.projectCreateMenuOpen && !e.target.closest('#project-create-menu') && !e.target.closest('#new-project-btn')) {
         setProjectCreateMenuOpen(false);
       }
-      if (state.modelMenuOpen && !e.target.closest('.model-badge')) {
+      if (state.modelMenuOpen && !e.target.closest('.model-badge, [data-harness-capability="autoresearch"]')) {
         setModelMenuOpen(false);
       }
       if (state.slashMenuOpen && !e.target.closest('.input-row')) {
@@ -10051,6 +10487,11 @@
         ? { status: 'success', count: state.availableModels.length, endpoint: probe.endpoint || '', error: '' }
         : { status: probe.attempted ? 'error' : 'idle', count: state.availableModels.length, endpoint: probe.endpoint || '', error: probe.error || '' };
       renderModelOptions(data.provider, data.model);
+      const remembered = state.lastModelChoice;
+      if (remembered && (remembered.provider !== data.provider || remembered.model !== data.model)
+          && state.availableModels.some(item => item.provider === remembered.provider && item.model === remembered.model)) {
+        await switchModel(remembered.provider, remembered.model);
+      }
       if (data.api_key_present === false) {
         setStatus('error', tr('Setup required'));
       } else {
@@ -10260,8 +10701,8 @@
     inputEl.disabled = true;
     loadState();
     workbenchHistory = window.ClientWorkbench.createHistory({
-      snapshot:()=>({sessions:state.sessions,projects:state.projects,activeSessionId:state.activeSessionId,activeProjectId:state.activeProjectId}),
-      restore:saved=>{ state.sessions=Array.isArray(saved.sessions)?saved.sessions:[];state.projects=Array.isArray(saved.projects)?saved.projects:[];state.activeSessionId=saved.activeSessionId;state.activeProjectId=saved.activeProjectId;normalizeAllSessions(); },
+      snapshot:()=>({sessions:state.sessions,projects:state.projects,activeSessionId:state.activeSessionId,activeProjectId:state.activeProjectId,composerDefaults:lastComposerSettings(),lastModelChoice:state.lastModelChoice}),
+      restore:saved=>{ state.sessions=Array.isArray(saved.sessions)?saved.sessions:[];state.projects=Array.isArray(saved.projects)?saved.projects:[];state.activeSessionId=saved.activeSessionId;state.activeProjectId=saved.activeProjectId;state.composerDefaults=saved.composerDefaults?composerSettings(saved.composerDefaults):null;state.lastModelChoice=saved.lastModelChoice || null;normalizeAllSessions(); },
       onError:error=>{
         showError(uiText('History sync: ','历史同步：')+error.message);
         if (error.recoveryId) {
@@ -10275,6 +10716,13 @@
       },
     });
     await workbenchHistory.load();
+    window.neuroArtifactPanel = window.NeuroArtifacts.mount({
+      document,
+      getContext: () => ({chatId: state.activeSessionId, view: state.activeView,
+        zh: isChineseUi(), messages: getActiveSession()?.messages || []}),
+    });
+    void refreshServerQueue();
+    setInterval(()=>void refreshServerQueue(),2000);
     bindEvents();
     applyTheme(state.theme);
     applyTextScale(state.textScale, false);
@@ -10292,7 +10740,7 @@
     setActiveView('chat', { focus: false });
     renderPendingFiles();
     loadSkills();
-    loadEnv();
+    await loadEnv();
     loadDesktopSettings();
     loadCheckpoints();
     state.sessions.filter(s=>s.pendingRequest).forEach(s=>void resumeWorkbenchRequest(s));
@@ -10300,12 +10748,40 @@
     window.addEventListener('online',()=>void workbenchHistory.flush());
     chatListEl.addEventListener('click',event=>{if(event.target.closest('[data-wb-more]')){state.workbenchChatLimit=(state.workbenchChatLimit || 60)+60;renderChatList();}});
     document.addEventListener('keydown',event=>{
+      const menu = event.target.closest('.chat-menu.open');
+      if (menu && ['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
+        event.preventDefault();
+        const options = [...menu.querySelectorAll('button:not(:disabled)')];
+        const current = options.indexOf(document.activeElement);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : (current + (event.key === 'ArrowDown' ? 1 : options.length - 1)) % options.length;
+        options[next]?.focus();
+      }
       if(event.key==='Escape' && state.openSessionMenuId && !document.querySelector('dialog[open]')) {state.openSessionMenuId=null;state.menuPosition=null;renderSidebarLists();}
     });
+    window.addEventListener('resize', positionSessionMenu);
     fetch('/api/workbench/validate-workspace',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
       .then(response=>response.json()).then(data=>{state.defaultWorkbenchPath=data.path || '';syncWorkbenchContext();}).catch(()=>{});
     syncActiveRequestUi();
     inputEl.focus();
+    try {
+      await window.NeuroDiscoveryHarness.mount({
+        document, location: window.location, fetch: window.fetch.bind(window),
+        evaluationEnabled: HUMAN_EVALUATION_ENABLED,
+        getState: () => ({ language: currentUiLanguage(), view: state.activeView, mode: state.autoResearchMode }),
+        adapter: {
+          openView: view => setActiveView(view, { askDownload: false }),
+          configureResearch: () => {
+            setActiveView('chat');
+            state.modelMenuPanel = 'autoresearch';
+            renderModelMenu();
+            setModelMenuOpen(true);
+            modelMenuEl.querySelector('[data-autoresearch-mode]')?.focus();
+          },
+        },
+      });
+    } catch (error) {
+      showError(error.message);
+    }
   }
 
   boot();

@@ -1,30 +1,37 @@
 /* Small, dependency-free controls shared by the desktop and browser client. */
 (() => {
   'use strict';
-  const MODES = Object.freeze(['strict', 'novelty_first', 'weighted']);
-  const normalize = value => MODES.includes(value) ? value : 'strict';
+  const MODES = Object.freeze(['novelty_first', 'balanced']);
+  // v1 stored values: `strict` was the conservative mode; both `novelty_first`
+  // (then the permissive composite mode) and `weighted` become v2 `balanced`.
+  // Because v1 `novelty_first` and v2 `novelty_first` are the same literal string
+  // meaning different things, migration needs the stored schema version — a bare
+  // string cannot be disambiguated, so normalize() must NOT guess from the name.
+  const LEGACY = Object.freeze({strict: 'novelty_first', novelty_first: 'balanced', weighted: 'balanced'});
+  const normalize = value => MODES.includes(value) ? value : 'balanced';
+  // Apply only to values read from a store recorded as the pre-v2 schema.
+  const migrateStored = value => Object.prototype.hasOwnProperty.call(LEGACY, value)
+    ? LEGACY[value] : normalize(value);
   const copy = {
     en: {
-      title: 'Generation parameters', eyebrow: 'HYPOTHESIS GENERATOR', label: 'Novelty strategy',
+      title: 'Hypothesis selection', eyebrow: 'HYPOTHESIS GENERATOR', label: 'Novelty strategy',
       intro: 'Choose how reviewed hypotheses are selected.',
-      strict: ['Strict', 'Only evidence-backed novelty. Fewer candidates—or none—is a valid result.'],
-      novelty_first: ['Novelty first', 'Prioritize novel candidates, then uncertain exploration, then known replications.'],
-      weighted: ['Weighted', 'Balance novelty with structural evidence, GNN scores, and scientific review.'],
+      novelty_first: ['Novelty first', 'Only evidence-backed novelty. Fewer candidates—or none—is a valid result.'],
+      balanced: ['Balanced', 'Fill the budget from every valid candidate, ranking novelty against graph/GNN evidence and scientific review.'],
       weights: ['Novelty', 'Structure', 'GNN', 'Review'],
       note: 'Selection does not change literature facts. Known relations remain replications, never new discoveries.',
       scope: 'Saved for this chat. Applies to new workflows, not frozen or running experiments.',
-      done: 'Done', busy: 'A request is running. Change parameters after it finishes.',
+      done: 'Done', busy: 'A request is running. Change the selection preference after it finishes.',
     },
     zh: {
-      title: '生成参数', eyebrow: 'HYPOTHESIS GENERATOR', label: '新颖性策略',
+      title: '假设筛选偏好', eyebrow: 'HYPOTHESIS GENERATOR', label: '新颖性策略',
       intro: '选择如何筛选已完成科学评审的假设。',
-      strict: ['严格', '仅选择有证据支持的新颖候选；宁可少选，也可以不选。'],
-      novelty_first: ['新颖优先', '先选新颖候选，不足时依次以不确定探索、已知关系复现补位。'],
-      weighted: ['综合加权', '结合新颖性、结构证据、GNN 评分与科学评审排序。'],
+      novelty_first: ['新颖优先', '仅选择有证据支持的新颖候选；宁可少选，也可以不选。'],
+      balanced: ['均衡', '在科学有效的候选中填满配额，以结合图谱/GNN 证据与科学评审的综合分排序。'],
       weights: ['新颖性', '结构', 'GNN', '科学评审'],
       note: '选择策略不改变文献事实。已知关系即使入选，也只能算复现，不能算新发现。',
       scope: '按当前对话保存。仅用于新工作流，不修改已冻结或正在运行的实验。',
-      done: '完成', busy: '请求正在运行，请在结束后调整参数。',
+      done: '完成', busy: '请求正在运行，请在结束后调整筛选偏好。',
     },
   };
 
@@ -50,7 +57,7 @@
         label.querySelector('[data-mode-description]').textContent = c[input.value][1];
       });
       dialog.querySelectorAll('[data-weight-label]').forEach((el, i) => { el.textContent = c.weights[i]; });
-      dialog.querySelector('.novelty-weights').hidden = mode !== 'weighted';
+      dialog.querySelector('.novelty-weights').hidden = mode !== 'balanced';
       if (busy && dialog.open) dialog.close();
     }
     button.addEventListener('click', () => {
@@ -74,5 +81,5 @@
     sync();
     return { sync };
   }
-  window.HypothesisControls = Object.freeze({ MODES, normalize, mount });
+  window.HypothesisControls = Object.freeze({ MODES, normalize, migrateStored, mount });
 })();

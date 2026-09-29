@@ -1,0 +1,122 @@
+// Exercise the real shared renderer with isolated profiles and synthetic text only.
+const {app,BrowserWindow,clipboard}=require('electron');
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
+const {setTimeout:delay}=require('node:timers/promises');
+const {createDemoServer}=require('../demo/native-server.cjs');
+const {createDemoWindow,installNetwork,installIPC}=require('../demo-main.js');
+const D=require('../demo/scenarios.js');
+const root=path.resolve(__dirname,'../..'),output=path.join(root,'tmp/presentation-check'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'nd-presentation-'));
+app.setPath('userData',profile);app.disableHardwareAcceleration();
+let api,win,diagram;const checks=[],errors=[];
+const evaluate=source=>win.webContents.executeJavaScript(source,true);
+async function until(source){for(let i=0;i<300;i++){if(await evaluate(source))return;await delay(30);}throw Error('Timeout: '+source);}
+async function capture(name){await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');fs.writeFileSync(path.join(output,name+'.png'),(await win.webContents.capturePage()).toPNG());}
+async function run(){
+  await app.whenReady();fs.mkdirSync(output,{recursive:true});
+  const legacy=fs.readFileSync(path.join(__dirname,'fixtures/evidence-graph/v1.svg'),'utf8'),v2=fs.readFileSync(path.join(__dirname,'fixtures/evidence-graph/v2.svg'),'utf8');
+  fs.mkdirSync(path.join(profile,'native-artifacts'));
+  const originals={};
+  for(const [id,value] of Object.entries({legacy,v2,custom:'<svg xmlns="http://www.w3.org/2000/svg"><text>User figure</text></svg>'})){
+    originals[id]=JSON.stringify({'evidence.svg':value,'sentinel.csv':'id,value\n1,unchanged\n'});fs.writeFileSync(path.join(profile,'native-artifacts',id+'.json'),originals[id]);
+  }
+  api=await createDemoServer({staticRoot:path.join(root,'core/web/static'),profile,workspace:root,timeScale:.001});
+  const svg=await(await fetch(api.origin+'/demo/artifacts/legacy/evidence.svg')).text();assert.match(svg,/evidence-map-v3/);
+  assert.equal(await(await fetch(api.origin+'/demo/artifacts/v2/evidence.svg')).text(),svg);
+  assert.equal(await(await fetch(api.origin+'/demo/artifacts/custom/evidence.svg')).text(),JSON.parse(originals.custom)['evidence.svg']);
+  for(const [id,text] of Object.entries(originals))assert.equal(fs.readFileSync(path.join(profile,'native-artifacts',id+'.json'),'utf8'),text);
+  fs.writeFileSync(path.join(output,'graph.svg'),svg);
+  installNetwork(api.origin);installIPC({origin:api.origin,profile,getWindow:()=>win});
+  win=createDemoWindow({origin:api.origin,show:false});win.webContents.setBackgroundThrottling(false);
+  win.webContents.debugger.attach('1.3');
+  await win.webContents.debugger.sendCommand('Emulation.setFocusEmulationEnabled',{enabled:true});
+  win.webContents.on('console-message',details=>{if(details.level==='error')errors.push(details.message);});
+  await until(`typeof state!=='undefined'&&state.settingsLoaded&&Boolean(window.neuroArtifactPanel)`);
+  const code='    # 长行与原始缩进\nvalues = '+JSON.stringify('ADHD 小脑 & <literal> '.repeat(24))+'\n\n';
+  const md='```python\n'+code+'```\n\n![证据子图](/demo/artifacts/legacy/evidence.svg)\n\n[model.py](/demo/artifacts/code-fixture/model.py)\n\n[REPORT.md](/demo/artifacts/code-fixture/REPORT.md)';
+  api.runs.set('code-fixture',{assets:{'model.py':code,'REPORT.md':'# Report\n\n```python\n'+code+'```'}});
+  await evaluate(`startNewChat();getActiveSession().messages.push({role:'assistant',content:${JSON.stringify(md)},id:'presentation'});renderActiveSession()`);
+  await until(`document.querySelectorAll('.msg.assistant .graph-node').length===6`);
+  assert.equal(await evaluate(`document.querySelectorAll('.code-copy').length`),1);
+  assert.equal(await evaluate(`document.querySelectorAll('.copy-btn').length`),0);
+  assert.equal(await evaluate(`document.querySelector('.code-language').textContent`),'python');
+  const renderedCode=await evaluate(`document.querySelector('.code-block pre code').textContent`);
+  // Markdown normalizes the fence's final newline; copying must equal its display.
+  assert.equal(renderedCode,code.replace(/\n+$/,'\n'));
+  const unwrapped=await evaluate(`(()=>{const p=document.querySelector('.code-block pre'),c=p.firstElementChild;p.scrollLeft=350;return {scroll:p.scrollWidth,client:p.clientWidth,left:p.scrollLeft,whiteSpace:getComputedStyle(p).whiteSpace,overflow:getComputedStyle(p).overflow,codeScroll:c.scrollWidth,codeClient:c.clientWidth,codeOverflow:getComputedStyle(c).overflow};})()`);
+  assert.ok(unwrapped.scroll>unwrapped.client&&unwrapped.left===350,JSON.stringify(unwrapped));
+  await evaluate(`renderMarkdownBubble(document.querySelector('.msg.assistant .bubble'),${JSON.stringify(md+'\n\nStreaming continues.')})`);
+  assert.equal(await evaluate(`document.querySelector('.code-block pre').scrollLeft`),350);
+  await capture('code-unwrapped');
+  await evaluate(`document.querySelector('.code-wrap').click()`);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.code-block pre')).whiteSpace`),'pre-wrap');
+  assert.ok(await evaluate(`(()=>{const p=document.querySelector('.code-block pre');return p.scrollWidth<=p.clientWidth+1;})()`));
+  await evaluate(`document.querySelector('.code-copy').click()`);
+  await until(`document.querySelector('.code-copy').title==='Code copied'`);
+  assert.equal(clipboard.readText().replace(/\r\n/g,'\n'),renderedCode);
+  await evaluate(`renderMarkdownBubble(document.querySelector('.msg.assistant .bubble'),${JSON.stringify(md+'\n\nMore streaming text.')})`);
+  assert.equal(await evaluate(`document.querySelector('.code-copy').title`),'Code copied');
+  assert.equal(await evaluate(`document.querySelector('.code-wrap').getAttribute('aria-pressed')`),'true');
+  await capture('code-wrapped');
+  checks.push('Exact code copy (Unicode, leading/trailing whitespace, literal markup); wrap toggle; horizontal position and copy feedback survive streaming');
+  await evaluate(`document.querySelector('.evidence-graph').scrollIntoView({block:'center'});document.querySelector('.graph-node[data-node="cerebellum"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
+  assert.equal(await evaluate(`document.querySelectorAll('.graph-relation').length`),3);
+  assert.equal(await evaluate(`document.querySelectorAll('.graph-edge.is-selected').length`),3);
+  await evaluate(`document.querySelector('.graph-node[data-node="attention"]').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))`);
+  assert.equal(await evaluate(`document.querySelector('.graph-detail-name').textContent`),'Attention symptoms');
+  await evaluate(`document.querySelector('.graph-node[data-node="cerebellum"]').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))`);
+  await evaluate(`document.querySelector('[data-graph-action="in"]').click()`);
+  assert.equal(await evaluate(`document.querySelector('.evidence-graph').dataset.zoom`),'1.25');
+  await evaluate(`renderMarkdownBubble(document.querySelector('.msg.assistant .bubble'),${JSON.stringify(md+'\n\nStream update')})`);
+  assert.equal(await evaluate(`document.querySelector('.evidence-graph').dataset.zoom`),'1.25');
+  assert.equal(await evaluate(`document.querySelectorAll('.graph-relation').length`),3);
+  await evaluate(`document.querySelector('.evidence-graph').scrollIntoView({block:'start'})`);
+  await capture('graph-selected');
+  const center=await evaluate(`(()=>{const b=document.querySelector('.graph-stage > svg').getBoundingClientRect();return {x:Math.round(b.x+b.width*.52),y:Math.round(b.y+b.height*.35)};})()`);
+  const before=await evaluate(`document.querySelector('.graph-viewport').getAttribute('transform')`);
+  await win.webContents.debugger.sendCommand('Input.dispatchMouseEvent',{type:'mousePressed',...center,button:'left',buttons:1,clickCount:1});
+  await win.webContents.debugger.sendCommand('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x+45,y:center.y+25,button:'left',buttons:1});
+  await win.webContents.debugger.sendCommand('Input.dispatchMouseEvent',{type:'mouseReleased',x:center.x+45,y:center.y+25,button:'left',buttons:0,clickCount:1});
+  await delay(60);assert.notEqual(await evaluate(`document.querySelector('.graph-viewport').getAttribute('transform')`),before);
+  await evaluate(`document.querySelector('[data-graph-action="fit"]').click()`);
+  assert.equal(await evaluate(`document.querySelector('.evidence-graph').dataset.zoom`),'1');
+  for(const width of [1320,960]){
+    win.setSize(width,900);await delay(60);await evaluate(`document.querySelector('.evidence-graph').scrollIntoView({block:'center'})`);
+    assert.ok(await evaluate(`document.documentElement.scrollWidth<=innerWidth+1`));await capture('graph-'+width);
+  }
+  checks.push('Graph preserves selected neighbors and zoom during streaming; pointer pan, fit, narrow layout and both former SVG upgrades without stored-file writes');
+  win.setSize(1600,950);await delay(50);
+  await until(`Boolean(document.querySelector('.graph-toolbar a')?.dataset.artifactKey)`);
+  await evaluate(`document.querySelector('.graph-toolbar a').click()`);
+  await until(`document.querySelectorAll('#artifact-content .graph-node').length===6`);await capture('graph-sidebar');
+  assert.ok(await evaluate(`(()=>{const labels=[...document.querySelectorAll('#artifact-content .graph-legend-label')].map(node=>node.getBoundingClientRect());return labels.every((a,i)=>labels.slice(i+1).every(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)<=1||Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)<=1));})()`),'English sidebar legend labels do not overlap');
+  assert.ok(await evaluate(`(()=>{const n=document.querySelector('#artifact-content .node-name'),scale=n.ownerSVGElement.getBoundingClientRect().width/1000;return parseFloat(getComputedStyle(n).fontSize)*scale>=11.9;})()`));
+  assert.equal(await evaluate(`NeuroEvidenceGraph.readSvg('<svg xmlns="http://www.w3.org/2000/svg"><metadata>{"kind":"neurodiscovery-evidence-graph","nodes":[null],"edges":[]}</metadata></svg>')`),null);
+  await evaluate(`document.querySelector('#artifact-close').click();document.querySelector('a[href$="model.py"]').click()`);
+  await until(`Boolean(document.querySelector('#artifact-content .code-copy'))`);
+  assert.equal(await evaluate(`document.querySelector('#artifact-content .code-wrap').getAttribute('aria-pressed')`),'true');
+  await evaluate(`document.querySelector('#artifact-content .code-copy').click()`);await delay(80);assert.equal(clipboard.readText().replace(/\r\n/g,'\n'),code);
+  await capture('code-sidebar');
+  await evaluate(`document.querySelector('#artifact-content .code-wrap').click()`);
+  assert.equal(await evaluate(`document.querySelector('.msg.assistant .code-wrap').getAttribute('aria-pressed')`),'false');
+  await evaluate(`document.querySelector('#artifact-close').click();document.querySelector('a[href$="REPORT.md"]').click()`);
+  await until(`Boolean(document.querySelector('.artifact-markdown .code-copy'))`);
+  assert.equal(await evaluate(`document.querySelector('.artifact-markdown .code-language').textContent`),'python');
+  await evaluate(`applyTheme('dark')`);await capture('code-dark');
+  await evaluate(`document.querySelector('#artifact-close').click();document.querySelector('.evidence-graph').scrollIntoView({block:'center'})`);await capture('graph-dark');
+  // Failed clipboard requests remain retryable and never report success.
+  await evaluate(`window.restoreClipboard=Object.getOwnPropertyDescriptor(navigator.clipboard,'writeText');Object.defineProperty(navigator.clipboard,'writeText',{configurable:true,value:()=>Promise.reject(Error('denied'))});document.querySelector('.msg.assistant .code-copy').click()`);
+  await until(`document.querySelector('.msg.assistant .code-copy').title==='Copy failed. Try again.'`);
+  await evaluate(`delete navigator.clipboard.writeText;document.querySelector('.msg.assistant .code-wrap').click();workbenchHistory.flush()`);
+  await win.loadURL(api.origin+'/harness');await until(`state.settingsLoaded&&Boolean(document.querySelector('.code-wrap'))`);
+  assert.equal(await evaluate(`document.querySelector('.code-wrap').getAttribute('aria-pressed')`),'true');
+  checks.push('Code/Markdown source previews share wrap preference and exact copy; clipboard failure, dark theme, history reload and persistent setting');
+  diagram=new BrowserWindow({show:false,width:1000,height:600,useContentSize:true,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
+  await diagram.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent('<style>html,body{margin:0;overflow:hidden}</style>'+svg));
+  await diagram.webContents.executeJavaScript('document.fonts.ready');
+  const geometry=await diagram.webContents.executeJavaScript(`(()=>{const text=[...document.querySelectorAll('text')].map(n=>({text:n.textContent,b:n.getBoundingClientRect().toJSON()})),collisions=[];for(let i=0;i<text.length;i++)for(let j=i+1;j<text.length;j++){const a=text[i].b,b=text[j].b;if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1)collisions.push([text[i].text,text[j].text]);}return {collisions,metadata:JSON.parse(document.querySelector('metadata').textContent)};})()`);
+  assert.deepEqual(geometry.collisions,[]);assert.deepEqual(geometry.metadata.edges,D.graph.edges);assert.deepEqual(geometry.metadata.nodes.map(n=>[n.id,n.name]),D.graph.nodes.map(n=>n.slice(0,2)));
+  fs.writeFileSync(path.join(output,'graph.png'),(await diagram.webContents.capturePage()).toPNG());
+  assert.deepEqual(errors.filter(e=>!e.includes('404')),[]);
+  fs.writeFileSync(path.join(output,'RESULTS.json'),JSON.stringify({ok:true,checks,geometry,errors,model_calls:0},null,2));console.log(JSON.stringify({ok:true,checks}));
+}
+run().then(async()=>{diagram.destroy();win.destroy();await api.close();app.exit(0);}).catch(async error=>{console.error(error);if(win){await capture('failure').catch(()=>{});win.destroy();}diagram?.destroy();if(api)await api.close();app.exit(1);});
