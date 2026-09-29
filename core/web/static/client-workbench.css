@@ -1,40 +1,108 @@
 /* Scoped primitives, inheriting NeuroDiscovery's light/dark theme tokens. */
 :root { --panel: var(--surface-elev); --muted: var(--text-muted); }
-.wb-dialog { margin: auto; width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 26px; border: 1px solid var(--border, #dce4df); border-radius: 18px; color: var(--text, #22372e); background: var(--panel, #fff); box-shadow: 0 24px 90px #0004; }
-.wb-dialog::backdrop { background: #091e1980; backdrop-filter: blur(3px); }
+.wb-dialog { margin: auto; width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 26px; border: 1px solid var(--border, #e5e5e6); border-radius: 18px; color: var(--text, #0f1115); background: var(--panel, #fff); box-shadow: 0 24px 90px #0004; }
+.wb-dialog::backdrop { background: #00000080; backdrop-filter: blur(3px); }
 .wb-dialog h2 { font-size: 19px; font-weight: 600; }
-.wb-dialog-description, .wb-note { margin: 12px 0; color: var(--muted, #6b7972); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.wb-dialog-description, .wb-note { margin: 12px 0; color: var(--muted, #61666b); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
 .wb-dialog-fields { display: grid; gap: 16px; margin: 20px 0; }
 .wb-dialog label, .wb-usage-filters label { display: grid; gap: 7px; font-size: 12px; }
-.wb-dialog input, .wb-dialog select, .wb-usage-filters select { min-width: 0; width: 100%; padding: 9px 11px; color: inherit; border: 1px solid var(--border, #dce4df); background: var(--bg, #f7faf8); border-radius: 9px; }
+.wb-dialog input, .wb-dialog select, .wb-usage-filters select { min-width: 0; width: 100%; padding: 9px 11px; color: inherit; border: 1px solid var(--border, #e5e5e6); background: var(--bg, #fff); border-radius: 9px; }
 .wb-dialog footer, .wb-usage-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
 .wb-dialog footer { justify-content: flex-end; margin-top: 22px; }
-.wb-dialog button, .wb-usage-filters button, .wb-chip { min-height: 34px; padding: 7px 13px; border: 1px solid var(--border, #dce4df); border-radius: 9px; color: inherit; background: var(--panel, #fff); cursor: pointer; }
-.wb-dialog .wb-primary { background: #326951; border-color: #326951; color: white; }
+.wb-dialog button, .wb-usage-filters button, .wb-chip { min-height: 34px; padding: 7px 13px; border: 1px solid var(--border, #e5e5e6); border-radius: 9px; color: inherit; background: var(--panel, #fff); cursor: pointer; }
+.wb-dialog .wb-primary { background: var(--accent-strong, #285dc5); border-color: var(--accent-strong, #285dc5); color: var(--bg, #fff); }
 .wb-dialog .wb-danger { color: white; background: #a13e3e; border-color: #a13e3e; }
 .wb-inline-error { padding: 10px; border-radius: 8px; background: #a13e3e15; color: #bc5252; font-size: 12px; }
-button:focus-visible, summary:focus-visible, .wb-dialog input:focus-visible, .wb-dialog select:focus-visible { outline: 2px solid var(--accent, #4a896a); outline-offset: 3px; }
+button:focus-visible, summary:focus-visible, .wb-dialog input:focus-visible, .wb-dialog select:focus-visible { outline: 2px solid var(--accent, #4176e6); outline-offset: 3px; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 .wb-chip { display: inline-flex; align-items: center; gap: 7px; max-width: 270px; font-size: 11px; min-height: 30px; padding: 5px 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wb-context-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px 2px; }
-.wb-execution { margin: 12px 0; padding: 12px 16px; border: 1px solid var(--border, #dce4df); border-radius: 12px; background: var(--panel, #fff); min-width: 0; }
-.wb-execution-status { font-size: 11px; font-weight: 600; color: var(--muted, #6b7972); margin-bottom: 6px; }
-.wb-execution details { padding: 7px 0; }
+.wb-message-queue { display: grid; gap: 6px; padding: 8px 2px; font-size: 12px; }
+.wb-message-queue[hidden] { display: none; }
+.wb-tasks { width: min(620px, calc(100vw - 32px)); }
+.wb-task { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.wb-task p, .wb-task summary { font-size: 12px; color: var(--text-muted); margin: 8px 0; }
+.wb-task pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 200px; overflow: auto; }
+.wb-task button { margin: 8px 8px 0 0; }
+.slash-menu-list { max-height: min(380px, 48vh); overflow-y: auto; overscroll-behavior: contain; }
+.slash-menu .slash-menu-help { display: none; }
+.slash-menu .slash-command-icon { background: transparent; color: var(--text-muted); }
+.slash-menu .slash-command.active { background: var(--surface-soft); }
+.slash-menu .slash-command-copy { display: flex; align-items: baseline; gap: 12px; }
+.slash-menu .slash-command-name { flex-shrink: 0; }
+.slash-menu .slash-command-desc { min-width: 0; }
+.wb-message-queue > div { display: flex; gap: 10px; align-items: center; }
+.wb-message-queue span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-message-queue button { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.msg.assistant .msg-main, #wb-live-execution { width: 100%; min-width: 0; }
+.wb-execution { margin: 0; padding: 0; width: 100%; min-width: 0; color: var(--text); text-align: left; }
+.wb-execution-status { display: flex; align-items: center; gap: 7px; font: calc(14px * var(--text-scale, 1))/22px var(--ui-font); color: var(--text-muted); margin: 0 0 10px; overflow-wrap: anywhere; }
+.wb-execution-status::before { content: ''; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--text-muted); }
+.wb-execution[data-status="running"] .wb-execution-status, .wb-execution[data-status="stopping"] .wb-execution-status { color: #4176e6; }
+.wb-execution[data-status="running"] .wb-execution-status::before, .wb-execution[data-status="stopping"] .wb-execution-status::before { background: #4176e6; animation: wb-status-pulse 1.2s ease-in-out infinite; }
+.wb-execution[data-status="failed"] .wb-execution-status::before, .wb-execution[data-status="blocked"] .wb-execution-status::before { background: #bb5050; }
+.wb-execution .wb-execution-process { margin: 6px 0 12px; padding: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.wb-execution .wb-execution-process > summary { padding: 9px 12px; font: calc(13px * var(--text-scale, 1))/20px var(--ui-font); color: var(--text-soft); border-radius: 12px; }
+.wb-execution-process > summary:hover { background: var(--hover-bg); }
+.wb-process-count { margin-left: 12px; font: calc(12px * var(--text-scale, 1))/18px var(--ui-font); }
+.wb-execution-blocks { padding: 0 12px 4px; }
+.wb-execution-blocks > details { margin: 6px 0 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-elev); overflow: hidden; }
+.wb-execution-blocks > details > summary { padding: 8px 12px; }
+.wb-execution-blocks > details > summary:hover { background: var(--hover-bg); }
+.wb-execution-blocks > details > pre { padding: 0 12px 10px; }
+.wb-execution summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+@keyframes wb-status-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
+@media (prefers-reduced-motion: reduce) { .wb-execution .wb-execution-status::before { animation: none; } }
+.wb-execution details { padding: 0; }
 .wb-execution summary { cursor: pointer; font-size: 12px; overflow-wrap: anywhere; }
-.wb-execution .wb-running summary::after { content: ' ···'; color: #448965; }
+.wb-execution .wb-running summary::after { content: ' ···'; color: var(--accent, #4176e6); }
 .wb-execution pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.7 ui-monospace, monospace; max-height: 380px; overflow-y: auto; margin: 12px 0 0; }
 .wb-usage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px; margin: 20px 0 10px; }
-.wb-usage-grid > div { padding: 14px; border: 1px solid var(--border, #dce4df); border-radius: 12px; display: grid; gap: 8px; }
-.wb-usage-grid span { font-size: 11px; color: var(--muted, #6b7972); }
+.wb-usage-grid > div { padding: 14px; border: 1px solid var(--border, #e5e5e6); border-radius: 12px; display: grid; gap: 8px; }
+.wb-usage-grid span { font-size: 11px; color: var(--muted, #61666b); }
 .wb-usage-grid strong { font-size: 18px; font-weight: 550; font-variant-numeric: tabular-nums; }
 .wb-table-scroll { overflow: auto; margin-top: 16px; }
 .wb-table-scroll table { border-collapse: collapse; width: 100%; font-size: 12px; }
-.wb-table-scroll th, .wb-table-scroll td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border, #dce4df); overflow-wrap: anywhere; }
-.wb-table-scroll small { display: block; color: var(--muted, #6b7972); }
-.wb-usage-inline { margin-top: 8px; font-size: 11px; color: var(--muted, #6b7972); cursor: pointer; }
-.wb-sidebar-heading { margin: 14px 8px 6px; font-size: 10px; font-weight: 600; color: var(--muted, #6b7972); text-transform: uppercase; letter-spacing: .08em; }
+.wb-table-scroll th, .wb-table-scroll td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border, #e5e5e6); overflow-wrap: anywhere; }
+.wb-table-scroll small { display: block; color: var(--muted, #61666b); }
+.wb-usage-inline { margin-top: 8px; font-size: 11px; color: var(--muted, #61666b); cursor: pointer; }
+.wb-sidebar-heading { margin: 14px 8px 6px; font-size: 10px; font-weight: 600; color: var(--muted, #61666b); text-transform: uppercase; letter-spacing: .08em; }
 .chat-menu { min-width: 210px; max-height: min(370px, calc(100dvh - 32px)); overflow-y: auto; }
 .chat-menu-item.wb-danger { color: #bb5050; }
-[data-theme="dark"] .wb-dialog, [data-theme="dark"] .wb-execution, [data-theme="dark"] .wb-chip, [data-theme="dark"] .wb-usage-filters button { background: var(--panel, #18271f); color: var(--text, #e1eee5); }
+[data-theme="dark"] .wb-dialog, [data-theme="dark"] .wb-execution, [data-theme="dark"] .wb-chip, [data-theme="dark"] .wb-usage-filters button { background: var(--panel, #232324); color: var(--text, #f9fafb); }
 @media (prefers-reduced-motion: reduce) { .wb-dialog::backdrop { backdrop-filter: none; } }
+.wb-message-queue details { padding: 6px 0; color: var(--text-muted, #71717a); }
+.wb-message-queue details label { display: block; margin: 8px 0; }
+.wb-message-queue select, .wb-approval button { padding: 6px 10px; border: 1px solid var(--border, #dedee3); border-radius: 6px; background: var(--panel, #fff); color: var(--text, #18181b); }
+.input-row, .chat-panel.is-empty .input-row { grid-template-columns: 34px minmax(80px, 1fr) minmax(0, auto) 34px; }
+.input-row #msg-input { grid-column: 1 / -1; grid-row: 1; }
+.input-row .composer-permissions { grid-column: 2; grid-row: 2; display: flex; align-items: center; min-width: 0; position: relative; color: var(--text-muted); }
+.composer-permissions svg { width: 17px; height: 17px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.permission-trigger { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; height: 34px; padding: 0 9px; border: 0; border-radius: 18px; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.permission-trigger:hover, .permission-trigger[aria-expanded="true"] { background: var(--surface-soft); color: var(--text); }
+.permission-trigger [data-permission-label] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.permission-trigger .permission-caret { width: 14px; height: 14px; transition: transform .15s ease; }
+.permission-trigger[aria-expanded="true"] .permission-caret { transform: rotate(180deg); }
+.permission-menu { position: absolute; bottom: calc(100% + 9px); left: 0; width: 280px; max-width: calc(100vw - 90px); padding: 7px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-elev); color: var(--text); box-shadow: 0 12px 38px #00000015, 0 2px 6px #0000000a; z-index: 3100; }
+.permission-menu[hidden] { display: none; }
+.permission-option { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; min-height: 45px; padding: 11px 15px; border: 0; border-radius: 11px; background: transparent; color: inherit; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.permission-option:hover, .permission-option:focus-visible, .permission-option[aria-checked="true"] { background: var(--surface-soft); }
+.permission-check { visibility: hidden; flex-shrink: 0; font-size: 18px; }
+.permission-option[aria-checked="true"] .permission-check { visibility: visible; }
+.input-row .model-badge { grid-column: 3; grid-row: 2; justify-self: end; width: auto; }
+.input-row .model-trigger { max-width: min(300px, 32vw); }
+.input-row .model-menu { left: auto; right: 0; overflow-y: auto; max-height: min(460px, 65vh); background: var(--surface-elev); }
+.input-row .generation-parameters[hidden] { display: none; }
+.composer-menu-note { margin: 10px 8px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+.composer-menu-toggle { display: flex; align-items: center; gap: 8px; margin: 8px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.permission-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 540px) {
+  .input-row, .chat-panel.is-empty .input-row { grid-template-columns: 30px minmax(70px, 1fr) minmax(0, auto) 30px; }
+  .permission-trigger { max-width: 145px; padding: 0 5px; gap: 4px; font-size: 11px; }
+  .input-row .model-trigger { max-width: 130px; }
+  .input-row .model-trigger-meta { display: none; }
+  .input-row .model-menu { left: 14px; right: 14px; }
+}
+.wb-approval { border-top: 1px solid var(--border, #dedee3); padding: 10px; }
+.wb-approval pre { max-height: 240px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.wb-approval button { margin-right: 8px; cursor: pointer; }
 @media (min-width: 1100px) { .wb-usage-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

@@ -1,0 +1,23 @@
+/* Shared by conversation bubbles and the artifact sidebar. */
+.code-block {
+  position: relative; min-width: 0; max-width: 100%; margin: 12px 0; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+  color: var(--text); white-space: normal;
+}
+.code-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 9px 0 17px; }
+.code-language { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; font: 11px/1.4 var(--ui-code-font, monospace); letter-spacing: .04em; color: var(--text-soft); }
+.code-actions { display: flex; flex: 0 0 auto; gap: 4px; }
+.code-actions button { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 7px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.code-actions svg { width: 20px; height: 20px; }
+.code-actions button:hover, .code-wrap[aria-pressed="true"] { background: var(--hover-bg); border-color: var(--border); color: var(--text); }
+.code-actions button:focus-visible, .code-block pre:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.code-feedback { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.code-block > pre {
+  display: block; min-width: 0; max-width: 100%; min-height: 0; box-sizing: border-box;
+  margin: 0; padding: 8px 17px 16px; border: 0; border-radius: 0; background: transparent;
+  font: calc(13px * var(--text-scale, 1))/1.75 var(--ui-code-font, monospace);
+  overflow: auto; white-space: pre; overflow-wrap: normal; word-break: normal; tab-size: 4;
+}
+.code-block > pre > code { display: block; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; overflow: visible; white-space: inherit; overflow-wrap: inherit; word-break: inherit; }
+.code-block.is-wrapped > pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+#artifact-content > .code-block { margin: 12px; }

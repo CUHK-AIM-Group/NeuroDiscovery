@@ -5,6 +5,77 @@ backend. The visual layer lives in `core/web/static/research-workspace.css`;
 `index.html` retains the application events, model configuration, research
 workflows, bilingual content and historical desktop/storage identifiers.
 
+## Artifact workspace — 2026-09-29
+
+The shared production frontend now includes `artifact-panel.js` / `.css`.
+The reference was the local Camellia `docs/artifact-previews.md` and its
+`src/renderer/chat/claude.js` preview interactions, inspected read-only. This is
+an original implementation with no additional renderer dependencies.
+
+- The header's **Artifacts / 产物** button lists files linked in the active
+  conversation and its recorded workspace changes. Clicking a file, inline
+  file reference or output image opens the right preview; no workspace scan.
+- Markdown, CSV/TSV, JSON, text/code, common images including SVG, PDF and static
+  HTML have previews. CSV/TSV searches all parsed rows, pages by 100 and scrolls
+  horizontally. The existing inline result tables keep their own scrollbars.
+- Each preview offers the original download; text formats offer source view.
+  Unavailable files have reload controls. Office documents and other unsupported
+  binaries use the download fallback, not a claimed full-fidelity preview.
+- The panel supports mouse/keyboard resizing, Escape, themes and language changes.
+  Desktop widths above 1200px dock it beside the chat; smaller windows use a right
+  overlay. Closing it restores the full conversation area. Chat/composer maximum
+  width is 1120px, with a 1080px message maximum, in both native and harness layouts.
+- Production file reads resolve against the saved chat/project workspace, reject
+  hidden files and resolved paths outside it, and never modify files. Text previews
+  are bounded to 2 MiB, images/PDF to 32 MiB, tables to 20,000 rows / 200 columns;
+  downloads retain the complete original. Markdown is sanitized, HTML is isolated
+  and scriptless, and CSV cells are text. The offline transport permits Chromium's
+  bundled PDF resources while still blocking external network requests.
+
+Verification uses temporary files/profiles in `core/web/test_artifacts.py`,
+`core/web/static/tests/artifact-panel.test.cjs`, and
+`desktop/tests/artifact-panel-electron.cjs`. The native demo and packaged executable
+checks also exercise the actual 500/501-row artifacts through this shared UI.
+
+Standalone output-file links in replies now use Camellia-style grouped cards:
+extension icon, filename, format/category and actual byte size, with an **Open with**
+menu. Filename clicks open the existing right preview; the menu also offers source
+view for text formats and an original-file download. Four rows are visible by
+default; more files expand in place. Ordinary inline references and scientific
+citations retain their original presentation. The source Markdown is preserved.
+Card/menu state survives streaming, and keyboard navigation/Escape, dark mode and
+narrow windows use the same shared UI. File sizes use bounded-concurrency HEAD
+requests, without fetching file bodies or scanning a workspace. The production
+HEAD route keeps the existing conversation/workspace path checks; unknown sizes
+are omitted rather than invented. No system-app/reveal action is offered until
+a desktop bridge supports it. Reference: local Camellia `claude.js`'s
+`showTurnArtifacts` and `claude.css`'s `.turn-artifacts`, inspected read-only.
+
+The shared `evidence-graph.js` / `.css` uses the light canvas, colored node network
+and neighbor inspection of [Intern Atlas](https://intern-atlas.opendatalab.org.cn/explore)
+as a visual reference, inspected on 2026-09-29. Original SVG rendering is shared
+between the scripted transport's export, inline conversations and artifact preview.
+Select a node to highlight/list its relationships, drag the canvas to pan, use
+zoom/fit buttons or Ctrl + wheel to zoom. Streaming retains the current view.
+Narrow previews keep labels legible; both themes are supported. Only bounded,
+recognized graph metadata is rendered; arbitrary SVG remains an inert image.
+Its six original concepts and six relations are unchanged; no scientific graph
+is read or rewritten. Exact SHA-256 matches for the former v1/v2 illustrations
+receive the current rendering on retrieval, without rewriting stored artifacts.
+
+Code fences and file/source previews share `code-blocks.js` / `.css`, with an
+uppercase language header, word-wrap toggle and icon-only copy button, informed
+by local Camellia's `claude.js` / `.css` controls. Wrap persists locally; streaming
+keeps scroll position and copy feedback. Copy includes only displayed code (the
+Markdown parser normalizes fenced trailing newlines); source-file copies preserve
+the complete text, subject to the operating system's clipboard newline convention.
+The old hover-only copy buttons are removed. Clipboard errors stay retryable.
+
+`desktop/tests/presentation-electron.cjs` uses isolated profiles for clipboard,
+streaming state, pointer/keyboard controls, history reload, responsive labels,
+SVG bounds/semantics, legacy compatibility and both preview surfaces. Screenshots
+and the verification receipt are in `tmp/presentation-check/`.
+
 ## References reviewed
 
 DeepSeek Harness source was reviewed at revision

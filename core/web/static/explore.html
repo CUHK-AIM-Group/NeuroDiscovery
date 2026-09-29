@@ -27,33 +27,11 @@
   --graph-label-size: 32px;
 }
 html[data-theme="light"] {
-  --bg: #f5f7fa;
-  --surface: #ffffff;
-  --surface-soft: #f1f4f9;
-  --surface-elev: #ffffff;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --accent: #0a84ff;
-  --accent-soft: rgba(10, 132, 255, 0.1);
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --text-subtle: #94a3b8;
   --danger: #dc2626;
   --warning: #d97706;
   --success: #10b981;
 }
 html[data-theme="dark"] {
-  --bg: #0b1220;
-  --surface: #111a2c;
-  --surface-soft: #0e1626;
-  --surface-elev: #152037;
-  --border: #1f2d45;
-  --border-strong: #2b3d5c;
-  --accent: #58a6ff;
-  --accent-soft: rgba(88, 166, 255, 0.15);
-  --text: #e2e8f0;
-  --text-muted: #8da0b4;
-  --text-subtle: #64748b;
   --danger: #ef4444;
   --warning: #f59e0b;
   --success: #10b981;
@@ -657,7 +635,7 @@ body {
 }
 .recipe-pill {
   display: inline-block;
-  background: linear-gradient(135deg, #10b981, #3b82f6);
+  background: var(--accent-strong);
   color: #fff;
   padding: 1px 8px;
   border-radius: 10px;
@@ -881,6 +859,7 @@ body {
 <link rel="stylesheet" href="/static/workspace-tokens.css">
 <link rel="stylesheet" href="/static/client-workbench.css">
 <link rel="stylesheet" href="/static/oracle-workspace.css">
+<link rel="stylesheet" href="/static/workspace-controls.css">
 </head>
 <body>
 
@@ -899,7 +878,7 @@ body {
     <div class="oracle-workspace-menu">
       <span class="update-status" id="graphUpdateStatus" role="status" data-i18n="update_idle">Graph updates</span>
       <button class="icon-btn" id="graphCheckUpdateBtn" type="button" data-i18n="check_updates">Check graph updates</button>
-      <button class="icon-btn primary" id="graphUpdateBtn" type="button" data-i18n="update_graph" style="display:none;">Update graph</button>
+      <button class="icon-btn primary" id="graphUpdateBtn" type="button" data-i18n="update_graph">Download from Hugging Face</button>
       <button class="icon-btn" id="themeBtn" title="Toggle theme" data-i18n-title="toggle_theme">☾</button>
     </div>
   </details>
@@ -918,7 +897,7 @@ body {
              data-i18n-ph="search_placeholder"
              placeholder="Search biomarker / outcome / concept (≥2 chars)" autocomplete="off">
       <details class="oracle-search-filters"><summary data-i18n="search_filters">Search filters</summary>
-      <select class="domain-select" id="atomSelect" aria-label="Concept type" data-i18n-label="concept_type" style="width:100%;margin-top:6px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
+      <select class="domain-select" id="atomSelect" aria-label="Concept type" data-i18n-label="concept_type" style="width:100%;margin-top:6px;">
         <option value=""                data-i18n="atom_all">All</option>
         <option value="disease" data-i18n="atom_disease">Disease</option>
         <option value="drug" data-i18n="atom_drug">Drug</option>
@@ -929,7 +908,7 @@ body {
         <option value="individual_data" data-i18n="atom_individual_data">Individual data</option>
       </select>
       <div class="task-row" style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-        <select id="taskSelect" aria-label="Task / Chain" data-i18n-label="task_chain" style="flex:1;min-width:160px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:12.5px;">
+        <select class="domain-select" id="taskSelect" aria-label="Task / Chain" data-i18n-label="task_chain" style="flex:1;min-width:160px;">
           <option value="" data-i18n="task_chain">— Task / Chain —</option>
         </select>
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);">
@@ -962,8 +941,7 @@ body {
         </select>
       </label>
       <label><span data-i18n="neighbors">Neighbors</span>
-        <input type="number" id="limitInput" value="30" min="5" max="200" step="5"
-               style="width:64px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:inherit;">
+        <input type="number" id="limitInput" value="30" min="5" max="200" step="5">
       </label>
       <label><span data-i18n="edge_type">Edge type</span>
         <select id="edgeTypeSelect">
@@ -1192,7 +1170,7 @@ const I18N = {
     graph_actions: "Graph actions",
     update_idle: "Graph updates",
     check_updates: "Check graph updates",
-    update_graph: "Update graph",
+    update_graph: "Download from Hugging Face",
     checking_updates: "Checking HuggingFace…",
     update_available: "New graph available",
     up_to_date: "Graph is up to date",
@@ -1200,7 +1178,7 @@ const I18N = {
     checked_files: "checked files",
     downloading_graph: "Downloading graph…",
     download_complete: "Graph updated",
-    download_confirm: "Download the latest NeuroOracle graph from HuggingFace now?",
+    download_confirm: "Download the NeuroOracle graph from Hugging Face now? This uses network and disk space and replaces the existing downloaded graph file. Local research results are not uploaded. Reloading the graph does not fix unavailable reviewed-evidence services.",
   },
   zh: {
     header_sub: "NeuroOracle 图谱",
@@ -1297,7 +1275,7 @@ const I18N = {
     graph_actions: "图谱操作",
     update_idle: "图谱更新",
     check_updates: "检查图谱更新",
-    update_graph: "更新图谱",
+    update_graph: "从 Hugging Face 下载图谱",
     checking_updates: "正在检查 HuggingFace…",
     update_available: "发现新版图谱",
     up_to_date: "图谱已是最新",
@@ -1305,7 +1283,7 @@ const I18N = {
     checked_files: "已检查文件",
     downloading_graph: "正在下载图谱…",
     download_complete: "图谱已更新",
-    download_confirm: "现在从 HuggingFace 下载最新版 NeuroOracle 图谱吗？",
+    download_confirm: "现在从 Hugging Face 下载 NeuroOracle 图谱吗？这会使用网络与磁盘空间，并替换现有下载图谱文件；不会上传本地研究结果。重新加载图谱不会修复不可用的已审核证据服务。",
   },
 };
 const t = (key, ...args) => {
@@ -1535,7 +1513,7 @@ function renderGraphUpdateStatus(status = null) {
 
   checkBtn.disabled = false;
   updateBtn.disabled = false;
-  updateBtn.style.display = "none";
+  updateBtn.style.display = "inline-flex";
 
   if (!status) {
     statusEl.textContent = t("update_idle");
@@ -1610,6 +1588,10 @@ async function pollGraphDownload() {
     }
     if (download.error) {
       renderGraphUpdateStatus({ type: "error", message: download.error });
+      return;
+    }
+    if (!download.completed) {
+      renderGraphUpdateStatus({type:'error',message:state.lang === 'zh' ? '下载尚未启动或完成，请检查后重试。' : 'Download has not started or completed. Check and retry.'});
       return;
     }
     renderGraphUpdateStatus({ update_available: false });

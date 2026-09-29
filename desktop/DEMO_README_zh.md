@@ -1,5 +1,7 @@
 # NeuroDiscovery Demo · Windows x64
 
+> 本文描述旧的联网 Demo。当前无需 API key 的客户端复用正式版界面，见 [五个 prompt 和 AutoResearch 设置](DEMO_NATIVE_PROMPTS_zh.md)；源码用 `npm run dev:demo` 启动，新包位于 `dist-demo-native/`。
+
 本包面向演示使用，不提供 Human Evaluation 1/2、评估问卷、评分、参与者材料或评估 API。常规聊天、Skills、项目和 NeuroOracle 入口保留。正式评估版不受影响。
 
 ## 启动

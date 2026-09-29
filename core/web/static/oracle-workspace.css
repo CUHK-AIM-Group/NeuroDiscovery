@@ -1,6 +1,8 @@
 /* NeuroOracle is a workbench module, not a second application shell. */
 :root { --sidebar-w: 260px; --detail-w: 330px; --radius-sm: 8px; --ui-font-size: calc(13px * var(--text-scale, 1)); }
 html[data-theme] { --accent-soft: var(--accent-wash); --text-subtle: var(--text-muted); --border-strong: var(--border); --muted: var(--text-muted); }
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
 html, body { height: 100%; min-height: 0; }
 body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; font: calc(13px * var(--text-scale, 1))/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; }
 button, input, select { font-family: inherit; }
@@ -20,9 +22,10 @@ html[data-theme="light"] .icon-btn.primary { color: #fff; }
 html[data-embedded="true"] #themeBtn { display: none; }
 html[data-embedded="true"] .header { display: none; }
 .oracle-navigation { display: flex; align-items: center; gap: 8px; padding: 0 20px; border-bottom: 1px solid var(--border); background: var(--bg); flex: none; min-height: 44px; position: relative; z-index: 9; }
-.oracle-view-tabs { display: flex; align-self: stretch; gap: 22px; flex: 1; min-width: 0; }
-.oracle-view-tab { background: transparent; color: var(--text-muted); padding: 10px 0; border: 0; border-bottom: 2px solid transparent; font-size: calc(12px * var(--text-scale, 1)); cursor: pointer; white-space: nowrap; }
-.oracle-view-tab[aria-selected="true"] { color: var(--accent-strong); border-bottom-color: var(--accent); font-weight: 600; }
+.oracle-view-tabs { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.oracle-view-tab { background: transparent; color: var(--text-muted); padding: 6px 10px; border: 1px solid transparent; border-radius: 7px; font-size: calc(12px * var(--text-scale, 1)); cursor: pointer; white-space: nowrap; }
+.oracle-view-tab:hover { background: var(--surface); color: var(--text); }
+.oracle-view-tab[aria-selected="true"] { color: var(--text); background: var(--surface-soft); font-weight: 600; }
 #oracleBrowseToggle { background: transparent; border-color: transparent; flex-shrink: 0; }
 #oracleBrowseToggle[aria-expanded="false"] { background: var(--accent-wash); color: var(--accent-strong); }
 .oracle-workspace-options { position: relative; flex-shrink: 0; }
@@ -31,7 +34,8 @@ html[data-embedded="true"] .header { display: none; }
 .oracle-workspace-options > summary svg { width: 18px; height: 18px; fill: currentColor; }
 .oracle-workspace-options[open] > summary { background: var(--surface-soft); color: var(--text); }
 .oracle-workspace-menu { position: absolute; top: calc(100% + 8px); right: 0; width: min(240px, calc(100vw - 32px)); display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-elev); box-shadow: var(--shadow-soft); }
-.oracle-workspace-menu .icon-btn { justify-content: flex-start; text-align: left; }
+.oracle-workspace-menu .icon-btn { justify-content: flex-start; text-align: left; background: transparent; border-color: transparent; border-radius: 6px; color: var(--text); }
+.oracle-workspace-menu .icon-btn:hover { background: var(--surface-soft); }
 .oracle-workspace-menu .update-status { display: block; white-space: normal; padding: 4px 6px; font-size: calc(11px * var(--text-scale, 1)); }
 .oracle-statusbar { flex: none; min-height: 30px; padding: 5px 18px; border-top: 1px solid var(--border); background: var(--bg); order: 10; }
 .stats-line { margin: 0; font-size: calc(11px * var(--text-scale, 1)); gap: 8px; flex-wrap: wrap; }
@@ -50,7 +54,8 @@ html[data-embedded="true"] .header { display: none; }
 .ce-result, .result-item { padding: 11px 12px; margin-bottom: 5px; border-radius: 8px; border: 1px solid transparent; }
 .result-item { display: block; width: 100%; text-align: left; background: transparent; color: var(--text); }
 .domain-tag { display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; color: #fff; font-size: calc(10px * var(--text-scale, 1)); }
-.ce-result[aria-current="true"], .result-item.active { background: var(--accent-wash); border-color: var(--border); box-shadow: inset 2px 0 var(--accent); }
+.ce-result[aria-current="true"], .result-item.active { background: var(--surface-soft); border-color: transparent; box-shadow: none; }
+.ce-result:hover, .result-item:hover { background: var(--surface); }
 .ce-result strong, .result-name { font-size: calc(12px * var(--text-scale, 1)); font-weight: 550; }
 .ce-result .ce-predicate, .result-cui, .ce-badge { font-size: calc(11px * var(--text-scale, 1)); }
 .ce-badge { border-radius: 6px; }
@@ -101,8 +106,19 @@ body[data-oracle-browse="closed"] .layout, body[data-oracle-browse="closed"] .cl
 .legend-row-label { min-width: 65px; }
 .legend-dot { width: 9px; height: 9px; }
 .legend-row { gap: 10px; }
-.focus-banner, .paths-section[open], .path-row:hover, .path-suggest:hover { background: var(--accent-wash); }
-.recipe-pill { background: var(--accent-strong); }
+.focus-banner, .paths-section[open], .path-row:hover, .path-suggest:hover { background: var(--surface); }
+.recipe-pill { background: var(--accent-strong); color: var(--bg); }
+.chip, .pill { border-radius: 6px; padding: 5px 9px; font-size: calc(11px * var(--text-scale, 1)); background: transparent; border-color: var(--border); }
+.chip:hover, .pill:hover { background: var(--surface); }
+.chip.active, .pill.active { background: var(--surface-soft); color: var(--text); border-color: var(--border); }
+.tabs { gap: 4px; padding: 6px 10px; }
+.tab-btn { border: 0; border-radius: 6px; padding: 6px 9px; color: var(--text-muted); font-size: calc(12px * var(--text-scale, 1)); }
+.tab-btn.active { background: var(--surface-soft); color: var(--text); border-bottom-color: transparent; }
+.tab-btn:hover { background: var(--surface); }
+.domain-select, .ce-search select, .graph-controls select, .graph-controls input, .paths-controls input[type="text"] { min-height: 32px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-elev); color: var(--text); font-size: calc(12px * var(--text-scale, 1)); }
+input[type="checkbox"] { accent-color: var(--accent); }
+.paths-section, .path-row, .path-endpoint { background: var(--surface-elev); border-color: var(--border); }
+.legend, .hover-hint { background: var(--surface-elev); border-color: var(--border); box-shadow: var(--shadow-soft); }
 .detail-title { font-size: calc(18px * var(--text-scale, 1)); }
 .item-card { background: var(--bg); box-shadow: none; border-radius: 9px; }
 .cold-start-banner { flex: none; padding: 8px 18px; font-size: calc(11px * var(--text-scale, 1)); }

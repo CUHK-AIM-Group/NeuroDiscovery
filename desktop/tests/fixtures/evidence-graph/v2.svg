@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560" role="img" aria-labelledby="graph-title graph-description">
+    <title id="graph-title">小脑—默认模式网络与注意症状：主题证据子图</title>
+    <desc id="graph-description">ADHD、小脑、默认模式网络和注意症状的研究线索；下方保留 T1 灰质体积与头动、站点条件。连线表示关联线索，不表示因果关系。</desc>
+    <metadata>{&quot;demo&quot;:true,&quot;scientific_validation&quot;:false,&quot;rendering&quot;:&quot;evidence-map-v2&quot;,&quot;nodes&quot;:[{&quot;id&quot;:&quot;adhd&quot;,&quot;name&quot;:&quot;ADHD&quot;},{&quot;id&quot;:&quot;cerebellum&quot;,&quot;name&quot;:&quot;小脑&quot;},{&quot;id&quot;:&quot;dmn&quot;,&quot;name&quot;:&quot;默认模式网络&quot;},{&quot;id&quot;:&quot;attention&quot;,&quot;name&quot;:&quot;注意症状&quot;},{&quot;id&quot;:&quot;motion&quot;,&quot;name&quot;:&quot;头动 / 站点&quot;},{&quot;id&quot;:&quot;t1&quot;,&quot;name&quot;:&quot;T1 灰质体积&quot;}],&quot;edges&quot;:[[&quot;adhd&quot;,&quot;cerebellum&quot;,&quot;共现线索&quot;],[&quot;cerebellum&quot;,&quot;dmn&quot;,&quot;连接候选&quot;],[&quot;dmn&quot;,&quot;attention&quot;,&quot;待验证关联&quot;],[&quot;motion&quot;,&quot;dmn&quot;,&quot;混杂控制&quot;],[&quot;t1&quot;,&quot;cerebellum&quot;,&quot;多模态补充&quot;],[&quot;adhd&quot;,&quot;attention&quot;,&quot;表型&quot;]]}</metadata>
+    <defs>
+      <linearGradient id="graph-surface" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#f9fbfe"/></linearGradient>
+      <filter id="node-shadow" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#28436d" flood-opacity=".04"/></filter>
+    </defs>
+    <rect x=".5" y=".5" width="999" height="559" rx="20" fill="url(#graph-surface)" stroke="#e5ebf3"/>
+    <g font-family="Segoe UI,Microsoft YaHei,PingFang SC,sans-serif">
+      <text x="32" y="35" font-size="13" font-weight="600" fill="#6280aa" letter-spacing="1">主题证据子图</text>
+      <text x="32" y="66" font-size="24" font-weight="600" fill="#24344d">小脑—默认模式网络与注意症状</text>
+      <text x="32" y="91" font-size="14" fill="#7b889c">ADHD 儿童 · 静息态功能连接</text>
+      <rect x="869" y="28" width="99" height="28" rx="14" fill="#f0f5fc"/>
+      <text x="918.5" y="47" font-size="12" text-anchor="middle" fill="#56749b">研究线索</text>
+      <path d="M32 112H968" stroke="#eef1f6"/>
+      <rect x="248" y="396" width="512" height="116" rx="20" fill="#f3f6fb"/>
+      <g class="graph-edge" data-source="adhd" data-target="cerebellum">
+      <path d="M190 261H284" fill="none" stroke="#91a9cf" stroke-width="1.8" />
+      
+      <text class="edge-label" x="237" y="243" text-anchor="middle" font-size="13" fill="#62738e">共现线索</text>
+    </g><g class="graph-edge" data-source="cerebellum" data-target="dmn">
+      <path d="M450 261H542" fill="none" stroke="#91a9cf" stroke-width="1.8" />
+      
+      <text class="edge-label" x="496" y="243" text-anchor="middle" font-size="13" fill="#62738e">连接候选</text>
+    </g><g class="graph-edge" data-source="dmn" data-target="attention">
+      <path d="M738 261H828" fill="none" stroke="#91a9cf" stroke-width="1.8" />
+      
+      <text class="edge-label" x="783" y="243" text-anchor="middle" font-size="13" fill="#62738e">待验证关联</text>
+    </g><g class="graph-edge" data-source="motion" data-target="dmn">
+      <path d="M640 416V308" fill="none" stroke="#adb9cc" stroke-width="1.6" stroke-dasharray="5 5"/>
+      <rect x="600" y="349" width="80" height="28" rx="14" fill="#fff" stroke="#e7ecf4"/>
+      <text class="edge-label" x="640" y="369" text-anchor="middle" font-size="13" fill="#62738e">混杂控制</text>
+    </g><g class="graph-edge" data-source="t1" data-target="cerebellum">
+      <path d="M367 416V308" fill="none" stroke="#adb9cc" stroke-width="1.6" stroke-dasharray="5 5"/>
+      <rect x="320" y="349" width="94" height="28" rx="14" fill="#fff" stroke="#e7ecf4"/>
+      <text class="edge-label" x="367" y="369" text-anchor="middle" font-size="13" fill="#62738e">多模态补充</text>
+    </g><g class="graph-edge" data-source="adhd" data-target="attention">
+      <path d="M110 214V168Q110 148 130 148H879Q899 148 899 168V214" fill="none" stroke="#91a9cf" stroke-width="1.8" />
+      <rect x="478" y="133" width="52" height="28" rx="14" fill="#fff" stroke="#e7ecf4"/>
+      <text class="edge-label" x="504" y="153" text-anchor="middle" font-size="13" fill="#62738e">表型</text>
+    </g><g class="graph-node" data-node="adhd" transform="translate(30 214)">
+      <rect class="node-card" width="160" height="94" rx="15" fill="#eff6ff" stroke="#c7dcfc" filter="url(#node-shadow)"/>
+      <circle cx="18" cy="23" r="3.5" fill="#2563eb"/>
+      <text x="29" y="27" font-size="12" fill="#2563eb">研究人群</text>
+      <text class="node-name" x="16" y="58" font-size="21" font-weight="600" fill="#25354d">ADHD</text>
+      <text x="16" y="80" font-size="12" fill="#78869b">儿童</text>
+    </g><g class="graph-node" data-node="cerebellum" transform="translate(284 214)">
+      <rect class="node-card" width="166" height="94" rx="15" fill="#f5f2fc" stroke="#ddd3f3" filter="url(#node-shadow)"/>
+      <circle cx="18" cy="23" r="3.5" fill="#7c5ac5"/>
+      <text x="29" y="27" font-size="12" fill="#7c5ac5">脑区</text>
+      <text class="node-name" x="16" y="58" font-size="21" font-weight="600" fill="#25354d">小脑</text>
+      <text x="16" y="80" font-size="12" fill="#78869b">Cerebellum</text>
+    </g><g class="graph-node" data-node="dmn" transform="translate(542 214)">
+      <rect class="node-card" width="196" height="94" rx="15" fill="#effaf7" stroke="#b8e2da" filter="url(#node-shadow)"/>
+      <circle cx="18" cy="23" r="3.5" fill="#0f817c"/>
+      <text x="29" y="27" font-size="12" fill="#0f817c">功能网络</text>
+      <text class="node-name" x="16" y="58" font-size="21" font-weight="600" fill="#25354d">默认模式网络</text>
+      <text x="16" y="80" font-size="12" fill="#78869b">DMN</text>
+    </g><g class="graph-node" data-node="attention" transform="translate(828 214)">
+      <rect class="node-card" width="142" height="94" rx="15" fill="#fff3f6" stroke="#f1d2df" filter="url(#node-shadow)"/>
+      <circle cx="18" cy="23" r="3.5" fill="#b65378"/>
+      <text x="29" y="27" font-size="12" fill="#b65378">临床表型</text>
+      <text class="node-name" x="16" y="58" font-size="21" font-weight="600" fill="#25354d">注意症状</text>
+      
+    </g><g class="graph-node" data-node="motion" transform="translate(540 416)">
+      <rect class="node-card" width="200" height="78" rx="15" fill="#ffffff" stroke="#e1e6ef" filter="url(#node-shadow)"/>
+      <circle cx="18" cy="23" r="3.5" fill="#63738c"/>
+      <text x="29" y="27" font-size="12" fill="#63738c">研究条件</text>
+      <text class="node-name" x="16" y="56" font-size="19" font-weight="600" fill="#25354d">头动 / 站点</text>
+      
+    </g><g class="graph-node" data-node="t1" transform="translate(267 416)">
+      <rect class="node-card" width="200" height="78" rx="15" fill="#ffffff" stroke="#e1e6ef" filter="url(#node-shadow)"/>
+      <circle cx="18" cy="23" r="3.5" fill="#9b702f"/>
+      <text x="29" y="27" font-size="12" fill="#9b702f">影像测量</text>
+      <text class="node-name" x="16" y="56" font-size="19" font-weight="600" fill="#25354d">T1 灰质体积</text>
+      
+    </g>
+      <path d="M32 535H59" stroke="#91a9cf" stroke-width="2"/>
+      <text x="69" y="539" font-size="12" fill="#7b889c">主题关系</text>
+      <path d="M158 535H185" stroke="#adb9cc" stroke-width="1.6" stroke-dasharray="5 5"/>
+      <text x="195" y="539" font-size="12" fill="#7b889c">测量与研究条件</text>
+      <text x="968" y="539" text-anchor="end" font-size="12" fill="#8995a6">关联线索不等于因果关系</text>
+    </g>
+  </svg>

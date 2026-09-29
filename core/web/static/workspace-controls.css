@@ -1,0 +1,166 @@
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+html[data-theme] body { font-family: var(--ui-font); }
+html[data-theme] body { font-size: calc(var(--ui-font-control) * var(--text-scale, 1)); line-height: 1.5714286; }
+html[data-theme] .bubble,
+html[data-theme] .bubble :where(p, li, blockquote, table),
+html[data-theme] :is(#msg-input, .edit-textarea) {
+  --base-font-size: var(--ui-font-body);
+  font-size: calc(var(--ui-font-body) * var(--text-scale, 1));
+}
+html[data-theme] .bubble { line-height: 1.75; }
+html[data-theme] :is(#msg-input, .edit-textarea) { line-height: 1.5; }
+html[data-theme] :is(.chat-title, .project-name, .primary-nav-btn, .harness-capabilities button,
+  .new-chat-btn, .clear-chat-btn, .model-menu-name, .model-menu-route, .model-menu-item,
+  .model-menu-back, .model-menu-title, .permission-option, .settings-field label,
+  .settings-row-label, .settings-control, .settings-select-trigger, .settings-select-option,
+  .settings-input, .settings-select, .settings-action-btn, .wb-dialog button, .wb-dialog input,
+  .wb-dialog select, .wb-dialog label, .wb-task button, .skill-card-title) {
+  font-size: calc(var(--ui-font-control) * var(--text-scale, 1)); line-height: 1.5714286;
+}
+html[data-theme] :is(.model-menu-sub, .settings-field-desc, .settings-row-desc, .composer-menu-note,
+  .wb-note, .wb-dialog-description, .wb-execution summary) {
+  font-size: calc(var(--ui-font-secondary) * var(--text-scale, 1)); line-height: 1.5384615;
+}
+html[data-theme] :is(.model-badge, .permission-trigger, .status, .chat-meta,
+  .wb-message-queue, .wb-usage-inline, .wb-table-scroll table) {
+  font-size: calc(var(--ui-font-caption) * var(--text-scale, 1)); line-height: 1.5;
+}
+html[data-theme] :is(.bubble pre, .bubble code, .tool-event-code, .wb-execution pre) {
+  font-family: var(--ui-code-font); font-size: calc(13px * var(--text-scale, 1)); line-height: 1.5384615;
+}
+.assistant-identity { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; color: var(--text-muted); font-size: calc(14px * var(--text-scale, 1)); font-weight: 600; line-height: 26px; }
+.assistant-identity img { display: block; width: 26px; height: 26px; flex: 0 0 26px; border-radius: 50%; object-fit: contain; }
+#typing-indicator, #execution-indicator { flex-direction: column; align-items: flex-start; gap: 0; }
+html[data-theme] :is(button, input, select, textarea) { font-family: inherit; }
+html[data-theme] button { transition: background .1s var(--ui-ease), border-color .1s var(--ui-ease); }
+html[data-theme] .msg-action-btn:not(:disabled):is(:hover, :focus-visible) {
+  background: var(--selected-bg); border-color: var(--border-strong); color: var(--text);
+}
+html[data-theme] .msg-action-btn:not(:disabled):active { background: var(--surface-soft); transform: scale(.92); }
+html[data-theme] .msg-action-btn:disabled { cursor: not-allowed; }
+html[data-theme] .msg-action-btn[data-feedback="success"] { background: var(--accent-wash); color: var(--accent-strong); border-color: var(--accent); }
+html[data-theme] .msg-action-btn[data-feedback="error"] { background: var(--danger-wash); color: var(--danger); border-color: var(--danger); }
+.msg-action-btn:focus-visible::after { opacity: 1; }
+.msg-action-btn[data-feedback]::after { display: none; }
+.msg-actions:has([data-feedback]) { opacity: 1; visibility: visible; pointer-events: auto; }
+.msg-action-feedback { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 5px 8px; border-radius: 6px; background: var(--text); color: var(--bg); font: 12px/18px var(--ui-font); white-space: nowrap; pointer-events: none; z-index: 1; }
+html[data-theme] :is(button, input, select, textarea):disabled { opacity: .45; cursor: default; }
+html[data-theme] :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #679efe; outline-offset: 2px;
+}
+html[data-theme] :is(input, textarea)::placeholder { color: var(--placeholder); }
+html[data-theme] :is(input[type="checkbox"], input[type="radio"]) { accent-color: #4176e6; }
+html[data-theme] ::-webkit-scrollbar { width: 8px; height: 8px; }
+html[data-theme] ::-webkit-scrollbar-track { background: transparent; }
+html[data-theme] ::-webkit-scrollbar-thumb { background: var(--scrollbar); border: 0; border-radius: 4px; }
+
+html[data-theme] :is(.model-menu, .input-row .model-menu, .settings-select-menu, .project-create-menu, .chat-menu, .slash-menu, .oracle-workspace-menu, .oracle-options-grid) {
+  padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-menu);
+  background: var(--popover-bg); color: var(--text); box-shadow: var(--shadow-soft);
+}
+html[data-theme] .permission-menu {
+  border-color: var(--border); background: var(--popover-bg); box-shadow: var(--shadow-soft);
+}
+html[data-theme] :is(.model-menu-item, .model-menu-route, .model-menu-back, .settings-select-option, .project-create-option, .chat-menu button, .slash-command, .oracle-workspace-menu .icon-btn) {
+  min-height: 40px; padding: 9px 12px; border: 0; border-radius: var(--radius-item);
+  background: transparent; color: var(--text); font-weight: 400; box-shadow: none;
+}
+html[data-theme] :is(.model-menu-name, .model-menu-title, .slash-command-name) { font-weight: 500; }
+html[data-theme] :is(.model-menu-item, .model-menu-route, .model-menu-back, .settings-select-option, .project-create-option, .chat-menu button, .slash-command, .oracle-workspace-menu .icon-btn, .permission-option):hover {
+  background: var(--hover-bg); color: var(--text);
+}
+html[data-theme] :is(.model-menu-item.active, .settings-select-option.active, .slash-menu .slash-command.active, .permission-option[aria-checked="true"]) {
+  background: var(--selected-bg); color: var(--text);
+}
+html[data-theme] .settings-select-check { color: var(--text); }
+html[data-theme] .chat-menu {
+  min-width: 0; width: 230px; max-width: calc(100vw - 24px);
+  max-height: min(480px, calc(100dvh - 24px)); box-sizing: border-box;
+  padding: 6px; border-radius: 14px;
+}
+html[data-theme] .chat-menu .chat-menu-item {
+  display: flex; align-items: center; gap: 8px; min-height: 40px;
+  padding: 9px 12px; border-radius: 8px; text-align: left;
+  font: 400 14px/22px var(--ui-font); white-space: normal; overflow-wrap: anywhere;
+}
+html[data-theme] .chat-menu .chat-menu-item:is(:hover, :focus) {
+  background: var(--selected-bg); outline: none;
+}
+html[data-theme] .chat-menu .chat-menu-item.wb-danger { color: var(--danger); }
+html[data-theme] :is(.settings-select-trigger, .model-connection-field .settings-select-trigger) {
+  min-height: 36px; padding: 6px 14px; border: 0; border-radius: var(--radius-control);
+  background: var(--control-bg); color: var(--text);
+}
+html[data-theme] .settings-select-trigger:hover { background: var(--hover-bg); }
+
+html[data-theme] :is(.wb-dialog button, .wb-usage-filters button, .wb-chip, .wb-message-queue button, .wb-approval button, .model-action, .settings-save, .settings-reset-button, .neurooracle-primary, .icon-btn, .ce-action, .ce-pagination button, .secondary, .study-close, .evaluation-actions button) {
+  min-height: 34px; padding: 7px 16px; border: 1px solid var(--border); border-radius: var(--radius-control);
+  background: transparent; color: var(--text); font-weight: 500; box-shadow: none; cursor: pointer;
+}
+html[data-theme] :is(.wb-dialog button, .wb-usage-filters button, .wb-chip, .wb-message-queue button, .wb-approval button, .model-action, .settings-reset-button, .icon-btn, .ce-action, .ce-pagination button, .secondary, .study-close, .evaluation-actions button):hover:not(:disabled) {
+  background: var(--hover-bg); filter: none; box-shadow: none;
+}
+html[data-theme] :is(.wb-dialog .wb-primary, .model-action.primary, .settings-save, .neurooracle-primary, .icon-btn.primary) {
+  background: #4176e6; color: #fff; border-color: transparent;
+}
+html[data-theme] :is(.wb-dialog .wb-primary, .model-action.primary, .settings-save, .neurooracle-primary, .icon-btn.primary):hover:not(:disabled) { background: #679efe; }
+html[data-theme] .wb-dialog .wb-danger { background: var(--danger); color: var(--bg); border-color: transparent; }
+html[data-theme] .wb-dialog .wb-danger:hover:not(:disabled) { background: var(--danger); filter: brightness(.92); }
+html[data-theme] .wb-inline-error { color: var(--danger); background: var(--danger-wash); }
+html[data-theme] :is(.oracle-workspace-menu .icon-btn, .oracle-view-tab, .settings-nav-item, .primary-nav-btn) { border-radius: var(--radius-item); }
+html[data-theme] :is(.settings-nav-item.active, .oracle-view-tab[aria-selected="true"]) { background: var(--surface-soft); color: var(--text); }
+
+html[data-theme] :is(.settings-control, .model-connection-field .settings-control, .wb-dialog input, .search-input, .ce-search input, .graph-controls input, .paths-controls input[type="text"]) {
+  border: 1px solid var(--border); border-radius: var(--radius-input); background: var(--surface-elev); color: var(--text); box-shadow: none;
+}
+html[data-theme] :is(dialog, .wb-dialog) {
+  border: 0; border-radius: var(--radius-dialog); background: var(--surface-elev); color: var(--text); box-shadow: var(--shadow-soft);
+}
+html[data-theme] dialog::backdrop { background: var(--mask); backdrop-filter: none; }
+html[data-theme] :is(.settings-card, .skill-card, .wb-usage-grid > div) { border-color: var(--border); border-radius: var(--radius-menu); box-shadow: none; }
+html[data-theme] .oracle-workspace-menu .icon-btn { min-height: 40px; border: 0; padding: 9px 12px; background: transparent; color: var(--text); }
+html[data-theme] .oracle-workspace-menu .icon-btn:hover { background: var(--hover-bg); }
+html[data-theme] .cards > button { border-radius: var(--radius-dialog); box-shadow: none; }
+html[data-theme] .cards > button:hover { background: var(--hover-bg); outline: none; }
+html[data-theme][data-study-ui] :is(.secondary, .study-close, .evaluation-actions button) { border-radius: var(--radius-control); }
+html[data-theme][data-study-ui="discovery"] button:not(.nav-card):not([data-discovery-language]) { border-radius: var(--radius-control); }
+html[data-theme][data-study-ui] :is(input:not([type="checkbox"]):not([type="radio"]), textarea) { border-radius: var(--radius-input); }
+html[data-theme][data-study-ui] :is(.setup, .auth) :is(button, select) { border-radius: var(--radius-control); }
+html[data-theme][data-study-ui] :is(.setup, .auth) input { border-radius: var(--radius-input); }
+html[data-theme][data-study-ui] :is(.primary, .evaluation-export-dialog .primary) { background: #4176e6; color: #fff; border-color: transparent; border-radius: var(--radius-control); }
+html[data-theme="dark"][data-study-ui="legacy"] .primary { color: #fff; }
+html[data-theme][data-study-ui] :is(.primary, #start, #close-save):hover:not(:disabled) { background: #679efe; filter: none; }
+html[data-theme][data-study-ui] :is(dialog, .evaluation-export-dialog) { border: 0; border-radius: var(--radius-dialog); }
+
+@supports (appearance: base-select) {
+  html[data-theme] select:not([multiple]):not([size]), ::picker(select) { appearance: base-select; }
+  html[data-theme] select:not([multiple]):not([size]) {
+    display: inline-flex; align-items: center; gap: 12px; min-width: 0; min-height: 36px; max-width: 100%;
+    padding: 6px 14px; border: 0; border-radius: var(--radius-control); background: var(--control-bg);
+    color: var(--text); font-size: calc(14px * var(--text-scale, 1)); line-height: 22px; cursor: pointer; white-space: nowrap;
+  }
+  html[data-theme] select:not([multiple]):not([size]):is(:hover, :open) { background: var(--hover-bg); }
+  html[data-theme] select::picker-icon {
+    content: ""; width: 7px; height: 7px; flex-shrink: 0; margin: 0 1px 3px auto;
+    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    color: var(--text-soft); transform: rotate(45deg); transition: transform .1s var(--ui-ease);
+  }
+  html[data-theme] select:open::picker-icon { transform: translateY(3px) rotate(225deg); }
+  ::picker(select) {
+    min-width: min(220px, calc(100vw - 24px)); max-width: calc(100vw - 24px);
+    max-height: min(420px, calc(100dvh - 24px)); overflow-y: auto; margin: 4px 0; padding: 6px;
+    border: 1px solid var(--border); border-radius: var(--radius-menu); background: var(--popover-bg);
+    color: var(--text); box-shadow: var(--shadow-soft); font: 14px/22px var(--ui-font);
+  }
+  html[data-theme] select:not([multiple]):not([size]) option {
+    display: flex; align-items: center; gap: 12px; min-height: 40px; box-sizing: border-box;
+    padding: 9px 12px; border-radius: var(--radius-item); cursor: pointer; white-space: normal; overflow-wrap: anywhere;
+  }
+  html[data-theme] option:checked { background: var(--selected-bg); }
+  html[data-theme] option:is(:hover, :focus) { background: var(--hover-bg); outline: none; }
+  html[data-theme] option::checkmark { order: 1; margin-left: auto; content: "✓"; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] *, html[data-theme] *::before, html[data-theme] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

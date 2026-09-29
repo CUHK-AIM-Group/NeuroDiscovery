@@ -884,6 +884,8 @@ def create_app() -> Any:
         return catalog
 
     app = FastAPI(title="NeuroDiscovery Web UI", docs_url=None, redoc_url=None)
+    from core.harness import register_routes
+    register_routes(app, STATIC_DIR, evaluation_enabled=not demo_build)
     from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
     from core.web.claim_layer_v8 import AcceptedClaimLayer, validate_queries
     accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))

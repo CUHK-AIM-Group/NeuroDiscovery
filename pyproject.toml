@@ -3,6 +3,9 @@ name = "neuroclaw"
 version = "0.1.0"
 requires-python = ">=3.10"
 
+[project.scripts]
+neurodiscovery = "core.cli:main"
+
 [project.optional-dependencies]
 tabular-models = [
     "statsmodels>=0.14",
@@ -58,6 +61,7 @@ testpaths = [
     "core/web/test_oracle_workspace.py",
     "core/web/test_study_workspace.py",
     "core/web/test_workbench.py",
+    "core/web/test_harness.py",
     "desktop/tests/test_window_chrome.py",
     "skills/method-design/scripts",
 ]

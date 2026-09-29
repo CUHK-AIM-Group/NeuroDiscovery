@@ -1,0 +1,17 @@
+{
+  "extends": null,
+  "appId": "org.neurodiscovery.offline-demo",
+  "productName": "NeuroDiscovery",
+  "directories": {"output": "dist-demo-native"},
+  "artifactName": "NeuroDiscovery-Native-Demo-${version}-${os}-${arch}.${ext}",
+  "files": ["demo-main.js", "preload.js", "demo/native-server.cjs", "demo/scenarios.js", "demo/native-ui/**/*", "demo/vendor/**/*", "demo/NATIVE_UI.json", "package.json"],
+  "extraMetadata": {"main": "demo-main.js", "distribution": "native-ui-demo"},
+  "extraResources": [
+    {"from": "../data/demo", "to": "demo-workspace/data/demo", "filter": ["**/*", "!**/__pycache__/**"]},
+    {"from": "demo-workspace/ideas", "to": "demo-workspace/ideas"},
+    {"from": "DEMO_PROMPTS.md", "to": "DEMO_README.md"}
+  ],
+  "win": {"target": ["portable", "zip"]},
+  "portable": {"artifactName": "NeuroDiscovery-Native-Demo-${version}-Portable-${arch}.${ext}"},
+  "mac": {"target": ["dmg", "zip"], "category": "public.app-category.education", "identity": null}
+}

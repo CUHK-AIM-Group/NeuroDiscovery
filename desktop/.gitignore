@@ -2,6 +2,11 @@ node_modules/
 dist/
 dist-evaluation/
 dist-demo/
+dist-demo-showcase/
+dist-demo-native/
+demo/native-ui/
+demo/NATIVE_UI.json
+demo-workspace/
 dist-demo-initial-internal/
 dist-mac-arm64*/
 runtime-demo/

@@ -8,7 +8,7 @@
   const copy = value => JSON.parse(JSON.stringify(value));
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-  const terminal = status => !['running', 'stopping'].includes(status);
+  const terminal = status => !['running', 'stopping', 'queued', 'paused'].includes(status);
 
   function removeWorkspace(state, projectId, busy) {
     const project = state.projects.find(p => p.id === projectId);
@@ -67,6 +67,7 @@
       schedule() { dirty = true; clearTimeout(timer); timer = setTimeout(flush, 250); },
       flush,
       get conflict() { return conflict; },
+      get saved() { return ready && !dirty && !conflict && !pending; },
     };
   }
 
@@ -132,6 +133,7 @@
       Object.assign(tool, event);
     }
     if (event.type === 'finish' || event.type === 'status') state.status = event.status;
+    if (['instructions','context','steering','approval'].includes(event.type)) { state.runtime ||= {}; state.runtime[event.type]=event; }
     return state;
   }
 
@@ -162,43 +164,89 @@
   }
 
   function statusLabel(status, zh) {
+    if (status === 'queued') return zh ? '排队中' : 'Queued';
+    if (status === 'paused') return zh ? '队列已暂停' : 'Queue paused';
     const labels = {running:['Running','运行中'], stopping:['Stopping…','停止中…'], completed:['Completed','已完成'], failed:['Failed','失败'], cancelled:['Cancelled','已取消'], interrupted:['Interrupted','中断'], blocked:['Blocked','阻塞'], stalled:['Needs attention','需要处理'], budget_exhausted:['Budget reached','达到预算']};
     return labels[status]?.[zh ? 1 : 0] || status;
+  }
+
+  function activityLabel(execution, zh = false) {
+    if (execution.status !== 'running') return statusLabel(execution.status, zh);
+    if (execution.runtime?.approval?.status === 'pending') return zh ? '等待工具授权' : 'Waiting for tool approval';
+    const tool = execution.tools?.findLast(item => item.status === 'running');
+    if (tool) return `${zh ? '正在使用工具' : 'Using tool'} · ${tool.tool || 'Tool'}`;
+    const block = execution.blocks?.findLast(item => item.status === 'running');
+    if (block?.text) return zh ? '正在生成回复…' : 'Writing a response…';
+    if (block?.reasoning) return zh ? '正在思考…' : 'Thinking…';
+    if (block) return zh ? '等待模型响应' : 'Waiting for model';
+    return zh ? '正在处理请求' : 'Working';
   }
 
   function executionView(host, execution, {zh = false, live = false} = {}) {
     if (!execution) return;
     const nearBottom = host.parentElement ? host.parentElement.scrollHeight - host.parentElement.scrollTop - host.parentElement.clientHeight < 110 : false;
-    if (!host.querySelector('.wb-execution-status')) host.innerHTML = '<div class="wb-execution-status" role="status"></div><div class="wb-execution-blocks"></div>';
+    if (!host.querySelector('.wb-execution-status')) host.innerHTML = '<div class="wb-execution-status" role="status" aria-live="polite"></div><details class="wb-execution-process"><summary><span class="wb-process-label"></span><span class="wb-process-count"></span></summary><div class="wb-execution-blocks"></div></details>';
     host.classList.add('wb-execution');
-    host.querySelector('.wb-execution-status').textContent = statusLabel(execution.status, zh);
+    host.dataset.status = execution.status;
+    host.querySelector('.wb-execution-status').textContent = activityLabel(execution, zh);
+    const process = host.querySelector('.wb-execution-process');
+    const toolCount = execution.tools?.length || 0;
+    process.querySelector('.wb-process-label').textContent = zh ? '操作过程' : 'Execution process';
+    process.querySelector('.wb-process-count').textContent = `${toolCount} ${zh ? '次工具调用' : 'tool calls'}`;
+    process.hidden = false;
     const parent = host.querySelector('.wb-execution-blocks');
-    function details(key, label, text, running, defaultOpen) {
+    function details(key, label, text, running) {
       let node = [...parent.children].find(child => child.dataset.key === key);
       if (!node) {
         node = document.createElement('details'); node.dataset.key = key;
         node.innerHTML = '<summary></summary><pre></pre>';
-        node.open = Boolean(defaultOpen);
-        node.querySelector('summary').addEventListener('click', () => node.dataset.touched = '1');
+        node.open = false;
         parent.append(node);
       }
       node.classList.toggle('wb-running', running);
       node.querySelector('summary').textContent = label;
       node.querySelector('pre').textContent = text;
-      if (!running && node.dataset.touched !== '1') node.open = false;
     }
     (execution.blocks || []).forEach(block => {
       const running = live && block.status === 'running' && !terminal(execution.status);
       const origin = block.source && block.source !== 'main' ? ` · ${block.source}` : '';
       const name = `${block.model || (zh ? '模型' : 'Model')}${origin}`;
-      if (block.reasoning) details(`reasoning:${block.call_id}`, `${zh ? '模型提供的思考摘要' : 'Provider reasoning'} · ${name}`, block.reasoning, running, running);
-      if (block.text) details(`text:${block.call_id}`, `${zh ? '生成内容' : 'Output'} · ${name}`, block.text, running, running);
+      if (block.reasoning) details(`reasoning:${block.call_id}`, `${zh ? '模型提供的思考摘要' : 'Provider reasoning'} · ${name}`, block.reasoning, running);
+      if (block.text) details(`text:${block.call_id}`, `${zh ? '生成内容' : 'Output'} · ${name}`, block.text, running);
     });
     (execution.tools || []).forEach(tool => {
       const running = live && tool.status === 'running' && !terminal(execution.status);
       details(`tool:${tool.tool_id}`, `${tool.tool || 'Tool'} · ${statusLabel(running ? 'running' : tool.status === 'running' ? execution.status : tool.status, zh)}`,
-        [tool.command, tool.output, tool.error].filter(Boolean).join('\n\n'), running, running);
+        [tool.command, tool.output, tool.error].filter(Boolean).join('\n\n'), running);
     });
+    if (execution.runtime?.instructions) details('instructions', zh ? '已加载指令文件' : 'Loaded instructions', JSON.stringify(execution.runtime.instructions.sources, null, 2), false);
+    if (execution.runtime?.context) details('context', zh ? '上下文压缩记录' : 'Context checkpoint', JSON.stringify(execution.runtime.context, null, 2), false);
+    if (execution.runtime?.steering) details('steering', zh ? '中途指令（安全边界生效）' : 'Steering at a safe boundary', JSON.stringify(execution.runtime.steering, null, 2), false);
+    const approval = execution.runtime?.approval;
+    let gate = host.querySelector('.wb-approval');
+    if (approval?.status === 'pending' && live && execution.status === 'running') {
+      if (!gate) { gate = document.createElement('div'); gate.className = 'wb-approval'; host.append(gate); }
+      if (gate.dataset.step !== approval.step_id) {
+        gate.dataset.step = approval.step_id; gate.replaceChildren();
+        const description = document.createElement('pre');
+        description.textContent = `${zh ? '等待工具授权（仅本次调用）' : 'Approve this tool call only'}: ${approval.tool}\n${JSON.stringify(approval.arguments, null, 2)}`;
+        gate.append(description);
+        for (const approved of [false, true]) {
+          const button = document.createElement('button'); button.type = 'button';
+          button.textContent = approved ? (zh ? '允许一次' : 'Allow once') : (zh ? '拒绝' : 'Deny');
+          button.onclick = async () => {
+            button.disabled = true;
+            try {
+              const response = await fetch('/api/chat/approval', {method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({request_id:execution.request_id, chat_id:execution.chat_id, step_id:approval.step_id, approved})});
+              if (!response.ok) throw new Error(zh ? '授权已失效，请刷新状态' : 'Approval expired; refresh status');
+              gate.remove();
+            } catch (error) { description.textContent += '\n' + error.message; button.disabled = false; }
+          };
+          gate.append(button);
+        }
+      }
+    } else if (gate) gate.remove();
     if (live && nearBottom) host.parentElement.scrollTop = host.parentElement.scrollHeight;
   }
 
@@ -268,5 +316,5 @@
     await refresh();
   }
 
-  return {removeWorkspace,moveSession,createHistory,dialog,reduceEvent,followRun,executionView,executionUsage,countLabel,usageDetails,usagePanel,csv,esc,terminal};
+  return {removeWorkspace,moveSession,createHistory,dialog,reduceEvent,followRun,activityLabel,executionView,executionUsage,countLabel,usageDetails,usagePanel,csv,esc,terminal};
 });

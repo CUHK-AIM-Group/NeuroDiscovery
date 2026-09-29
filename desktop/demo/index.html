@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>NeuroDiscovery Demo</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="demo.css">
+  <script defer src="scenarios.js"></script>
+  <script defer src="player.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="index.html" aria-label="NeuroDiscovery Demo 首页"><span class="brand-mark">N</span><span>NeuroDiscovery<small>RESEARCH WORKSPACE</small></span></a>
+    <div class="sidebar-heading">演示场景 <span>05</span></div>
+    <nav id="scenarios" aria-label="演示场景"></nav>
+    <div class="sidebar-note"><span class="online-dot"></span> 本地演示已就绪<p>无需 API key · 无需联网<br>逐步输出，可停止、可重播</p></div>
+    <div class="sidebar-bottom"><button id="theme" type="button">◐ <span>切换深色</span></button><button id="about" type="button">ⓘ <span>演示说明</span></button></div>
+  </aside>
+  <main>
+    <header class="topbar"><div><span class="breadcrumb">工作空间 /</span> <strong id="scene-title">普通聊天</strong></div><div class="topbar-actions"><span class="demo-badge">DEMO</span><button id="export" type="button" disabled>导出记录 ↗</button></div></header>
+    <div class="disclosure">预设回复与模拟工具过程 · 评分和实验结果仅用于演示</div>
+    <div class="main-grid">
+      <section class="conversation">
+        <div id="scroll-area" class="scroll-area">
+          <div id="welcome" class="welcome"><div class="hero-icon">✦</div><p class="eyebrow">FROM EVIDENCE TO DISCOVERY</p><h1>让研究过程，看得见。</h1><p id="scene-description">从一个问题开始，认识你的科研助手。</p><div id="scene-overview" class="scene-overview"></div></div>
+          <div id="messages" aria-label="对话记录"></div>
+        </div>
+        <div class="composer-area">
+          <div class="progress-row"><span id="status" role="status" aria-live="polite">选择场景，发送预设问题</span><span id="progress-label"></span></div>
+          <div class="progress-track"><div id="progress"></div></div>
+          <div class="composer">
+            <label class="sr-only" for="prompt">演示问题</label>
+            <textarea id="prompt" rows="4" spellcheck="false"></textarea>
+            <div class="composer-controls">
+              <div class="selectors"><label><span class="sr-only">模型</span><select id="model"><option>GPT-6-Astra</option></select></label><label><span class="sr-only">AutoResearch 模式</span><select id="mode"><option value="chat">AutoResearch · Off</option><option value="idea">AutoResearch · Idea</option><option value="data">AutoResearch · Data</option><option value="experiment">AutoResearch · Experiment</option><option value="full">AutoResearch · Full</option></select></label></div>
+              <div class="send-controls"><button id="reset-prompt" type="button" title="恢复预设 prompt">恢复预设</button><button id="stop" type="button" hidden>■ 停止</button><button id="send" type="button" aria-label="发送预设问题">↑</button></div>
+            </div>
+          </div>
+          <p id="composer-hint" class="composer-hint">GPT-6-Astra 为演示选择 · 每次步骤等待 0.5–1.6 秒</p>
+        </div>
+      </section>
+      <aside class="inspector" aria-label="场景信息和产物">
+        <div class="inspector-heading">场景概览 <span id="scene-number">01 / 05</span></div>
+        <div id="context"></div>
+        <label class="full-control" id="full-control" hidden>Full 停止分支<select id="full-outcome"><option value="success">3 轮达成目标</option><option value="limit">20 轮仍不足，停止</option></select></label>
+        <div class="inspector-heading artifact-heading">输出文件 <span id="artifact-count">0</span></div>
+        <div id="artifacts"><p class="muted">播放完成后可查看并导出。</p></div>
+        <button type="button" id="open-data" hidden>打开本地演示数据 ↗</button>
+        <div class="inspector-footer">NeuroOracle + NeuroRuntime<p>图谱、数据、模型与验证，<br>串成一段可追踪的研究过程。</p></div>
+      </aside>
+    </div>
+  </main>
+  <dialog id="preview"><header><h2 id="preview-title"></h2><button id="close-preview" aria-label="关闭预览" type="button">×</button></header><pre id="preview-content"></pre><footer><button id="download-artifact" type="button">下载文件</button></footer></dialog>
+</body>
+</html>
