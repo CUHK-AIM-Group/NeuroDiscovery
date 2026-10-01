@@ -21,13 +21,43 @@
     "copy_full_corpus_again": false
   },
   "execution": {
+    "actor": "root_rules_with_batch_model_extraction",
+    "external_models": true,
+    "agents": false,
+    "ollama": true,
+    "authorization": "tmp/kg_pilot_20260927/COMPLETED.json",
+    "pilot_directory": "tmp/kg_pilot_20260927",
+    "routes": {
+      "preferred": {
+        "provider": "ollama",
+        "endpoint": "https://ollama.com/api/chat",
+        "model": "deepseek-v4.1-flash:cloud",
+        "params": {
+          "think": "high"
+        },
+        "credentials": "~/Downloads/keys.txt by slot order"
+      },
+      "fallback": {
+        "provider": "nvidia",
+        "endpoint": "https://inference-api.nvidia.com/v1",
+        "model": "openai/openai/gpt-5.6-sol",
+        "params": {
+          "reasoning_effort": "high"
+        },
+        "credentials": "~/Downloads/nvidia.txt"
+      }
+    },
+    "whole_corpus_dispatch": "disabled pending user decision on spend cap and semantic layer",
+    "output_directory": "tmp/kg_paper_reconstruction_20260920"
+  },
+  "extraction_contract": "docs/KG_PAPER_EXTRACTION_CONTRACT.md",
+  "end_to_end_plan": "docs/KG_PAPER_RECONSTRUCTION.md",
+  "execution_before_20260927": {
     "actor": "root_direct_source_reading",
     "external_models": false,
     "agents": false,
     "ollama": false,
     "output_directory": "tmp/kg_paper_reconstruction_20260920",
     "authorization": "tmp/kg_paper_reconstruction_20260920/ROOT_MANUAL_AUTHORIZATION_20260922.json"
-  },
-  "extraction_contract": "docs/KG_PAPER_EXTRACTION_CONTRACT.md",
-  "end_to_end_plan": "docs/KG_PAPER_RECONSTRUCTION.md"
+  }
 }
