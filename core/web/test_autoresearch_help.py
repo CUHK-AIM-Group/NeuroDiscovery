@@ -108,10 +108,12 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertNotIn("AUTO_RESEARCH_MODES.includes(parsed.autoResearchMode)", index_html)
         create_session = index_html[index_html.index("function createSession(") :]
         create_session = create_session[: create_session.index("function ensureSession(")]
-        self.assertIn("state.autoResearchMode = AUTO_RESEARCH_MODE_OFF", create_session)
+        self.assertIn("const defaults = lastComposerSettings()", create_session)
+        self.assertIn("state.autoResearchMode = defaults.researchMode", create_session)
         fresh_session = index_html[index_html.index("function startFreshSession(") :]
         fresh_session = fresh_session[: fresh_session.index("function startFreshHomeSession(")]
-        self.assertIn("state.autoResearchMode = AUTO_RESEARCH_MODE_OFF", fresh_session)
+        self.assertIn("const defaults = lastComposerSettings()", fresh_session)
+        self.assertIn("state.autoResearchMode = defaults.researchMode", fresh_session)
         self.assertIn("return createSession('New Chat', targetProjectId", fresh_session)
 
     def test_english_ui_translation_branches_do_not_contain_chinese(self):
@@ -782,7 +784,7 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
             "Enter an API key and confirm the API endpoint below, then save the settings.", index_html
         )
         self.assertIn("请在下方填写 API key 并确认 API 接入点，然后保存设置。", index_html)
-        send_message = index_html[index_html.index("async function sendMessage()") :]
+        send_message = index_html[index_html.index("async function sendMessage(") :]
         send_message = send_message[: send_message.index("function stopCurrentRequest(")]
         self.assertIn(
             "if (!(await ensureChatLlmConfigured())) return;", send_message
