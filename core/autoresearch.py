@@ -52,7 +52,7 @@ _MODE_ALIASES = {
 def normalize_autoresearch_mode(value: object) -> str:
     """Return a supported mode name, defaulting to ``off``."""
     raw = str(value or "").strip().lower().replace("_", "-")
-    legacy = {"on": AUTORESEARCH_MODE_END_TO_END, "high": AUTORESEARCH_MODE_END_TO_END}
+    legacy = {"on": AUTORESEARCH_MODE_END_TO_END, "high": AUTORESEARCH_MODE_END_TO_END, "full": AUTORESEARCH_MODE_END_TO_END}
     raw = legacy.get(raw, raw)
     return raw if raw in SUPPORTED_AUTORESEARCH_MODES else AUTORESEARCH_MODE_OFF
 

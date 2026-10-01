@@ -6,6 +6,7 @@ Owning XML, full abstracts, authority identities and host decisions are bound.
 from collections import defaultdict
 from copy import deepcopy
 import json
+import xml.etree.ElementTree as ET
 
 from core.web.claim_evidence import EvidenceUnavailable
 from neurooracle.src.kg_identity_pilot import digest
@@ -64,6 +65,10 @@ def load_support_records(layer):
     registry_fp=layer['original_relation_extension']['supplemental_identity_registry']
     registry_payload=json.loads(checked(registry_fp).read_text(encoding='utf-8'))
     registry=VerifiedPaperIdentities(registry_payload)
+    wanted=defaultdict(set)
+    for record in records.values():
+        witness=record['observation']['source_review']['primary_source']
+        wanted[witness['path']].add(record['pmid'])
     documents,ledgers,raw_sources={}, {}, {}
     by_target=defaultdict(list)
     for cid,record in records.items():
@@ -81,7 +86,18 @@ def load_support_records(layer):
         require(record['target_shared_claim_id']==decision['target_shared_claim_id'] and record['anchor_original_claim_ids']==decision['original_claim_ids'],'Supplemental original-target binding changed')
         fp=doc['source']
         if fp['path'] not in raw_sources:
-            raw_sources[fp['path']]={p:(d,a,s) for p,d,a,s in own_records(checked(fp).read_bytes(),fp)}
+            # Hash the full immutable source, then decode only the complete
+            # articles actually used by this layer. A raw file may contain
+            # hundreds of unrelated papers; retaining all of them used GBs.
+            root=ET.fromstring(checked(fp).read_bytes())
+            selected=ET.Element('PubmedArticleSet')
+            for article in root:
+                article_pmid=(article.findtext('./MedlineCitation/PMID')
+                              if article.tag=='PubmedArticle' else article.findtext('./BookDocument/PMID'))
+                if article_pmid in wanted[fp['path']]:
+                    selected.append(article)
+            raw_sources[fp['path']]={p:(d,a,s) for p,d,a,s in own_records(ET.tostring(selected),fp)}
+            del root,selected
         raw=raw_sources[fp['path']].get(pmid)
         require(raw is not None and raw[0]==doc and raw[2]=='OWN_RECORD_CACHED','Source document is not the complete owning PubMed article')
         own_registry=VerifiedPaperIdentities(dict(version='kg.paper_identity.v1',records={pmid:raw[1]}))

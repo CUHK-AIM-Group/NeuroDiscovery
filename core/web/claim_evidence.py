@@ -7,10 +7,14 @@ caches a validated revision and adds search/pagination for the web explorer.
 from __future__ import annotations
 
 from collections import OrderedDict
+from contextlib import contextmanager
 from copy import deepcopy
+from contextlib import closing
 import json
+import mmap
 import os
 from pathlib import Path
+import sqlite3
 import threading
 
 from neurooracle.src.claim_evidence_query import paper_evidence, query_claim_evidence
@@ -60,6 +64,10 @@ class AcceptedClaimEvidence:
         self._member_relations = {}
         self._search = {}
         self._details = OrderedDict()
+        self._snapshot_campaign = None
+        self._global_index_fp = None
+        self._global_index = None
+        self._original_resources = None
 
     def _read_current(self):
         if self.path is None:
@@ -77,6 +85,10 @@ class AcceptedClaimEvidence:
                 check_file(campaign[name])
         if self._database:
             check_file(self._database)
+        if self._global_index_fp:
+            check_file(self._global_index_fp)
+        if self._global_index:
+            check_file(self._global_index["database"])
         if self._read_current() != campaign:
             raise EvidenceUnavailable("The graph revision changed during the request; retry")
 
@@ -88,6 +100,9 @@ class AcceptedClaimEvidence:
         self._campaign = None
         self._database = None
         self._details.clear()
+        self._global_index_fp = None
+        self._global_index = None
+        self._original_resources = None
         receipt = json.loads(check_file(campaign["current_acceptance"], full_hash=True).read_text(encoding="utf-8"))
         census_fp = campaign["current_paper_census"]
         if (receipt.get("current_paper_census") != census_fp or
@@ -163,6 +178,253 @@ class AcceptedClaimEvidence:
                         claims=deepcopy(matches[offset:offset + limit]),
                         minimum_reviewed_supporting_papers=minimum_papers, **self._revision(campaign))
 
+    def claim_index(self):
+        """The cached (summary, searchable text) pairs, under the current revision.
+
+        Read-only view for topic aggregation; it never adds, renames or re-extracts
+        a scientific claim, so callers must treat the text as retrieval keys only.
+        """
+        with self._lock:
+            campaign = self._ensure_current()
+            index = [(deepcopy(summary), self._search.get(summary["shared_claim_id"], ""))
+                     for summary in self._summaries]
+            self._check_current(campaign)
+            return index
+
+    @contextmanager
+    def read_snapshot(self):
+        """Keep retrieval and evidence expansion within one accepted revision."""
+        with self._lock:
+            campaign = self._ensure_current()
+            revision = self._revision(campaign)
+            previous = self._snapshot_campaign
+            self._snapshot_campaign = campaign
+            try:
+                yield revision
+            finally:
+                self._snapshot_campaign = previous
+            self._check_current(campaign)
+            if self._revision(campaign) != revision:
+                raise EvidenceUnavailable("Evidence dependencies changed during topic retrieval")
+
+    def topic_search(self, **kwargs):
+        from core.topic_evidence import topic_evidence
+        return topic_evidence(self, **kwargs)
+
+    def idea_hypotheses(self, **kwargs):
+        from core.idea_hypotheses import generate_hypotheses
+        return generate_hypotheses(self, **kwargs)
+
+    def _original_index(self, campaign):
+        """Use the existing sealed retrieval index; never create one on a read."""
+        if self._global_index_fp is None:
+            return None
+        if self._global_index is None:
+            manifest = json.loads(check_file(self._global_index_fp, full_hash=True).read_text(encoding="utf-8"))
+            if (manifest.get("schema") != "kg.global_claim_index.acceptance.v1" or
+                    manifest.get("status") != "COMPLETE_RETRIEVAL_INDEX_NOT_SCIENTIFIC_APPROVAL" or
+                    manifest.get("graph") != campaign["current_graph"] or
+                    manifest.get("all_claim_hashes_verified") is not True):
+                raise EvidenceUnavailable("Original claim index does not cover this accepted graph")
+            check_file(manifest["database"])
+            self._global_index = manifest
+        return self._global_index
+
+    def original_claim_candidates(self, matchers, *, minimum_matches, limit):
+        """Bounded single-paper recall from original endpoints and source IDs.
+
+        Shared/projection members are excluded. One best observation per source
+        keeps a prolific paper from consuming the evidence budget. Counts and
+        scientific fields are only established by query_batch, never by this index.
+        """
+        with self._lock:
+            campaign = self._ensure_current()
+            manifest = self._original_index(campaign)
+            if manifest is None:
+                return dict(available=False, indexed=0, eligible=0, matched=0, candidates=[])
+            import re
+            any_term = re.compile("|".join(pattern.pattern for _, pattern in matchers), re.IGNORECASE)
+            best, matched, scanned, covered = {}, 0, 0, 0
+            path = check_file(manifest["database"])
+            with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
+                rows = db.execute("SELECT cid,rid,subject_id,subject_name,predicate,object_id,object_name,"
+                                  "pmid,doi,source_key,paper_sig FROM observations ORDER BY number")
+                for cid, rid, sid, subject, predicate, oid, obj, pmid, doi, source, signature in rows:
+                    scanned += 1
+                    if cid in self._member_relations:
+                        covered += 1
+                        continue
+                    text = " ".join(str(v or "") for v in (sid, subject, predicate, oid, obj, cid, pmid, doi))
+                    if not any_term.search(text):
+                        continue
+                    hits = [term for term, pattern in matchers if pattern.search(text)]
+                    if len(hits) < minimum_matches:
+                        continue
+                    matched += 1
+                    key = source or signature or cid
+                    rank = (-len(hits), subject.casefold(), cid)
+                    if key not in best or rank < best[key][0]:
+                        best[key] = (rank, dict(
+                            shared_claim_id=rid, original_claim_ids=[cid], query_id=cid,
+                            retrieval_origin="original_singleton", matched_terms=hits,
+                            claim=dict(subject_id=sid, subject_name=subject, predicate=predicate,
+                                       object_id=oid, object_name=obj), observation_count=1,
+                            **{name: None for name in self.COUNTS}))
+            candidates = [row for _, row in sorted(best.values(), key=lambda item: item[0])[:limit]]
+            if scanned != manifest["all_current_claims_indexed"]:
+                raise EvidenceUnavailable("Original index row count differs from its acceptance")
+            self._check_current(campaign)
+            return dict(available=True, indexed=scanned, eligible=scanned - covered,
+                        matched=matched, matched_sources=len(best), candidates=candidates)
+
+    def _indexed_singleton(self, campaign, cid):
+        """Same census/identity/evidence owners as query_claim_evidence, by offset."""
+        manifest = self._original_index(campaign)
+        if manifest is None:
+            return query_claim_evidence(self.path, claim_id=cid)
+        from neurooracle.scripts.project_kg_systematic_review import record_at
+        from neurooracle.src.kg_identity_pilot import digest
+        from neurooracle.src.kg_paper_identity import VerifiedPaperIdentities
+        from neurooracle.src.correlation_grouping import IndexTerms
+        from neurooracle.src.verified_entity_terms import VerifiedEntityTerms
+        from neurooracle.src.relation_evidence import summarize_relation
+        from neurooracle.src.relation_evidence_dossier import observation, summarize
+
+        with closing(sqlite3.connect(check_file(manifest["database"]).as_uri() + "?mode=ro", uri=True)) as db:
+            witness = db.execute("SELECT node_sha,byte_offset,rid FROM observations WHERE cid=?", (cid,)).fetchone()
+        if witness is None:
+            raise KeyError("claim not found: " + cid)
+        seal, offset, rid = witness
+        with closing(sqlite3.connect(check_file(self._database).as_uri() + "?mode=ro", uri=True)) as db:
+            members = db.execute("SELECT cid,node_sha,shared FROM claims WHERE relation_id=?", (rid,)).fetchall()
+        if members != [(cid, seal, 0)]:
+            raise EvidenceUnavailable("Original index and singleton census membership differ")
+        with check_file(campaign["current_graph"]).open("rb") as stream, mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            record = record_at(mm, offset)
+        if record.get("id") != cid or digest(record) != seal:
+            raise EvidenceUnavailable("Indexed observation does not match its current census seal")
+        if self._original_resources is None:
+            def read(name):
+                return json.loads(check_file(campaign[name], full_hash=True).read_text(encoding="utf-8"))
+            receipt = read("current_acceptance")
+            for name, key in (("current_paper_identities", "paper_identities"),
+                              ("current_entity_terms", "entity_terms"),
+                              ("current_source_role_reviews", "source_role_reviews")):
+                if receipt.get(key) != campaign.get(name):
+                    raise EvidenceUnavailable("Unaccepted singleton identity or source review input")
+            self._original_resources = (VerifiedPaperIdentities(read("current_paper_identities")),
+                                        IndexTerms(VerifiedEntityTerms(read("current_entity_terms"))),
+                                        read("current_source_role_reviews") if campaign.get("current_source_role_reviews") else {})
+        registry, terms, reviews = self._original_resources
+        group = summarize_relation(terms.relation_key(record["metadata"]), [record["metadata"]], identities=terms, papers=registry)
+        if group["id"] != rid:
+            raise EvidenceUnavailable("Singleton relation differs from current census")
+        dossier = summarize(group, [observation(record, registry, reviews)])
+        return dict(requested_claim_id=cid, shared_claim_id=rid,
+                    claim={k: group[k] for k in ("subject_id", "subject_name", "predicate", "object_id", "object_name")},
+                    original_claim_ids=[cid], observation_count=1, **paper_evidence(dossier),
+                    scope="complete current graph membership of this reviewed fine relation; not complete literature recall")
+
+    def adjacent_claim_ids(self, node_ids, *, predicates, limit=64):
+        """One bounded original-index hop for a topic's typed chain candidates."""
+        nodes = sorted(set(node_ids))
+        relations = sorted(set(predicates))
+        if not nodes or not relations:
+            return dict(claim_ids=[], truncated=False)
+        if len(nodes) > 128 or not 1 <= limit <= 96:
+            raise ValueError("Too many chain anchors or adjacent claims")
+        with self._lock:
+            campaign = self._ensure_current()
+            manifest = self._original_index(campaign)
+            if manifest is None:
+                return dict(claim_ids=[], truncated=False)
+            marks = ','.join('?' for _ in nodes)
+            predicates_sql = ','.join('?' for _ in relations)
+            with closing(sqlite3.connect(check_file(manifest['database']).as_uri() + '?mode=ro', uri=True)) as db:
+                rows = db.execute(f"SELECT cid FROM observations WHERE (subject_id IN ({marks}) OR object_id IN ({marks})) "
+                                  f"AND predicate IN ({predicates_sql}) AND subject_type NOT IN ('null','', '\"\"') "
+                                  "AND object_type NOT IN ('null','', '\"\"') ORDER BY number LIMIT ?",
+                                  [*nodes, *nodes, *relations, limit + 1]).fetchall()
+            self._check_current(campaign)
+            return dict(claim_ids=[r[0] for r in rows[:limit]], truncated=len(rows) > limit)
+
+    def chain_index(self, *, predicates):
+        """Read lightweight typed edges from the existing sealed original index.
+
+        This is a recall view, not trusted evidence. Retained paths must still
+        resolve their CLM records through query_batch and validate actual nodes.
+        No per-paper representative or arbitrary neighbor cutoff is applied.
+        """
+        with self._lock:
+            campaign = self._ensure_current()
+            manifest = self._original_index(campaign)
+            if manifest is None:
+                return dict(available=False, indexed=0, records=[])
+            relations = sorted(set(predicates))
+            records = []
+            if relations:
+                marks = ','.join('?' for _ in relations)
+                with closing(sqlite3.connect(check_file(manifest['database']).as_uri() + '?mode=ro', uri=True)) as db:
+                    rows = db.execute('SELECT cid,subject_id,subject_name,subject_type,predicate,object_id,object_name,object_type,'
+                                      f'pmid,doi,source_key FROM observations WHERE predicate IN ({marks}) '
+                                      "AND subject_type NOT IN ('null','', '\"\"') AND object_type NOT IN ('null','', '\"\"') ORDER BY number", relations)
+                    for cid, sid, sn, st, predicate, oid, on, ot, pmid, doi, source in rows:
+                        records.append(dict(id=cid, subject_id=sid, subject_name=sn, subject_type=json.loads(st),
+                                            predicate=predicate, object_id=oid, object_name=on, object_type=json.loads(ot),
+                                            source_key=source, pmid=pmid, doi=doi))
+            self._check_current(campaign)
+            return dict(available=True, indexed=manifest['all_current_claims_indexed'], records=records)
+
+    def pair_support_counts(self, pairs):
+        """Count distinct indexed sources joining each endpoint pair, in either direction.
+
+        This is graph exposure, not a prior-art search or a whole-chain novelty verdict.
+        Scan the existing sealed index once; never create an index or write the graph.
+        """
+        pairs = {tuple(sorted(pair)) for pair in pairs}
+        with self._lock:
+            campaign = self._ensure_current()
+            manifest = self._original_index(campaign)
+            if manifest is None:
+                return None
+            sources = {pair: set() for pair in pairs}
+            if pairs:
+                with closing(sqlite3.connect(check_file(manifest['database']).as_uri() + '?mode=ro', uri=True)) as db:
+                    for s, t, work in db.execute('SELECT subject_id,object_id,source_key FROM observations'):
+                        if not isinstance(s, str) or not isinstance(t, str):
+                            continue
+                        pair = tuple(sorted((s, t)))
+                        if pair in sources and work:
+                            sources[pair].add(work)
+            self._check_current(campaign)
+            return {pair: len(works) for pair, works in sources.items()}
+
+    def graph_nodes(self, node_ids):
+        """Read requested actual concept records; absent nodes stay absent."""
+        from neurooracle.scripts.project_kg_systematic_review import record_at
+        nodes = sorted(set(node_ids))
+        if len(nodes) > 128:
+            raise ValueError('Too many chain nodes')
+        with self._lock:
+            campaign = self._ensure_current()
+            found = {}
+            with check_file(campaign['current_graph']).open('rb') as stream, mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                start = mm.find(b'"concepts":{')
+                if start < 0:
+                    raise EvidenceUnavailable('Unsupported graph layout for concept lookup')
+                for nid in nodes:
+                    if not isinstance(nid, str) or nid.startswith('CLM:'):
+                        continue
+                    key = json.dumps(nid, ensure_ascii=False).encode('utf-8') + b':'
+                    pos = mm.find(key, start)
+                    if pos < 0:
+                        continue
+                    record = record_at(mm, pos + len(key))
+                    if record.get('id') == nid and record.get('preferred_name'):
+                        found[nid] = record
+            self._check_current(campaign)
+            return found
+
     def query(self, *, claim_id=None, relation_id=None):
         if bool(claim_id) == bool(relation_id):
             raise ValueError("Provide exactly one original claim ID or shared claim ID")
@@ -174,7 +436,8 @@ class AcceptedClaimEvidence:
             shared_id = relation_id or self._member_relations.get(claim_id)
             key = (None, shared_id) if shared_id else (claim_id, None)
             if key not in self._details:
-                result = query_claim_evidence(self.path, claim_id=claim_id, relation_id=relation_id)
+                result = (self._indexed_singleton(campaign, claim_id) if claim_id and not shared_id
+                          else query_claim_evidence(self.path, claim_id=claim_id, relation_id=relation_id))
                 self._check_current(campaign)
                 self._details[key] = result
                 if len(self._details) > 64:

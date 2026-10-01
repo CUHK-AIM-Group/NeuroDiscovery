@@ -666,7 +666,7 @@ def create_app() -> Any:
     """Build and return the FastAPI application object."""
     _require_webdeps()
 
-    from fastapi import Body, FastAPI, Request, WebSocket, WebSocketDisconnect  # type: ignore
+    from fastapi import Body, FastAPI, Query, Request, WebSocket, WebSocketDisconnect  # type: ignore
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse  # type: ignore
     from fastapi.staticfiles import StaticFiles  # type: ignore
 
@@ -914,6 +914,7 @@ def create_app() -> Any:
     register_routes(app, STATIC_DIR, evaluation_enabled=not demo_build)
     from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
     from core.web.claim_layer_v8 import AcceptedClaimLayer, validate_queries
+    from core.topic_evidence import TopicQueryError
     accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))
     app.state.accepted_claim_evidence = accepted_evidence
     study_service = None if demo_build else UserStudyService()
@@ -3168,6 +3169,8 @@ def create_app() -> Any:
     async def _accepted_evidence_response(method: str, **kwargs: Any) -> Any:
         try:
             return await asyncio.to_thread(getattr(app.state.accepted_claim_evidence, method), **kwargs)
+        except TopicQueryError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=422)
         except KeyError as exc:
             return JSONResponse({"error": str(exc)}, status_code=404)
         except (EvidenceUnavailable, OSError) as exc:
@@ -3187,12 +3190,27 @@ def create_app() -> Any:
             return JSONResponse({"error": "Invalid claim search or page"}, status_code=422)
         return await _accepted_evidence_response("search", query=q, minimum_papers=minimum_papers, offset=offset, limit=limit)
 
+    @app.get("/api/kg/topic-evidence")
+    async def kg_topic_evidence(topic: str, limit: int = 20, evidence_claims: int = 10,
+                               minimum_papers: int = 0, minimum_coverage: float = 0.5,
+                               term: list[str] = Query(default=[])) -> Any:
+        return await _accepted_evidence_response(
+            "topic_search", topic=topic, limit=limit, evidence_claims=evidence_claims,
+            minimum_papers=minimum_papers, minimum_coverage=minimum_coverage, extra_terms=term)
+
     @app.get("/api/kg/claim-evidence")
     async def kg_claim_evidence(claim_id: str = "", relation_id: str = "") -> Any:
         value = claim_id or relation_id
         if bool(claim_id) == bool(relation_id) or len(value) > 300 or not value.startswith("CLM:" if claim_id else "REL:"):
             return JSONResponse({"error": "Provide exactly one original CLM ID or shared REL ID"}, status_code=422)
         return await _accepted_evidence_response("query", claim_id=claim_id or None, relation_id=relation_id or None)
+
+    @app.get('/api/kg/idea-hypotheses')
+    async def kg_idea_hypotheses(topic: str, limit: int = 500, template: list[str] = Query(default=[])) -> Any:
+        from core.idea_hypotheses import TEMPLATES, MAX_POOL_SIZE
+        if not 1 <= limit <= MAX_POOL_SIZE or any(name not in TEMPLATES for name in template):
+            return JSONResponse({'error': 'Invalid hypothesis limit or typed template'}, status_code=422)
+        return await _accepted_evidence_response('idea_hypotheses', topic=topic, limit=limit, templates=template or None)
 
     @app.post("/api/kg/claim-evidence-batch")
     async def kg_claim_evidence_batch(payload: dict[str, Any]) -> Any:

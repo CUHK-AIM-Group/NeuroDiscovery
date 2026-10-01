@@ -33,7 +33,6 @@ try:
 except ImportError:
     Entrez = None
 
-import requests
 
 
 class Source(Enum):
@@ -144,11 +143,12 @@ def search_arxiv(
     
     except Exception as e:
         print(f"Error searching arXiv: {e}", file=sys.stderr)
-        return []
+        raise SystemExit(1) from e
 
 
 def download_arxiv_papers(papers: List[Dict[str, Any]], output_dir: str):
     """Download arXiv papers as PDFs"""
+    import requests
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
@@ -288,7 +288,7 @@ def search_pubmed(
     
     except Exception as e:
         print(f"Error searching PubMed: {e}", file=sys.stderr)
-        return []
+        raise SystemExit(1) from e
 
 
 # ============================================================================
@@ -377,7 +377,7 @@ def search_semantic(
     
     except Exception as e:
         print(f"Error searching Semantic Scholar: {e}", file=sys.stderr)
-        return []
+        raise SystemExit(1) from e
 
 
 # ============================================================================

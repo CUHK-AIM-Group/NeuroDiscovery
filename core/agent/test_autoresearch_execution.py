@@ -28,8 +28,81 @@ def completion(**overrides):
                 evidence_ids=[1]) | overrides
 
 
+def test_shell_python_resolves_to_active_runtime(tmp_path):
+    result = main._run_shell_command('python -c "import sys; print(sys.executable)"', tmp_path, timeout_sec=10)
+    assert result["success"]
+    from pathlib import Path
+    assert Path(result["stdout"].strip()).resolve() == Path(sys.executable).resolve()
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+def test_separate_readonly_verifier_gates_completion(tmp_path, monkeypatch, accepted):
+    def execute(**kwargs):
+        (tmp_path / "result.md").write_text("Synthetic verified result", encoding="utf-8")
+        return {"success": True, "stdout": "Inspected synthetic result"}
+    monkeypatch.setattr(main, "_run_shell_command", execute)
+    agent, calls = session(tmp_path, [
+        reply(calls=[tool("run_shell_command", command="synthetic")]),
+        reply(calls=[tool("finish_autoresearch", **completion())]),
+        reply(json.dumps({"accepted": accepted, "reason": "Offline independent verdict"})),
+    ])
+    agent.env["autoresearch_independent_review"] = True
+    agent._chat()
+    assert agent.autoresearch_state["status"] == ("completed" if accepted else "review_required")
+    assert len(calls) == 3
+    assert "tools" not in calls[-1]
+    assert len(calls[-1]["messages"]) == 2
+    assert "separate read-only" in calls[-1]["messages"][0]["content"]
+    assert agent.autoresearch_state["independent_review"]["accepted"] is accepted
+
+
+def test_steering_is_applied_before_next_model_dispatch(tmp_path):
+    agent, calls = session(tmp_path, [reply("Finished with updated instruction")], mode="off")
+    agent._instruction_lock = threading.Lock()
+    agent._pending_instructions = []
+    agent.steer("Use the revised output directory")
+    assert "updated" in agent._chat()
+    assert calls[0]["messages"][-1]["content"] == "Use the revised output directory"
+    assert not agent._pending_instructions
+    agent.request_cancel()
+    with pytest.raises(ValueError, match="stopping"):
+        agent.steer("Do not accept")
+
+
+def test_long_artifact_is_reviewed_completely(tmp_path):
+    content = '中文证据🙂' * 3000 + '\nFINAL EVIDENCE AND LIMITATIONS'
+    (tmp_path / "result.md").write_bytes(content.encode('utf-8'))
+    agent, calls = session(tmp_path, [reply('{"accepted": true, "reason": "Claimed pass"}')])
+    run = AutoResearchRun(tmp_path, "data")
+    run.state["artifacts"] = [str(tmp_path / "result.md")]
+    assert agent._review_autoresearch(run, "offline-test")["accepted"] is True
+    assert len(calls) == 1
+    packet = json.loads(calls[0]['messages'][1]['content'])
+    assert packet['artifacts'][0]['content'] == content
+    assert packet['artifacts'][0]['partial'] is False
+
+
+def test_resume_uses_new_receipt_without_inheriting_execution_credit(tmp_path):
+    previous = AutoResearchRun(tmp_path, "data")
+    previous.state.update(objective="Original task", summary="Partial result", status="interrupted")
+    previous.save()
+    frozen = previous.path.read_bytes()
+    (tmp_path / "result.md").write_text("Offline output")
+    agent, calls = session(tmp_path, [
+        reply(calls=[tool("inspect_local_path", path="result.md")]),
+        reply(calls=[tool("finish_autoresearch", **completion())]),
+    ])
+    agent.resume_autoresearch_id = previous.path.parent.name
+    agent._chat()
+    assert agent.autoresearch_state["parent_run"] == previous.path.parent.name
+    assert agent.autoresearch_state["objective"] == "Original task"
+    assert len(agent.autoresearch_state["evidence"]) == 1
+    assert "Do not replay earlier tools blindly" in calls[0]["messages"][-1]["content"]
+    assert previous.path.read_bytes() == frozen
+
+
 @pytest.fixture(autouse=True)
-def no_default_cap(monkeypatch):
+def default_cap(monkeypatch):
     monkeypatch.delenv("NEUROCLAW_MAX_TOOL_ITERATIONS", raising=False)
 
 
@@ -46,6 +119,7 @@ def session(tmp_path, responses, mode="data"):
     agent.no_skill_mode = False
     agent._checkpoint_mgr = None
     agent._tool_events = []
+    agent._last_token_usage = {}
     calls = []
     response_iter = iter(responses)
 
@@ -63,14 +137,15 @@ def session(tmp_path, responses, mode="data"):
 def test_continues_beyond_eight_rounds_and_plan_only_replies(tmp_path):
     (tmp_path / "result.md").write_text("Synthetic deliverable; not scientific evidence.", encoding="utf-8")
     sequence = [reply("I will inspect the inputs; shall I continue?")]
-    sequence += [reply(calls=[tool("inspect_local_path", path="result.md")]) for _ in range(10)]
+    sequence += [reply(calls=[tool("inspect_local_path", path="result.md")]) for _ in range(9)]
+    sequence += [reply(calls=[tool("inspect_research_progress", path="result.md", kind="deliverable")])]
     sequence += [reply("Next I will deliver the report."), reply(calls=[tool("finish_autoresearch", **completion())])]
     agent, calls = session(tmp_path, sequence)
     result = agent._chat()
     assert "completed" in result and "result.md" in result
     assert len(calls) == 13
     assert agent.autoresearch_state["iterations"] == 13
-    assert agent.autoresearch_state["iteration_limit"] is None
+    assert agent.autoresearch_state["iteration_limit"] == 40
     assert len(agent.autoresearch_state["evidence"]) == 10
     assert len(agent.history) == 2  # ephemeral continuation prompts don't masquerade as user requests
     assert "AutoResearch continuation" in calls[1]["messages"][-1]["content"]
@@ -158,9 +233,9 @@ def test_repeated_text_only_model_refusal_is_incomplete_not_success(tmp_path):
 
 def test_identical_failed_commands_do_not_loop_forever(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "_run_shell_command", lambda **kwargs: {"success": False, "error": "Unchanged failure"})
-    agent, calls = session(tmp_path, [reply(calls=[tool("run_shell_command", command="synthetic failure")])] * 6)
+    agent, calls = session(tmp_path, [reply(calls=[tool("run_shell_command", command="synthetic failure")])] * 12)
     assert "stalled" in agent._chat()
-    assert len(calls) == 6
+    assert len(calls) == 12
 
 
 def test_cancel_during_response_prevents_all_subsequent_tool_dispatch(tmp_path, monkeypatch):

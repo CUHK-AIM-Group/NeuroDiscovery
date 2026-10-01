@@ -57,6 +57,18 @@ class ModelExtractionSafety(unittest.TestCase):
     def test_wrong_operator_rejected(self):
         v,s=self.example();v['observations'][0]['statistics'][0]['operator']='='
         self.assertIn('observation_0_p_value_or_operator_changed',validate_candidate(v,s))
+    def test_decimal_space_preserves_raw_and_numeric_value(self):
+        candidate,source=self.example()
+        text='Patients had lower volume (P=0. 003).'
+        source['source_snapshot']['abstract']=text
+        candidate['observations'][0]['quotes']=[text]
+        statistic={'raw':'P=0. 003','kind':'p_value','operator':'=','value':.003}
+        candidate['observations'][0]['statistics']=[statistic]
+        before=deepcopy(candidate)
+        self.assertEqual(validate_candidate(candidate,source),[])
+        self.assertEqual(candidate,before)
+        statistic['value']=0
+        self.assertIn('observation_0_p_value_or_operator_changed',validate_candidate(candidate,source))
     def test_repeated_ambiguous_source_span_rejected(self):
         v,s=self.example();s['source_snapshot']['abstract']+=' '+s['source_snapshot']['abstract']
         self.assertIn('observation_0_quote_not_unique_literal',validate_candidate(v,s))

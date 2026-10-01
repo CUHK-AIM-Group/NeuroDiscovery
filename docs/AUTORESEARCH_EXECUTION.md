@@ -33,7 +33,7 @@ requirement is satisfied. Task-specific validation remains essential.
 
 Plans, unexecuted scripts, intermediate artifacts and submitted background jobs
 must not be presented as completion of an execution task. An audited negative
-result, or an empty strict-novelty selection, can be a finished deliverable. Do
+result, or an empty `novelty_first` selection, can be a finished deliverable. Do
 not relax novelty/evidence gates, relabel known relations or fabricate data to
 force a positive result.
 
@@ -49,6 +49,14 @@ failed tool attempts in the recent failure window, stop as **stalled/incomplete*
 not as scientific completion or proof that the requested analysis is impossible.
 Unchanged successful job polling does not trip the failed-attempt guard. A
 non-retryable provider/runtime failure is **interrupted/incomplete**.
+
+A plain reread (no explicit `offset`/`paper_start`) of a file the run has already
+covered returns no new content and is labeled as an EOF/coverage fact rather than
+an empty failure. After a bounded tolerance the runtime refuses further plain
+rereads with a `repeat_read` error and points to synthesis, so a model looping on
+an empty read is redirected instead of idling until the stall guard. Intentional
+rereads with an explicit `offset`/`paper_start` and files not yet fully covered
+are never blocked.
 
 ## Cancellation and records
 

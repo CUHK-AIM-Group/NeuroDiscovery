@@ -175,5 +175,12 @@
       "enabled": false,
       "description": "MATLAB / SPM integration (disabled by default; enable if MATLAB is licensed)"
     }
+  },
+  "harness": {
+    "_comment": "NeuroRuntime harness seams. Off by default so existing paths, including the legacy benchmark suite and its published results, keep their exact tool surface. A benchmark driver enables these per arm.",
+    "skill_tools": {
+      "enabled": false,
+      "description": "Expose search_skills / read_skill so the model loads skills on demand instead of receiving injected summaries"
+    }
   }
 }

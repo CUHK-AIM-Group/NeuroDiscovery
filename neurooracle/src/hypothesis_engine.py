@@ -1105,6 +1105,87 @@ _AAL_REGION_KEYWORDS = [
 class HypothesisEngine:
     """Batch-generate, persist, and rank testable hypotheses from a knowledge graph."""
 
+    @staticmethod
+    def validate_typed_path(chain, nodes, records):
+        """Check an exact claim-backed path, retaining actual edge orientation.
+
+        Callers supply resolved graph records, never candidate-authored metadata.
+        Missing declared types cannot be guessed from a name to make a path fit.
+        """
+        from .claim_semantics import declared_type_atoms
+        if not chain.relations or len(nodes) != len(chain.chain) or len(records) != len(nodes) - 1:
+            raise ValueError("Incomplete typed chain")
+        if len(set(nodes)) != len(nodes) or len({r.get('id') for r in records}) != len(records):
+            raise ValueError("Repeated node or observation in typed chain")
+        for i, md in enumerate(records):
+            if not str(md.get('id', '')).startswith('CLM:') or md.get('predicate') not in chain.relations[i]:
+                raise ValueError("Unknown observation or predicate outside chain template")
+            pair = (md.get('subject_id'), md.get('object_id'))
+            direction = chain.directions[i]
+            if pair == (nodes[i], nodes[i + 1]) and direction in {'forward', 'either'}:
+                sides = ('subject', 'object')
+            elif pair == (nodes[i + 1], nodes[i]) and direction in {'reverse', 'either'}:
+                sides = ('object', 'subject')
+            else:
+                raise ValueError("Disconnected chain or disallowed edge direction")
+            for side, atom in zip(sides, chain.chain[i:i + 2]):
+                declared = md.get(side + '_type') or (md.get('metadata') or {}).get(side + '_type')
+                if atom not in declared_type_atoms(declared):
+                    raise ValueError("Missing or incompatible graph-declared endpoint type")
+
+    @staticmethod
+    def enumerate_typed_paths(chain, records, *, anchor_claim_ids, limit=500):
+        """Bounded exact-template enumeration without scoring or graph mutation."""
+        if not chain.relations or type(limit) is not int or not 1 <= limit <= 10001:
+            raise ValueError("Typed relations and a bounded path limit are required")
+        from .claim_semantics import declared_type_atoms
+        roles = {}
+        def atoms(md, side):
+            value = md.get(side + '_type') or (md.get('metadata') or {}).get(side + '_type')
+            key = str(value)
+            if key not in roles:
+                roles[key] = declared_type_atoms(value)
+            return roles[key]
+        hops = []
+        for i, relations in enumerate(chain.relations):
+            options = defaultdict(list)
+            for md in records:
+                if md.get('predicate') not in relations:
+                    continue
+                for left, right, direction in (('subject', 'object', 'forward'), ('object', 'subject', 'reverse')):
+                    if chain.directions[i] not in {direction, 'either'}:
+                        continue
+                    if not all(atom in atoms(md, side)
+                               for side, atom in zip((left, right), chain.chain[i:i + 2])):
+                        continue
+                    start, end = md.get(left + '_id'), md.get(right + '_id')
+                    if start and end and start != end:
+                        options[start].append((end, md))
+            hops.append(options)
+        found, seen = [], set()
+        def walk(nodes, chosen):
+            if len(found) >= limit:
+                return
+            if len(chosen) == len(hops):
+                if not anchor_claim_ids.intersection(md['id'] for md in chosen):
+                    return
+                # Several papers witnessing the same graph path do not create
+                # several hypotheses. Evidence still resolves via each CLM.
+                key = (tuple(nodes), tuple((md['subject_id'], md['predicate'], md['object_id']) for md in chosen))
+                if key not in seen:
+                    HypothesisEngine.validate_typed_path(chain, nodes, chosen)
+                    seen.add(key)
+                    found.append((list(nodes), list(chosen)))
+                return
+            for end, md in hops[len(chosen)].get(nodes[-1], []):
+                if end not in nodes and md['id'] not in {r['id'] for r in chosen}:
+                    walk([*nodes, end], [*chosen, md])
+        for start in sorted(hops[0]):
+            walk([start], [])
+            if len(found) >= limit:
+                break
+        return found
+
     def __init__(self, kg: KnowledgeGraph):
         self.kg = kg
         # P1: traversal walks the semantic layer only (no `about` provenance edges).
@@ -3402,6 +3483,9 @@ class HypothesisEngine:
 
         if not isinstance(chain, _TaskChain):
             raise TypeError(f"expected atoms.TaskChain, got {type(chain).__name__}")
+
+        if chain.relations:
+            raise ValueError("Use enumerate_typed_paths with resolved claim records for strict relation-constrained chains")
 
         if self._chain_claim_first_scope:
             return self._batch_generate_from_scoped_claims(chain, max_chains)
