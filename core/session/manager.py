@@ -6,12 +6,10 @@ checkpointing so long-running neuroscience sessions can be resumed.
 
 Design decisions
 ----------------
-- Compression uses a sliding window: the oldest messages (beyond a configurable
-  keep_recent count) are summarised into a single "context summary" assistant
-  message.  The system prompt is always preserved.
-- Supports two compression modes:
-  * stub (default): Simple placeholder text, zero cost
-  * llm_summary: LLM-generated semantic summary, requires LLM client
+- Dispatch compaction uses a byte-based token estimate, complete turn/tool
+  boundaries, bounded excerpts and a lossless content-addressed archive.
+- System instructions and the active user task remain verbatim. Legacy summary
+  constructor options are retained for compatibility, not used for dispatch.
 - Checkpoints are written as JSON to workspace/.neuroclaw_checkpoints/.
 - No external dependencies beyond the Python standard library.
 """
@@ -66,42 +64,9 @@ class SessionManager:
     # ── Context compression ────────────────────────────────────────────────────
 
     def maybe_compress(self, history: list[dict]) -> None:
-        """
-        Compress history in-place if it exceeds the keep_recent threshold.
-
-        The system prompt (index 0) is always preserved.
-        Messages beyond keep_recent are replaced by a summary (stub or LLM-generated).
-        """
-        # Count non-system messages
-        user_assistant = [m for m in history if m["role"] != "system"]
-        if len(user_assistant) <= self.keep_recent:
-            return
-
-        system_msgs = [m for m in history if m["role"] == "system"]
-        recent = user_assistant[-self.keep_recent :]
-        old_messages = user_assistant[: -self.keep_recent]
-        compressed_count = len(old_messages)
-
-        # Generate summary based on compression mode
-        if self.compression_mode == "llm_summary" and self.llm_client is not None:
-            summary_content = self._generate_llm_summary(old_messages, compressed_count)
-        else:
-            # Fallback to stub mode
-            summary_content = (
-                f"[Context summary: {compressed_count} earlier message(s) compressed "
-                f"to save context space. Key topics covered in prior turns are available "
-                f"in the session checkpoint.]"
-            )
-
-        summary = {
-            "role": "assistant",
-            "content": summary_content,
-        }
-
-        history.clear()
-        history.extend(system_msgs)
-        history.append(summary)
-        history.extend(recent)
+        """Compact only complete earlier turns; retain a lossless local archive."""
+        from core.session.context import compact_context
+        compact_context(history, Path(self.env.get("workspace_path") or REPO_ROOT), self.env.get("context_input_budget", 24000))
 
     def _generate_llm_summary(self, old_messages: list[dict], count: int) -> str:
         """
