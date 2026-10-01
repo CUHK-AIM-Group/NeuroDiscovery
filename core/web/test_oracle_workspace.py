@@ -49,6 +49,18 @@ def test_host_and_explorer_share_palette_and_dialog_styles():
     assert (STATIC / "vendor/oracle-layout.LICENSE.txt").is_file()
 
 
+def test_huggingface_download_remains_available_in_both_graph_views():
+    css = (STATIC / "claim-evidence.css").read_text(encoding="utf-8")
+    assert 'body.claim-evidence-active #graphUpdateBtn' not in css
+    assert 'body.claim-evidence-active #graphCheckUpdateBtn' not in css
+    button = next(attrs for _, attrs in Elements().items if attrs.get("id") == "graphUpdateBtn")
+    assert "display:none" not in button.get("style", "")
+    assert 'updateBtn.style.display = "none"' not in EXPLORER
+    assert 'if (!download.completed)' in EXPLORER
+    assert 'if (!answer) return;' in EXPLORER
+    assert 'fetch("/api/neurooracle/graph/download"' in EXPLORER
+
+
 def test_responsive_panels_and_shared_appearance_are_local():
     css = (STATIC / "oracle-workspace.css").read_text(encoding="utf-8")
     bridge = (STATIC / "oracle-workspace.js").read_text(encoding="utf-8")

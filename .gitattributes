@@ -9,3 +9,7 @@ desktop/evaluation-materials/manifest.json text eol=lf
 neurooracle/data/user_study/case1_tcp_expert_study_v3.json -text
 neurooracle/data/user_study/case1_tcp_expert_study_v3_reference_notes_v4.json -text
 neurooracle/data/user_study/case1_tcp_expert_pair_assignments_v4.json -text
+
+# Material packs are byte-hashed by their assignment/notes/significance
+# sidecars, so a CRLF checkout must not rewrite the pack bytes.
+core/web/study_materials/** -text

@@ -6,7 +6,9 @@ candidates as reviewed claims. Old shared IDs remain query aliases.
 """
 from collections import OrderedDict
 from copy import deepcopy
+import hashlib
 import json
+from pathlib import Path
 
 from core.web.claim_evidence import AcceptedClaimEvidence, EvidenceUnavailable
 from core.web.claim_layer_support_v1 import paper_evidence, load_support_records, ORIGIN
@@ -109,14 +111,31 @@ class AcceptedClaimLayer(AcceptedClaimEvidence):
         self._layer_aliases = {}
         self._layer_details = {}
         self._layer_loaded_campaign = None
+        self._historical_web_code = []
+        self._historical_code_drift = []
 
     def _check_current(self, campaign):
+        # A topic request owns the lock and checks every dependency before and
+        # after all nested reads. Nested operations still check its live header.
+        if self._snapshot_campaign == campaign:
+            require(self._read_current() == campaign, 'Graph revision changed during topic retrieval')
+            return
         super()._check_current(campaign)
         if campaign.get('current_claim_layer'):
             check_file(campaign['current_claim_layer'])
             if self._layer_loaded_campaign == campaign:
                 for fp in self._layer_inputs:
                     check_file(fp)
+                # Historical copies of the active application/reader are audit
+                # witnesses, not scientific data. Changes are disclosed, while
+                # projections and all source inputs still fail closed.
+                self._historical_code_drift = []
+                for fp in self._historical_web_code:
+                    current_sha = hashlib.sha256(Path(fp['path']).read_bytes()).hexdigest()
+                    if current_sha != fp['sha256']:
+                        self._historical_code_drift.append(dict(
+                            path=fp['path'], accepted_sha256=fp['sha256'],
+                            current_sha256=current_sha, role='historical_application_code'))
 
     def _ensure_current(self):
         campaign = super()._ensure_current()
@@ -127,7 +146,10 @@ class AcceptedClaimLayer(AcceptedClaimEvidence):
         self._layer_inputs = []
         self._layer_aliases = {}
         self._layer_details = {}
+        self._historical_web_code = []
+        self._historical_code_drift = []
         fp = campaign.get('current_claim_layer')
+        self._global_index_fp = None
         if fp:
             layer = json.loads(check_file(fp, full_hash=True).read_text(encoding='utf-8'))
             require(layer.get('schema') in {VERSION, 'kg.accepted_claim_layer.v5', 'kg.accepted_claim_layer.v4', 'kg.accepted_claim_layer.v3', 'kg.accepted_claim_layer.v2', 'kg.accepted_claim_layer.v1'} and layer.get('status') == 'ACCEPTED', 'Claim layer is not accepted')
@@ -168,7 +190,14 @@ class AcceptedClaimLayer(AcceptedClaimEvidence):
             self._member_relations = {cid: s['shared_claim_id'] for s in summaries for cid in s['original_claim_ids']}
             self._layer_aliases, self._layer_details = aliases, details
             self._layer_fp = fp
-            self._layer_inputs = [layer['projection'], *layer.get('review_inputs', []), *extra_inputs, *payload.get('source_support_inputs', [])]
+            active_code = {Path(__file__).resolve(),
+                           Path(__file__).with_name('server.py').resolve(),
+                           Path(__file__).with_name('claim_layer_support_v1.py').resolve()}
+            reviews = layer.get('review_inputs', [])
+            self._historical_web_code = [fp for fp in reviews if Path(fp['path']).resolve() in active_code]
+            runtime_reviews = [fp for fp in reviews if fp not in self._historical_web_code]
+            self._layer_inputs = [layer['projection'], *runtime_reviews, *extra_inputs, *payload.get('source_support_inputs', [])]
+            self._global_index_fp = (payload.get('original_relation_extension') or {}).get('global_index_acceptance')
             self._details = OrderedDict()
         self._layer_loaded_campaign = campaign
         self._check_current(campaign)
@@ -178,6 +207,10 @@ class AcceptedClaimLayer(AcceptedClaimEvidence):
         result = super()._revision(campaign)
         if self._layer_fp:
             result.update(source='accepted_claim_layer', claim_layer_revision=self._layer_fp['sha256'])
+        if self._global_index_fp:
+            result['original_index_revision'] = self._global_index_fp['sha256']
+        if self._historical_code_drift:
+            result['historical_code_drift'] = deepcopy(self._historical_code_drift)
         return result
 
     def query(self, *, claim_id=None, relation_id=None):

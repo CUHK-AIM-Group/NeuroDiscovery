@@ -58,6 +58,7 @@ The linked [NeuroClaw technical report](https://arxiv.org/abs/2604.24696) descri
 
 ## 🚀 Updates
 
+- **[2026.09.27]**: Hypothesis novelty modes consolidated to two: `novelty_first` (evidence-backed novelty only) and `balanced` (the previous composite mode, now the default). The earlier `strict`, `novelty_first` and `weighted` names are still accepted at the request/CLI boundary and mapped to their current equivalent.
 - **[2026.09.15]**: **NeuroDiscovery v1.0.0** brings a refreshed desktop interface, expanded model-provider support including Ollama Cloud, improved AutoResearch continuity, and three configurable hypothesis novelty modes (`strict`, `novelty_first`, `weighted`).
 - **[2026.06.20]**: NeuroClaw now provides Windows and macOS desktop clients, while Linux remains supported through the repository and command-line/web workflows.
 - **[2026.05.23]**: NeuroBench now covers both data processing and model training/evaluation.

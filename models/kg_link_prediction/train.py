@@ -1,4 +1,8 @@
-"""Train ComplEx or relation-aware GNN link predictors on NeuroOracle."""
+"""Legacy triple-split baselines, not the source-supported ranking experiment.
+
+For that task use models.kg_link_prediction.experiment with a reviewed frozen
+bundle and a new explicit allocation. This trainer does not enforce its gates.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ from models.common.artifacts import RunArtifacts
 from models.kg_link_prediction.gnn import (
     GNNLinkPredictor,
     TripleIndex,
+    directed_message_graph,
     message_graph,
     sample_negatives,
 )
@@ -23,10 +28,14 @@ from neurooracle.src.kge.triple_loader import load_triples_from_kg, split_triple
 def _filtered_ranking_metrics(model, embeddings, triples, known, limit=200):
     ranks = []
     for source, relation, target in triples[:limit].tolist():
-        relation_vector = model.relation_embedding.weight[relation]
-        scores = (
-            embeddings[source][None, :] * relation_vector[None, :] * embeddings
-        ).sum(dim=1)
+        chunks = []
+        with torch.no_grad():
+            for start in range(0, len(embeddings), 256):
+                targets = torch.arange(start, min(start + 256, len(embeddings)), device=embeddings.device)
+                candidates = torch.stack((torch.full_like(targets, source),
+                                          torch.full_like(targets, relation), targets), dim=1)
+                chunks.append(model.score(embeddings, candidates))
+        scores = torch.cat(chunks)
         for known_source, known_relation, known_target in known:
             if (
                 known_source == source
@@ -35,9 +44,11 @@ def _filtered_ranking_metrics(model, embeddings, triples, known, limit=200):
             ):
                 scores[known_target] = -torch.inf
         target_score = scores[target]
-        ranks.append(1 + int((scores > target_score).sum().item()))
+        tied = torch.isclose(scores, target_score, rtol=1e-4, atol=1e-6)
+        better = (scores > target_score) & ~tied
+        ranks.append(1 + int(better.sum().item()) + (int(tied.sum().item()) - 1) / 2)
     if not ranks:
-        return {"mrr": 0.0, "hits_at_1": 0.0, "hits_at_3": 0.0, "hits_at_10": 0.0}
+        return {"mrr": None, "hits_at_1": None, "hits_at_3": None, "hits_at_10": None}
     values = np.asarray(ranks)
     return {
         "mrr": float(np.mean(1 / values)),
@@ -49,6 +60,8 @@ def _filtered_ranking_metrics(model, embeddings, triples, known, limit=200):
 
 def _train_gnn(args, train, validation, test):
     device = torch.device(args.device)
+    if args.reverse_relations and args.model != "rgcn":
+        raise ValueError("--reverse-relations is only implemented for the rgcn encoder")
     all_triples = [*train, *validation, *test]
     index = TripleIndex.from_triples(all_triples)
     train_ids = index.encode(train)
@@ -62,7 +75,11 @@ def _train_gnn(args, train, validation, test):
         args.embedding_dim,
         args.layers,
         args.dropout,
+        args.decoder,
+        args.reverse_relations,
     ).to(device)
+    if args.reverse_relations and args.model == "rgcn":
+        edge_index, edge_type = directed_message_graph(train_ids, len(index.relation_to_id))
     train_ids_device = train_ids.to(device)
     edge_index = edge_index.to(device)
     edge_type = edge_type.to(device)
@@ -136,6 +153,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--embedding-dim", type=int, default=64)
     parser.add_argument("--layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument(
+        "--decoder", choices=["distmult", "directional"], default="distmult",
+        help="distmult keeps the historical symmetric decoder; directional can "
+             "represent asymmetric relations",
+    )
+    parser.add_argument(
+        "--reverse-relations", action="store_true",
+        help="give reversed message edges their own relation slots (rgcn only)",
+    )
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--negatives", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-3)

@@ -11,11 +11,15 @@ from neurooracle.scripts.whole_graph_sources_20260914 import own_records
 from neurooracle.tests.test_claim_evidence_query import fingerprint
 
 
-def fixture(tmp_path,pmid='444'):
+def fixture(tmp_path,pmid='444',extra_paper=False):
     path,campaign,records,catalog,dossier,payload=release(tmp_path)
     text='Scoped exposure correlated with the measured outcome in this study.'
     xml=tmp_path/'own.xml'
     xml.write_text(f'<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>{pmid}</PMID><Article><ArticleTitle>Own {pmid}</ArticleTitle><Journal><JournalIssue><PubDate><Year>2020</Year></PubDate></JournalIssue></Journal><Abstract><AbstractText>{text}</AbstractText></Abstract><PublicationTypeList><PublicationType>Journal Article</PublicationType></PublicationTypeList></Article></MedlineCitation><PubmedData><ArticleIdList><ArticleId IdType="pubmed">{pmid}</ArticleId></ArticleIdList><ReferenceList><Reference><ArticleIdList><ArticleId IdType="pubmed">999</ArticleId></ArticleIdList></Reference></ReferenceList></PubmedData></PubmedArticle></PubmedArticleSet>',encoding='utf8')
+    if extra_paper:
+        original=xml.read_text(encoding='utf-8')
+        extra=original.removeprefix('<PubmedArticleSet>').removesuffix('</PubmedArticleSet>').replace(pmid,'555')
+        xml.write_text(original.replace('</PubmedArticleSet>',extra+'</PubmedArticleSet>'),encoding='utf-8')
     _,doc,authority,state=next(own_records(xml.read_bytes(),fingerprint(xml)))
     registry=json.loads((tmp_path/'papers.json').read_text());registry['records'][pmid]=authority
     registry_path=tmp_path/'support_registry.json';registry_path.write_text(json.dumps(registry),encoding='utf8')
@@ -92,3 +96,21 @@ def test_existing_layer_without_supplements_is_unchanged(tmp_path):
     result=next(iter(details.values()))
     assert result['reviewed_supporting_article_count']==1 and result['publication_record_count']==2
     assert not result['supplemental_observation_ids']
+
+
+def test_raw_cache_retains_only_used_whole_articles_with_identical_evidence(tmp_path,monkeypatch):
+    from core.web import claim_layer_support_v1 as support
+    _,_,payload,*_=fixture(tmp_path,extra_paper=True)
+    xml=tmp_path/'own.xml'
+    full={p:(doc,authority,state) for p,doc,authority,state in own_records(xml.read_bytes(),fingerprint(xml))}
+    assert set(full)=={'444','555'}
+    decoded={}
+    def tracked(data,witness):
+        for pmid,doc,authority,state in own_records(data,witness):
+            decoded[pmid]=(doc,authority,state)
+            yield pmid,doc,authority,state
+    monkeypatch.setattr(support,'own_records',tracked)
+    actual=load_support_records(payload)
+    assert decoded=={'444':full['444']}
+    expected=next(iter(payload['supplemental_source_records'].values()))['observation']
+    assert next(iter(actual.values()))[0]['observation']==expected

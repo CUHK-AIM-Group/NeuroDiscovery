@@ -1,5 +1,15 @@
 """GNN link predictors that complement NeuroOracle ComplEx."""
 
-from .gnn import GNNLinkPredictor, TripleIndex
+from .gnn import (
+    DirectionalDecoder,
+    GNNLinkPredictor,
+    TripleIndex,
+    directed_message_graph,
+)
 
-__all__ = ["GNNLinkPredictor", "TripleIndex"]
+__all__ = [
+    "DirectionalDecoder",
+    "GNNLinkPredictor",
+    "TripleIndex",
+    "directed_message_graph",
+]

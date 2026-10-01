@@ -22,6 +22,9 @@ import hashlib
 import os
 import re
 import subprocess
+import signal
+import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -47,6 +50,7 @@ _EXCLUDE_PATTERNS: list[str] = [
     "build/",
     ".venv/",
     "venv/",
+    ".neurodiscovery/",
 ]
 
 
@@ -70,6 +74,7 @@ class ShadowCheckpointManager:
             else ""
         )
         self._dedup: set[str] = set()  # per-turn dedup keys
+        self._operation = threading.local()
 
     # ── Internal helpers ─────────────────────────────────────────────────────
 
@@ -120,10 +125,7 @@ class ShadowCheckpointManager:
         git_dot_dir = shadow_root / ".git"
         if not (git_dot_dir / "HEAD").exists():
             shadow_root.mkdir(parents=True, exist_ok=True)
-            subprocess.run(
-                ["git", "init", str(shadow_root)],
-                capture_output=True, text=True, check=True,
-            )
+            self._execute_git(["init", str(shadow_root)], os.environ.copy(), workspace)
             # Write exclude patterns into the .git info/exclude
             exclude = git_dot_dir / "info" / "exclude"
             exclude.parent.mkdir(parents=True, exist_ok=True)
@@ -151,14 +153,42 @@ class ShadowCheckpointManager:
         self, workspace: Path, *args: str, check: bool = True
     ) -> subprocess.CompletedProcess[str]:
         env = self._git_env(workspace)
-        return subprocess.run(
-            ["git", *args],
-            env=env,
-            capture_output=True,
-            text=True,
-            cwd=str(workspace.resolve()),
-            check=check,
-        )
+        return self._execute_git(list(args), env, workspace, check)
+
+    def _execute_git(self, args, env, workspace, check=True):
+        cancel = getattr(self._operation, 'cancel', None)
+        deadline = getattr(self._operation, 'deadline', time.monotonic() + 15)
+        command = ['git', '-c', 'gc.auto=0', '-c', 'maintenance.auto=false', *args]
+        if (cancel and cancel.is_set()) or time.monotonic() >= deadline:
+            raise TimeoutError('Checkpoint cancelled or time allowance exhausted')
+        with subprocess.Popen(command, cwd=str(workspace.resolve()), env=env,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              start_new_session=os.name != 'nt',
+                              creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0) as process:
+            while True:
+                if (cancel and cancel.is_set()) or time.monotonic() >= deadline:
+                    try:
+                        if os.name == 'nt':
+                            subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], capture_output=True,
+                                           timeout=5, creationflags=subprocess.CREATE_NO_WINDOW)
+                        else:
+                            os.killpg(process.pid, signal.SIGKILL)
+                    except (OSError, subprocess.TimeoutExpired):
+                        pass
+                    finally:
+                        if process.poll() is None:
+                            process.kill()
+                    process.communicate(timeout=5)
+                    raise TimeoutError('Checkpoint cancelled or time allowance exhausted')
+                try:
+                    stdout, stderr = process.communicate(timeout=min(0.2, max(0.01, deadline - time.monotonic())))
+                    result = subprocess.CompletedProcess(command, process.returncode,
+                                                         stdout.decode('utf-8', errors='replace'), stderr.decode('utf-8', errors='replace'))
+                    if check:
+                        result.check_returncode()
+                    return result
+                except subprocess.TimeoutExpired:
+                    continue
 
     # ── Public API ───────────────────────────────────────────────────────────
 
@@ -179,7 +209,16 @@ class ShadowCheckpointManager:
         self._prune(ws)
         return {"commit": commit_hash, "timestamp": ts, "files_changed": 0, "label": label}
 
-    def checkpoint(self, workspace: Path, label: str = "") -> dict:
+    def checkpoint(self, workspace: Path, label: str = "", *, timeout: float = 15, cancel_event=None) -> dict:
+        self._operation.deadline = time.monotonic() + max(0.01, timeout)
+        self._operation.cancel = cancel_event
+        try:
+            return self._checkpoint(workspace, label)
+        finally:
+            del self._operation.deadline
+            del self._operation.cancel
+
+    def _checkpoint(self, workspace: Path, label: str = "") -> dict:
         """Create a snapshot of *workspace* if anything changed.
 
         Returns ``{"skipped": True}`` when nothing changed, or

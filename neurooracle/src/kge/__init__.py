@@ -19,6 +19,12 @@ from .plausibility import (
     score_hypothesis,
 )
 from .specificity import path_specificity, build_degree_map
+from .hypothesis_path import (
+    CandidateMappingError,
+    declared_triples,
+    iter_endpoints,
+    score_candidate,
+)
 
 try:
     from .complex_scorer import ComplExScorer
@@ -29,6 +35,10 @@ __all__ = [
     "Triple",
     "Scorer",
     "ComplExScorer",
+    "CandidateMappingError",
+    "declared_triples",
+    "iter_endpoints",
+    "score_candidate",
     "load_triples_from_kg",
     "split_triples",
     "local_plausibility",

@@ -185,6 +185,8 @@ class TaskChain:
     modifier: TaskModifier = TaskModifier.NONE
     description: str = ""
     example: str = ""
+    relations: tuple[tuple[str, ...], ...] = ()
+    directions: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.name:
@@ -194,6 +196,16 @@ class TaskChain:
                 f"TaskChain '{self.name}': chain must have ≥3 atoms "
                 f"(got {len(self.chain)})"
             )
+        if self.relations or self.directions:
+            if len(self.relations) != len(self.chain) - 1 or len(self.directions) != len(self.relations):
+                raise ValueError("A typed chain needs one relation set and direction per hop")
+            for relations, direction in zip(self.relations, self.directions):
+                if not relations or any(not isinstance(r, str) or not r.strip() for r in relations):
+                    raise ValueError("Chain relations must be explicit nonempty predicate names")
+                if direction not in {"forward", "reverse", "either"}:
+                    raise ValueError("Invalid chain direction")
+                if direction == "either" and not set(relations) <= {"is_associated_with", "associated_with", "correlates_with"}:
+                    raise ValueError("Only explicitly symmetric associations may use either direction")
 
     @property
     def signature(self) -> str:
@@ -215,7 +227,7 @@ class TaskChain:
         return self.chain[1:-1]
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             "name": self.name,
             "chain": [a.value for a in self.chain],
             "modifier": self.modifier.value,
@@ -223,6 +235,9 @@ class TaskChain:
             "example": self.example,
             "signature": self.signature,
         }
+        if self.relations:
+            result.update(relations=[list(r) for r in self.relations], directions=list(self.directions))
+        return result
 
 
 # ── Canonical task registry ──────────────────────────────────────────────────
