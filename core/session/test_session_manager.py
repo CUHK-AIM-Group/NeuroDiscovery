@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import json
 import sys
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.session.manager import SessionManager
+
+
+@pytest.fixture(autouse=True)
+def isolated_checkpoints(tmp_path, monkeypatch):
+    monkeypatch.setattr("core.session.manager.CHECKPOINT_DIR", tmp_path / "checkpoints")
 
 
 def test_session_manager_init(tmp_path):
@@ -33,14 +39,14 @@ def test_maybe_compress_no_compression():
     assert len(history) == original_len
 
 
-def test_maybe_compress_with_compression():
-    """Test compression when history exceeds threshold."""
-    env = {}
+def test_maybe_compress_with_compression(tmp_path):
+    """Token pressure replaces complete earlier turns, not an arbitrary message count."""
+    env = {"workspace_path": str(tmp_path), "context_input_budget": 2048}
     manager = SessionManager(env, keep_recent=2)
     history = [
         {"role": "system", "content": "System prompt"},
         {"role": "user", "content": "Message 1"},
-        {"role": "assistant", "content": "Response 1"},
+        {"role": "assistant", "content": "Response 1" * 10000},
         {"role": "user", "content": "Message 2"},
         {"role": "assistant", "content": "Response 2"},
         {"role": "user", "content": "Message 3"},
@@ -48,14 +54,14 @@ def test_maybe_compress_with_compression():
     ]
     manager.maybe_compress(history)
     # Should have: system + summary + keep_recent (2) messages = 4 total
-    assert len(history) == 4
+    assert len(history) == 6
     # First message should be system
     assert history[0]["role"] == "system"
     # Second message should be the summary
-    assert "Context summary" in history[1]["content"]
+    assert "Extractive context checkpoint" in history[1]["content"]
     # Last 2 messages should be the recent ones
-    assert history[2]["content"] == "Message 3"
-    assert history[3]["content"] == "Response 3"
+    assert history[-2]["content"] == "Message 3"
+    assert history[-1]["content"] == "Response 3"
 
 
 def test_maybe_compress_preserves_system():

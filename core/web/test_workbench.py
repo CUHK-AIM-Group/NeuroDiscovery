@@ -239,6 +239,7 @@ def api(monkeypatch,tmp_path):
             instances.append(self)
         def set_llm_client(self,client): self._llm=client
         def request_cancel(self): self._cancel_event.set(); self.release.set()
+        def steer(self, message): self.steering = message
         def _chat(self):
             self._llm.chat.completions.create(model="gpt-test",messages=self.history)
             self.started.set()
@@ -272,6 +273,9 @@ def test_http_returns_before_completion_and_refresh_never_replays(api):
         assert data["snapshot"]["blocks"][0]["text"]=="Synthetic output"
     assert client.post('/api/chat',json={"message":"duplicate","request_id":rid,"chat_id":"chat"}).status_code==409
     assert client.post('/api/chat',json={"message":"competing","request_id":"another_request_123456","chat_id":"chat"}).status_code==409
+    assert client.post('/api/chat/steer',json={"request_id":rid,"chat_id":"other","message":"No"}).status_code==409
+    assert client.post('/api/chat/steer',json={"request_id":rid,"chat_id":"chat","message":"Updated task"}).json()["accepted"]
+    assert sessions[0].steering == "Updated task"
     assert client.post('/api/chat/cancel',json={"request_id":rid}).json()=={"cancelled":True}
     result=poll_complete(client,rid)
     assert result["status"]=="cancelled"
@@ -305,3 +309,179 @@ def test_node_workbench_behaviors():
     script=Path(__file__).parent / "static" / "tests" / "client-workbench.test.cjs"
     result=subprocess.run(["node","--test",str(script)],capture_output=True,text=True,encoding="utf-8")
     assert result.returncode==0,result.stdout+result.stderr
+
+
+def test_server_queue_survives_observer_and_orders_history_once(api):
+    client, sessions = api
+    first = {'message': 'wait for release', 'server_queue': True, 'request_id': 'queue_first_123456', 'chat_id': 'queued-chat',
+             'history': [{'role': 'user', 'content': 'original context'}]}
+    second = {**first, 'message': 'second prompt', 'request_id': 'queue_second_123456',
+              'history': [{'role': 'user', 'content': 'must not duplicate browser history'}]}
+    assert client.post('/api/chat', json=first).status_code == 202
+    deadline = time.monotonic() + 3
+    while not sessions and time.monotonic() < deadline:
+        time.sleep(.01)
+    assert sessions[0].started.wait(3)
+    assert client.post('/api/chat', json=second).status_code == 202
+    assert client.post('/api/chat', json=second).status_code == 202
+    assert client.post('/api/chat', json={**second, 'message': 'changed'}).status_code == 409
+    assert client.get('/api/chat/runs/queue_second_123456').json()['status'] == 'queued'
+    assert len(sessions) == 1
+    sessions[0].release.set()
+    deadline = time.monotonic() + 4
+    while time.monotonic() < deadline:
+        rows = client.get('/api/chat/queue/queued-chat').json()['items']
+        if all(row['status'] == 'completed' for row in rows):
+            break
+        time.sleep(.01)
+    assert [row['status'] for row in rows] == ['completed', 'completed']
+    assert len(sessions) == 2
+    contents = [message['content'] for message in sessions[1].history]
+    assert contents.count('original context') == 1
+    assert contents.count('wait for release') == 1
+    assert 'must not duplicate browser history' not in contents
+
+
+def test_queue_cancel_pauses_and_requires_explicit_continue(api):
+    client, sessions = api
+    first = {'message': 'wait', 'server_queue': True, 'request_id': 'queue_cancel_123456', 'chat_id': 'cancel-chat'}
+    assert client.post('/api/chat', json=first).status_code == 202
+    deadline = time.monotonic() + 3
+    while not sessions and time.monotonic() < deadline:
+        time.sleep(.01)
+    assert sessions[0].started.wait(3)
+    assert client.post('/api/chat', json={**first, 'message': 'after cancel', 'request_id': 'queue_after_123456'}).status_code == 202
+    assert client.post('/api/chat/cancel', json={'request_id': first['request_id']}).json()['cancelled']
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        rows = client.get('/api/chat/queue/cancel-chat').json()['items']
+        if rows[-1]['status'] == 'paused':
+            break
+        time.sleep(.01)
+    assert rows[-1]['status'] == 'paused'
+    assert len(sessions) == 1
+    assert client.post('/api/chat/queue/cancel-chat/continue').status_code == 200
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        status = client.get('/api/chat/runs/queue_after_123456').json()['status']
+        if status == 'completed':
+            break
+        time.sleep(.01)
+    assert status == 'completed'
+
+
+def test_recovery_cannot_be_injected_through_normal_chat(api):
+    client, sessions = api
+    for queued in [False, True]:
+        response = client.post('/api/chat', json={'message': 'spoof', 'request_id': 'recovery_spoof_123456',
+                                                 'recovery_from': 'someone-else', 'server_queue': queued})
+        assert response.status_code == 400
+    assert not sessions
+
+
+def test_cross_origin_cannot_approve_tools(api):
+    client, _ = api
+    assert client.post('/api/chat/approval', headers={'Origin': 'https://unrelated.example'}, json={}).status_code == 403
+
+
+@pytest.mark.parametrize('mode', ['ask', 'risk', 'never', 'read_only'])
+def test_permission_mode_is_bound_to_http_session(api, mode):
+    client, sessions = api
+    response = client.post('/api/chat', json={'message': 'synthetic permission check', 'permission_mode': mode})
+    assert response.status_code == 200
+    assert sessions[-1].permission_mode == mode
+
+
+def test_tasks_listing_never_schedules_and_creation_requires_confirmation(api, tmp_path):
+    client, sessions = api
+    assert client.get('/api/chat/tasks/chat').json() == {'items': []}
+    payload = {'chat_id': 'chat', 'workspace_path': str(tmp_path), 'path': 'status.json'}
+    assert client.post('/api/chat/tasks', json=payload).status_code == 400
+    assert client.post('/api/chat/tasks', json={**payload, 'confirmed': True, 'max_repairs': 1}).status_code == 400
+    response = client.post('/api/chat/tasks', json={**payload, 'confirmed': True})
+    assert response.status_code == 200
+    task = response.json()
+    assert task['checks'] == 0 and task['max_repairs'] == 0
+    assert client.post('/api/chat/tasks/' + task['id'], json={'chat_id': 'chat', 'action': 'pause'}).status_code == 409
+    assert client.post('/api/chat/tasks/' + task['id'], json={'chat_id': 'chat', 'action': 'pause', 'confirmed': True}).status_code == 200
+    assert client.get('/api/chat/tasks/chat').json()['items'][0]['status'] == 'paused'
+    assert not sessions
+
+
+def test_compact_command_archives_history_and_changes_next_context_without_model_call(api, tmp_path):
+    client, sessions = api
+    history = [{'role': 'user', 'content': 'earlier request'}, {'role': 'assistant', 'content': 'old ' * 6000},
+               {'role': 'user', 'content': 'current request'}, {'role': 'assistant', 'content': 'current reply'}]
+    response = client.post('/api/chat/compact', json={'chat_id': 'compact-chat', 'workspace_path': str(tmp_path), 'history': history})
+    assert response.status_code == 200
+    result = response.json()
+    assert result['status'] == 'compacted' and result['after'] < result['before']
+    assert Path(result['archive']).is_file()
+    assert not sessions
+    response = client.post('/api/chat', json={'message': 'next', 'server_queue': True, 'chat_id': 'compact-chat',
+                          'request_id': 'compact_next_123456', 'workspace_path': str(tmp_path), 'history': history})
+    assert response.status_code == 202
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        data = client.get('/api/chat/runs/compact_next_123456').json()
+        if data['status'] == 'completed':
+            break
+        time.sleep(.01)
+    assert data['status'] == 'completed'
+    assert len(json.dumps(sessions[0].history)) < len(json.dumps(history))
+    assert any(result['sha256'] in message['content'] for message in sessions[0].history)
+
+
+def test_compact_refuses_pending_work(api, tmp_path):
+    import os
+    from core.runtime_store import RuntimeStore
+    client, sessions = api
+    store = RuntimeStore(Path(os.environ['NEURODISCOVERY_WORKBENCH_DB']))
+    store.enqueue({'chat_id': 'busy-compact', 'request_id': 'busy_compact_123456', 'message': 'waiting', 'workspace_path': str(tmp_path)})
+    response = client.post('/api/chat/compact', json={'chat_id': 'busy-compact', 'workspace_path': str(tmp_path)})
+    assert response.status_code == 409
+    assert not sessions
+
+
+def test_reasoning_effort_bound_to_request_not_global_settings(api, monkeypatch):
+    client, sessions = api
+    session_type = main.AgentSession
+    original_init = session_type.__init__
+    def initialize(instance, **kwargs):
+        original_init(instance, **kwargs)
+        instance.env['llm_backend']['model'] = 'gpt-5.5'
+    monkeypatch.setattr(session_type, '__init__', initialize)
+    response = client.post('/api/chat', json={'message': 'synthetic', 'reasoning_effort': 'high'})
+    assert response.status_code == 200
+    assert sessions[0].env['llm_backend']['reasoning_effort'] == 'high'
+    response = client.post('/api/chat', json={'message': 'synthetic', 'reasoning_effort': 'invalid'})
+    assert response.status_code == 400
+
+
+def test_recovery_endpoint_restores_saved_tool_transaction_without_replaying(api, tmp_path, monkeypatch):
+    import os
+    from core.runtime_store import RuntimeStore
+    client, sessions = api
+    store = RuntimeStore(Path(os.environ['NEURODISCOVERY_WORKBENCH_DB']))
+    original = {'message': 'original objective', 'server_queue': True, 'request_id': 'recovery_original_123456',
+                'chat_id': 'recovery-chat', 'workspace_path': str(tmp_path)}
+    store.enqueue(original); store.claim('recovery-chat', 'dead-owner')
+    messages = [{'role': 'user', 'content': 'original objective'},
+                {'role': 'assistant', 'content': '', 'tool_calls': [{'id': 'already-executed', 'type': 'function',
+                    'function': {'name': 'read_workspace_file', 'arguments': '{"path":"result.md"}'}}]},
+                {'role': 'tool', 'tool_call_id': 'already-executed', 'content': '{"success":true}'}]
+    store.checkpoint(original['request_id'], 'recovery-chat', {'workspace': str(tmp_path), 'messages': messages, 'autoresearch': None})
+    store.recover_owner('dead-owner')
+    response = client.post('/api/chat/recover', json={'request_id': original['request_id'], 'chat_id': 'wrong', 'new_request_id': 'recovery_new_123456'})
+    assert response.status_code == 409
+    response = client.post('/api/chat/recover', json={'request_id': original['request_id'], 'chat_id': 'recovery-chat', 'new_request_id': 'recovery_new_123456'})
+    assert response.status_code == 200
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        data = client.get('/api/chat/runs/recovery_new_123456').json()
+        if data['status'] == 'completed':
+            break
+        time.sleep(.01)
+    assert data['status'] == 'completed'
+    assert sessions[0].history[1:] == messages
+    assert len(sessions) == 1

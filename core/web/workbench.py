@@ -158,13 +158,13 @@ class WorkbenchStore:
         with self._lock, self._connect() as conn:
             conn.execute("INSERT OR REPLACE INTO runs VALUES(?,?,?)", (run.id, run.chat_id, json.dumps(run.snapshot(), ensure_ascii=False)))
 
-    def saved_run(self, request_id: str) -> dict | None:
+    def saved_run(self, request_id: str, mark_interrupted: bool = True) -> dict | None:
         with self._lock, self._connect() as conn:
             row = conn.execute("SELECT body FROM runs WHERE request_id=?", (request_id,)).fetchone()
         if not row:
             return None
         result = json.loads(row[0])
-        if result["status"] in {"running", "stopping"}:
+        if mark_interrupted and result["status"] in {"running", "stopping"}:
             result["status"] = "interrupted"
             with self._lock, self._connect() as conn:
                 conn.execute("UPDATE calls SET status='interrupted' WHERE request_id=? AND status='running'", (request_id,))
@@ -187,6 +187,7 @@ class WorkbenchRun:
         self.result = None
         self.blocks: dict[str, dict] = {}
         self.tools: dict[str, dict] = {}
+        self.runtime: dict[str, dict] = {}
         self._lock = threading.RLock()
         self._last_save = time.monotonic()
 
@@ -209,6 +210,8 @@ class WorkbenchRun:
             if event["type"] in {"tool_start", "tool_end"}:
                 tool_id = str(event.get("tool_id") or "")
                 self.tools.setdefault(tool_id, {}).update(event)
+            if event["type"] in {"instructions", "context", "steering", "approval"}:
+                self.runtime[event["type"]] = event
             self.events.append(event)
             if time.monotonic() - self._last_save >= 1:
                 self._last_save = time.monotonic()
@@ -218,7 +221,7 @@ class WorkbenchRun:
         with self._lock:
             return deepcopy({"request_id": self.id, "chat_id": self.chat_id, "seq": self.seq,
                              "status": self.status, "blocks": list(self.blocks.values()),
-                             "tools": list(self.tools.values()), "result": self.result})
+                             "tools": list(self.tools.values()), "runtime": self.runtime, "result": self.result})
 
     def poll(self, after: int) -> dict:
         with self._lock:

@@ -57,7 +57,9 @@ def _client_surface_prompt(raw_surface: Any) -> str:
         "Never inspect, create, or require neuroclaw_environment.json in the user's "
         "project workspace. Never run or recommend installer/setup.py as a prerequisite. "
         "Proceed with the user's task using the inherited desktop runtime. If a specific "
-        "external command is unavailable, diagnose that command directly."
+        "external command is unavailable, diagnose that command directly. "
+        f"The active Python executable is {sys.executable!r}. Shell PATH includes its directory; "
+        "use this interpreter instead of guessing .venv or a system installation."
     )
 
 
@@ -883,7 +885,31 @@ def create_app() -> Any:
         catalog, _probe = _runtime_model_catalog(llm)
         return catalog
 
-    app = FastAPI(title="NeuroDiscovery Web UI", docs_url=None, redoc_url=None)
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def runtime_lifespan(app):
+        scheduled_checks.pause_on_restart()
+        stop_checks = asyncio.Event()
+        async def check_due_files():
+            while not stop_checks.is_set():
+                try:
+                    await asyncio.to_thread(scheduled_checks.tick)
+                except Exception:
+                    scheduled_checks.pause_on_restart()
+                try:
+                    await asyncio.wait_for(stop_checks.wait(), timeout=5)
+                except asyncio.TimeoutError:
+                    pass
+        checker = asyncio.create_task(check_due_files())
+        try:
+            yield
+        finally:
+            stop_checks.set()
+            await checker
+            scheduled_checks.pause_on_restart()
+
+    app = FastAPI(title="NeuroDiscovery Web UI", docs_url=None, redoc_url=None, lifespan=runtime_lifespan)
     from core.harness import register_routes
     register_routes(app, STATIC_DIR, evaluation_enabled=not demo_build)
     from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
@@ -908,6 +934,10 @@ def create_app() -> Any:
 
     @app.middleware("http")
     async def protect_study_api(request: Request, call_next: Any) -> Any:
+        if request.url.path.startswith('/api/chat') and request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+            origin = request.headers.get('origin')
+            if origin and origin.rstrip('/') != str(request.base_url).rstrip('/'):
+                return JSONResponse({'message': 'Cross-origin chat mutation is not allowed'}, status_code=403)
         if demo_build:
             route_path = request.url.path.rstrip("/")
             if route_path in {"/study", "/discovery-study", "/api/studies", "/materials"} or route_path.startswith(("/api/studies/", "/materials/", "/static/study", "/static/discovery-study")):
@@ -1132,6 +1162,14 @@ def create_app() -> Any:
     active_chat_ids: dict[str, str] = {}
     from core.web.workbench import WorkbenchStore, WorkbenchRun, ObservedClient, StateConflict, observe_local_call
     workbench = WorkbenchStore()
+    from core.runtime_store import RuntimeStore
+    from core.permissions import PERMISSION_MODES
+    runtime_store = RuntimeStore(workbench.path)
+    runtime_owner = secrets.token_hex(16)
+    runtime_store.register_owner(runtime_owner)
+    from core.scheduled_checks import ScheduledChecks
+    scheduled_checks = ScheduledChecks(workbench.path)
+    queue_workers: dict[str, Any] = {}
     workbench_runs: dict[str, Any] = {}
     chat_workers: set[Any] = set()
 
@@ -1163,6 +1201,27 @@ def create_app() -> Any:
         except ValueError as exc:
             return JSONResponse({"message": str(exc)}, status_code=400)
 
+    async def workbench_artifact(request: Request, chat_id: str, path: str, download: bool = False) -> Any:
+        from core.web.artifacts import resolve_artifact
+        try:
+            saved = await asyncio.to_thread(workbench.state)
+            target, media_type = await asyncio.to_thread(
+                resolve_artifact, saved.get("state") or {}, chat_id, path, REPO_ROOT,
+                download=download or request.method == "HEAD")
+        except PermissionError:
+            return JSONResponse({"message": "Artifact is outside the permitted workspace"}, status_code=403)
+        except OverflowError as exc:
+            return JSONResponse({"message": str(exc)}, status_code=413)
+        except (ValueError, OSError, RuntimeError):
+            return JSONResponse({"message": "Artifact not found"}, status_code=404)
+        # Even HTML/SVG downloads cannot execute as a same-origin app document.
+        return FileResponse(target, media_type=media_type, filename=target.name,
+                            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+                                     "Content-Security-Policy": "sandbox; default-src 'none'"})
+
+    workbench_artifact.__annotations__["request"] = Request
+    app.add_api_route("/api/workbench/artifact", workbench_artifact, methods=["GET", "HEAD"])
+
     @app.get("/api/workbench/usage")
     async def workbench_usage(days: int = 0, provider: str = "", model: str = "", project_id: str = "",
                               chat_id: str = "", request_id: str = "") -> Any:
@@ -1174,7 +1233,14 @@ def create_app() -> Any:
         run = workbench_runs.get(request_id)
         if run is not None:
             return run.poll(max(0, after))
-        saved = await asyncio.to_thread(workbench.saved_run, request_id)
+        queued = await asyncio.to_thread(runtime_store.get, request_id)
+        if queued and queued['status'] in {'queued', 'paused'}:
+            return {"snapshot": {"request_id": request_id, "chat_id": queued['chat_id'], "status": queued['status'], "seq": 0, "blocks": [], "tools": []},
+                    "events": [], "seq": 0, "status": queued['status'], "result": None}
+        saved = await asyncio.to_thread(workbench.saved_run, request_id, mark_interrupted=not queued or queued['status'] != 'running')
+        if saved is None and queued:
+            return {"snapshot": {"request_id": request_id, "chat_id": queued['chat_id'], "status": queued['status'], "seq": 0, "blocks": [], "tools": []},
+                    "events": [], "seq": 0, "status": queued['status'], "result": json.loads(queued['result']) if queued['result'] else None}
         if saved is None:
             return JSONResponse({"message": "Request not found; no request was replayed."}, status_code=404)
         return {"snapshot": saved, "events": [], "seq": saved["seq"], "status": saved["status"], "result": saved["result"]}
@@ -1188,6 +1254,7 @@ def create_app() -> Any:
                 event = {**event, "tool_id": source + ":" + event["tool_id"], "source": source}
             run.emit(event)
         if not isinstance(session._llm, dict):
+            session._review_llm = ObservedClient(session._llm, workbench, {**meta, "source": "acceptance-review"}, emit, getattr(session, "_cancel_event", None))
             session.set_llm_client(ObservedClient(session._llm, workbench, meta, emit, getattr(session, "_cancel_event", None)))
         else:
             session._local_chat_observer = lambda request: observe_local_call(
@@ -1205,9 +1272,139 @@ def create_app() -> Any:
             if run is not None:
                 run.status = "stopping"
                 run.emit({"type": "status", "status": "stopping"})
-        return {"cancelled": session is not None}
+        queued = runtime_store.get(request_id)
+        removed = False
+        if session is None and queued:
+            removed = runtime_store.cancel(request_id, queued['chat_id'])
+        return {"cancelled": session is not None or removed}
 
-    async def chat_http(payload: dict, request: Request) -> Any:
+    @app.get('/api/chat/queue/{chat_id}')
+    async def get_chat_queue(chat_id: str) -> Any:
+        rows = await asyncio.to_thread(runtime_store.list, chat_id)
+        return {"items": [{"request_id": row['request_id'], "status": row['status'],
+                           "sequence": row['sequence'],
+                           "message": json.loads(row['payload']).get('message', ''),
+                           "result": json.loads(row['result']) if row['result'] else None} for row in rows]}
+
+    @app.get('/api/chat/tasks/{chat_id}')
+    async def list_scheduled_checks(chat_id: str) -> Any:
+        return {'items': await asyncio.to_thread(scheduled_checks.list, chat_id)}
+
+    @app.post('/api/chat/tasks')
+    async def create_scheduled_check(payload: dict) -> Any:
+        if payload.get('confirmed') is not True or payload.get('max_repairs', 0) != 0:
+            return JSONResponse({'message': 'Explicit confirmation required; this checker never repairs experiments'}, status_code=400)
+        try:
+            if not isinstance(payload.get('chat_id'), str) or not isinstance(payload.get('path'), str):
+                raise ValueError('Conversation and relative status-file path are required')
+            workspace = _resolve_workspace_path(payload.get('workspace_path'))
+            return await asyncio.to_thread(scheduled_checks.create, payload['chat_id'], workspace, payload['path'],
+                                           payload.get('interval_minutes', 10), payload.get('max_checks', 24), payload.get('max_hours', 24))
+        except ValueError as exc:
+            return JSONResponse({'message': str(exc)}, status_code=400)
+
+    @app.post('/api/chat/tasks/{task_id}')
+    async def control_scheduled_check(task_id: str, payload: dict) -> Any:
+        try:
+            if payload.get('confirmed') is not True:
+                raise ValueError('Explicit user action required')
+            await asyncio.to_thread(scheduled_checks.control, task_id, payload.get('chat_id', ''), payload.get('action', ''))
+            return {'updated': True}
+        except ValueError as exc:
+            return JSONResponse({'message': str(exc)}, status_code=409)
+
+    @app.get('/api/llm/composer-capabilities')
+    async def composer_capabilities(provider: str = '', model: str = '') -> Any:
+        from core.llm.model_capabilities import capabilities
+        cfg = dict(load_environment().get('llm_backend') or {})
+        if provider:
+            cfg['provider'] = provider
+        return capabilities(cfg, model)
+
+    @app.post('/api/chat/compact')
+    async def compact_chat_context(payload: dict) -> Any:
+        chat_id = payload.get('chat_id')
+        if not isinstance(chat_id, str) or not chat_id or len(chat_id) > 200:
+            return JSONResponse({'message': 'Invalid conversation'}, status_code=400)
+        if chat_id in active_chat_ids:
+            return JSONResponse({'message': 'Wait for the active turn before compacting'}, status_code=409)
+        try:
+            workspace = _resolve_workspace_path(payload.get('workspace_path'))
+            raw = payload.get('history', [])
+            if not isinstance(raw, list) or len(json.dumps(raw).encode()) > 8 * 1024 * 1024:
+                raise ValueError('Invalid or oversized history')
+            history = [{'role': item['role'], 'content': item['content']} for item in raw
+                       if isinstance(item, dict) and item.get('role') in {'user', 'assistant'} and isinstance(item.get('content'), str)]
+            return await asyncio.to_thread(runtime_store.compact_chat, chat_id, workspace, history)
+        except ValueError as exc:
+            return JSONResponse({'message': str(exc)}, status_code=409)
+
+    async def continue_chat_queue(chat_id: str, request: Request) -> Any:
+        try:
+            runtime_store.continue_queue(chat_id)
+        except ValueError as exc:
+            return JSONResponse({"message": str(exc)}, status_code=409)
+        start_queue_worker(chat_id, request)
+        return {"continued": True}
+    continue_chat_queue.__annotations__['request'] = Request
+    app.post('/api/chat/queue/{chat_id}/continue')(continue_chat_queue)
+
+    @app.post('/api/chat/approval')
+    async def decide_tool_approval(payload: dict) -> Any:
+        request_id = str(payload.get('request_id') or '')
+        run = workbench_runs.get(request_id)
+        if run is None or run.chat_id != payload.get('chat_id') or run.status != 'running' or type(payload.get('approved')) is not bool:
+            return JSONResponse({"message": "Approval is not for an active request in this conversation"}, status_code=409)
+        changed = runtime_store.decide(request_id, str(payload.get('step_id') or ''), payload['approved'])
+        return JSONResponse({"decided": changed}, status_code=200 if changed else 409)
+
+    @app.get('/api/chat/recovery/{request_id}')
+    async def execution_recovery(request_id: str) -> Any:
+        return await asyncio.to_thread(runtime_store.recovery, request_id)
+
+    async def recover_chat(payload: dict, request: Request) -> Any:
+        source_id = str(payload.get('request_id') or '')
+        chat_id = str(payload.get('chat_id') or '')
+        try:
+            next_id = payload.get('new_request_id')
+            if not isinstance(next_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', next_id):
+                raise ValueError('Supply a new stable request ID')
+            existing = runtime_store.get(next_id)
+            if existing:
+                body = json.loads(existing['payload'])
+                if existing['chat_id'] != chat_id or body.get('recovery_from') != source_id:
+                    raise ValueError('Recovery request ID is already bound to different work')
+                return {'type': 'accepted', 'request_id': next_id}
+            saved = runtime_store.resumable(source_id, chat_id)
+            source = runtime_store.get(source_id)
+            next_payload = json.loads(source['payload'])
+            next_payload.update(request_id=next_id, recovery_from=source_id)
+            entry = runtime_store.enqueue_recovery(next_payload, source_id, saved)
+        except ValueError as exc:
+            return JSONResponse({'message': str(exc)}, status_code=409)
+        start_queue_worker(chat_id, request)
+        return {'type': 'accepted', 'request_id': entry['request_id']}
+    recover_chat.__annotations__['request'] = Request
+    app.post('/api/chat/recover')(recover_chat)
+
+    @app.post("/api/chat/steer")
+    async def steer_chat(payload: dict) -> Any:
+        request_id = str(payload.get("request_id") or "")
+        session = active_chat_requests.get(request_id)
+        run = workbench_runs.get(request_id)
+        if session is None or run is None or run.chat_id != payload.get("chat_id") or run.status != "running":
+            return JSONResponse({"message": "Request is not running in this conversation"}, status_code=409)
+        if getattr(session, "no_skill_mode", False) or isinstance(session._llm, dict):
+            return JSONResponse({"message": "This backend does not support tool-boundary steering"}, status_code=409)
+        try:
+            session.steer(payload.get("message"))
+        except (ValueError, AttributeError) as exc:
+            return JSONResponse({"message": str(exc)}, status_code=400)
+        run.emit({"type": "steering", "status": "pending", "text": payload["message"]})
+        workbench.save_run(run)
+        return {"accepted": True, "scope": "next_safe_model_boundary", "request_id": request_id}
+
+    async def execute_chat_http(payload: dict, request: Request, queued_dispatch: bool = False) -> Any:
         """HTTP fallback for chat when WebSocket is unavailable."""
         user_text = str(payload.get("message", "")).strip()
         raw_history = payload.get("history", [])
@@ -1220,6 +1417,9 @@ def create_app() -> Any:
         client_surface = payload.get("client_surface", "web")
         if not user_text:
             return JSONResponse({"type": "error", "message": "Empty message"}, status_code=400)
+        resume_id = payload.get("resume_autoresearch_id")
+        if resume_id is not None and (not isinstance(resume_id, str) or not re.fullmatch(r"[a-f0-9]{32}", resume_id) or autoresearch_mode == "off"):
+            return JSONResponse({"type": "error", "message": "Resume requires a valid checkpoint ID and enabled AutoResearch scope"}, status_code=400)
 
         help_request = parse_help_command(user_text, payload.get("language"))
         if help_request is not None:
@@ -1248,6 +1448,8 @@ def create_app() -> Any:
         saved_run = await asyncio.to_thread(workbench.saved_run, request_id)
         if saved_run is not None:
             return JSONResponse({"type": "accepted", "request_id": request_id}, status_code=202)
+        if not queued_dispatch and runtime_store.list(chat_id):
+            return JSONResponse({'type': 'error', 'message': 'This conversation uses the server queue; submit through server_queue.'}, status_code=409)
         if request_id in active_chat_requests:
             return JSONResponse({"type": "error", "message": "Request is already running"}, status_code=409)
         if chat_id and chat_id in active_chat_ids:
@@ -1257,6 +1459,33 @@ def create_app() -> Any:
             checkpoint_scope=chat_id or None,
             autoresearch_mode=autoresearch_mode,
         )
+        session.env.setdefault("autoresearch_independent_review", True)
+        session.env.setdefault("autoresearch_novelty_gate", True)
+        if 'reasoning_effort' in payload:
+            from core.llm.model_capabilities import request_options
+            effort = payload['reasoning_effort']
+            if effort not in {'default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'}:
+                return JSONResponse({'type': 'error', 'message': 'Invalid reasoning effort'}, status_code=400)
+            cfg = {**session.env.get('llm_backend', {}), 'reasoning_effort': effort}
+            try:
+                request_options(cfg, cfg.get('model', ''), {})
+            except ValueError as exc:
+                return JSONResponse({'type': 'error', 'message': str(exc)}, status_code=400)
+            session.env['llm_backend'] = cfg
+        session.resume_autoresearch_id = payload.get("resume_autoresearch_id")
+        session.novelty_mode = novelty_mode
+        session._runtime_store = runtime_store
+        session._runtime_request_id = request_id
+        session._runtime_chat_id = chat_id
+        session.permission_mode = payload.get('permission_mode', 'ask')
+        session.response_language = payload.get('language')
+        session.env['semantic_context_compaction'] = payload.get('semantic_compaction') is True
+        if not isinstance(session.permission_mode, str) or session.permission_mode not in PERMISSION_MODES:
+            return JSONResponse({"type": "error", "message": "Unsupported permission mode"}, status_code=400)
+        if 'repair_limit' in payload:
+            if type(payload['repair_limit']) is not int or not 0 <= payload['repair_limit'] <= 3:
+                return JSONResponse({"type": "error", "message": "repair_limit must be 0–3"}, status_code=400)
+            session.env['autoresearch_repair_limit'] = payload['repair_limit']
 
         try:
             loader = SkillLoader(REPO_ROOT / "skills")
@@ -1277,13 +1506,32 @@ def create_app() -> Any:
         except Exception as exc:
             return JSONResponse({"type": "error", "message": f"LLM backend error: {exc}"}, status_code=500)
 
-        soul_path = REPO_ROOT / "SOUL.md"
-        soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
+        from core.instructions import load_instructions
+        try:
+            soul, instruction_sources = load_instructions(workspace, REPO_ROOT)
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"type": "error", "message": f"Workspace instructions unavailable: {exc}"}, status_code=400)
+        memory = getattr(session, "_memory_store", None)
+        if memory is not None:
+            soul += memory.render_index()
         skill_names = ", ".join(s["name"] for s in skills)
         surface_prompt = _client_surface_prompt(client_surface)
         language_prompt = _response_language_prompt(payload.get("language"))
         system_parts = [soul, surface_prompt, language_prompt, f"Loaded skills: {skill_names}"]
         system_parts.append(build_selection_prompt(novelty_mode))
+        if autoresearch_mode == "idea":
+            system_parts.append(
+                "[Idea research retrieval route]\n"
+                f"The local graph API is {str(request.base_url).rstrip('/')}/api/kg. "
+                "Start with bounded GET /search?q=<URL-encoded concept>&limit=10, then inspect the "
+                "documented graph/claim endpoints for returned IDs. GET /api/neurooracle/graph/status "
+                "reports graph availability. A concept match is not paper evidence. Preserve provenance "
+                "and distinguish unavailable reviewed evidence from no relevant science. Read the relevant "
+                "SKILL.md before using its method. Do not recursively scan the entire checkout, virtual "
+                "environments, node_modules, archives or multi-GB graph files with findstr/grep. "
+                "If an API is unavailable, inspect only the relevant API/CLI documentation and bounded "
+                "source files. Do not download, replace or rebuild the graph without explicit user approval."
+            )
         session.history = [{
             "role": "system",
             "content": "\n\n".join(part for part in system_parts if part),
@@ -1312,6 +1560,12 @@ def create_app() -> Any:
         user_payload = "\n\n".join(payload_parts)
 
         session.history.append({"role": "user", "content": user_payload})
+        if payload.get('recovery_from'):
+            saved = runtime_store.recovery(payload['recovery_from'])['checkpoint']
+            if saved is None or Path(saved['workspace']).resolve() != workspace.resolve():
+                return JSONResponse({'type': 'error', 'message': 'Recovery workspace mismatch'}, status_code=409)
+            session.history = session.history[:1] + [message for message in saved['messages'] if message.get('role') not in {'system', 'developer'}]
+            session._recovery_state = saved.get('autoresearch')
 
         workspace_before = _workspace_change_snapshot(workspace)
         active_chat_requests[request_id] = session
@@ -1321,6 +1575,7 @@ def create_app() -> Any:
         workbench_runs[request_id] = run
         workbench.save_run(run)
         observe_session(session, run, str(payload.get("project_id") or ""))
+        run.emit({"type": "instructions", "sources": instruction_sources})
 
         async def execute_turn() -> dict:
             try:
@@ -1335,6 +1590,7 @@ def create_app() -> Any:
                           "provider_used": str(llm_cfg.get("provider", "unknown")),
                           "model_used": str(llm_cfg.get("model", "unknown")),
                           "request_id": request_id, "novelty_mode": novelty_mode, "autoresearch": research,
+                          "autoresearch_mode": autoresearch_mode,
                           "tool_events": _summarize_web_tool_events(getattr(session, "_tool_events", [])),
                           "workspace_changes": await asyncio.to_thread(_workspace_change_summary, workspace, workspace_before),
                           "workspace_change_scope": "turn", "execution": run.snapshot(),
@@ -1345,7 +1601,11 @@ def create_app() -> Any:
             except Exception as exc:
                 cancelled = getattr(session, "_cancel_event", None)
                 status = "cancelled" if cancelled is not None and cancelled.is_set() else "interrupted"
+                from core.api_diagnostics import exception_diagnostic
+                diagnostic = exception_diagnostic(exc, 'web_chat_turn')
+                run.emit({'type': 'api_diagnostic', **diagnostic})
                 result = {"type": "error", "request_id": request_id,
+                          "error_diagnostic": diagnostic,
                           "message": f"Execution {status} ({type(exc).__name__}); partial output and usage are preserved. No request was replayed.",
                           "execution": run.snapshot(), "usage": await asyncio.to_thread(workbench.usage, request_id=request_id)}
                 result["execution"]["status"] = status
@@ -1355,6 +1615,8 @@ def create_app() -> Any:
                 active_chat_requests.pop(request_id, None)
                 if active_chat_ids.get(chat_id) == request_id:
                     active_chat_ids.pop(chat_id, None)
+                if not queued_dispatch:
+                    start_queue_worker(chat_id, request)
                 # Completed requests remain durable; keep only recent in-memory snapshots.
                 completed = [key for key, value in workbench_runs.items() if value.status not in {"running", "stopping"}]
                 for key in completed[:-100]:
@@ -1365,7 +1627,8 @@ def create_app() -> Any:
         worker.add_done_callback(chat_workers.discard)
         if payload.get("stream_events") is True:
             # Browser reconnect/reload observes this request; only an explicit Stop cancels it.
-            return JSONResponse({"type": "accepted", "request_id": request_id}, status_code=202)
+            return JSONResponse({"type": "accepted", "request_id": request_id, "autoresearch_mode": autoresearch_mode,
+                                 "runtime_contract": "autoresearch-v1"}, status_code=202)
 
         async def watch_disconnect() -> None:
             while True:
@@ -1374,17 +1637,77 @@ def create_app() -> Any:
                     return
                 await asyncio.sleep(0.25)
 
-        disconnect_watch = asyncio.create_task(watch_disconnect())
+        disconnect_watch = None if queued_dispatch else asyncio.create_task(watch_disconnect())
         try:
             result = await asyncio.shield(worker)
         except asyncio.CancelledError:
             session.request_cancel()
             raise
         finally:
-            disconnect_watch.cancel()
+            if disconnect_watch is not None:
+                disconnect_watch.cancel()
             # A cancelled HTTP handler must not erase the handle while its worker is draining.
             worker.add_done_callback(lambda _task: active_chat_requests.pop(request_id, None))
         return result
+
+    async def drain_chat_queue(chat_id: str, request: Request) -> None:
+        try:
+            while True:
+                if chat_id in active_chat_ids:
+                    return
+                entry = await asyncio.to_thread(runtime_store.claim, chat_id, runtime_owner)
+                if entry is None:
+                    return
+                payload = json.loads(entry['payload'])
+                history = runtime_store.history_for(entry['request_id'])
+                payload.update(history=history, stream_events=False)
+                try:
+                    result = await execute_chat_http(payload, request, queued_dispatch=True)
+                    if isinstance(result, JSONResponse):
+                        result = json.loads(result.body)
+                    status = result.get('execution', {}).get('status') or ('completed' if result.get('type') == 'done' else 'failed')
+                except Exception as exc:
+                    result, status = {"type": "error", "message": f"Queue dispatch failed ({type(exc).__name__}); no automatic replay."}, 'interrupted'
+                await asyncio.to_thread(runtime_store.finish, entry['request_id'], runtime_owner, result, status)
+                if status != 'completed':
+                    return
+        finally:
+            queue_workers.pop(chat_id, None)
+            rows = runtime_store.list(chat_id)
+            if chat_id not in active_chat_ids and any(row['status'] == 'queued' for row in rows) and not any(row['status'] in {'running', 'paused', 'interrupted'} for row in rows):
+                start_queue_worker(chat_id, request)
+
+    def start_queue_worker(chat_id: str, request: Request) -> None:
+        if chat_id not in queue_workers:
+            worker = asyncio.create_task(drain_chat_queue(chat_id, request))
+            queue_workers[chat_id] = worker
+            chat_workers.add(worker)
+            worker.add_done_callback(chat_workers.discard)
+
+    async def chat_http(payload: dict, request: Request) -> Any:
+        if payload.get('recovery_from'):
+            return JSONResponse({'type': 'error', 'message': 'Use the checked recovery endpoint'}, status_code=400)
+        if payload.get('server_queue') is not True:
+            return await execute_chat_http(payload, request)
+        chat_id, request_id = payload.get('chat_id'), payload.get('request_id')
+        if not isinstance(chat_id, str) or not chat_id.strip() or len(chat_id) > 200 or not isinstance(request_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', request_id):
+            return JSONResponse({"type": "error", "message": "Queue requires a conversation and stable request ID"}, status_code=400)
+        if not isinstance(payload.get('message'), str) or not payload['message'].strip():
+            return JSONResponse({"type": "error", "message": "Empty queued message"}, status_code=400)
+        try:
+            payload = {**payload, 'workspace_path': str(_resolve_workspace_path(payload.get('workspace_path')))}
+            validate_mode(payload.get('novelty_mode', DEFAULT_MODE))
+            if not isinstance(payload.get('permission_mode', 'ask'), str) or payload.get('permission_mode', 'ask') not in PERMISSION_MODES:
+                raise ValueError('Unsupported permission mode')
+            if 'repair_limit' in payload and (type(payload['repair_limit']) is not int or not 0 <= payload['repair_limit'] <= 3):
+                raise ValueError('repair_limit must be 0–3')
+            entry = await asyncio.to_thread(runtime_store.enqueue, payload)
+        except ValueError as exc:
+            return JSONResponse({"type": "error", "message": str(exc)}, status_code=409)
+        start_queue_worker(chat_id, request)
+        return JSONResponse({"type": "accepted", "request_id": request_id, "status": entry['status'],
+                             "autoresearch_mode": normalize_autoresearch_mode(payload.get('autoresearch_mode', 'off')),
+                             "runtime_contract": "autoresearch-v1"}, status_code=202)
 
     chat_http.__annotations__["request"] = Request
     app.post("/api/chat")(chat_http)
@@ -1581,8 +1904,11 @@ def create_app() -> Any:
                 }))
 
             # Build system prompt
-            soul_path = REPO_ROOT / "SOUL.md"
-            soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
+            from core.instructions import load_instructions
+            soul, instruction_sources = load_instructions(getattr(session, "workspace", None) or REPO_ROOT, REPO_ROOT)
+            memory = getattr(session, "_memory_store", None)
+            if memory is not None:
+                soul += memory.render_index()
             skill_names = ", ".join(s["name"] for s in skills)
             session.history = [
                 {"role": "system", "content": f"{soul}\n\nLoaded skills: {skill_names}"}
@@ -1633,6 +1959,15 @@ def create_app() -> Any:
                         await websocket.send_text(json.dumps({"type": "error", "message": str(exc)}))
                         continue
                     session.configure_autoresearch(autoresearch_mode)
+                    session.novelty_mode = novelty_mode
+                    session._runtime_store = runtime_store
+                    session._runtime_request_id = secrets.token_urlsafe(24)
+                    session._runtime_chat_id = str(msg.get('chat_id') or '')
+                    session.permission_mode = 'read_only'
+                    soul, instruction_sources = load_instructions(session.workspace, REPO_ROOT)
+                    session.env.setdefault("autoresearch_independent_review", True)
+                    session.env.setdefault("autoresearch_novelty_gate", True)
+                    session.resume_autoresearch_id = msg.get("resume_autoresearch_id")
                     language_context = _response_language_prompt(msg.get("language"))
                     # Replace per-request preferences; stale turns must not override this turn.
                     session.history[0]["content"] = (
