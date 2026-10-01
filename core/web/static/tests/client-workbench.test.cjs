@@ -139,6 +139,7 @@ function queueFixture() {
     getHypothesisMode:()=> 'novelty_first', composerReasoningEffort:async()=> 'high', buildSkillInstruction:()=>'',buildAttachmentText:()=>'',
     uiText:en=>en, tr:text=>text, newMessageId:()=>`message-${++sequence}`, nowISO:()=> 'now',
     workspacePathForSession:()=>'/workspace', clearPendingFiles:()=>{context.state.pendingFiles=[];},
+    serverQueueAvailable:()=>true,
     saveSessions(){}, renderMessageQueue(){}, chatPanelEl:{classList:{remove(){}}}, welcomeEl:{style:{}},
     beginAutoTitleForFirstUserTurn(){}, beginSessionRequest:()=>{if(pending.request)return false; pending.request={requestId:`request-${++sequence}`,researchMode:'off'};session.pendingRequest={};return true;},
     sessionRequestFor:()=>pending.request, renderSidebarLists(){},renderActiveSession(){},loadCheckpoints(){},scrollToBottom(){},closeSlashMenu(){},currentUiLanguage:()=> 'en',
@@ -165,6 +166,21 @@ test('busy composer submits durable server queue entries without starting client
   assert.ok(posted.every(item=>item.server_queue===true));
   assert.ok(posted.every(item=>item.reasoning_effort==='high'));
   assert.notEqual(posted[0].request_id,posted[1].request_id);
+});
+
+test('a backend without the queue endpoint keeps the queue in the browser', async()=>{
+  const {context,session,requests,pending}=queueFixture();
+  context.serverQueueAvailable=()=>false;
+  pending.request={requestId:'busy'};
+  const posted=[];
+  context.crypto=require('node:crypto').webcrypto;
+  context.fetch=async(url, options)=>{posted.push(url);return {ok:true,json:async()=>({type:'accepted'})};};
+  context.inputEl.value='held locally';
+  await context.sendMessage();
+  assert.equal(posted.length,0);
+  assert.equal(requests.length,0);
+  assert.equal(session.messageQueue.length,1);
+  assert.equal(session.messageQueue[0].text,'held locally');
 });
 
 test('/compact is a local control and never becomes a model prompt',async()=>{

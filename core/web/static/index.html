@@ -8328,6 +8328,7 @@
   }
 
   async function openScheduledTasks(session) {
+    if(!serverQueueAvailable()) {showError(uiText('This backend does not provide scheduled checks; no task was created.','当前后端不提供定时检查；未创建任务。'));return;}
     const dialog=document.createElement('dialog');dialog.className='wb-dialog wb-tasks';
     const title=document.createElement('h2');title.id='scheduled-tasks-title';title.textContent=uiText('Scheduled checks','定时检查');
     dialog.setAttribute('aria-labelledby',title.id);
@@ -8381,6 +8382,7 @@
 
   async function compactConversation(session) {
     if(!session || session.compacting) return;
+    if(!serverQueueAvailable()) {showError(uiText('This backend does not provide context compaction; no history was changed.','当前后端不提供上下文压缩；会话历史未改动。'));return;}
     if(isSessionWaiting(session.id) || state.pendingFiles.length) {showError(uiText('Finish the active turn and remove attachments before /compact.','请等待当前任务结束并移除附件后再执行 /compact。'));return;}
     session.compacting=true;
     try {
@@ -8483,7 +8485,7 @@
   async function performWorkbenchChat(payload, session, controller) {
     await workbenchHistory?.flush();
     if (workbenchHistory && !workbenchHistory.saved) return {type:'error',message:uiText('History is not durably saved. Resolve the connection or revision conflict before sending.', '会话尚未持久保存，请先解决连接或版本冲突再发送。')};
-    {
+    if (payload.autoresearch_mode && payload.autoresearch_mode !== 'off') {
       try {
         const response = await fetch('/api/harness', {cache:'no-store'});
         const capabilities = await response.json();
@@ -8525,8 +8527,18 @@
     } finally { finishSessionRequest(session.id,controller); }
   }
 
+  let serverQueueBackend=null;
+  function serverQueueAvailable(){return serverQueueBackend!==false;}
   let refreshingServerQueue=false;
   async function refreshServerQueue() {
+    if (serverQueueBackend===null) {
+      try {
+        const probe=await fetch('/api/chat/queue/__probe__',{cache:'no-store'});
+        serverQueueBackend=probe.ok;
+      } catch(_error) {serverQueueBackend=false;}
+      renderMessageQueue();
+    }
+    if (!serverQueueBackend) return;
     const session=getActiveSession();
     if (!session || refreshingServerQueue) return;
     refreshingServerQueue=true;
@@ -8583,25 +8595,27 @@
     if (isSessionWaiting() && inputEl.value.trim()) {
       const add = document.createElement('button'); add.type='button'; add.textContent=uiText('Queue message (Enter)', '加入队列（Enter）');
       add.onclick=()=>void sendMessage(); panel.append(add);
-      const steer=document.createElement('button'); steer.type='button'; steer.textContent=uiText('Steer at next safe boundary', '在下一安全边界插入指令');
-      steer.disabled=Boolean(sessionRequestFor()?.stopping);
-      steer.onclick=async()=>{
-        const message=inputEl.value.trim(), request=sessionRequestFor();
-        if (!request || !message || state.pendingFiles.length || getSessionSelectedSkills(session).length) {
-          showError(uiText('Steering accepts text only; queue attachments and skills instead.', '中途指令仅支持文字；附件和技能请加入队列。')); return;
-        }
-        steer.disabled=true;
-        try {
-          const response=await fetch('/api/chat/steer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:request.requestId,chat_id:session.id,message})});
-          const data=await response.json();
-          if (!response.ok) throw new Error(data.message || 'Steering failed');
-          session.messages.push({id:newMessageId(),role:'user',content:message,time:nowISO()});
-          if (getActiveSession()===session && inputEl.value.trim()===message) {inputEl.value='';session.draft='';}
-          saveSessions(); renderMessageQueue();
-        } catch(error) {showError(error.message);}
-        finally {steer.disabled=false;}
-      };
-      panel.append(steer);
+      if (serverQueueAvailable()) {
+        const steer=document.createElement('button'); steer.type='button'; steer.textContent=uiText('Steer at next safe boundary', '在下一安全边界插入指令');
+        steer.disabled=Boolean(sessionRequestFor()?.stopping);
+        steer.onclick=async()=>{
+          const message=inputEl.value.trim(), request=sessionRequestFor();
+          if (!request || !message || state.pendingFiles.length || getSessionSelectedSkills(session).length) {
+            showError(uiText('Steering accepts text only; queue attachments and skills instead.', '中途指令仅支持文字；附件和技能请加入队列。')); return;
+          }
+          steer.disabled=true;
+          try {
+            const response=await fetch('/api/chat/steer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:request.requestId,chat_id:session.id,message})});
+            const data=await response.json();
+            if (!response.ok) throw new Error(data.message || 'Steering failed');
+            session.messages.push({id:newMessageId(),role:'user',content:message,time:nowISO()});
+            if (getActiveSession()===session && inputEl.value.trim()===message) {inputEl.value='';session.draft='';}
+            saveSessions(); renderMessageQueue();
+          } catch(error) {showError(error.message);}
+          finally {steer.disabled=false;}
+        };
+        panel.append(steer);
+      }
     }
     for (const item of queue) {
       const row=document.createElement('div'), label=document.createElement('span'), remove=document.createElement('button');
@@ -8643,6 +8657,12 @@
     const finalText = queued ? queued.finalText : [text, skillText, attachmentText].filter(Boolean).join('\n\n').trim() || 'Please analyze the provided context.';
     const displayText = queued ? queued.displayText : text || (hasFiles ? uiText('Attached local files', '已附加本地文件') : tr('Use selected skills'));
     if (isSessionWaiting(session.id)) {
+      if (!serverQueueAvailable()) {
+        session.messageQueue ||= [];
+        session.messageQueue.push({id:newMessageId(),text,finalText,displayText,selectedSkills,noveltyMode,workspacePath:workspacePathForSession(session)});
+        inputEl.value=''; session.draft=''; session.selectedSkills=[]; state.selectedSkills=[]; clearPendingFiles();
+        saveSessions(); renderMessageQueue(); return;
+      }
       const requestId=crypto.randomUUID();
       try {
         const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
