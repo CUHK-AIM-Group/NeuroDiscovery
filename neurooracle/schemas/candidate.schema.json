@@ -1,0 +1,192 @@
+{
+  "$id": "kg://candidate/1",
+  "title": "Paper extraction candidate",
+  "pipeline_version": 1,
+  "description": "Single structural source for the candidate artifact. Prompt shape text is rendered from here, and drift between a prompt and this file is an error. Field names, required keys and enums live here; reasoning guidance stays in the prompt prose.",
+  "additionalProperties": true,
+  "note_on_additional_properties": "true deliberately: the current validators ignore unknown keys, so tightening this would be a behaviour change rather than consolidation.",
+  "required": ["paper_id", "study", "observations", "unresolved", "coverage_note"],
+  "properties": {
+    "paper_id": {"type": "string", "description": "the supplied work identity; must match the source packet"},
+    "study": {"$ref": "#/definitions/study"},
+    "observations": {"type": "array", "items": {"$ref": "#/definitions/observation"}},
+    "unresolved": {"type": "array", "description": "results that could not be expressed; never silently dropped"},
+    "coverage_note": {"type": "string", "description": "scope actually extracted"}
+  },
+  "definitions": {
+    "study": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "design": {"type": ["string", "null"]},
+        "cohort": {"type": ["string", "null"]},
+        "overlap": {"type": ["string", "null"], "description": "unknown unless the source states sharing"},
+        "quotes": {"type": "array", "items": {"type": "string"}},
+        "samples": {"type": "array", "items": {"$ref": "#/definitions/sample"}}
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "group": {"type": ["string", "null"]},
+        "n": {"type": ["number", "null"]},
+        "unit": {"enum": ["participants", "studies", "other", null]},
+        "raw": {"type": ["string", "null"], "description": "literal supporting phrase"}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["statement", "quotes", "role", "proposition", "evidence_relation",
+                   "scope_reason", "conditions", "result", "statistics", "limitations"],
+      "properties": {
+        "statement": {"type": "string"},
+        "quotes": {"type": "array", "items": {"type": "string"},
+                   "description": "literal source spans, unique in the supplied text"},
+        "role": {"enum": ["primary_result", "synthesis_result", "background",
+                          "hypothesis", "protocol", "method"]},
+        "evidence_relation": {"enum": ["supports", "opposes", "partial", "contextual", "unresolved"]},
+        "scope_reason": {"type": ["string", "null"]},
+        "proposition": {"oneOf": [{"type": "null"}, {"$ref": "#/definitions/proposition"}]},
+        "conditions": {"$ref": "#/definitions/conditions"},
+        "result": {"$ref": "#/definitions/result"},
+        "statistics": {"type": "array", "items": {"$ref": "#/definitions/statistic"}},
+        "limitations": {"type": "array"},
+        "structured_result": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/definitions/structured_result"}],
+          "description": "required on every primary_result once the contract is in force; absence on a candidate that carries it elsewhere is a contract failure"
+        }
+      }
+    },
+    "proposition": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "subject": {"type": ["string", "null"], "description": "short canonical label, not paper wording"},
+        "relation": {"enum": ["group_difference", "association", "longitudinal_change",
+                              "prediction", "causal_effect", "mechanism", "other"]},
+        "object": {"type": ["string", "null"]},
+        "measurement": {"type": ["string", "null"]},
+        "polarity": {"enum": ["asserted", "negated"]},
+        "direction": {"enum": ["lower", "higher", "positive", "negative", "difference",
+                               "association", "other"]},
+        "qualifiers": {"$ref": "#/definitions/qualifiers"},
+        "scope": {"$ref": "#/definitions/scope"}
+      }
+    },
+    "qualifiers": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "species": {}, "population": {}, "disease_stage": {}, "anatomy": {},
+        "modality": {}, "measurement": {}, "task": {}, "intervention": {},
+        "comparator": {}, "dose": {}, "timepoint": {}, "adjustment": {}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "species": {}, "population": {}, "region": {}, "modality": {},
+        "comparator": {}, "necessary_condition": {}
+      }
+    },
+    "conditions": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "species": {}, "population": {}, "age": {}, "sex": {}, "stage": {},
+        "tissue_or_region": {}, "modality": {}, "measurement": {},
+        "intervention": {}, "dose": {}, "comparator": {}, "timepoint": {},
+        "adjustment": {}
+      },
+      "note_on_stage": "stage is a disease stage. baseline/follow-up/post-treatment are timepoints; putting them here is an error the checks flag."
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "direction": {},
+        "significance": {"enum": ["reported_significant", "not_significant", "not_reported", "other"]},
+        "estimate": {}, "confidence_interval": {}
+      }
+    },
+    "statistic": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "raw": {"type": "string", "description": "literal numeric substring, preserved verbatim"},
+        "kind": {"enum": ["p_value", "effect", "sample_size", "other"]},
+        "operator": {}, "value": {}, "unit": {}, "adjustment": {}
+      }
+    },
+    "structured_result": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["schema", "kind", "population", "exposure", "outcome", "comparator",
+                   "timepoint", "disease_stage", "contrast", "atomicity", "test"],
+      "properties": {
+        "schema": {"const": "source_result_v3",
+                   "description": "frozen wire value; owned by neurooracle/src/pilot_validation_v3.py SCHEMA"},
+        "kind": {"enum": ["between_groups", "within_group_change", "association",
+                          "interaction", "other"]},
+        "population": {"$ref": "#/definitions/slot"},
+        "exposure": {"$ref": "#/definitions/slot", "description": "the tested predictor; not a substitute for population"},
+        "outcome": {"$ref": "#/definitions/slot"},
+        "comparator": {"$ref": "#/definitions/slot"},
+        "timepoint": {"$ref": "#/definitions/slot"},
+        "disease_stage": {"$ref": "#/definitions/slot"},
+        "contrast": {"$ref": "#/definitions/binding",
+                     "description": "the source clause describing this comparison"},
+        "atomicity": {"$ref": "#/definitions/atomicity"},
+        "test": {"$ref": "#/definitions/test"}
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["value", "bindings", "unknown_reason"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "bindings": {"type": "array", "items": {"$ref": "#/definitions/binding"}},
+        "unknown_reason": {"type": ["string", "null"]}
+      },
+      "note": "value null requires a reason and no bindings; value present requires at least one literal binding."
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["quote_index", "start", "end", "text"],
+      "properties": {
+        "quote_index": {"type": "integer", "description": "index into quotes"},
+        "start": {"type": "integer"},
+        "end": {"type": "integer"},
+        "text": {"type": "string"}
+      },
+      "note": "zero-based character offsets within quotes[quote_index], end exclusive"
+    },
+    "atomicity": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": {"enum": ["single", "unresolved"]},
+        "reason": {"type": "string"}
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["status", "contrast", "evidence"],
+      "properties": {
+        "status": {"enum": ["reported_significant", "reported_not_significant",
+                            "not_reported", "derived", "unresolved"]},
+        "contrast": {"oneOf": [{"type": "null"}, {"$ref": "#/definitions/binding"}],
+                     "description": "must bind the same comparison clause as structured_result.contrast"},
+        "evidence": {"oneOf": [{"type": "null"}, {"$ref": "#/definitions/binding"}],
+                     "description": "must bind the explicit test result inside that clause"}
+      }
+    }
+  }
+}

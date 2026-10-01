@@ -1,0 +1,43 @@
+{
+  "schema": "active_pipeline_manifest_v1",
+  "generated": "2026-09-27",
+  "authority": "docs/KG_PIPELINE_CONSOLIDATION_PLAN_20260927.md",
+  "rule": "Only the paths below are the current paper-extraction pipeline. Every other script under neurooracle/ and tmp/ is archive: keep for evidence, never import from it in new work, never treat it as current state.",
+  "stages": ["select", "extract", "validate", "evaluate"],
+  "files": [
+    {"path": "neurooracle/configs/kg_reconstruction.json", "stage": "select", "role": "frozen scope: source corpus, read-only fixed layer, route policy"},
+    {"path": "neurooracle/scripts/prepare_paper_reconstruction.py", "stage": "select", "role": "build the source-only paper queue; reads CORPUS, writes nothing to graphs"},
+    {"path": "neurooracle/scripts/paper_batch_inputs.py", "stage": "select", "role": "compile INPUTS.sqlite; sole producer of source packets and the work_key identity"},
+    {"path": "neurooracle/scripts/freeze_cohort_v3_20260927.py", "stage": "select", "role": "deterministic cohort selection; known defect: substring topic matching (see re-audit doc)"},
+    {"path": "neurooracle/scripts/paper_pilot_batch.py", "stage": "extract", "role": "transport, routing, attempt ledger, anti-resend journal"},
+    {"path": "neurooracle/scripts/paper_extract_v2.py", "stage": "extract", "role": "extraction entry point and consistency gate"},
+    {"path": "neurooracle/scripts/paper_batch_model.py", "stage": "validate", "role": "structural candidate validator; also owns a legacy transport and ledger (step 4/5 target)"},
+    {"path": "neurooracle/src/paper_extraction_contract_v3.py", "stage": "extract", "role": "versioned result-contract prompt text; not installed in a sender"},
+    {"path": "neurooracle/src/source_statistics.py", "stage": "validate", "role": "conservative p-value literal parsing; original evidence strings unchanged"},
+    {"path": "neurooracle/src/pilot_validation.py", "stage": "validate", "role": "validator-gap exemptions (structural errors that are our gap, not the model's)"},
+    {"path": "neurooracle/src/pilot_validation_v2.py", "stage": "validate", "role": "source-bound signed direction and claimed significance"},
+    {"path": "neurooracle/src/pilot_validation_v3.py", "stage": "validate", "role": "result-contract checks; advisory diagnostics split from blocking contract errors"},
+    {"path": "neurooracle/src/candidate_checks.py", "stage": "validate", "role": "single door over all candidate rules; returns blocked/advisory/exempted/not_applicable"},
+    {"path": "neurooracle/scripts/check_paper_extraction_v3.py", "stage": "validate", "role": "offline CLI over the single door; never sends or promotes"},
+    {"path": "neurooracle/src/candidate_ledger_v2.py", "stage": "validate", "role": "per-job eligible-attempt loading with source binding"},
+    {"path": "neurooracle/src/proposition_scope_v2.py", "stage": "evaluate", "role": "scope/orientation/null gate used by the adjudication path"},
+    {"path": "neurooracle/scripts/paper_adjudicate_v2.py", "stage": "evaluate", "role": "pair packaging, recall, gate enforcement, model verdicts"},
+    {"path": "neurooracle/scripts/build_validation_set_v2.py", "stage": "evaluate", "role": "build validation pairs from retained candidates"},
+    {"path": "neurooracle/scripts/correct_validation_reference_v2.py", "stage": "evaluate", "role": "versioned correction of the validation reference, keeping the old file"},
+    {"path": "neurooracle/scripts/score_validation_v2.py", "stage": "evaluate", "role": "strict-label scoring; only equivalent counts as a merge"},
+    {"path": "neurooracle/scripts/rescore_run_v2.py", "stage": "evaluate", "role": "offline re-score; best-of-attempt policy is scheduled for replacement in step 5"},
+    {"path": "neurooracle/scripts/audit_source_first_repairs_v3.py", "stage": "evaluate", "role": "read-only regression over frozen first bodies"}
+  ],
+  "known_duplication_to_remove": [
+    {"concept": "transport", "implementations": ["neurooracle/scripts/paper_pilot_batch.py", "neurooracle/scripts/paper_adjudicate_v2.py", "neurooracle/scripts/paper_batch_model.py"], "step": 4},
+    {"concept": "ledger_schema", "implementations": ["attempts", "requests"], "step": 5},
+    {"concept": "observation_identity", "implementations": ["(job_id, index)", "work_key"], "step": 5},
+    {"concept": "prompt_and_schema", "implementations": ["paper_pilot_batch.SYSTEM", "paper_batch_model.SYSTEM", "paper_extract_v2.EXTRACTION_SYSTEM_V2", "paper_adjudicate_v2 prompt"], "step": 3},
+    {"concept": "scoring", "implementations": ["paper_adjudicate_v2.recall_pairs", "score_validation_v2.py"], "step": 6}
+  ],
+  "archive_declared": {
+    "policy": "everything_else",
+    "enumerated": false,
+    "reason": "1197 scripts and 362 tests accumulated across earlier routes; enumerating or deleting them would risk evidence loss for no gain"
+  }
+}
