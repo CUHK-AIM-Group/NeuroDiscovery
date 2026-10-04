@@ -60,6 +60,7 @@
       "model-library.js",
       "settings-restart.js",
       "preload.js",
+      "assets/icon.png",
       "package.json"
     ],
     "extraResources": [
@@ -76,6 +77,7 @@
       "main": "main.js"
     },
     "win": {
+      "icon": "assets/icon.png",
       "target": [
         "nsis",
         "portable",
@@ -83,6 +85,7 @@
       ]
     },
     "mac": {
+      "icon": "assets/icon.png",
       "target": [
         "dmg",
         "zip"

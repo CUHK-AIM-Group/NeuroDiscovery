@@ -5,7 +5,7 @@ NeuroRuntime Core Agent — LLM conversation loop and tool-call dispatcher.
   AgentSession
     │
     ├─ SkillLoader        loads skills/*/SKILL.md, registers tools
-    ├─ ToolRuntime        executes handler.js / Python handlers
+    ├─ Tool registry      dispatches core tools through the shared pipeline
     ├─ SessionManager     context window, persistence, compression
     └─ LLMBackend         OpenAI / Anthropic / local model adapter
 
@@ -105,17 +105,8 @@ from core.llm.connection_policy import retryable_connection_failure
 from core import tool_registry
 from core.tools_impl import register_core_tools as _register_core_tools, visible_schemas as _visible_schemas
 
-# The loop-owned tools live in the registry; this set is the dispatch check that
-# replaces the former per-tool elif branches.
+# Registered tools provide both their schemas and execution bodies.
 _register_core_tools()
-_CORE_TOOL_NAMES = frozenset({
-    "run_shell_command",
-    "inspect_local_path",
-    "read_workspace_file",
-    "spawn_subagent",
-    "search_skills",
-    "read_skill",
-})
 
 
 # ── Environment bootstrap ──────────────────────────────────────────────────────
@@ -169,6 +160,13 @@ def _normalize_llm_backend(env: dict) -> None:
         env["llm_backend"] = llm_cfg
 
     apply_openai_compatible_profile_defaults(llm_cfg)
+
+    if str(llm_cfg.get("connection") or "api").strip().lower() == "subscription":
+        llm_cfg["provider"] = "subscription"
+        llm_cfg["model"] = llm_cfg.get("subscription_model") or llm_cfg.get("model") or (
+            "claude-sonnet-4-5" if str(llm_cfg.get("subscription_engine") or "codex").lower() == "claude" else "gpt-5.5"
+        )
+        return
 
     if llm_cfg.get("model_selection_managed"):
         # Desktop Settings owns this catalog, including an intentionally empty list.
@@ -446,6 +444,10 @@ def build_llm_client(env: dict) -> Any:
     the provider is not enabled in features.json.
     """
     llm_cfg = dict(env.get("llm_backend", {}))
+    if str(llm_cfg.get("connection") or "api").strip().lower() == "subscription":
+        from core.llm.subscription import SubscriptionClient
+        llm_cfg.setdefault("workspace", str(REPO_ROOT))
+        return SubscriptionClient(llm_cfg)
     if llm_cfg.get("model_selection_managed") and not llm_cfg.get("model"):
         raise RuntimeError('Add a model in Settings > Models before starting a request.')
     apply_openai_compatible_profile_defaults(llm_cfg)
@@ -706,7 +708,7 @@ def _build_anthropic_client(cfg: dict):
 
 
 def _build_local_client(cfg: dict):
-    """Return a minimal dict config; actual HTTP calls are handled by ToolRuntime."""
+    """Return minimal configuration for the agent's provider client."""
     return {
         "provider": "local",
         "endpoint": cfg.get("local_endpoint", "http://localhost:11434"),
@@ -3661,7 +3663,7 @@ class AgentSession:
     - Bootstrap environment (load_environment)
     - Load skills via SkillLoader
     - Maintain conversation history
-    - Route tool calls to ToolRuntime
+    - Route registered tools through the shared guarded execution pipeline
     - Stream responses from the LLM backend
     """
 
@@ -3753,6 +3755,8 @@ class AgentSession:
         the internal field can be renamed without breaking callers.
         """
         self._llm = client
+        if getattr(client, "engine", None) in {"codex", "claude"} and hasattr(client, "workspace"):
+            client.workspace = self.workspace.resolve()
 
         # Initialise the memory extractor once a client is available. The
         # extractor uses the same client to call a lightweight model for
@@ -4179,12 +4183,58 @@ class AgentSession:
         self._emit_execution_event({'type': 'approval', 'step_id': step_id, 'status': 'denied'})
         return False
 
+    def _tool_preflight(self, name, args, event_id, argument_error, autoresearch, visible_names=None):
+        """Existing owner checks, in their original order, supplied as a guard."""
+        if argument_error:
+            return {"success": False, "executed": False, "error_type": "invalid_tool_input", "error": argument_error}
+        if visible_names is not None and name not in visible_names:
+            return {"success": False, "executed": False, "error_type": "tool_not_available",
+                    "error": "This tool is not exposed in the current session."}
+        if not self._tool_authorized(name, args, event_id):
+            return {"success": False, "executed": False, "error_type": "permission_denied", "error": "Tool execution was not approved."}
+        if autoresearch:
+            control_error = autoresearch.control_rejection(name, args)
+            if control_error:
+                return control_error
+            repeat_read_error = autoresearch.repeat_read_rejection(name, args)
+            if repeat_read_error:
+                return repeat_read_error
+            if autoresearch.preparation_exhausted() and (
+                name == 'inspect_local_path'
+                or (name == 'read_workspace_file' and Path(str(args.get('path', ''))).name.upper() in {'SKILL.MD', 'AGENTS.MD', 'SOUL.MD', 'USER.MD', 'MEMORY.MD'})
+                or (name == 'run_shell_command' and (is_readonly_probe(str(args.get('command', ''))) or is_python_listing_probe(str(args.get('command', '')))))
+            ):
+                return {'success': False, 'executed': False, 'error_type': 'preparation_complete',
+                        'error': autoresearch.synthesis_prompt() or 'Preparation allowance used. Read concrete source evidence with read_workspace_file or search literature now; do not repeat directory/environment probes.'}
+        return None
+
     def _compact_context(self, messages: list[dict]) -> None:
         from core.session.context import compact_context
         summarizer = self._summarize_context if self.env.get('semantic_context_compaction', False) else None
-        result = compact_context(messages, self.workspace, self.env.get("context_input_budget", 24000), summarizer=summarizer)
+        result = compact_context(
+            messages,
+            self.workspace,
+            self.env.get("context_input_budget", 24000),
+            summarizer=summarizer,
+            native_compactor=self._native_context_compactor,
+        )
         if result:
             self._emit_execution_event({"type": "context", **result})
+
+    def _native_context_compactor(self, messages: list[dict], budget: int) -> dict | None:
+        """Delegate to an explicitly advertised native session compactor.
+
+        Direct API clients do not expose this method, so they always use the
+        local archival fallback.  A native Codex/Claude/Kimi adapter can add a
+        `native_compact(messages, budget=..., workspace=...)` method without
+        changing the agent loop or weakening the fallback behavior.
+        """
+        client = getattr(self, "_llm", None)
+        callback = getattr(client, "native_compact", None)
+        if not callable(callback):
+            return None
+        result = callback(messages, budget=budget, workspace=self.workspace)
+        return result if isinstance(result, dict) else None
 
     def _summarize_context(self, raw: str) -> str:
         import uuid
@@ -4240,17 +4290,18 @@ class AgentSession:
         try:
             return dispatch()
         except Exception as exc:
-            code = str(getattr(exc, 'code', '') or '')
-            body = getattr(exc, 'body', None)
-            if isinstance(body, dict):
-                error = body.get('error', body)
-                if isinstance(error, dict):
-                    code = str(error.get('code') or code)
-            if code not in {'context_length_exceeded', 'context_window_exceeded'}:
+            from core.session.context import is_context_overflow_error
+            if not is_context_overflow_error(exc):
                 raise
             from core.session.context import compact_context
             before = len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) // 3 + 1
-            result = compact_context(messages, self.workspace, max(2048, min(self.env.get('context_input_budget', 24000) // 2, before // 2)))
+            result = compact_context(
+                messages,
+                self.workspace,
+                max(2048, min(self.env.get('context_input_budget', 24000) // 2, before // 2)),
+                summarizer=self._summarize_context if self.env.get('semantic_context_compaction', False) else None,
+                native_compactor=self._native_context_compactor,
+            )
             if not result or result.get('status') != 'compacted' or self._cancel_event.is_set():
                 raise
             run = getattr(self, '_autoresearch_run', None)
@@ -4288,8 +4339,13 @@ class AgentSession:
         run.state["independent_review_required"] = bool(self.env.get("autoresearch_independent_review", False))
         run.state["novelty_mode"] = validate_novelty_mode(getattr(self, "novelty_mode", None))
         # Candidate novelty is gated only where candidates are the deliverable.
-        run.state["novelty_gate_required"] = (run.mode == "idea" and
-                                              bool(self.env.get("autoresearch_novelty_gate", False)))
+        # End-to-end runs include the Idea stage, so expose the same chain,
+        # ranking and novelty checks even when the user did not select the
+        # idea-only mode.  The environment flag still controls the optional
+        # idea-only gate; end-to-end keeps the contract enabled by default.
+        run.state["novelty_gate_required"] = (run.mode in {"idea", "end-to-end"} and
+                                              (run.mode == "end-to-end" or
+                                               bool(self.env.get("autoresearch_novelty_gate", False))))
         run.state["objective"] = recovered.get('objective', '') if recovered else next((message.get("content", "") for message in reversed(self.history) if message.get("role") == "user"), "")
         resume_id = getattr(self, "resume_autoresearch_id", None)
         if resume_id:
@@ -4335,7 +4391,11 @@ class AgentSession:
             return "[Agent: LLM backend not configured]"
 
         response = "[Agent: LLM backend not configured]"
-        if is_openai_compatible_provider(provider) or canonical_provider(provider) == "anthropic":
+        if str(self.env.get("llm_backend", {}).get("connection") or "api").strip().lower() == "subscription":
+            if self.autoresearch_mode != "off":
+                return "[Agent: subscription sessions currently support ordinary chat; switch to API mode for NeuroRuntime tools and autoresearch.]"
+            response = self._llm.chat.completions.create(model=model, messages=list(self.history)).choices[0].message.content or ""
+        elif is_openai_compatible_provider(provider) or canonical_provider(provider) == "anthropic":
             response = self._chat_openai_with_tools(model)
         elif provider == "local":
             import urllib.request  # stdlib only
@@ -4372,6 +4432,9 @@ class AgentSession:
         if self._checkpoint_mgr is not None:
             self._checkpoint_mgr.begin_turn()
         if self.no_skill_mode:
+            if not self.benchmark_mode:
+                self._compact_context(self.history)
+
             def _request_once(req_messages: list[dict[str, Any]]) -> tuple[str, dict[str, int]]:
                 resp = _retry_api_call(
                     "OpenAI chat request",
@@ -4426,7 +4489,7 @@ class AgentSession:
             tools.append(PROGRESS_TOOL)
             tools.append(PUBMED_TOOL)
             tools.append(WRITE_TOOL)
-            if autoresearch.mode == 'idea':
+            if autoresearch.mode in {'idea', 'end-to-end'}:
                 tools.append(IDEA_CHAIN_TOOL)
                 tools.append(RANK_TOOL)
             tools.append(NOTE_TOOL)
@@ -4445,6 +4508,7 @@ class AgentSession:
         }
         max_tool_iterations = autoresearch.limit if autoresearch else _max_tool_iterations_from_env()
         tool_iteration_summaries: list[str] = []
+        visible_tool_names = {schema["function"]["name"] for schema in tools}
         iteration_idx = 0
         while max_tool_iterations is None or iteration_idx < max_tool_iterations:
             if self._cancel_event.is_set():
@@ -4573,31 +4637,22 @@ class AgentSession:
                                             "tool": name, "status": "running",
                                             "command": str(args.get("command") or args.get("path") or args.get("task") or "")[:12000]})
 
-                if argument_error:
-                    result = {"success": False, "executed": False, "error_type": "invalid_tool_input", "error": argument_error}
-                elif not self._tool_authorized(name, args, event_id):
-                    result = {"success": False, "executed": False, "error_type": "permission_denied", "error": "Tool execution was not approved."}
-                elif autoresearch and (control_error := autoresearch.control_rejection(name, args)):
-                    result = control_error
-                elif autoresearch and (repeat_read_error := autoresearch.repeat_read_rejection(name, args)):
-                    result = repeat_read_error
-                elif autoresearch and autoresearch.preparation_exhausted() and (
-                    name == 'inspect_local_path'
-                    or (name == 'read_workspace_file' and Path(str(args.get('path', ''))).name.upper() in {'SKILL.MD', 'AGENTS.MD', 'SOUL.MD', 'USER.MD', 'MEMORY.MD'})
-                    or (name == 'run_shell_command' and (is_readonly_probe(str(args.get('command', ''))) or is_python_listing_probe(str(args.get('command', '')))))
-                ):
-                    result = {'success': False, 'executed': False, 'error_type': 'preparation_complete',
-                              'error': autoresearch.synthesis_prompt() or 'Preparation allowance used. Read concrete source evidence with read_workspace_file or search literature now; do not repeat directory/environment probes.'}
+                if tool_registry.get(name) is not None:
+                    result = tool_registry.dispatch(
+                        self, name, args, self.workspace,
+                        guard=lambda: self._tool_preflight(name, args, event_id, argument_error, autoresearch, visible_tool_names))
+                elif (rejection := self._tool_preflight(name, args, event_id, argument_error, autoresearch, visible_tool_names)) is not None:
+                    result = rejection
                 elif autoresearch and name == 'record_research_note':
                     result = record_note(autoresearch.workspace, autoresearch.state, args)
                     autoresearch.save()
                     self._tool_events.append({'tool': name, 'executed': bool(result.get('success')), 'success': bool(result.get('success')), 'result': result})
                 elif autoresearch and name == WRITE_TOOL_NAME:
                     result = write_research_file(autoresearch.workspace, args, self._cancel_event,
-                                                 require_chain=autoresearch.mode == 'idea')
+                                                 require_chain=autoresearch.mode in {'idea', 'end-to-end'})
                     self._tool_events.append({'tool': name, 'command': str(args.get('path', '')), 'executed': result.get('executed', True),
                                               'success': bool(result.get('success')), 'result': result})
-                elif autoresearch and autoresearch.mode == 'idea' and name in {IDEA_CHAIN_TOOL_NAME, RANK_TOOL_NAME}:
+                elif autoresearch and autoresearch.mode in {'idea', 'end-to-end'} and name in {IDEA_CHAIN_TOOL_NAME, RANK_TOOL_NAME}:
                     from core.topic_evidence import default_layer
                     try:
                         if getattr(self, '_idea_claim_layer', None) is None:
@@ -4682,13 +4737,8 @@ class AgentSession:
                                                     "tool": name, "status": "completed", "success": True})
                         self._runtime_record(messages + [{'role': 'tool', 'tool_call_id': tc.id, 'content': json.dumps(result)}], event_id, result)
                         return autoresearch.response()
-                elif name in _CORE_TOOL_NAMES:
-                    result = tool_registry.dispatch(self, name, args, self.workspace)
-
-                if name == "run_shell_command" and result.get("executed", True) is not False:
-                    normalize_shell_outcome(str(args.get("command") or ""), result)
-                    if self._tool_events and self._tool_events[-1].get("result") is result:
-                        self._tool_events[-1]["success"] = bool(result.get("success"))
+                else:
+                    result = {"success": False, "executed": False, "error_type": "unknown_tool", "error": f"unknown tool: {name}"}
                 self._emit_execution_event({"type": "tool_end", "tool_id": event_id, "tool": name,
                                             "status": "completed" if result.get("success") else "failed",
                                             "success": bool(result.get("success")),
@@ -5017,7 +5067,7 @@ class AgentSession:
 
     def _chain_validation_rejection(self, run: AutoResearchRun) -> dict | None:
         """Format/source checks cannot be waived by score settings or retry caps."""
-        if run.mode != 'idea' or run.state.get('status') not in {'verifying', 'completed'}:
+        if run.mode not in {'idea', 'end-to-end'} or run.state.get('status') not in {'verifying', 'completed'}:
             return None
         from core import novelty_gate
         layer = getattr(self, '_idea_claim_layer', None)

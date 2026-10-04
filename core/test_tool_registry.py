@@ -40,7 +40,7 @@ EXPECTED = {
     },
     "read_skill": {
         "required": ["name"],
-        "properties": {"name"},
+        "properties": {"name", "offset"},
     },
 }
 

@@ -10,6 +10,8 @@ def tool_permission(mode: str, name: str, arguments: dict, workspace: Path) -> s
         return 'deny'
     if name == 'finish_autoresearch':
         return 'allow'
+    if name in {'search_skills', 'read_skill'}:
+        return 'allow'  # Provider confines these reads to its named skill catalog.
     if name in {'generate_idea_hypotheses', 'rank_idea_hypotheses'}:
         return 'allow'  # Current accepted graph reads only; no model calls or writes.
     if name == 'record_research_note':

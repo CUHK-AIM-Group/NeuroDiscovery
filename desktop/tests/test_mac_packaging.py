@@ -34,7 +34,9 @@ class MacPackagingTests(unittest.TestCase):
             self.assertIsNone(config["mac"]["identity"])
             self.assertEqual(config["mac"]["target"], [
                 {"target": "dmg", "arch": ["arm64"]}, {"target": "zip", "arch": ["arm64"]}])
-        self.assertEqual(configs[1]["files"], ["evaluation-main.js", "evaluation-preload.js", "package.json"])
+        self.assertEqual(configs[1]["files"], ["evaluation-main.js", "evaluation-preload.js", "assets/icon.png", "package.json"])
+        for config in configs:
+            self.assertEqual(config["mac"]["icon"], "assets/icon.png")
         self.assertEqual(configs[1]["extraResources"][0]["to"], "evaluation-runtime")
         self.assertEqual(configs[2]["extraMetadata"]["distribution"], "demo")
 

@@ -6,6 +6,7 @@ const http = require('node:http');
 const instanceId = require('node:crypto').randomUUID();
 
 app.setName('NeuroDiscovery Human Evaluation');
+if (process.platform === 'win32') app.setAppUserModelId('org.neurodiscovery.human-evaluation');
 app.setPath('userData', path.join(app.getPath('appData'), 'NeuroDiscovery-Human-Evaluation'));
 const origin = 'http://127.0.0.1:17890';
 let backend;
@@ -100,6 +101,7 @@ async function boot() {
   }
   if (!ready) throw new Error(`Unable to start the evaluation server.\n${backendError}`);
   mainWindow = new BrowserWindow({width: 1280, height: 900, minWidth: 800, minHeight: 600,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: {preload: path.join(__dirname, 'evaluation-preload.js'), nodeIntegration: false,
       contextIsolation: true, sandbox: true}});
   mainWindow.webContents.setWindowOpenHandler(({url}) => {

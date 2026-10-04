@@ -67,7 +67,7 @@ def _search_skills(session: Any, args: Mapping[str, Any], workspace: Path) -> di
 
 def _read_skill(session: Any, args: Mapping[str, Any], workspace: Path) -> dict[str, Any]:
     name = str(args.get("name", ""))
-    result = _skill_capability(session).load(name)
+    result = _skill_capability(session).load(name, offset=int(args.get("offset", 0)))
     _record(session, {
         "tool": "read_skill",
         "command": name,
@@ -293,6 +293,7 @@ def register_core_tools() -> None:
         name="read_skill",
         description=(
             "Load the full instructions for one skill named in the session skill catalog. "
+            "If truncated, call again with the returned next_offset to read the remaining instructions. "
             "Call it before acting on a task that names or clearly matches a listed skill. "
             "The skill is reusable guidance, not a rigid pipeline: reuse the parts that fit the task contract."
         ),
@@ -300,6 +301,8 @@ def register_core_tools() -> None:
             "type": "object",
             "properties": {
                 "name": {"type": "string", "description": "The exact skill name from the skill catalog."},
+                "offset": {"type": "integer", "minimum": 0,
+                           "description": "Zero-based character offset; use next_offset when a prior page was truncated."},
             },
             "required": ["name"],
         },

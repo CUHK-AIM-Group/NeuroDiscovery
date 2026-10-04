@@ -1,5 +1,6 @@
 """Offline workbench evidence: synthetic wire events, temporary SQLite, no keys."""
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -260,6 +261,122 @@ def poll_complete(client,request_id):
         if data["status"] not in {"running","stopping"}: return data
         time.sleep(.01)
     pytest.fail("Synthetic request did not finish")
+
+
+def wait_goal_status(client, chat_id, expected, *, min_turns=0):
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        items = client.get(f'/api/chat/goals/{chat_id}').json()['items']
+        if items and items[0]['status'] == expected and items[0]['turns_started'] >= min_turns:
+            return items[0]
+        time.sleep(.01)
+    pytest.fail(f"Goal did not reach {expected}: {items}")
+
+
+def test_goal_requires_explicit_creation_and_resume_keeps_original_permissions(api, tmp_path, monkeypatch):
+    from core.runtime_store import RuntimeStore
+    import os
+
+    client, sessions = api
+    monkeypatch.setattr(main.AgentSession, '_chat', lambda self: 'Need a user decision.\n<goal:blocked>')
+    original = {
+        'chat_id': 'goal-contract-chat', 'workspace_path': str(tmp_path),
+        'objective': 'Inspect the report', 'criterion': 'Report is verified',
+        'max_turns': 3, 'permission_mode': 'ask', 'language': 'en',
+    }
+    assert client.get('/api/chat/goals/goal-contract-chat').json()['items'] == []
+    assert client.post('/api/chat/goals', json=original).status_code == 400
+    assert not sessions
+    created = client.post('/api/chat/goals', json={**original, 'confirmed': True})
+    assert created.status_code == 202
+    goal_id = created.json()['goal']['goal_id']
+    assert client.post('/api/chat/goals', json={**original, 'confirmed': True}).status_code == 409
+    first = wait_goal_status(client, original['chat_id'], 'blocked')
+    assert first['turns_started'] == 1
+
+    # A later renderer request cannot widen the stored Goal's permissions or workspace.
+    other_workspace = tmp_path / 'other'
+    other_workspace.mkdir()
+    resumed = client.post(f'/api/chat/goals/{goal_id}', json={
+        'chat_id': original['chat_id'], 'action': 'resume', 'confirmed': True,
+        'permission_mode': 'never', 'workspace_path': str(other_workspace), 'language': 'zh',
+    })
+    assert resumed.status_code == 202
+    second = wait_goal_status(client, original['chat_id'], 'blocked', min_turns=2)
+    assert second['turns_started'] == 2
+    rows = RuntimeStore(Path(os.environ['NEURODISCOVERY_WORKBENCH_DB'])).list(original['chat_id'])
+    assert len(rows) == 2
+    payloads = [json.loads(row['payload']) for row in rows]
+    assert [body['goal_turn'] for body in payloads] == [1, 2]
+    assert all(body['permission_mode'] == 'ask' for body in payloads)
+    assert all(body['workspace_path'] == str(tmp_path.resolve()) for body in payloads)
+    assert all(body['language'] == 'en' for body in payloads)
+
+
+def test_goal_completion_uses_separate_no_tool_verifier(api, tmp_path, monkeypatch):
+    client, sessions = api
+    report = tmp_path / 'report.md'
+    report.write_text('A saved result', encoding='utf-8')
+    monkeypatch.setattr(server, '_workspace_change_summary', lambda *args: [{'path': 'report.md', 'status': '??'}])
+
+    def synthetic_goal_reply(session):
+        if session.constructor_options.get('no_skill_mode'):
+            return '{"accepted":true,"reason":"The supplied record meets the stated criterion."}'
+        return 'The requested summary is in this response.\n<goal:complete>'
+
+    monkeypatch.setattr(main.AgentSession, '_chat', synthetic_goal_reply)
+    created = client.post('/api/chat/goals', json={
+        'chat_id': 'goal-verify-chat', 'workspace_path': str(tmp_path),
+        'objective': 'Summarize the result', 'criterion': 'Summary is present in the response',
+        'max_turns': 2, 'confirmed': True,
+    })
+    assert created.status_code == 202
+    goal = wait_goal_status(client, 'goal-verify-chat', 'complete')
+    assert goal['turns_started'] == 1
+    assert goal['verification']['accepted'] is True
+    assert goal['verification']['review']['source_request_id'] == goal['last_request_id']
+    assert 'Summary is present in the response' in goal['verification']['review']['input']
+    assert hashlib.sha256(report.read_bytes()).hexdigest() in goal['verification']['review']['input']
+    assert '"accepted":true' in goal['verification']['review']['response']
+    assert len(sessions) == 2
+    assert sessions[1].constructor_options['no_skill_mode'] is True
+    assert 'Summary is present in the response' in sessions[1].history[-1]['content']
+
+
+def test_goal_review_measures_changed_workspace_files_without_escape(tmp_path):
+    report = tmp_path / 'report.md'
+    report.write_text('Verified result\n', encoding='utf-8')
+    evidence = server._goal_workspace_evidence(tmp_path, [
+        {'path': 'report.md', 'status': '??'},
+        {'path': 'missing.md', 'status': 'D'},
+        {'path': '../outside.md', 'status': '??'},
+        {'path': 'report.md', 'status': '??'},
+    ])
+    assert [item['path'] for item in evidence] == ['report.md', 'missing.md']
+    assert evidence[0]['exists'] is True
+    assert evidence[0]['sha256'] == hashlib.sha256(report.read_bytes()).hexdigest()
+    assert evidence[1]['exists'] is False
+
+
+def test_goal_rejected_verification_stops_at_turn_limit(api, tmp_path, monkeypatch):
+    client, sessions = api
+
+    def synthetic_goal_reply(session):
+        if session.constructor_options.get('no_skill_mode'):
+            return '{"accepted":false,"reason":"No saved report was measured."}'
+        return 'The report is ready.\n<goal:complete>'
+
+    monkeypatch.setattr(main.AgentSession, '_chat', synthetic_goal_reply)
+    created = client.post('/api/chat/goals', json={
+        'chat_id': 'goal-reject-chat', 'workspace_path': str(tmp_path),
+        'objective': 'Save a report', 'criterion': 'A saved report exists',
+        'max_turns': 1, 'confirmed': True,
+    })
+    assert created.status_code == 202
+    goal = wait_goal_status(client, 'goal-reject-chat', 'paused', min_turns=1)
+    assert goal['verification']['accepted'] is False
+    assert len(sessions) == 2
+    assert len(client.get('/api/chat/queue/goal-reject-chat').json()['items']) == 1
 
 
 def test_http_returns_before_completion_and_refresh_never_replays(api):

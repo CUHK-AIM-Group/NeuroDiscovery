@@ -317,6 +317,10 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb { border-color: var(--bg); bac
 .model-action.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
 .model-action:hover:not(:disabled) { box-shadow: var(--shadow-card); filter: brightness(.96); }
 .model-action:disabled { opacity: .45; cursor: not-allowed; }
+.subscription-account-panel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-elev); }
+.subscription-account-panel > div:first-child { display: flex; align-items: center; gap: 10px; }
+.subscription-account-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.subscription-account-panel > .model-discovery-status { flex-basis: 100%; margin: 0; }
 .model-discovery-status { margin: 0 0 14px; font-size: calc(12px * var(--text-scale, 1)); line-height: 1.6; color: var(--text-muted); overflow-wrap: anywhere; }
 .model-discovery-status.error { color: var(--danger); }
 .model-search { width: 100%; margin: 0 0 10px; }

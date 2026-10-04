@@ -10,6 +10,7 @@ function workspaceRoot(){return app.isPackaged?path.join(process.resourcesPath,'
 function dataRoot(){return path.join(workspaceRoot(),'data/demo');}
 function createDemoWindow({origin,show=true}){
   const win=new BrowserWindow({title:'NeuroDiscovery',width:1320,height:900,minWidth:960,minHeight:680,show,
+    icon:path.join(__dirname,'assets','icon.png'),
     backgroundColor:nativeTheme.shouldUseDarkColors?'#151517':'#ffffff',autoHideMenuBar:false,
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
   win.webContents.on('will-navigate',(event,url)=>{if(!url.startsWith(origin+'/'))event.preventDefault();});
@@ -96,6 +97,7 @@ function installMenu(getWindow,language='English'){
 async function main(){
   const smoke=process.argv.includes('--demo-smoke');
   app.setName('NeuroDiscovery');
+  if(process.platform==='win32')app.setAppUserModelId('org.neurodiscovery.offline-demo');
   const profile=smoke?fs.mkdtempSync(path.join(os.tmpdir(),'nd-native-smoke-')):path.join(app.getPath('appData'),'NeuroDiscovery-NativeDemo');
   app.setPath('userData',profile);
   if(smoke)app.disableHardwareAcceleration();

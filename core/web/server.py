@@ -63,6 +63,20 @@ def _client_surface_prompt(raw_surface: Any) -> str:
     )
 
 
+def _neurooracle_access_prompt(base_url: str, *, available: bool, path: str = "") -> str:
+    """Make graph availability and the in-chat recovery path visible to every client."""
+    state = "available locally" if available else "not downloaded on this machine"
+    path_line = f" Local path: {path}." if path else ""
+    return (
+        "[NeuroOracle graph access]\n"
+        f"The NeuroOracle knowledge graph is {state}.{path_line} "
+        f"Check {base_url}/api/neurooracle/graph/status before graph-backed work. "
+        "Use the bounded /api/kg endpoints for graph retrieval and preserve returned IDs and provenance. "
+        "If the graph is unavailable, tell the user to use the in-chat NeuroOracle download banner; "
+        "do not invent graph results or silently substitute a different graph."
+    )
+
+
 def _response_language_prompt(raw_language: Any) -> str:
     """Return an explicit response-language policy for model-backed UI output."""
     language = str(raw_language or "").strip().lower()
@@ -249,6 +263,39 @@ def _workspace_change_summary(
         current = after.get(path)
         changes.append({"status": current[0] if current else "clean", "path": path})
     return changes[:200]
+
+
+def _goal_workspace_evidence(workspace: Path, changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Measure bounded file facts for independent Goal review without opening tools."""
+    root = workspace.resolve()
+    evidence: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for change in changes[:40]:
+        if not isinstance(change, dict):
+            continue
+        display_path = str(change.get('path') or '')
+        candidate = _workspace_status_path(root, display_path)
+        if candidate is None:
+            continue
+        relative = candidate.relative_to(root).as_posix()
+        if relative in seen:
+            continue
+        seen.add(relative)
+        item: dict[str, Any] = {'path': relative, 'status': str(change.get('status') or '')[:32]}
+        try:
+            if candidate.is_file():
+                size = candidate.stat().st_size
+                item.update(kind='file', exists=True, bytes=size)
+                if size <= 2 * 1024 * 1024:
+                    item['sha256'] = hashlib.sha256(candidate.read_bytes()).hexdigest()
+            elif candidate.is_dir():
+                item.update(kind='directory', exists=True)
+            else:
+                item.update(kind='missing', exists=False)
+        except OSError:
+            item.update(kind='unavailable', exists=False)
+        evidence.append(item)
+    return evidence
 
 
 def _resolve_workspace_path(raw: Any) -> Path:
@@ -890,6 +937,7 @@ def create_app() -> Any:
     @asynccontextmanager
     async def runtime_lifespan(app):
         scheduled_checks.pause_on_restart()
+        goal_store.pause_on_restart()
         stop_checks = asyncio.Event()
         async def check_due_files():
             while not stop_checks.is_set():
@@ -908,6 +956,7 @@ def create_app() -> Any:
             stop_checks.set()
             await checker
             scheduled_checks.pause_on_restart()
+            goal_store.pause_on_restart()
 
     app = FastAPI(title="NeuroDiscovery Web UI", docs_url=None, redoc_url=None, lifespan=runtime_lifespan)
     from core.harness import register_routes
@@ -1166,6 +1215,8 @@ def create_app() -> Any:
     from core.runtime_store import RuntimeStore
     from core.permissions import PERMISSION_MODES
     runtime_store = RuntimeStore(workbench.path)
+    from core.goal_runtime import GoalStore
+    goal_store = GoalStore(workbench.path)
     runtime_owner = secrets.token_hex(16)
     runtime_store.register_owner(runtime_owner)
     from core.scheduled_checks import ScheduledChecks
@@ -1313,6 +1364,278 @@ def create_app() -> Any:
             return {'updated': True}
         except ValueError as exc:
             return JSONResponse({'message': str(exc)}, status_code=409)
+
+    def _goal_turn_message(goal: dict[str, Any]) -> str:
+        criterion = str(goal.get('criterion') or '').strip() or 'Provide a concrete, inspectable result and explain what remains uncertain.'
+        turn = int(goal.get('turns_started') or 0)
+        limit = int(goal.get('max_turns') or 0)
+        return (
+            "[NeuroRuntime Goal mode]\n"
+            f"Objective: {goal['objective']}\n"
+            f"Acceptance criterion: {criterion}\n"
+            f"Bounded turn: {turn}/{limit}\n\n"
+            "Work on this objective using the available runtime and the current workspace. "
+            "Keep evidence and changes inspectable, state uncertainty plainly, and stop when the "
+            "criterion cannot be met safely. Do not claim completion merely because a command ran. "
+            "When the acceptance criterion is actually satisfied, put the exact standalone line "
+            "<goal:complete> at the end of your response. If progress is blocked and no safe next "
+            "step remains, put the exact standalone line <goal:blocked> at the end instead. "
+            "Do not put either marker in a code block or quote it as an example. Without a marker, "
+            "the controller may provide another bounded turn."
+        )
+
+    async def _enqueue_goal_turn(goal_id: str, request: Request, source_payload: dict[str, Any] | None = None) -> dict[str, Any] | None:
+        goal = await asyncio.to_thread(goal_store.get, goal_id)
+        if not goal or goal['status'] != 'active' or goal.get('active_request_id'):
+            return None
+        chat_id = str(goal['chat_id'])
+        if chat_id in active_chat_ids:
+            await asyncio.to_thread(goal_store.control, goal_id, chat_id, 'pause')
+            return None
+        rows = await asyncio.to_thread(runtime_store.list, chat_id)
+        original_goal_payload = None
+        for row in rows:
+            body = json.loads(row['payload'])
+            if body.get('goal_id') == goal_id and original_goal_payload is None:
+                original_goal_payload = body
+            if row['status'] not in {'queued', 'paused', 'running', 'interrupted'}:
+                continue
+            if body.get('goal_id') == goal_id:
+                if row['status'] in {'running', 'interrupted'} or (row['status'] == 'paused' and row.get('result') is None):
+                    await asyncio.to_thread(goal_store.control, goal_id, chat_id, 'pause')
+                    return None
+                continue
+            if body.get('goal_id') != goal_id:
+                await asyncio.to_thread(goal_store.control, goal_id, chat_id, 'pause')
+                return None
+        # The first queued turn is the durable source of the Goal's permission
+        # and request settings. A resume request cannot widen them.
+        base = dict(original_goal_payload or source_payload or {})
+        request_id = secrets.token_urlsafe(24)
+        bound = None
+        try:
+            permission_mode = str(base.get('permission_mode') or 'ask')
+            if permission_mode not in PERMISSION_MODES:
+                raise ValueError('Unsupported permission mode')
+            bound = await asyncio.to_thread(goal_store.bind_request, goal_id, request_id)
+            payload = {
+                'server_queue': True,
+                'request_id': request_id,
+                'chat_id': chat_id,
+                'workspace_path': str(Path(bound['workspace_path']).resolve()),
+                'message': _goal_turn_message(bound),
+                'history': [],
+                'selected_skills': [],
+                'autoresearch_mode': 'off',
+                'permission_mode': permission_mode,
+                'language': base.get('language'),
+                'project_id': str(base.get('project_id') or ''),
+                'client_surface': base.get('client_surface', 'web'),
+                'reasoning_effort': base.get('reasoning_effort', 'default'),
+                'goal_id': goal_id,
+                'goal_turn': int(bound['turns_started']),
+                'goal_mode': True,
+                'stream_events': False,
+            }
+            entry = await asyncio.to_thread(runtime_store.enqueue, payload)
+        except Exception as exc:
+            current = await asyncio.to_thread(goal_store.get, goal_id)
+            if bound and current and current.get('active_request_id') == request_id:
+                try:
+                    await asyncio.to_thread(
+                        goal_store.abort_unqueued_request, goal_id, request_id,
+                        f'Goal turn was not queued ({type(exc).__name__}): {exc}'[:8000],
+                    )
+                except ValueError:
+                    pass
+            elif current and current['status'] == 'active':
+                try:
+                    await asyncio.to_thread(goal_store.control, goal_id, chat_id, 'pause')
+                except ValueError:
+                    pass
+            raise
+        start_queue_worker(chat_id, request)
+        return {'goal': bound, 'request_id': request_id, 'status': entry['status']}
+
+    def _parse_goal_verification(text: str) -> tuple[bool, str] | None:
+        raw = str(text or '').strip()
+        if re.search(r'(?im)^\s*<verify:pass>\s*$', raw):
+            return True, 'Verifier explicitly accepted the stated criterion.'
+        if re.search(r'(?im)^\s*<verify:fail>\s*$', raw):
+            return False, 'Verifier did not accept the stated criterion.'
+        candidate = re.search(r'\{[\s\S]*\}', raw)
+        if not candidate:
+            return None
+        try:
+            data = json.loads(candidate.group(0))
+        except (TypeError, ValueError):
+            return None
+        if type(data.get('accepted')) is not bool:
+            return None
+        reason = str(data.get('reason') or '').strip()
+        if not reason:
+            return None
+        return data['accepted'], reason[:8000]
+
+    async def _verify_goal(goal_id: str, result: dict[str, Any], source_payload: dict[str, Any], request: Request) -> None:
+        goal = await asyncio.to_thread(goal_store.get, goal_id)
+        if not goal or goal['status'] != 'verifying':
+            return
+        review_request_id = 'goal_verify_' + secrets.token_urlsafe(18)
+        workspace_evidence = await asyncio.to_thread(
+            _goal_workspace_evidence, Path(goal['workspace_path']), result.get('workspace_changes') or []
+        )
+        bounded_result = {
+            'content': str(result.get('content') or '')[-16000:],
+            'workspace_files': workspace_evidence,
+            'tool_events': [
+                {key: event.get(key) for key in ('tool', 'success', 'returncode', 'stdout_preview', 'stderr_preview')}
+                for event in (result.get('tool_events') or [])[:20] if isinstance(event, dict)
+            ],
+            'execution_status': (result.get('execution') or {}).get('status'),
+        }
+        prompt = (
+            "You are an independent acceptance reviewer for a bounded local Goal. "
+            "Review only the supplied objective, criterion, agent response, execution record, and "
+            "independently measured workspace file facts. File hashes prove identity, not contents. "
+            "Do not perform tools, infer hidden file contents, or treat a model marker as proof. "
+            "Accept only when the criterion is directly supported; otherwise reject and explain the "
+            "missing evidence. Return exactly JSON with a boolean `accepted` and a concise `reason`.\n\n"
+            + json.dumps({'objective': goal['objective'], 'criterion': goal['criterion'], 'turn': goal['turns_started'], 'record': bounded_result}, ensure_ascii=False)
+        )
+        verdict: tuple[bool, str] | None = None
+        review_response = ''
+        try:
+            verifier = AgentSession(
+                workspace=Path(goal['workspace_path']),
+                no_skill_mode=True,
+                checkpoint_scope=f'goal-review-{goal_id}',
+            )
+            verifier.set_llm_client(build_llm_client(verifier.env))
+            if not isinstance(verifier._llm, dict):
+                meta = {
+                    'request_id': review_request_id,
+                    'chat_id': goal['chat_id'],
+                    'project_id': str(source_payload.get('project_id') or ''),
+                    'provider': str(verifier.env.get('llm_backend', {}).get('provider') or 'unknown'),
+                    'model': str(verifier.env.get('llm_backend', {}).get('model') or 'unknown'),
+                    'source': 'goal-verifier',
+                }
+                verifier.set_llm_client(ObservedClient(verifier._llm, workbench, meta, lambda _event: None))
+            language_prompt = _response_language_prompt(source_payload.get('language'))
+            verifier.history = [
+                {'role': 'system', 'content': 'Return only the requested JSON object.\n' + language_prompt},
+                {'role': 'user', 'content': prompt},
+            ]
+            review_response = str(await asyncio.to_thread(verifier._chat))
+            verdict = _parse_goal_verification(review_response)
+        except Exception as exc:
+            verdict = None
+            reason = f'Independent verification could not run: {type(exc).__name__}: {exc}'[:8000]
+        else:
+            reason = verdict[1] if verdict else 'Independent verification returned no valid JSON verdict.'
+        try:
+            updated = await asyncio.to_thread(
+                goal_store.mark_verification,
+                goal_id,
+                verdict[0] if verdict else None,
+                reason,
+                request_id=goal.get('last_request_id'),
+                review_record={
+                    'request_id': review_request_id,
+                    'source_request_id': goal.get('last_request_id'),
+                    'input': prompt,
+                    'response': review_response[:8000],
+                },
+            )
+        except ValueError:
+            return
+        if updated['status'] == 'active':
+            await _enqueue_goal_turn(goal_id, request, source_payload)
+
+    @app.get('/api/chat/goals/{chat_id}')
+    async def list_goals(chat_id: str) -> Any:
+        return {'items': await asyncio.to_thread(goal_store.list, chat_id)}
+
+    async def create_goal(payload: dict, request: Request) -> Any:
+        if payload.get('confirmed') is not True:
+            return JSONResponse({'message': 'Explicit user confirmation is required to start Goal mode'}, status_code=400)
+        chat_id = str(payload.get('chat_id') or '').strip()
+        if not chat_id or len(chat_id) > 200:
+            return JSONResponse({'message': 'Conversation is required'}, status_code=400)
+        if chat_id in active_chat_ids:
+            return JSONResponse({'message': 'Wait for the active turn before starting a goal'}, status_code=409)
+        goal = None
+        try:
+            workspace = _resolve_workspace_path(payload.get('workspace_path'))
+            permission_mode = payload.get('permission_mode', 'ask')
+            if not isinstance(permission_mode, str) or permission_mode not in PERMISSION_MODES:
+                raise ValueError('Unsupported permission mode')
+            rows = await asyncio.to_thread(runtime_store.list, chat_id)
+            if any(row['status'] in {'queued', 'paused', 'running', 'interrupted'} for row in rows):
+                raise ValueError('Finish or dismiss queued work before starting a goal')
+            goal = await asyncio.to_thread(
+                goal_store.create,
+                chat_id,
+                workspace,
+                payload.get('objective'),
+                payload.get('criterion', ''),
+                payload.get('max_turns', 12),
+            )
+            queued = await _enqueue_goal_turn(goal['goal_id'], request, payload)
+            if not queued:
+                raise ValueError('Goal could not acquire the conversation queue')
+            return JSONResponse({'type': 'accepted', **queued}, status_code=202)
+        except ValueError as exc:
+            if goal is not None:
+                try:
+                    await asyncio.to_thread(goal_store.control, goal['goal_id'], chat_id, 'cancel')
+                except ValueError:
+                    pass
+            return JSONResponse({'message': str(exc)}, status_code=409)
+        except Exception:
+            if goal is not None:
+                try:
+                    await asyncio.to_thread(goal_store.control, goal['goal_id'], chat_id, 'cancel')
+                except ValueError:
+                    pass
+            raise
+
+    async def control_goal(goal_id: str, payload: dict, request: Request) -> Any:
+        if payload.get('confirmed') is not True:
+            return JSONResponse({'message': 'Explicit user action is required'}, status_code=400)
+        chat_id = str(payload.get('chat_id') or '')
+        action = str(payload.get('action') or '')
+        try:
+            current = await asyncio.to_thread(goal_store.get, goal_id, chat_id)
+            if not current:
+                raise ValueError('Goal not found')
+            updated = await asyncio.to_thread(goal_store.control, goal_id, chat_id, action)
+            active_request = current.get('active_request_id')
+            if action in {'pause', 'cancel'} and active_request:
+                session = active_chat_requests.get(active_request)
+                if session is not None:
+                    session.request_cancel()
+                queued = await asyncio.to_thread(runtime_store.get, active_request)
+                if queued and queued['status'] in {'queued', 'paused', 'interrupted'}:
+                    await asyncio.to_thread(runtime_store.cancel, active_request, chat_id)
+            if action == 'resume':
+                queued = await _enqueue_goal_turn(goal_id, request, payload)
+                if queued:
+                    updated = queued['goal']
+                    return JSONResponse({'type': 'accepted', **queued}, status_code=202)
+                current = await asyncio.to_thread(goal_store.get, goal_id, chat_id)
+                if current and current['status'] == 'active' and not current.get('active_request_id'):
+                    await asyncio.to_thread(goal_store.control, goal_id, chat_id, 'pause')
+                raise ValueError('Goal could not resume; inspect pending or interrupted queue work first')
+            return {'updated': True, 'goal': updated}
+        except ValueError as exc:
+            return JSONResponse({'message': str(exc)}, status_code=409)
+
+    create_goal.__annotations__['request'] = Request
+    control_goal.__annotations__['request'] = Request
+    app.post('/api/chat/goals')(create_goal)
+    app.post('/api/chat/goals/{goal_id}')(control_goal)
 
     @app.get('/api/llm/composer-capabilities')
     async def composer_capabilities(provider: str = '', model: str = '') -> Any:
@@ -1519,6 +1842,12 @@ def create_app() -> Any:
         surface_prompt = _client_surface_prompt(client_surface)
         language_prompt = _response_language_prompt(payload.get("language"))
         system_parts = [soul, surface_prompt, language_prompt, f"Loaded skills: {skill_names}"]
+        graph_status = _neurooracle_graph_status()
+        system_parts.append(_neurooracle_access_prompt(
+            str(request.base_url).rstrip("/"),
+            available=bool(graph_status.get("available")),
+            path=str(graph_status.get("path") or ""),
+        ))
         system_parts.append(build_selection_prompt(novelty_mode))
         if autoresearch_mode == "idea":
             system_parts.append(
@@ -1670,6 +1999,22 @@ def create_app() -> Any:
                 except Exception as exc:
                     result, status = {"type": "error", "message": f"Queue dispatch failed ({type(exc).__name__}); no automatic replay."}, 'interrupted'
                 await asyncio.to_thread(runtime_store.finish, entry['request_id'], runtime_owner, result, status)
+                if payload.get('goal_id'):
+                    try:
+                        current_goal = await asyncio.to_thread(goal_store.get, payload['goal_id'], chat_id)
+                        if current_goal and (current_goal.get('active_request_id') or current_goal.get('status') == 'verifying'):
+                            if current_goal.get('active_request_id'):
+                                current_goal = await asyncio.to_thread(
+                                    goal_store.record_turn, payload['goal_id'], entry['request_id'], result, status
+                                )
+                            if current_goal.get('status') == 'verifying':
+                                await _verify_goal(payload['goal_id'], result, payload, request)
+                            elif current_goal.get('status') == 'active':
+                                await _enqueue_goal_turn(payload['goal_id'], request, payload)
+                    except ValueError:
+                        # A user pause/cancel can intentionally detach the running
+                        # request; the durable goal state already records that action.
+                        pass
                 if status != 'completed':
                     return
         finally:
@@ -1974,6 +2319,11 @@ def create_app() -> Any:
                     session.history[0]["content"] = (
                         f"{soul}\n\nLoaded skills: {skill_names}\n\n"
                         + _client_surface_prompt(msg.get("client_surface", "web"))
+                        + "\n\n" + _neurooracle_access_prompt(
+                            str(websocket.base_url).rstrip("/") if getattr(websocket, "base_url", None) else "",
+                            available=bool(_neurooracle_graph_status().get("available")),
+                            path=str(_neurooracle_graph_status().get("path") or ""),
+                        )
                         + "\n\n" + build_selection_prompt(novelty_mode)
                     )
                     payload_parts = [user_text]

@@ -17,7 +17,7 @@ PRODUCTS = {"full": ("NeuroDiscovery", "org.neurodiscovery.desktop"),
             "evaluation": ("NeuroDiscovery Human Evaluation", "org.neurodiscovery.human-evaluation"),
             "demo": ("NeuroDiscovery Demo", "org.neurodiscovery.demo")}
 SHELL_FILES = ["main.js", "llm-settings.js", "llm-credentials.js", "model-library.js",
-               "settings-restart.js", "preload.js", "package.json"]
+               "settings-restart.js", "preload.js", "assets/icon.png", "package.json"]
 
 
 def builder_config(variant, runtime, output):
@@ -31,11 +31,11 @@ def builder_config(variant, runtime, output):
     return {"extends": None, "appId": app_id, "productName": name,
         "directories": {"output": str(output)},
         "artifactName": name.replace(" ", "-") + "-${version}-mac-${arch}.${ext}",
-        "files": ["evaluation-main.js", "evaluation-preload.js", "package.json"] if evaluation else SHELL_FILES,
+        "files": ["evaluation-main.js", "evaluation-preload.js", "assets/icon.png", "package.json"] if evaluation else SHELL_FILES,
         "extraMetadata": metadata,
         "extraResources": [{"from": str(runtime), "to": "evaluation-runtime" if evaluation else "runtime",
                             "filter": ["**/*", "!**/__pycache__/**", "!**/*.pyc", "!**/*.pyo"]}],
-        "mac": {"target": [{"target": "dmg", "arch": ["arm64"]}, {"target": "zip", "arch": ["arm64"]}],
+        "mac": {"icon": "assets/icon.png", "target": [{"target": "dmg", "arch": ["arm64"]}, {"target": "zip", "arch": ["arm64"]}],
                 "category": "public.app-category.education" if evaluation else "public.app-category.developer-tools",
                 "identity": None}}
 

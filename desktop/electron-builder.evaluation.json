@@ -4,11 +4,11 @@
   "productName": "NeuroDiscovery Human Evaluation",
   "directories": {"output": "dist-evaluation"},
   "artifactName": "NeuroDiscovery-Human-Evaluation-${version}-${os}-${arch}.${ext}",
-  "files": ["evaluation-main.js", "evaluation-preload.js", "package.json"],
+  "files": ["evaluation-main.js", "evaluation-preload.js", "assets/icon.png", "package.json"],
   "extraMetadata": {"main": "evaluation-main.js"},
   "extraResources": [{"from": "runtime-evaluation", "to": "evaluation-runtime", "filter": ["**/*", "!**/__pycache__/**", "!**/*.pyc"]}],
-  "win": {"target": ["nsis", "portable", "zip"]},
-  "mac": {"target": ["dmg", "zip"], "category": "public.app-category.education"},
+  "win": {"icon": "assets/icon.png", "target": ["nsis", "portable", "zip"]},
+  "mac": {"icon": "assets/icon.png", "target": ["dmg", "zip"], "category": "public.app-category.education"},
   "portable": {"artifactName": "NeuroDiscovery-Human-Evaluation-${version}-Portable-${arch}.${ext}"},
   "nsis": {"artifactName": "NeuroDiscovery-Human-Evaluation-${version}-Setup-${arch}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true}
 }

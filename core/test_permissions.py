@@ -32,3 +32,10 @@ def test_never_ask_skips_approval_but_honors_stop(tmp_path):
     assert agent._runtime_store.approval('synthetic-request', 'one') == 'missing'
     agent._cancel_event.set()
     assert not agent._tool_authorized('run_shell_command', {'command': 'synthetic only'}, 'two')
+
+
+@pytest.mark.parametrize('mode', ['ask', 'risk', 'never', 'read_only'])
+def test_catalog_skill_readers_are_read_only_capabilities(tmp_path, mode):
+    assert tool_permission(mode, 'search_skills', {'query': 'ADNI'}, tmp_path) == 'allow'
+    assert tool_permission(mode, 'read_skill', {'name': 'adni-skill'}, tmp_path) == 'allow'
+    assert tool_permission('invalid', 'read_skill', {'name': 'adni-skill'}, tmp_path) == 'deny'

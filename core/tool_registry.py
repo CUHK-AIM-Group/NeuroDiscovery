@@ -10,9 +10,9 @@ failed silently at call time.
 This module mirrors the registry seam DeepSeek Harness establishes with
 ``ctx.tools`` / ``defineTool`` (packages/core/tools/src/schema.ts): a tool
 declares its model-facing name, description and parameter schema, plus the
-canonical execution body that is dispatched by name. Everything else, the
-system-prompt schema list and the permission lookup included, reads from here
-instead of keeping a second copy.
+canonical execution body that is dispatched by name. The system-prompt schema
+list reads from here. Cooperative permission decisions remain in permissions.py
+and are supplied by each consumer as a pipeline guard.
 
 The registry is deliberately plain data plus one function per entry. It does not
 own scheduling, budgets, transcripts or retries; those stay in the agent loop,
@@ -25,6 +25,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
+
+from core.tool_pipeline import DEFAULT_PIPELINE
 
 
 ToolHandler = Callable[[Any, Mapping[str, Any], Path], dict[str, Any]]
@@ -101,26 +103,33 @@ def schemas(*, include: Sequence[str] | None = None, exclude: Sequence[str] | No
     ]
 
 
-def dispatch(session: Any, name: str, arguments: Mapping[str, Any], workspace: Path) -> dict[str, Any]:
-    """Run one tool body, converting an unexpected exception into a tool error.
-
-    A missing tool and a crash inside one tool must both surface as an ordinary
-    result the model can read, never as an exception that ends the turn. That
-    matches DSH's registry-level normalization, where a throwing pipeline becomes
-    ``isError`` rather than an aborted turn.
-    """
+def dispatch(session: Any, name: str, arguments: Mapping[str, Any], workspace: Path,
+             *, guard: Callable[[], dict | None] | None = None) -> dict[str, Any]:
+    """Run the shared stages with the caller's existing approval/control guard."""
     spec = REGISTRY.get(name)
-    if spec is None:
-        return {"success": False, "executed": False, "error_type": "unknown_tool", "error": f"unknown tool: {name}"}
-    try:
-        return spec.handler(session, arguments, workspace)
-    except Exception as exc:  # noqa: BLE001 - reported to the model, not raised
-        return {
-            "success": False,
-            "executed": False,
-            "error_type": "tool_execution_error",
-            "error": f"{type(exc).__name__}: {exc}",
-        }
+    events = getattr(session, "_tool_events", [])
+    first_event = len(events)
+
+    def owner_guard(call):
+        cancel = getattr(session, "_cancel_event", None)
+        if cancel is not None and cancel.is_set():
+            return {"success": False, "executed": False, "error_type": "cancelled", "error": "Execution cancelled."}
+        if spec is None:
+            return {"success": False, "executed": False, "error_type": "unknown_tool", "error": f"unknown tool: {name}"}
+        host_guard = getattr(session, "_tool_guard", None)
+        rejection = host_guard(call) if host_guard is not None else None
+        return rejection if rejection is not None else (guard() if guard is not None else None)
+
+    pipeline = getattr(session, "_tool_pipeline", DEFAULT_PIPELINE)
+    result = pipeline.run(name, arguments, workspace,
+                          lambda args: spec.handler(session, args, workspace), guards=(owner_guard,))
+    # Handlers keep their existing evidence bookkeeping; publish the final
+    # normalized result there as well as to the model/MCP caller.
+    for event in events[first_event:]:
+        if event.get("tool") == name:
+            event["result"] = result
+            event["success"] = bool(result.get("success"))
+    return result
 
 
 def canonical_schema_digest() -> str:

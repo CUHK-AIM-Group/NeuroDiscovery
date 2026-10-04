@@ -8,6 +8,7 @@ const path = require('node:path');
 
 const DEMO_BUILD = require('./package.json').distribution === 'demo';
 const APP_NAME = DEMO_BUILD ? 'NeuroDiscovery Demo' : 'NeuroDiscovery';
+const APP_ICON_PATH = path.join(__dirname, 'assets', 'icon.png');
 const LEGACY_USER_DATA_NAME = DEMO_BUILD ? 'NeuroDiscovery-Demo' : 'NeuroClaw';
 const APP_OPENED_AT_MS = Date.now();
 const STARTUP_TIMEOUT_MS = 90_000;
@@ -22,6 +23,7 @@ const WINDOWS_RESERVED_FOLDER_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.
 // rename. Internal storage can migrate separately without resetting users.
 app.setPath('userData', path.join(app.getPath('appData'), LEGACY_USER_DATA_NAME));
 app.setName(APP_NAME);
+if (process.platform === 'win32') app.setAppUserModelId(DEMO_BUILD ? 'org.neurodiscovery.demo' : 'org.neurodiscovery.desktop');
 
 function validateProjectFolderName(value) {
   const name = String(value || '').trim();
@@ -607,11 +609,17 @@ function normalizePackagedRuntimeConfig(config) {
 
 function defaultConfig() {
   const home = os.homedir();
+  // Development builds use the same bundled runtime contract as packaged
+  // builds.  The old defaultPythonExe(home) call was left behind after the
+  // runtime migration and is not defined, so a fresh client crashed before
+  // it could even show the settings page.
+  const developmentBundledPython = bundledPythonExe(packagedRuntimeSourceRoot()) || bundledPythonExe();
+  const forceDevelopmentBundled = !app.isPackaged && process.argv.includes('--development-runtime');
   return {
     host: '127.0.0.1',
     port: 7080,
-    runtimeMode: app.isPackaged ? 'bundled' : (process.env.NEUROCLAW_RUNTIME_MODE || 'conda'),
-    pythonExe: app.isPackaged ? bundledPythonExe() : (process.env.NEUROCLAW_PYTHON_EXE || defaultPythonExe(home)),
+    runtimeMode: app.isPackaged ? 'bundled' : (forceDevelopmentBundled ? 'bundled' : (process.env.NEUROCLAW_RUNTIME_MODE || 'bundled')),
+    pythonExe: app.isPackaged ? bundledPythonExe() : (process.env.NEUROCLAW_PYTHON_EXE || developmentBundledPython || (process.platform === 'win32' ? 'python.exe' : 'python3')),
     condaExe: app.isPackaged ? '' : (process.env.NEUROCLAW_CONDA_EXE || defaultCondaExe(home)),
     condaEnv: process.env.NEUROCLAW_CONDA_ENV || 'neuroclaw',
     localPythonExe: process.env.NEUROCLAW_LOCAL_PYTHON_EXE || '',
@@ -619,6 +627,9 @@ function defaultConfig() {
     language: process.env.NEUROCLAW_LANGUAGE || 'English',
     theme: process.env.NEUROCLAW_THEME || 'light',
     proxyUrl: process.env.NEUROCLAW_PROXY_URL || '',
+    llmConnection: process.env.NEUROCLAW_LLM_CONNECTION || 'api',
+    subscriptionEngine: process.env.NEUROCLAW_SUBSCRIPTION_ENGINE || 'codex',
+    subscriptionModel: process.env.NEUROCLAW_SUBSCRIPTION_MODEL || '',
     llmProvider: process.env.NEUROCLAW_LLM_PROVIDER || 'openai',
     llmModel: process.env.NEUROCLAW_LLM_MODEL || 'gpt-5.5',
     llmBaseUrl: defaultLlmBaseUrl(),
@@ -634,6 +645,11 @@ function defaultConfig() {
 
 function normalizeConfig(config) {
   const next = { ...config };
+  next.llmConnection = ['api', 'subscription'].includes(String(next.llmConnection || '').trim().toLowerCase())
+    ? String(next.llmConnection).trim().toLowerCase() : 'api';
+  next.subscriptionEngine = ['codex', 'claude'].includes(String(next.subscriptionEngine || '').trim().toLowerCase())
+    ? String(next.subscriptionEngine).trim().toLowerCase() : 'codex';
+  next.subscriptionModel = String(next.subscriptionModel || '').trim();
   const provider = String(next.llmProvider || 'openai').trim().toLowerCase();
   const apiKeyEnv = String(next.llmApiKeyEnv || '').trim();
   const baseUrl = String(next.llmBaseUrl || '').trim();
@@ -672,6 +688,9 @@ function saveConfig(nextConfig) {
     'fslDir',
     'language',
     'proxyUrl',
+    'llmConnection',
+    'subscriptionEngine',
+    'subscriptionModel',
     'llmProvider',
     'llmModel',
     'llmBaseUrl',
@@ -732,6 +751,7 @@ function providerNeedsNoApiKey(provider) {
 }
 
 function describeLlmConnectionStatus(config) {
+  const connection = String(config && config.llmConnection || 'api').trim().toLowerCase();
   const provider = String(config && config.llmProvider || '').trim().toLowerCase() || 'openai';
   const apiKey = String(config && config.llmApiKey || '').trim();
   const apiKeyEnv = String(config && config.llmApiKeyEnv || '').trim() || defaultApiKeyEnvForProvider(provider);
@@ -745,13 +765,55 @@ function describeLlmConnectionStatus(config) {
         ? 'environment'
         : 'missing';
   return {
+    connection,
+    subscriptionEngine: String(config && config.subscriptionEngine || 'codex').trim().toLowerCase(),
     provider,
-    apiKeyRequired,
-    apiKeyConfigured: !apiKeyRequired || Boolean(apiKey || environmentKey),
-    apiKeySource,
-    endpointConfigured: Boolean(String(config && config.llmBaseUrl || '').trim()),
+    apiKeyRequired: connection === 'subscription' ? false : apiKeyRequired,
+    apiKeyConfigured: connection === 'subscription' ? false : (!apiKeyRequired || Boolean(apiKey || environmentKey)),
+    apiKeySource: connection === 'subscription' ? 'subscription' : apiKeySource,
+    endpointConfigured: connection === 'subscription' || Boolean(String(config && config.llmBaseUrl || '').trim()),
     ...require('./llm-credentials').keyFileStatus(config),
   };
+}
+
+function subscriptionCommand(engine) {
+  const name = String(engine || '').trim().toLowerCase();
+  if (name === 'codex') return { executable: 'codex', statusArgs: ['login', 'status'], loginArgs: ['login'] };
+  if (name === 'claude') return { executable: 'claude', statusArgs: ['auth', 'status', '--json'], loginArgs: ['auth', 'login'] };
+  throw new Error('Unsupported subscription engine');
+}
+
+function subscriptionStatus(engine) {
+  const spec = subscriptionCommand(engine);
+  const found = spawnSync(spec.executable, ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+  if (found.error || found.status !== 0) return { engine, installed: false, signedIn: false, error: 'CLI not found' };
+  const result = spawnSync(spec.executable, spec.statusArgs, { encoding: 'utf8', windowsHide: true, timeout: 15000 });
+  const output = `${result.stdout || ''}\n${result.stderr || ''}`.trim();
+  let signedIn = result.status === 0;
+  try {
+    const parsed = JSON.parse(result.stdout || result.stderr || '{}');
+    if (typeof parsed.loggedIn === 'boolean') signedIn = parsed.loggedIn;
+    if (typeof parsed.logged_in === 'boolean') signedIn = parsed.logged_in;
+  } catch (_error) {
+    if (/not logged in|logged out|unauthenticated|sign in/i.test(output)) signedIn = false;
+  }
+  return { engine, installed: true, signedIn, error: signedIn ? '' : (output.slice(-300) || 'Not signed in') };
+}
+
+function startSubscriptionLogin(engine) {
+  const spec = subscriptionCommand(engine);
+  if (process.platform === 'win32') {
+    const commandLine = [spec.executable, ...spec.loginArgs].map(value => `"${String(value).replace(/"/g, '""')}"`).join(' ');
+    const child = spawn('cmd.exe', ['/d', '/k', commandLine], { detached: true, stdio: 'ignore', windowsHide: false });
+    child.unref();
+  } else if (process.platform === 'darwin') {
+    const commandLine = [spec.executable, ...spec.loginArgs].map(value => `'${String(value).replace(/'/g, "'\\''")}'`).join(' ');
+    spawn('osascript', ['-e', `tell application "Terminal" to do script ${JSON.stringify(commandLine)}`], { detached: true, stdio: 'ignore' }).unref();
+  } else {
+    const child = spawn(spec.executable, spec.loginArgs, { detached: true, stdio: 'ignore' });
+    child.unref();
+  }
+  return { engine, started: true };
 }
 
 function readJsonObject(filePath) {
@@ -782,6 +844,7 @@ function prependSelectedModel(models, selectedModel) {
 
 function applyDesktopLlmConfig(config) {
   require('./llm-credentials').validateKeyFileConfig(config);
+  const connection = String(config.llmConnection || 'api').trim().toLowerCase();
   const provider = String(config.llmProvider || '').trim() || 'openai';
   const addedModels = require('./model-library').selectedModelIds(config);
   const model = addedModels.includes(config.llmModel) ? config.llmModel : addedModels[0] || '';
@@ -812,9 +875,26 @@ function applyDesktopLlmConfig(config) {
     for (const field of ['default_headers', 'headers', 'extra_body', 'thinking', 'thinking_mode', 'reasoning_effort', 'temperature', 'top_p', 'api_mode', 'max_output_tokens']) delete llm[field];
   }
   require('./llm-settings').applyModelControls(config, llm);
-  llm.provider = provider;
-  llm.model = model;
-  if (provider === 'local') {
+  llm.connection = connection;
+  if (connection === 'subscription') {
+    llm.provider = 'subscription';
+    llm.subscription_engine = String(config.subscriptionEngine || 'codex').trim().toLowerCase();
+    llm.subscription_model = String(config.subscriptionModel || '').trim();
+    llm.model = llm.subscription_model || (llm.subscription_engine === 'claude' ? 'claude-sonnet-4-5' : 'gpt-5.5');
+    delete llm.api_key;
+    delete llm.api_key_env;
+    delete llm.base_url;
+    delete llm.baseUrl;
+    delete llm.openai_compatible;
+    delete llm.no_api_key_required;
+    delete llm.dummy_api_key;
+  } else {
+    llm.provider = provider;
+    llm.model = model;
+  }
+  if (connection === 'subscription') {
+    // Native CLIs own their endpoint and OAuth credentials.
+  } else if (provider === 'local') {
     if (baseUrl) llm.local_endpoint = baseUrl;
     delete llm.base_url;
     delete llm.baseUrl;
@@ -826,12 +906,12 @@ function applyDesktopLlmConfig(config) {
     delete llm.baseUrl;
   }
 
-  if (apiKeyEnv) {
+  if (connection !== 'subscription' && apiKeyEnv) {
     llm.api_key_env = apiKeyEnv;
   } else {
     delete llm.api_key_env;
   }
-  if (apiKey) {
+  if (connection !== 'subscription' && apiKey) {
     llm.api_key = apiKey;
     delete llm.apiKey;
   } else {
@@ -839,27 +919,27 @@ function applyDesktopLlmConfig(config) {
     delete llm.apiKey;
   }
 
-  if (providerNeedsNoApiKey(provider)) {
+  if (connection !== 'subscription' ? providerNeedsNoApiKey(provider) : false) {
     llm.no_api_key_required = true;
     llm.dummy_api_key = llm.dummy_api_key || 'neuroclaw-local';
   } else {
     delete llm.no_api_key_required;
     delete llm.dummy_api_key;
   }
-  llm.openai_compatible = provider !== 'anthropic' && provider !== 'local';
+  llm.openai_compatible = connection !== 'subscription' && provider !== 'anthropic' && provider !== 'local';
 
   const selectedModel = {
-    provider,
-    model,
-    label: `${provider} / ${model}`,
+    provider: connection === 'subscription' ? 'subscription' : provider,
+    model: connection === 'subscription' ? llm.model : model,
+    label: connection === 'subscription' ? `${llm.subscription_engine} subscription / ${llm.model}` : `${provider} / ${model}`,
   };
-  if (baseUrl) {
+  if (connection !== 'subscription' && baseUrl) {
     if (provider === 'local') selectedModel.local_endpoint = baseUrl;
     else selectedModel.base_url = baseUrl;
   }
-  if (apiKeyEnv) selectedModel.api_key_env = apiKeyEnv;
+  if (connection !== 'subscription' && apiKeyEnv) selectedModel.api_key_env = apiKeyEnv;
   if (llm.openai_compatible) selectedModel.openai_compatible = true;
-  if (providerNeedsNoApiKey(provider)) selectedModel.no_api_key_required = true;
+  if (connection !== 'subscription' ? providerNeedsNoApiKey(provider) : false) selectedModel.no_api_key_required = true;
   llm.model_selection_managed = true;
   llm.available_models = addedModels.map(id => ({...selectedModel, model:id, label:id}));
 
@@ -980,19 +1060,43 @@ async function requestDesktopCompatible(url, requireMultiTopicStudy = false) {
   if (DEMO_BUILD) {
     return await requestStatusCode(url, '/api/distribution/demo') === 200;
   }
+  // A healthy HTTP process is not necessarily a compatible NeuroRuntime.
+  // Keep the capability contract check before reusing an existing backend;
+  // the legacy UI intentionally bypasses this check.
+  if (!process.argv.includes('--legacy-ui')) {
+    const harnessStatus = await requestStatusCode(url, '/api/harness');
+    if (!(harnessStatus >= 200 && harnessStatus < 300)) return false;
+  }
   const graphStatus = await requestStatusCode(url, '/api/neurooracle/graph/status');
   if (!(graphStatus >= 200 && graphStatus < 500 && graphStatus !== 404)) return false;
   return !requireMultiTopicStudy || await requestMultiTopicStudy(url);
+}
+
+function probeBackendPort(host, port) {
+  return new Promise((resolve) => {
+    const server = require('node:net').createServer();
+    const finish = (value) => {
+      try { server.close(() => resolve(value)); } catch (_err) { resolve(value); }
+    };
+    server.once('error', () => resolve(null));
+    server.listen({ host, port }, () => {
+      const address = server.address();
+      finish(address && typeof address === 'object' ? address.port : null);
+    });
+  });
 }
 
 async function findBackendPort(config) {
   const base = Number(config.port) || 7080;
   for (let offset = 0; offset < 20; offset += 1) {
     const port = base + offset;
-    const url = `http://${config.host}:${port}`;
-    if (!(await requestHealth(url))) return port;
+    if (port > 65535) break;
+    const selected = await probeBackendPort(config.host, port);
+    if (selected != null) return selected;
   }
-  throw new Error(`No free local backend port found from ${base} to ${base + 19}`);
+  const ephemeral = await probeBackendPort(config.host, 0);
+  if (ephemeral != null) return ephemeral;
+  throw new Error(`No free local backend port found from ${base} to ${Math.min(65535, base + 19)}`);
 }
 
 async function waitForBackend(url, timeoutMs) {
@@ -1033,6 +1137,13 @@ function validateConfig(config) {
 
 function resolveRuntimeConfig(config) {
   config = normalizePackagedRuntimeConfig(config);
+  if (!app.isPackaged && process.argv.includes('--development-runtime')) {
+    config = {
+      ...config,
+      runtimeMode: 'bundled',
+      environmentFile: path.join(config.repoRoot || repoRoot(), 'development-environment.json'),
+    };
+  }
   if (config.runtimeMode === 'python' && config.localPythonExe) {
     config = { ...config, pythonExe: config.localPythonExe };
   }
@@ -1078,6 +1189,10 @@ async function ensureBackend() {
     config.host,
   ];
   const env = { ...process.env };
+  // Keep Python diagnostics readable when the desktop client is launched
+  // under a non-UTF-8 Windows console code page.
+  env.PYTHONUTF8 = '1';
+  env.PYTHONIOENCODING = 'utf-8';
   if (config.fslDir) env.FSLDIR = config.fslDir;
   if (config.language && config.language !== 'System default') env.NEUROCLAW_LANGUAGE = config.language;
   applyLlmProcessEnv(env, config);
@@ -1140,6 +1255,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 680,
     title: APP_NAME,
+    icon: APP_ICON_PATH,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#171c1b' : '#fcfcfb',
     ...windowChromeOptions(),
     webPreferences: {
@@ -1464,6 +1580,26 @@ ipcMain.handle('neuroclaw:get-config', () => {
   };
 });
 
+ipcMain.handle('neuroclaw:subscription-status', (_event, requestedEngine) => {
+  try {
+    const config = loadConfig();
+    const engine = String(requestedEngine || config.subscriptionEngine || 'codex').trim().toLowerCase();
+    return { ok: true, ...subscriptionStatus(engine) };
+  } catch (error) {
+    return { ok: false, message: error.message };
+  }
+});
+
+ipcMain.handle('neuroclaw:subscription-login', (_event, requestedEngine) => {
+  try {
+    const config = loadConfig();
+    const engine = String(requestedEngine || config.subscriptionEngine || 'codex').trim().toLowerCase();
+    return { ok: true, ...startSubscriptionLogin(engine) };
+  } catch (error) {
+    return { ok: false, message: error.message };
+  }
+});
+
 ipcMain.handle('neuroclaw:discover-models', async (_event, config) => {
   // Unsaved connection fields are intentional; discovery never saves or adds models.
   try {
@@ -1758,6 +1894,7 @@ async function boot() {
         : desktopText('NeuroRuntime is ready. Opening NeuroDiscovery.', 'NeuroRuntime 已就绪，正在打开 NeuroDiscovery。'),
     );
     const desktopUiUrl = new URL(backend.url);
+    if (!process.argv.includes('--legacy-ui')) desktopUiUrl.pathname = '/harness';
     desktopUiUrl.searchParams.set('desktop', app.isPackaged ? app.getVersion() : String(Date.now()));
     await mainWindow.loadURL(desktopUiUrl.toString());
     focusMainWindow();

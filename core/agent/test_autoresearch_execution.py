@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import json
+import hashlib
 import sys
 import threading
 import time
@@ -108,6 +109,8 @@ def default_cap(monkeypatch):
 
 def session(tmp_path, responses, mode="data"):
     # Bypass environment/credential loading and real checkpoint/memory initialization.
+    if mode == "data":
+        _install_synthetic_data_contract(tmp_path)
     agent = main.AgentSession.__new__(main.AgentSession)
     agent.workspace = tmp_path
     agent.env = {"llm_backend": {"provider": "openai", "model": "offline-test"}}
@@ -132,6 +135,40 @@ def session(tmp_path, responses, mode="data"):
 
     agent._llm = NS(chat=NS(completions=NS(create=create)))
     return agent, calls
+
+
+def _install_synthetic_data_contract(tmp_path):
+    """Give data-mode lifecycle tests a valid local delivery binding."""
+    def record(name, text, **extra):
+        path = tmp_path / name
+        path.write_text(text, encoding="utf-8")
+        return {"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), **extra}
+    ids = record("synthetic_subject_ids.json", '["S1"]')
+    train = record("synthetic_train_ids.json", '["S1"]')
+    validation = record("synthetic_validation_ids.json", "[]")
+    test = record("synthetic_test_ids.json", "[]")
+    qc_checks = [{"name": "finite", "status": "passed",
+                  "observed": 0, "criterion": "nonfinite_count == 0"}]
+    manifest = {
+        "contract": "neuroclaw.data.v2",
+        "inputs": [record("synthetic_input.csv", "subject,value\nS1,1\n",
+                           subject_ids=ids, subject_ids_sha256=ids["sha256"],
+                           subject_count=1, subject_id_column="subject")],
+        "outputs": [record("synthetic_output.csv", "subject,value\nS1,1\n",
+                            subject_ids=ids, subject_ids_sha256=ids["sha256"],
+                            subject_count=1, subject_id_column="subject",
+                            shape=[1, 2], schema={"subject": "string", "value": "float"})],
+        "split": {"strategy": "grouped", "group_key": "subject_id", "seed": 1,
+                   "subject_ids": {"train": train, "validation": validation, "test": test},
+                   "train_subject_ids_sha256": train["sha256"],
+                   "validation_subject_ids_sha256": validation["sha256"],
+                   "test_subject_ids_sha256": test["sha256"]},
+        "transforms": [{"name": "identity", "parameters": {}, "fit_on": "none",
+                        "source": record("synthetic_transform.py", "# identity\n")}],
+        "qc": {"status": "passed", "checks": qc_checks,
+               "report": record("synthetic_qc.json", json.dumps({"status": "passed", "checks": qc_checks}))},
+    }
+    (tmp_path / "data_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
 
 def test_continues_beyond_eight_rounds_and_plan_only_replies(tmp_path):
@@ -388,3 +425,10 @@ def test_idea_only_can_finish_without_local_patient_data(tmp_path):
     ], mode="idea")
     assert "completed" in agent._chat()
     assert len(calls) == 2
+
+
+def test_end_to_end_exposes_idea_chain_and_ranking_tools(tmp_path):
+    agent, calls = session(tmp_path, [reply("Continue with the full workflow.")], mode="end-to-end")
+    agent._chat()
+    names = {item["function"]["name"] for item in calls[0]["tools"]}
+    assert {"generate_idea_hypotheses", "rank_idea_hypotheses"}.issubset(names)
