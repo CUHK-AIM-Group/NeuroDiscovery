@@ -38,7 +38,9 @@ const server = http.createServer(async (request, response) => {
   }
   if (url.pathname === '/api/env') return json({ provider: 'fixture', model: 'Offline UI fixture', api_key_present: false, available_models: [{ provider: 'fixture', model: 'Offline UI fixture' }] });
   if (url.pathname === '/api/skills') return json({ skills: [] });
+  if (url.pathname === '/api/chat/queue/__probe__') return json({ ok: true });
   if (url.pathname.startsWith('/api/chat/tasks/') && request.method === 'GET') return json({items:[]});
+  if (url.pathname.startsWith('/api/chat/goals/') && request.method === 'GET') return json({items:[]});
   if (url.pathname === '/api/llm/composer-capabilities') return json({reasoning_efforts:['low','medium','high']});
   if (url.pathname === '/api/checkpoints') return json({ checkpoints: [] });
   if (url.pathname === '/api/workbench/validate-workspace') return json({ path: root });
@@ -156,13 +158,21 @@ async function run() {
   await evaluate(`document.querySelector('#msg-input').value='/comp';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}))`);
   assert.equal(await evaluate(`document.querySelector('.slash-command-name').textContent`), '/compact');
   await evaluate(`document.querySelector('#msg-input').value='/';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}))`);
-  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.slash-command-name'),item=>item.textContent).slice(0,7)`), ['/autoresearch','/data','/model','/idea','/tasks','/usage','/compact']);
+  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.slash-command-name'),item=>item.textContent).slice(0,8)`), ['/autoresearch','/data','/model','/idea','/goal','/tasks','/usage','/compact']);
   await capture('slash-commands');
   await evaluate(`document.querySelector('[data-slash-index="0"]').click()`);
   assert.equal(await evaluate(`document.querySelector('#model-trigger-meta').textContent`), 'Full');
   assert.equal(await evaluate(`document.querySelector('#msg-input').value`), '');
   await evaluate(`document.querySelector('#msg-input').value='/idea';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-slash-index="0"]').click()`);
   assert.equal(await evaluate(`document.querySelector('#model-trigger-meta').textContent`), 'Idea');
+  await evaluate(`document.querySelector('#msg-input').value='/goal';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-slash-index="0"]').click()`);
+  assert.equal(await evaluate(`document.querySelector('.wb-goals').open`), true);
+  await capture('goal-mode-empty');
+  await evaluate(`document.querySelector('.wb-goals footer button').click()`);
+  assert.equal(await evaluate(`document.querySelector('.wb-dialog:not(.wb-goals) input[name="criterion"]').required`), false);
+  assert.equal(await evaluate(`document.querySelector('.wb-dialog:not(.wb-goals) input[name="objective"]').required`), true);
+  await evaluate(`new Promise(resolve=>{const child=document.querySelector('.wb-dialog:not(.wb-goals)');child.addEventListener('close',resolve,{once:true});child.querySelector('[data-cancel]').click();})`);
+  await evaluate(`document.querySelector('.wb-goals').close()`);
   await evaluate(`document.querySelector('#msg-input').value='/tasks';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-slash-index="0"]').click()`);
   assert.equal(await evaluate(`document.querySelector('.wb-tasks').open`), true);
   await capture('scheduled-checks-empty');
@@ -210,7 +220,7 @@ async function run() {
   assert.equal(await evaluate(`document.querySelector('#wb-live-execution .wb-process-count').textContent`), '0 tool calls');
   assert.equal(await evaluate(`document.querySelector('#wb-live-execution .wb-execution-process').open`), false);
   assert.equal(await evaluate(`document.querySelector('#typing-indicator .wb-execution-process').hidden`), false);
-  assert.deepEqual(await evaluate(`(() => {const host=document.querySelector('#wb-live-execution');const status=getComputedStyle(host.querySelector('.wb-execution-status'));const process=getComputedStyle(host.querySelector('details'));const scale=parseFloat(status.getPropertyValue('--text-scale')) || 1;return [status.color,Math.round(parseFloat(status.fontSize)/scale),process.borderRadius,process.backgroundColor];})()`), ['rgb(65, 118, 230)',14,'12px','rgb(249, 250, 251)']);
+  assert.deepEqual(await evaluate(`(() => {const host=document.querySelector('#wb-live-execution');const status=getComputedStyle(host.querySelector('.wb-execution-status'));const process=getComputedStyle(host.querySelector('details'));const scale=parseFloat(status.getPropertyValue('--text-scale')) || 1;return [status.color,Math.round(parseFloat(status.fontSize)/scale),process.borderRadius,process.backgroundColor];})()`), ['rgb(65, 118, 230)',14,'12px','rgb(248, 250, 252)']);
   await evaluate(`document.querySelector('#welcome').hidden=true; document.querySelector('#messages .msg.assistant').hidden=true; removeTypingIndicator(); document.querySelector('#execution-indicator').remove()`);
   await capture('camellia-execution-live');
   await evaluate(`document.querySelector('#messages .msg.assistant').hidden=false; upsertExecutionIndicator('read README.md', Date.now())`);
@@ -328,7 +338,7 @@ async function run() {
         })()`);
         assert.equal(controls.menu, theme === 'dark' ? 'rgb(53, 54, 56)' : 'rgb(255, 255, 255)');
         assert.equal(controls.button, 'rgba(0, 0, 0, 0)');
-        assert.equal(controls.selected, theme === 'dark' ? 'rgb(67, 69, 74)' : 'rgb(235, 238, 242)');
+        assert.equal(controls.selected, theme === 'dark' ? 'rgb(67, 69, 74)' : 'rgb(229, 231, 235)');
         assert.equal(controls.input, theme === 'dark' ? 'rgb(53, 54, 56)' : 'rgb(245, 246, 247)');
         assert.equal(controls.task, controls.input);
         assert.equal(controls.limit, theme === 'dark' ? 'rgb(35, 35, 36)' : 'rgb(255, 255, 255)');

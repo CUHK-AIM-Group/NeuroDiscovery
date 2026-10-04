@@ -2375,6 +2375,40 @@
       margin-top: 0;
     }
 
+    .neurooracle-chat-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 12px max(16px, calc((100% - var(--chat-read-w)) / 2)) 0;
+      padding: 12px 14px;
+      border: 1px solid color-mix(in oklab, var(--accent), var(--border-strong) 42%);
+      border-radius: 12px;
+      background: color-mix(in oklab, var(--accent-wash), var(--surface-elev) 44%);
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(25, 55, 95, .07);
+    }
+    .neurooracle-chat-banner[hidden] { display: none; }
+    .neurooracle-chat-banner-copy { display: grid; gap: 3px; min-width: 0; }
+    .neurooracle-chat-banner-copy strong { font-size: 13px; font-weight: 720; }
+    .neurooracle-chat-banner-copy span { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+    .neurooracle-chat-banner-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+    .neurooracle-chat-banner button {
+      border-radius: 8px;
+      padding: 7px 11px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 680;
+      cursor: pointer;
+    }
+    .neurooracle-chat-banner-download { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+    .neurooracle-chat-banner-open { border: 1px solid var(--border-strong); background: var(--surface-elev); color: var(--text); }
+    .neurooracle-chat-banner button:disabled { opacity: .62; cursor: wait; }
+    @media (max-width: 640px) {
+      .neurooracle-chat-banner { align-items: stretch; flex-direction: column; }
+      .neurooracle-chat-banner-actions { justify-content: flex-end; }
+    }
+
     #welcome { margin: 0 auto; text-align: center; max-width: 760px; padding: 20px; color: var(--text-muted); }
     .start-kicker {
       display: inline-flex;
@@ -3247,7 +3281,7 @@
       transition: transform var(--ease), opacity var(--ease);
       flex-shrink: 0;
     }
-    #send-btn:disabled { opacity: .45; cursor: not-allowed; }
+    #send-btn:disabled { opacity: .62; cursor: not-allowed; }
     #send-btn:not(:disabled):hover { transform: translateY(-1px); }
 
     .empty-hint { font-size: 12px; color: var(--text-muted); padding: 10px 12px 14px; }
@@ -3594,6 +3628,17 @@
         </div>
       </section>
 
+      <div class="neurooracle-chat-banner" id="neurooracle-chat-banner" hidden role="status" aria-live="polite">
+        <div class="neurooracle-chat-banner-copy">
+          <strong id="neurooracle-chat-banner-title">NeuroOracle is not downloaded</strong>
+          <span id="neurooracle-chat-banner-message">Download the graph here to use graph-backed chat and AutoResearch.</span>
+        </div>
+        <div class="neurooracle-chat-banner-actions">
+          <button class="neurooracle-chat-banner-download" id="neurooracle-chat-download-btn" type="button">Download graph</button>
+          <button class="neurooracle-chat-banner-open" id="neurooracle-chat-open-btn" type="button">Open graph</button>
+        </div>
+      </div>
+
       <div id="messages">
         <div id="welcome">
           <img class="welcome-logo" src="/static/logo.png" alt="NeuroDiscovery logo">
@@ -3842,6 +3887,11 @@
   const skillPageContentEl = document.getElementById('skill-page-content');
   const neurooraclePageEl = document.getElementById('neurooracle-page');
   const neurooracleStatusEl = document.getElementById('neurooracle-status');
+  const neurooracleChatBannerEl = document.getElementById('neurooracle-chat-banner');
+  const neurooracleChatBannerTitleEl = document.getElementById('neurooracle-chat-banner-title');
+  const neurooracleChatBannerMessageEl = document.getElementById('neurooracle-chat-banner-message');
+  const neurooracleChatDownloadBtn = document.getElementById('neurooracle-chat-download-btn');
+  const neurooracleChatOpenBtn = document.getElementById('neurooracle-chat-open-btn');
   const neurooracleOpenBtn = document.getElementById('neurooracle-open-btn');
   const neurooracleDownloadBtn = document.getElementById('neurooracle-download-btn');
   const neurooracleRefreshBtn = document.getElementById('neurooracle-refresh-btn');
@@ -3899,12 +3949,13 @@
   const SETTINGS_KEY = 'neuroclaw.desktop.preferences.v1';
   const UI_LANGUAGE_KEY = 'neuroclaw.web.language.v1';
   const TEXT_SCALE_DEFAULT_MIGRATION_KEY = 'neuroclaw.web.camellia_typography_v1_applied';
+  const TEXT_SCALE_120_MIGRATION_KEY = 'neuroclaw.web.camellia_typography_120_v1_applied';
   const CASE_STUDY_WELCOME_KEY = 'neurooracle.case_study_welcome.v1.seen';
   const PREF_LAYOUT_VERSION = 2;
   const TEXT_SCALE_MIN = 0.8;
   const TEXT_SCALE_MAX = 1.5;
   const TEXT_SCALE_STEP = 0.1;
-  const TEXT_SCALE_DEFAULT = 1;
+  const TEXT_SCALE_DEFAULT = 1.2;
   const SIDEBAR_WIDTH_DEFAULT = window.location.pathname === '/harness' ? 260 : 292;
   const SIDEBAR_WIDTH_MIN = 200;
   const SIDEBAR_WIDTH_MAX = 520;
@@ -3959,6 +4010,9 @@
     theme: 'light',
     proxyUrl: '',
     llmProvider: 'openai',
+    llmConnection: 'api',
+    subscriptionEngine: 'codex',
+    subscriptionModel: '',
     llmModel: 'gpt-5.5',
     llmBaseUrl: 'https://api.openai.com/v1',
     llmApiKey: '',
@@ -4011,17 +4065,20 @@
       title: 'Models',
       note: 'Connect an endpoint, discover models, and add only the models you want to use.',
       rows: [
-        { key: 'llmProvider', scope: 'desktop', label: 'LLM provider', desc: 'Provider adapter used by the backend.', type: 'select', options: ['openai', 'anthropic', 'gemini', 'grok', 'deepseek', 'kimi', 'glm', 'qwen', 'openrouter', 'ollama_cloud', 'ollama', 'llamacpp'] },
-        { key: 'llmBaseUrl', scope: 'desktop', label: 'LLM base URL', desc: 'OpenAI-compatible API address, for example https://api.openai.com/v1 or a local proxy.', type: 'text' },
-        { key: 'llmApiKey', scope: 'desktop', label: 'LLM API key', desc: 'Saved on this device. Used to authenticate model discovery and requests at your configured endpoint.', type: 'password' },
-        { key: 'llmApiKeyEnv', scope: 'desktop', label: 'API key env var', desc: 'Optional environment variable name used by the backend when API key is blank.', type: 'text' },
-        { key: 'llmApiKeyFile', scope: 'desktop', whenProvider: 'ollama_cloud', label: 'Ollama key file', desc: 'Absolute path. The last two lines are primary and reserve keys; leave the pasted API key blank. Keys are read at runtime and never copied into settings.', type: 'text' },
-        { key: 'llmApiKeySlot', scope: 'desktop', whenProvider: 'ollama_cloud', label: 'Active Ollama key', desc: 'Manual selection only; no automatic key rotation.', type: 'select', options: ['primary', 'reserve'] },
-        { key: 'llmApiMode', scope: 'desktop', label: 'API protocol', desc: 'Auto selects Responses for official GPT-6 and Messages for Claude. Proxies may require an explicit protocol.', type: 'select', options: ['auto', 'chat_completions', 'responses', 'anthropic'] },
-        { key: 'llmReasoningEffort', scope: 'desktop', label: 'Reasoning effort', desc: 'Provider default keeps existing behavior. Unsupported values are rejected before saving.', type: 'select', options: ['default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] },
-        { key: 'llmThinkingMode', scope: 'desktop', label: 'Thinking mode', desc: 'Claude uses adaptive; DeepSeek, Kimi, GLM and Qwen use enabled/disabled. Gemini uses reasoning effort.', type: 'select', options: ['default', 'enabled', 'disabled', 'adaptive'] },
-        { key: 'llmMaxOutputTokens', scope: 'desktop', label: 'Output token limit', desc: 'Blank preserves the provider/default limit. Never increased automatically.', type: 'number' },
-        { key: 'llmTemperature', scope: 'desktop', label: 'Temperature', desc: 'Leave blank for GPT-6, recent Claude and Kimi fixed-sampling models.', type: 'number' },
+        { key: 'llmConnection', scope: 'desktop', label: 'Connection', desc: 'Use a direct API endpoint or a signed-in Codex/Claude subscription on this computer.', type: 'select', options: ['api', 'subscription'] },
+        { key: 'subscriptionEngine', scope: 'desktop', whenConnection: 'subscription', label: 'Subscription engine', desc: 'The official CLI owns OAuth credentials; NeuroDiscovery never stores the token.', type: 'select', options: ['codex', 'claude'] },
+        { key: 'subscriptionModel', scope: 'desktop', whenConnection: 'subscription', label: 'Subscription model', desc: 'Optional model ID passed to the signed-in native CLI.', type: 'text' },
+        { key: 'llmProvider', scope: 'desktop', whenConnection: 'api', label: 'LLM provider', desc: 'Provider adapter used by the backend.', type: 'select', options: ['openai', 'anthropic', 'gemini', 'grok', 'deepseek', 'kimi', 'glm', 'qwen', 'openrouter', 'ollama_cloud', 'ollama', 'llamacpp'] },
+        { key: 'llmBaseUrl', scope: 'desktop', whenConnection: 'api', label: 'LLM base URL', desc: 'OpenAI-compatible API address, for example https://api.openai.com/v1 or a local proxy.', type: 'text' },
+        { key: 'llmApiKey', scope: 'desktop', whenConnection: 'api', label: 'LLM API key', desc: 'Saved on this device. Used to authenticate model discovery and requests at your configured endpoint.', type: 'password' },
+        { key: 'llmApiKeyEnv', scope: 'desktop', whenConnection: 'api', label: 'API key env var', desc: 'Optional environment variable name used by the backend when API key is blank.', type: 'text' },
+        { key: 'llmApiKeyFile', scope: 'desktop', whenProvider: 'ollama_cloud', whenConnection: 'api', label: 'Ollama key file', desc: 'Absolute path. The last two lines are primary and reserve keys; leave the pasted API key blank. Keys are read at runtime and never copied into settings.', type: 'text' },
+        { key: 'llmApiKeySlot', scope: 'desktop', whenProvider: 'ollama_cloud', whenConnection: 'api', label: 'Active Ollama key', desc: 'Manual selection only; no automatic key rotation.', type: 'select', options: ['primary', 'reserve'] },
+        { key: 'llmApiMode', scope: 'desktop', whenConnection: 'api', label: 'API protocol', desc: 'Auto selects Responses for official GPT-6 and Messages for Claude. Proxies may require an explicit protocol.', type: 'select', options: ['auto', 'chat_completions', 'responses', 'anthropic'] },
+        { key: 'llmReasoningEffort', scope: 'desktop', whenConnection: 'api', label: 'Reasoning effort', desc: 'Provider default keeps existing behavior. Unsupported values are rejected before saving.', type: 'select', options: ['default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] },
+        { key: 'llmThinkingMode', scope: 'desktop', whenConnection: 'api', label: 'Thinking mode', desc: 'Claude uses adaptive; DeepSeek, Kimi, GLM and Qwen use enabled/disabled. Gemini uses reasoning effort.', type: 'select', options: ['default', 'enabled', 'disabled', 'adaptive'] },
+        { key: 'llmMaxOutputTokens', scope: 'desktop', whenConnection: 'api', label: 'Output token limit', desc: 'Blank preserves the provider/default limit. Never increased automatically.', type: 'number' },
+        { key: 'llmTemperature', scope: 'desktop', whenConnection: 'api', label: 'Temperature', desc: 'Leave blank for GPT-6, recent Claude and Kimi fixed-sampling models.', type: 'number' },
       ],
     },
     {
@@ -4112,6 +4169,8 @@
     settingsSearch: '',
     desktopConfig: { ...DEFAULT_DESKTOP_CONFIG },
     llmConnectionStatus: {
+      connection: 'api',
+      subscriptionEngine: 'codex',
       provider: DEFAULT_DESKTOP_CONFIG.llmProvider,
       apiKeyRequired: true,
       apiKeyConfigured: false,
@@ -4119,6 +4178,7 @@
       endpointConfigured: Boolean(DEFAULT_DESKTOP_CONFIG.llmBaseUrl),
     },
     settingsAttention: null,
+    subscriptionStatus: { engine: 'codex', installed: false, signedIn: false, error: '' },
     desktopConfigPath: '',
     desktopLogsPath: '',
     desktopIsPackaged: false,
@@ -4406,6 +4466,12 @@
     'Open graph viewer': '打开图谱查看器',
     'Download graph': '下载图谱',
     'Download the latest NeuroOracle graph from HuggingFace now?': '现在从 HuggingFace 下载最新版 NeuroOracle 图谱吗？',
+    'NeuroOracle is not downloaded': '尚未下载 NeuroOracle 图谱',
+    'Download the graph here to use graph-backed chat and AutoResearch.': '可以直接在当前对话中下载图谱，用于图谱对话和 AutoResearch。',
+    'The NeuroOracle graph is downloading. You can continue after it finishes.': 'NeuroOracle 图谱正在下载，完成后即可继续使用。',
+    'NeuroOracle graph status is unavailable.': '暂时无法检查 NeuroOracle 图谱状态。',
+    'Open graph': '打开图谱',
+    'Download NeuroOracle from the banner before starting graph-backed work.': '请先用对话上方的按钮下载 NeuroOracle，再开始图谱任务。',
     'Check local graph': '检查本地图谱',
     'NeuroOracle sections': 'NeuroOracle 功能区',
     'Graph Explorer': '图谱浏览器',
@@ -4814,6 +4880,10 @@
     setText('#neurooracle-open-btn', 'Open graph viewer');
     setText('#neurooracle-download-btn', 'Download graph');
     setText('#neurooracle-refresh-btn', 'Check local graph');
+    setText('#neurooracle-chat-banner-title', 'NeuroOracle is not downloaded');
+    setText('#neurooracle-chat-banner-message', 'Download the graph here to use graph-backed chat and AutoResearch.');
+    setText('#neurooracle-chat-download-btn', 'Download graph');
+    setText('#neurooracle-chat-open-btn', 'Open graph');
     const graphFrame = document.getElementById('neurooracle-frame');
     if (graphFrame) graphFrame.title = tr('NeuroOracle graph viewer');
     if (expertStudyFrameEl) expertStudyFrameEl.title = tr('Human Evaluation 1');
@@ -5508,6 +5578,11 @@
             localStorage.setItem(TEXT_SCALE_DEFAULT_MIGRATION_KEY, 'done');
             shouldPersist = state.textScale !== storedScale;
           }
+          if (localStorage.getItem(TEXT_SCALE_120_MIGRATION_KEY) !== 'done') {
+            if (state.textScale === 1) state.textScale = TEXT_SCALE_DEFAULT;
+            localStorage.setItem(TEXT_SCALE_120_MIGRATION_KEY, 'done');
+            shouldPersist ||= state.textScale !== storedScale;
+          }
         }
       }
     } catch (_e) {
@@ -5521,6 +5596,7 @@
 
   function saveLocalSettings() {
     localStorage.setItem(TEXT_SCALE_DEFAULT_MIGRATION_KEY, 'done');
+    localStorage.setItem(TEXT_SCALE_120_MIGRATION_KEY, 'done');
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.localSettings, null, 2));
   }
 
@@ -5529,14 +5605,17 @@
   }
 
   function fallbackLlmConnectionStatus(config = state.desktopConfig) {
+    const connection = String(config && config.llmConnection || 'api').trim().toLowerCase();
     const provider = String(config && config.llmProvider || '').trim().toLowerCase() || 'openai';
     const apiKeyRequired = !rendererProviderNeedsNoApiKey(provider);
     return {
+      connection,
+      subscriptionEngine: String(config && config.subscriptionEngine || 'codex').trim().toLowerCase(),
       provider,
-      apiKeyRequired,
-      apiKeyConfigured: !apiKeyRequired || Boolean(String(config && config.llmApiKey || '').trim()),
-      apiKeySource: !apiKeyRequired ? 'not-required' : String(config && config.llmApiKey || '').trim() ? 'desktop-config' : 'missing',
-      endpointConfigured: Boolean(String(config && config.llmBaseUrl || '').trim()),
+      apiKeyRequired: connection === 'subscription' ? false : apiKeyRequired,
+      apiKeyConfigured: connection === 'subscription' ? false : (!apiKeyRequired || Boolean(String(config && config.llmApiKey || '').trim())),
+      apiKeySource: connection === 'subscription' ? 'subscription' : (!apiKeyRequired ? 'not-required' : String(config && config.llmApiKey || '').trim() ? 'desktop-config' : 'missing'),
+      endpointConfigured: connection === 'subscription' || Boolean(String(config && config.llmBaseUrl || '').trim()),
     };
   }
 
@@ -5591,6 +5670,7 @@
       state.desktopIsPackaged = Boolean(result && result.isPackaged);
       state.desktopPlatform = result && result.platform ? String(result.platform) : state.desktopPlatform;
       applyLlmConnectionStatus(result);
+      await refreshSubscriptionStatus(false);
       applySettingsRestartStatus(result);
     } catch (err) {
       setSettingsStatus(`Could not read desktop config: ${err && err.message ? err.message : err}`, true);
@@ -5637,6 +5717,8 @@
 
   function shouldRenderSettingsRow(row) {
     if (row.whenProvider && state.desktopConfig.llmProvider !== row.whenProvider) return false;
+    if (row.whenConnection && String(state.desktopConfig.llmConnection || 'api') !== row.whenConnection) return false;
+    if (row.whenNotConnection && String(state.desktopConfig.llmConnection || 'api') === row.whenNotConnection) return false;
     if (row.hideWhenPackaged && isDesktopPackaged()) return false;
     if (row.whenRuntime && selectedRuntimeMode() !== row.whenRuntime) return false;
     return true;
@@ -5654,6 +5736,8 @@
       };
       return labels[String(option)] || String(option);
     }
+    if (row.key === 'llmConnection') return option === 'subscription' ? 'Subscription login' : 'API key / endpoint';
+    if (row.key === 'subscriptionEngine') return option === 'claude' ? 'Claude Code subscription' : 'Codex subscription';
     if (row.key === 'llmProvider') {
       const labels = {
         openai: 'OpenAI-compatible',
@@ -5925,7 +6009,7 @@
     const cfg = state.desktopConfig, library = modelLibrary.state;
     const added = window.NDModelLibrary.ids(cfg);
     const copy = (en, zh) => escapeHtml(uiText(en, zh));
-    const connectionKeys = ['llmProvider', 'llmBaseUrl', 'llmApiKey'];
+    const connectionKeys = ['llmConnection', 'subscriptionEngine', 'subscriptionModel', 'llmProvider', 'llmBaseUrl', 'llmApiKey'];
     const field = row => `<div class="model-connection-field" data-setting-row="${escapeAttr(row.key)}">
       <div class="settings-row-label">${escapeHtml(tr(row.label))}</div>
       ${renderSettingsControl(row)}
@@ -5943,17 +6027,23 @@
         <span class="model-id" title="${escapeAttr(item.model)}">${escapeHtml(item.model)}</span>
         ${exists ? `<span class="model-state-label">${copy('Added', '已添加')}</span>` : ''}</label>`;
     }).join('');
+    const subscription = cfg.llmConnection === 'subscription';
+    const subscriptionState = state.subscriptionStatus || {};
+    const subscriptionLabel = subscriptionState.signedIn
+      ? copy('Signed in', '已登录')
+      : subscriptionState.installed ? copy('Not signed in', '未登录') : copy('CLI not found', '未找到 CLI');
     return `<div class="model-settings-workflow">
       <section class="model-setup-card">
-        <div class="model-card-heading"><span class="model-step">01</span><h3>${copy('Connect an endpoint', '连接 API 接入点')}</h3><span class="model-card-caption">${copy('Connection', '连接')}</span></div>
+        <div class="model-card-heading"><span class="model-step">01</span><h3>${copy(subscription ? 'Use a subscription' : 'Connect an endpoint', subscription ? '使用订阅' : '连接 API 接入点')}</h3><span class="model-card-caption">${copy('Connection', '连接')}</span></div>
         <div class="model-connection-grid">${rows.filter(row => connectionKeys.includes(row.key)).map(field).join('')}</div>
+        ${subscription ? `<div class="subscription-account-panel"><div><strong>${copy('Native account', '原生账号')}</strong><span class="model-card-caption">${escapeHtml(subscriptionLabel)}</span></div><div class="subscription-account-actions"><button class="model-action" type="button" data-subscription-action="status">${copy('Check status', '检查状态')}</button><button class="model-action primary" type="button" data-subscription-action="login">${copy('Open login', '打开登录')}</button></div>${subscriptionState.error ? `<p class="model-discovery-status error">${escapeHtml(subscriptionState.error)}</p>` : `<p class="model-discovery-status">${copy('Login opens the official CLI in a terminal. Credentials stay with that CLI.', '登录会在终端打开官方 CLI，凭据只保留在 CLI 中。')}</p>`}</div>` : ''}
         ${cfg.llmApiKeyFile ? `<p class="model-credential-note">${copy('Using key file', '使用密钥文件')} · ${copy(cfg.llmApiKeySlot === 'reserve' ? 'Reserve' : 'Primary', cfg.llmApiKeySlot === 'reserve' ? '备用' : '主用')} — ${copy('Paste a key above to use it instead.', '在上方粘贴密钥可替换此方式。')}</p>` : ''}
         <details class="model-advanced" ${modelAdvancedOpen ? 'open' : ''} data-model-advanced><summary>${copy('Advanced connection & generation controls', '高级连接与生成参数')}</summary>
           <div class="model-connection-grid">${rows.filter(row => !connectionKeys.includes(row.key)).map(field).join('')}</div></details>
-        <div class="model-connect-footer"><p>${canDiscover ? copy('Only /models is requested. No model generation or automatic selection.', '只请求模型列表，不调用模型生成，也不自动选择。') : copy('Open the desktop app to manage connections.', '请在桌面客户端中管理连接。')}</p>
-          <button class="model-action primary" type="button" data-model-action="fetch" ${!canDiscover || library.status === 'loading' ? 'disabled' : ''}>${library.status === 'loading' ? copy('Fetching…', '正在拉取…') : copy('Fetch models', '拉取可用模型')}</button></div>
+        ${subscription ? '' : `<div class="model-connect-footer"><p>${canDiscover ? copy('Only /models is requested. No model generation or automatic selection.', '只请求模型列表，不调用模型生成，也不自动选择。') : copy('Open the desktop app to manage connections.', '请在桌面客户端中管理连接。')}</p>
+          <button class="model-action primary" type="button" data-model-action="fetch" ${!canDiscover || library.status === 'loading' ? 'disabled' : ''}>${library.status === 'loading' ? copy('Fetching…', '正在拉取…') : copy('Fetch models', '拉取可用模型')}</button></div>`}
       </section>
-      <section class="model-setup-card">
+      ${subscription ? '' : `<section class="model-setup-card">
         <div class="model-card-heading"><span class="model-step">02</span><h3>${copy('Choose models', '选择模型')}</h3><span class="model-card-caption">${copy('Available', '可用列表')}</span></div>
         <p class="model-discovery-status${library.status === 'error' ? ' error' : ''}" role="${library.status === 'error' ? 'alert' : 'status'}">${status}</p>
         ${library.status === 'ready' && library.models.length ? `<input class="settings-control model-search" type="search" id="model-discovery-search" aria-label="${copy('Search available models', '搜索可用模型')}" placeholder="${copy('Search by model name…', '搜索模型名称…')}" value="${escapeAttr(library.search)}">
@@ -5961,14 +6051,14 @@
         ${library.status === 'ready' && !library.models.length ? `<p class="model-empty">${copy('This endpoint returned an empty model list. Try another endpoint or add an exact ID below.', '接入点返回了空列表。可检查地址，或在下方手动添加确切的模型 ID。')}</p>` : ''}
         ${library.truncated ? `<p class="model-discovery-status">${copy('More pages exist. This list is limited to ten pages.', '还有更多分页；当前最多展示十页。')}</p>` : ''}
         <div class="model-selection-footer"><span>${library.selected.length} ${copy('selected', '个已勾选')}</span><button class="model-action" type="button" data-model-action="add" ${!library.selected.length ? 'disabled' : ''}>${copy('Add selected', '添加所选模型')}</button></div>
-      </section>
-      <section class="model-setup-card">
+      </section>`}
+      ${subscription ? '' : `<section class="model-setup-card">
         <div class="model-card-heading"><span class="model-step">03</span><h3>${copy('Your models', '已添加的模型')}</h3><span class="model-count">${added.length}</span></div>
         <p class="model-discovery-status">${copy('Only added models appear in the chat picker. Choose a default, then save your changes.', '聊天区只显示已添加的模型。请选择默认模型，然后保存更改。')}</p>
         <div class="model-added-list">${added.map(id => `<div class="model-added-row"><label><input type="radio" name="default-library-model" data-default-model="${escapeAttr(id)}" ${cfg.llmModel === id ? 'checked' : ''}><span class="model-id" title="${escapeAttr(id)}">${escapeHtml(id)}</span></label>
           ${cfg.llmModel === id ? `<span class="model-state-label">${copy('Default', '默认')}</span>` : ''}<button class="model-remove" type="button" data-remove-model="${escapeAttr(id)}" aria-label="${copy('Remove', '移除')} ${escapeAttr(id)}">×</button></div>`).join('') || `<p class="model-empty">${copy('No models added. Your chat list will stay empty until you add one.', '尚未添加模型。添加之前，聊天模型列表保持为空。')}</p>`}</div>
         <details class="model-manual"><summary>${copy('Endpoint does not support model discovery?', '接入点不支持拉取模型列表？')}</summary><div class="model-manual-row"><input id="model-manual-id" class="settings-control" aria-label="${copy('Exact model ID', '确切的模型 ID')}" placeholder="${copy('Enter an exact model ID', '填写确切的模型 ID')}"><button class="model-action" type="button" data-model-action="manual">${copy('Add ID', '添加 ID')}</button></div></details>
-      </section></div>`;
+      </section>`}</div>`;
   }
 
   function renderSettingsNav() {
@@ -6091,10 +6181,13 @@
     collectSettingsFromForm();
     try {
       const cfg = state.desktopConfig;
+      const subscription = String(cfg.llmConnection || 'api') === 'subscription';
       const chosen = window.NDModelLibrary.ids(cfg);
-      cfg.llmAddedModels = chosen;
-      if (!chosen.includes(cfg.llmModel)) cfg.llmModel = chosen[0] || '';
-      if (chosen.length) {
+      if (!subscription) {
+        cfg.llmAddedModels = chosen;
+        if (!chosen.includes(cfg.llmModel)) cfg.llmModel = chosen[0] || '';
+      }
+      if (chosen.length && !subscription) {
       const resp = await fetch('/api/llm/validate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider: cfg.llmProvider, model: cfg.llmModel, base_url: cfg.llmBaseUrl,
@@ -6185,7 +6278,7 @@
 
   function clampTextScale(value) {
     const next = Number(value);
-    if (!Number.isFinite(next)) return 1;
+    if (!Number.isFinite(next)) return TEXT_SCALE_DEFAULT;
     const rounded = Math.round(next / TEXT_SCALE_STEP) * TEXT_SCALE_STEP;
     return Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, Number(rounded.toFixed(2))));
   }
@@ -8323,8 +8416,60 @@
     if(command.action==='compact') {await compactConversation(session);return {handled:true};}
     inputEl.value='';session.draft='';saveSessions();closeSlashMenu();
     if(command.action==='usage') {state.settingsSection='usage';setActiveView('settings',{focus:false});}
+    if(command.action==='goal') await openGoalMode(session);
     if(command.action==='tasks') await openScheduledTasks(session);
     return {handled:true};
+  }
+
+  async function openGoalMode(session) {
+    if(!serverQueueAvailable()) {showError(uiText('This backend does not provide Goal mode; no goal was created.','当前后端不提供 Goal 模式；未创建目标。'));return;}
+    const dialog=document.createElement('dialog');dialog.className='wb-dialog wb-goals';
+    const title=document.createElement('h2');title.id='goal-mode-title';title.textContent=uiText('Goal mode','Goal 模式');
+    dialog.setAttribute('aria-labelledby',title.id);
+    const note=document.createElement('p');note.className='wb-note';
+    note.textContent=uiText('Goal mode runs bounded queue turns and asks a separate reviewer before completion. It never resumes after a backend restart without your action.','Goal 模式按有限队列轮次执行，并在完成前请求独立验收。后端重启后不会自动恢复，须由你明确操作。');
+    const list=document.createElement('div'),error=document.createElement('p');error.className='wb-inline-error';error.hidden=true;
+    const footer=document.createElement('footer'),create=document.createElement('button'),reload=document.createElement('button'),close=document.createElement('button');
+    create.type=reload.type=close.type='button';create.textContent=uiText('Create goal','创建目标');close.textContent=uiText('Close','关闭');reload.textContent=uiText('Refresh','刷新');
+    close.onclick=()=>dialog.close();footer.append(create,reload,close);dialog.append(title,note,list,error,footer);
+    function goalLabel(status) {return ({active:uiText('Active','执行中'),paused:uiText('Paused','已暂停'),blocked:uiText('Blocked','已阻塞'),verifying:uiText('Verifying','验收中'),complete:uiText('Complete','已完成'),cancelled:uiText('Cancelled','已取消')})[status] || status;}
+    async function control(goal,action,button) {
+      button.disabled=true;
+      try {const response=await fetch('/api/chat/goals/'+encodeURIComponent(goal.goal_id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:session.id,action,confirmed:true,workspace_path:workspacePathForSession(session),permission_mode:session.permissionMode || 'ask',language:currentUiLanguage(),project_id:session.projectId || ''})});const data=await response.json();if(!response.ok)throw new Error(data.message || 'Unable to update goal');await refresh();}
+      catch(exc) {error.hidden=false;error.textContent=exc.message;}
+      finally {button.disabled=false;}
+    }
+    async function refresh() {
+      const response=await fetch('/api/chat/goals/'+encodeURIComponent(session.id));const data=await response.json();
+      if(!response.ok) throw new Error(data.message || 'Unable to load goals');
+      list.replaceChildren();
+      if(!data.items.length) {const empty=document.createElement('p');empty.className='wb-note';empty.textContent=uiText('No goals. Opening this panel does not start one.','暂无目标。打开此面板不会自动开始目标。');list.append(empty);}
+      for(const goal of data.items) {
+        const card=document.createElement('section');card.className='wb-task';
+        const name=document.createElement('strong'),status=document.createElement('p'),detail=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('pre');
+        name.textContent=goal.objective;status.textContent=`${goalLabel(goal.status)} · ${goal.turns_started}/${goal.max_turns}`;
+        summary.textContent=uiText('Goal record','目标记录');body.textContent=JSON.stringify({criterion:goal.criterion,last_report:goal.last_report,verification:goal.verification},null,2);detail.append(summary,body);card.append(name,status,detail);
+        const actions=goal.status==='paused'||goal.status==='blocked'?['resume','cancel']:['active','verifying'].includes(goal.status)?['pause','cancel']:[];
+        for(const action of actions) {const button=document.createElement('button');button.type='button';button.textContent=({resume:uiText('Resume','恢复'),pause:uiText('Pause','暂停'),cancel:uiText('Cancel','取消')})[action];button.onclick=()=>control(goal,action,button);card.append(button);}
+        list.append(card);
+      }
+    }
+    create.onclick=async()=>{
+      create.disabled=true;
+      try {
+        const values=await workbenchDialog({title:uiText('Create bounded goal','创建有界目标'),message:uiText('State the objective and how completion can be checked. Each turn is queued; no work starts until you confirm.','填写目标和可检查的完成标准。每轮进入队列，确认后才会开始。'),confirm:uiText('Confirm and start','确认并开始'),fields:[
+          {name:'objective',label:uiText('Objective','目标'),placeholder:uiText('What should be completed?','需要完成什么？')},
+          {name:'criterion',label:uiText('Acceptance criterion (optional)','完成标准（可选）'),placeholder:uiText('What evidence is required?','需要什么证据？'),required:false},
+          {name:'max_turns',label:uiText('Maximum turns (1–40)','最多轮次（1–40）'),value:'12'}],submit:async values=>{
+            const response=await fetch('/api/chat/goals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:session.id,workspace_path:workspacePathForSession(session),objective:values.objective,criterion:values.criterion,max_turns:Number(values.max_turns),permission_mode:session.permissionMode || 'ask',language:currentUiLanguage(),project_id:session.projectId || '',confirmed:true})});const data=await response.json();if(!response.ok)throw new Error(data.message);return data;
+          }});
+        if(values) await refresh();
+      } catch(exc) {error.hidden=false;error.textContent=exc.message;} finally {create.disabled=false;}
+    };
+    const previous=document.activeElement;reload.onclick=async()=>{reload.disabled=true;try{await refresh();error.hidden=true;}catch(exc){error.hidden=false;error.textContent=exc.message;}finally{reload.disabled=false;}};
+    dialog.addEventListener('close',()=>{dialog.remove();if(previous?.isConnected)previous.focus();},{once:true});
+    document.body.append(dialog);dialog.showModal();close.focus();
+    try {await refresh();} catch(exc) {error.hidden=false;error.textContent=exc.message;create.disabled=true;}
   }
 
   async function openScheduledTasks(session) {
@@ -8634,7 +8779,7 @@
     let text = queued ? queued.text || queued.displayText : inputEl.value.trim();
     const session = getActiveSession();
     if(!queued && text.trim()==='/compact') {await compactConversation(session);return;}
-    if(!queued && /^\/(?:autoresearch|data|model|idea|tasks|usage)(?:\s|$)/i.test(text)) {
+    if(!queued && /^\/(?:autoresearch|data|model|idea|goal|tasks|usage)(?:\s|$)/i.test(text)) {
       const command=await handleComposerCommand(text,session);
       if(command.handled) return;
       text=command.text;
@@ -8646,6 +8791,16 @@
     if (queued && (isSessionWaiting(session.id) || session.messageQueue?.[0]?.id !== queued.id)) return;
     if (queued?.workspacePath && queued.workspacePath !== workspacePathForSession(session)) {
       showError(uiText('Queued message belongs to a different workspace. Remove and submit it again.', '队列消息属于其他工作区，请移除后重新提交。')); return;
+    }
+    const graphRequested = Boolean(session.researchMode && session.researchMode !== 'off')
+      || /\b(neurooracle|knowledge graph|knowledge-graph|graph evidence|hypothesis|图谱|知识图谱|假设)\b/i.test(text);
+    if (graphRequested && typeof refreshNeuroOracleStatus === 'function') {
+      const graphStatus = state.neurooracleStatus || await refreshNeuroOracleStatus();
+      if (graphStatus && !graphStatus.available) {
+        renderNeuroOracleChatBanner(graphStatus);
+        showError(uiText('Download NeuroOracle from the banner before starting graph-backed work.', '请先用对话上方的按钮下载 NeuroOracle，再开始图谱任务。'));
+        return;
+      }
     }
     if (!(await ensureChatLlmConfigured())) return;
     if (getActiveSession() !== session) return;
@@ -8974,6 +9129,7 @@
       } else resetStudyWorkspace(previousView);
     }
     state.activeView = nextView;
+    renderNeuroOracleChatBanner(state.neurooracleStatus);
     window.neuroArtifactPanel?.sync();
     window.NeuroDiscoveryHarness?.sync(document, { language: currentUiLanguage(), view: nextView, mode: state.autoResearchMode });
     if (opts.focus !== false && window.matchMedia('(max-width: 780px)').matches) {
@@ -9067,8 +9223,62 @@
     return `${n >= 10 || idx === 0 ? n.toFixed(0) : n.toFixed(1)} ${units[idx]}`;
   }
 
+  async function refreshSubscriptionStatus(showMessage = true) {
+    const engine = String(state.desktopConfig.subscriptionEngine || 'codex').trim().toLowerCase();
+    if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.subscriptionStatus !== 'function') {
+      state.subscriptionStatus = { engine, installed: false, signedIn: false, error: uiText('Available in the desktop app.', '仅桌面客户端可用。') };
+      if (showMessage) setSettingsStatus(state.subscriptionStatus.error, true);
+      renderSettings();
+      return state.subscriptionStatus;
+    }
+    const result = await window.neuroclawDesktop.subscriptionStatus(engine);
+    state.subscriptionStatus = result && result.ok ? result : { engine, installed: false, signedIn: false, error: result && result.message || 'Status check failed' };
+    if (showMessage) setSettingsStatus(state.subscriptionStatus.signedIn ? uiText('Subscription is signed in.', '订阅已登录。') : state.subscriptionStatus.error, !state.subscriptionStatus.signedIn);
+    renderSettings();
+    return state.subscriptionStatus;
+  }
+
+  async function startSubscriptionLogin() {
+    const engine = String(state.desktopConfig.subscriptionEngine || 'codex').trim().toLowerCase();
+    if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.subscriptionLogin !== 'function') {
+      setSettingsStatus(uiText('Open the desktop app to sign in.', '请在桌面客户端中登录。'), true);
+      return;
+    }
+    const result = await window.neuroclawDesktop.subscriptionLogin(engine);
+    if (!result || !result.ok) {
+      setSettingsStatus(result && result.message || uiText('Could not open the native login.', '无法打开原生登录。'), true);
+      return;
+    }
+    setSettingsStatus(uiText('The native login terminal is open. Check status after signing in.', '原生登录终端已打开。登录后请重新检查状态。'));
+    setTimeout(() => { void refreshSubscriptionStatus(false); }, 1500);
+  }
+
+  function renderNeuroOracleChatBanner(status = null) {
+    if (!neurooracleChatBannerEl) return;
+    const download = status && status.download ? status.download : {};
+    const available = Boolean(status && status.available);
+    const running = Boolean(download.running);
+    const show = state.activeView === 'chat' && !available;
+    neurooracleChatBannerEl.hidden = !show;
+    if (!show) return;
+    const failed = Boolean(download.error);
+    neurooracleChatBannerTitleEl.textContent = running
+      ? uiText('Downloading NeuroOracle graph', '正在下载 NeuroOracle 图谱')
+      : failed ? uiText('NeuroOracle graph status is unavailable.', '暂时无法检查 NeuroOracle 图谱状态。')
+        : tr('NeuroOracle is not downloaded');
+    neurooracleChatBannerMessageEl.textContent = running
+      ? uiText('The NeuroOracle graph is downloading. You can continue after it finishes.', 'NeuroOracle 图谱正在下载，完成后即可继续使用。')
+      : failed ? String(download.error)
+        : tr('Download the graph here to use graph-backed chat and AutoResearch.');
+    if (neurooracleChatDownloadBtn) {
+      neurooracleChatDownloadBtn.disabled = running;
+      neurooracleChatDownloadBtn.textContent = running ? uiText('Downloading…', '下载中…') : tr('Download graph');
+    }
+  }
+
   function renderNeuroOracleStatus(status) {
     state.neurooracleStatus = status || null;
+    renderNeuroOracleChatBanner(status);
     if (!neurooraclePageEl || !neurooracleStatusEl) return;
     const available = Boolean(status && status.available);
     const download = status && status.download ? status.download : {};
@@ -9186,9 +9396,9 @@
         if (next && next.available && !download.running) {
           clearInterval(state.neurooraclePoller);
           state.neurooraclePoller = null;
-          showSuccess(tr('Download complete. Opening graph viewer...'));
+          showSuccess(opts.openOnComplete === false ? uiText('Download complete. NeuroOracle is ready for chat.', '下载完成，NeuroOracle 已可用于对话。') : tr('Download complete. Opening graph viewer...'));
           renderNeuroOracleUpdateStatus(null);
-          openNeuroOracleViewer();
+          if (opts.openOnComplete !== false) openNeuroOracleViewer();
         } else if (download.error && !download.running) {
           clearInterval(state.neurooraclePoller);
           state.neurooraclePoller = null;
@@ -9336,7 +9546,7 @@
         return;
       }
       if (normalized === 'text-scale-reset') {
-        applyTextScale(TEXT_SCALE_DEFAULT, true);
+        applyTextScale(1, true);
         return;
       }
       if (normalized === 'open-settings') {
@@ -9430,6 +9640,12 @@
     if (neurooracleRefreshBtn) {
       neurooracleRefreshBtn.addEventListener('click', () => refreshNeuroOracleStatus());
     }
+    if (neurooracleChatDownloadBtn) {
+      neurooracleChatDownloadBtn.addEventListener('click', () => startNeuroOracleDownload({openOnComplete: false}));
+    }
+    if (neurooracleChatOpenBtn) {
+      neurooracleChatOpenBtn.addEventListener('click', () => setActiveView('neurooracle', {askDownload: true}));
+    }
     if (settingsSearchEl) {
       settingsSearchEl.addEventListener('input', () => {
         state.settingsSearch = settingsSearchEl.value;
@@ -9453,6 +9669,13 @@
         if (e.target.matches('[data-model-advanced]')) modelAdvancedOpen = e.target.open;
       }, true);
       settingsContentEl.addEventListener('click', async e => {
+        const subscriptionAction = e.target.closest('[data-subscription-action]');
+        if (subscriptionAction) {
+          collectSettingsFromForm();
+          if (subscriptionAction.dataset.subscriptionAction === 'login') await startSubscriptionLogin();
+          else await refreshSubscriptionStatus(true);
+          return;
+        }
         const action = e.target.closest('[data-model-action]');
         const remove = e.target.closest('[data-remove-model]');
         if (!action && !remove) return;
@@ -9526,6 +9749,13 @@
           } catch (_err) { /* custom IDs/endpoints can still be entered manually */ }
           renderSettings();
           setSettingsStatus(uiText('Provider changed. Check the model, regional endpoint and key before saving.', '已切换提供商。保存前请核对模型、区域地址和密钥。'));
+          return;
+        }
+        if (control.dataset.settingKey === 'llmConnection' || control.dataset.settingKey === 'subscriptionEngine') {
+          collectSettingsFromForm();
+          state.settingsAttention = null;
+          if (control.dataset.settingKey === 'subscriptionEngine') void refreshSubscriptionStatus(false);
+          renderSettings();
           return;
         }
         if (control.dataset.settingKey === 'language') {
@@ -10758,6 +10988,7 @@
     renderChatList();
     renderActiveSession();
     setActiveView('chat', { focus: false });
+    void refreshNeuroOracleStatus();
     renderPendingFiles();
     loadSkills();
     await loadEnv();

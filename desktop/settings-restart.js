@@ -14,6 +14,7 @@ function runtimeSettings(config) {
     runtimeMode: mode, repoRoot: text('repoRoot'),
     environmentFile: text('environmentFile'), fslDir: text('fslDir'),
     proxyUrl: text('proxyUrl'),
+    llmConnection: text('llmConnection'), subscriptionEngine: text('subscriptionEngine'), subscriptionModel: text('subscriptionModel'),
     llmProvider: text('llmProvider'), llmBaseUrl: text('llmBaseUrl'),
     llmApiKey: text('llmApiKey'), llmApiKeyEnv: text('llmApiKeyEnv'),
     llmApiKeyFile: text('llmApiKeyFile'),

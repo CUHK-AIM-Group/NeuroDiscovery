@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('neuroclawDesktop', {
     return () => ipcRenderer.removeListener('neuroclaw:menu-action', listener);
   },
   getConfig: () => ipcRenderer.invoke('neuroclaw:get-config'),
+  subscriptionStatus: (engine) => ipcRenderer.invoke('neuroclaw:subscription-status', engine),
+  subscriptionLogin: (engine) => ipcRenderer.invoke('neuroclaw:subscription-login', engine),
   saveConfig: (config) => ipcRenderer.invoke('neuroclaw:save-config', config),
   discoverModels: (config) => ipcRenderer.invoke('neuroclaw:discover-models', config),
   setLanguage: (language) => ipcRenderer.invoke('neuroclaw:set-language', language),

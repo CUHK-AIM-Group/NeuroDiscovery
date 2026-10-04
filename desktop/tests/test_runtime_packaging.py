@@ -48,7 +48,7 @@ def test_backend_client_identification_matches_package_version():
 
 def test_packaged_runtime_remains_separate_from_personal_configuration():
     package = json.loads((DESKTOP / 'package.json').read_text(encoding='utf-8'))
-    assert package['build']['files'] == ['main.js', 'llm-settings.js', 'llm-credentials.js', 'model-library.js', 'settings-restart.js', 'preload.js', 'package.json']
+    assert package['build']['files'] == ['main.js', 'llm-settings.js', 'llm-credentials.js', 'model-library.js', 'settings-restart.js', 'preload.js', 'assets/icon.png', 'package.json']
     assert package['build']['extraResources'][0]['from'] == 'runtime'
     script = (DESKTOP / 'scripts' / 'prepare-bundled-runtime.ps1').read_text(encoding='utf-8')
     assert '$defaultEnvironment = [ordered]@{' in script

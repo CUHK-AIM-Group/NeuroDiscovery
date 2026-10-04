@@ -12,6 +12,7 @@ import time
 import uuid
 
 from core.autoresearch import build_autoresearch_scope_prompt, normalize_autoresearch_mode
+from core.autoresearch_contracts import mode_contract_prompt, validate_mode_contract
 from core.research_progress import PROGRESS_TOOL_NAME, inspect_material
 
 
@@ -118,6 +119,8 @@ class AutoResearchRun:
     def prompt(self) -> str:
         return (
             build_autoresearch_scope_prompt(self.mode)
+            + ("\n[Mode delivery contract]\n" + mode_contract_prompt(self.mode)
+               if self.mode in {"data", "model", "end-to-end"} else "")
             + ("\n[Idea evidence contract]\nUse the existing current graph read-only; do not rebuild it. "
                "Call generate_idea_hypotheses for the topic to select typed templates, traverse actual graph claims "
                "and attach per-edge evidence and conditions. Refine its conditional hypothesis and prediction using "
@@ -141,7 +144,7 @@ class AutoResearchRun:
                "not permission to invent sources. Submit the candidate JSON alongside IDEA.md whenever "
                "you deliver hypotheses; a report without candidate JSON can only report an evidence gap. "
                "Graph retrieval does not establish global novelty.\n"
-               if self.mode == "idea" else "")
+               if self.mode in {"idea", "end-to-end"} else "")
             + "\n[AutoResearch runtime contract]\n"
             + "Continue calling tools in this same turn until finish_autoresearch accepts a completed or blocked report. "
             + "Text-only progress or a request for routine confirmation does not end this turn. "
@@ -618,6 +621,14 @@ class AutoResearchRun:
         if status == "completed":
             if not artifacts or not any(evidence[i]["success"] and evidence[i]["executed"] for i in ids):
                 return reject("Completion requires nonempty deliverable files and successful execution/validation evidence.")
+            if self.mode in {"data", "model", "end-to-end"}:
+                contract_result = validate_mode_contract(self.mode, self.workspace, [str(path) for path in paths])
+                self.state["mode_contract"] = contract_result
+                if not contract_result["ok"]:
+                    self.save()
+                    details = "; ".join(contract_result["errors"][:8])
+                    more = "" if len(contract_result["errors"]) <= 8 else f" (+{len(contract_result['errors']) - 8} more)"
+                    return reject(f"Mode delivery contract failed: {details}{more}")
         else:
             kind = args.get("blocker_kind")
             if not isinstance(kind, str) or kind not in {"missing_input", "access", "authorization", "budget", "execution"}:
@@ -632,7 +643,10 @@ class AutoResearchRun:
         self.state.update(status=saved_status, summary=summary.strip(), validation=validation.strip(),
                           artifacts=artifacts, evidence_ids=ids)
         self.save()
-        return {"success": True, "status": saved_status}
+        response = {"success": True, "status": saved_status}
+        if self.state.get("mode_contract") is not None:
+            response["mode_contract"] = self.state["mode_contract"]
+        return response
 
     def halt(self, status: str, reason: str) -> str:
         """Operational interruption is explicitly incomplete, never a fabricated scientific blocker."""

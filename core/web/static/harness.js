@@ -82,6 +82,11 @@
       hero.className = 'harness-welcome';
       const title = document.createElement('h1');
       title.textContent = 'NeuroDiscovery';
+      const logo = welcome.querySelector('.welcome-logo');
+      if (logo) {
+        logo.alt = '';
+        title.prepend(logo);
+      }
       const description = document.createElement('p');
       description.className = 'harness-welcome-copy';
       hero.append(title, description);

@@ -12,15 +12,15 @@ html[data-harness="true"] body { font-family: var(--dsw-font-family); }
   display: flex; align-items: center; gap: 9px; min-height: 34px; text-align: left;
   flex: 0 0 auto; padding: 7px 10px; border-radius: 8px;
   border: 1px solid transparent; background: transparent; color: var(--text);
-  cursor: pointer; font: inherit; font-size: 13px;
+  cursor: pointer; font: inherit; font-size: calc(var(--ui-font-control) * var(--text-scale, 1));
 }
 .harness-capabilities button:hover { background: var(--surface-soft); }
 .harness-capabilities button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .harness-capabilities button[aria-current="page"] { background: var(--surface-soft); }
 .harness-icon { width: 18px; text-align: center; font-size: 17px; color: var(--text-muted); }
 .harness-label { flex: 1; }
-.harness-mode { font-size: 10px; color: var(--accent); background: var(--accent-wash); padding: 2px 6px; border-radius: 6px; }
-.harness-section-title { color: var(--text-muted); font-size: 11px; padding: 8px 10px; }
+.harness-mode { font-size: calc(var(--ui-font-caption) * var(--text-scale, 1)); color: var(--accent); background: var(--accent-wash); padding: 2px 6px; border-radius: 6px; }
+.harness-section-title { color: var(--text-muted); font-size: calc(var(--ui-font-secondary) * var(--text-scale, 1)); padding: 8px 10px; }
 html[data-harness="true"] {
   --header-h: 54px; --chat-read-w: 768px; --message-read-w: 768px;
 }
@@ -35,7 +35,7 @@ html[data-harness="true"] #chat-panel { grid-column: 2; grid-row: 2; min-height:
 html[data-harness="true"] .primary-nav { padding: 8px 10px; gap: 2px; }
 html[data-harness="true"] #nav-neurooracle { display: none; }
 html[data-harness="true"] #nav-new-chat { margin-bottom: 6px; justify-content: center; border-radius: 10px; box-shadow: none; padding: 9px 14px; }
-html[data-harness="true"] .primary-nav-btn { min-height: 34px; padding: 7px 10px; font-size: 13px; }
+html[data-harness="true"] .primary-nav-btn { min-height: 34px; padding: 7px 10px; font-size: calc(var(--ui-font-control) * var(--text-scale, 1)); }
 html[data-harness="true"] .sidebar-scroll-zone { padding: 8px 10px; }
 html[data-harness="true"] .sidebar-footer { padding: 8px 10px; }
 html[data-harness="true"] .chat-item.active { background: var(--surface-soft); border-color: transparent; box-shadow: none; }
@@ -43,9 +43,10 @@ html[data-harness="true"] .chat-item.active::before { display: none; }
 html[data-harness="true"] .chat-panel.is-empty { justify-content: center; padding-top: 0; }
 html[data-harness="true"] .chat-panel.is-empty #messages { padding: 24px 24px 28px; }
 html[data-harness="true"] #welcome { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 768px; }
-html[data-harness="true"] #welcome .welcome-logo, html[data-harness="true"] #welcome .start-kicker { display: none; }
+html[data-harness="true"] #welcome .start-kicker { display: none; }
 html[data-harness="true"] #welcome > h2, html[data-harness="true"] #welcome > p { display: none; }
 .harness-welcome h1 { display: flex; align-items: center; justify-content: center; gap: 10px; font: 500 28px/36px var(--dsw-font-family); letter-spacing: -.5px; color: var(--text); }
+html[data-harness="true"] #welcome .harness-welcome .welcome-logo { display: block; flex: 0 0 auto; width: 36px; height: 36px; margin: 0; border-radius: 9px; }
 html[data-harness="true"] #welcome .harness-welcome-copy { margin: 14px auto 0; }
 html[data-harness="true"] #welcome h2 { font: 500 28px/36px var(--dsw-font-family); letter-spacing: -.5px; margin: 0; }
 html[data-harness="true"] #welcome p { font-size: 14px; max-width: 420px; margin: 0; color: var(--text-muted); }

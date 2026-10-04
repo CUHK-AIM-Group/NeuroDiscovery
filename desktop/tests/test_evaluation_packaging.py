@@ -45,7 +45,7 @@ class EvaluationPackagingTests(unittest.TestCase):
         self.assertNotEqual(evaluation["appId"], full["appId"])
         self.assertNotEqual(evaluation["directories"]["output"], full["directories"]["output"])
         self.assertNotEqual(evaluation["nsis"]["artifactName"], evaluation["portable"]["artifactName"])
-        self.assertEqual(evaluation["files"], ["evaluation-main.js", "evaluation-preload.js", "package.json"])
+        self.assertEqual(evaluation["files"], ["evaluation-main.js", "evaluation-preload.js", "assets/icon.png", "package.json"])
 
 
 if __name__ == "__main__":

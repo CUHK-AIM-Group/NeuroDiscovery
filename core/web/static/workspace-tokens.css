@@ -1,12 +1,12 @@
 /* Shared application palette: the workbench and NeuroOracle use one source. */
 html[data-theme="light"] {
-  --bg: #fff; --surface: #f9fafb; --surface-elev: #fff; --surface-soft: #ebeef2;
-  --border: #0000001a; --text: #0f1115; --text-muted: #61666b; --text-soft: #81858c;
+  --bg: #fff; --surface: #f8fafc; --surface-elev: #fff; --surface-soft: #e5e7eb;
+  --border: #00000026; --text: #0f1115; --text-muted: #4b5563; --text-soft: #667085;
   --accent: #4176e6; --accent-strong: #285dc5; --accent-wash: #edf3fe;
   --user-bg: #ebeef2; --user-text: #0f1115; --user-border: #e5e5e6;
   --control-bg: #f5f6f7; --popover-bg: #fff; --input-bg: #fff;
-  --hover-bg: #2631480f; --selected-bg: #f1f3f5; --border-strong: #0000001f;
-  --placeholder: #adb2b8; --scrollbar: #e1e5ee; --mask: #0000003d;
+  --hover-bg: #26314816; --selected-bg: #e8edf4; --border-strong: #00000033;
+  --placeholder: #7a8490; --scrollbar: #cbd5e1; --mask: #0000003d;
   --danger: #ec1313; --danger-wash: #fef2f2;
 }
 html[data-theme="dark"] {
@@ -23,10 +23,12 @@ html[data-theme] {
   --panel: var(--surface-elev); --muted: var(--text-muted);
   --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --ui-code-font: "SF Mono", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  /* Match the readable density of the reference client: body text stays
+     comfortable while controls, secondary labels, and captions gain one px. */
   --ui-font-body: 16px;
-  --ui-font-control: 14px;
-  --ui-font-secondary: 13px;
-  --ui-font-caption: 12px;
+  --ui-font-control: 15px;
+  --ui-font-secondary: 14px;
+  --ui-font-caption: 13px;
   --radius-control: 18px; --radius-input: 10px; --radius-menu: 14px;
   --radius-item: 8px; --radius-dialog: 24px;
   --shadow-card: 0 4px 12px 0 #00000005, 0 2px 8px 0 #0000000a;

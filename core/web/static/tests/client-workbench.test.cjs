@@ -57,7 +57,7 @@ test('research slash commands select full and component modes only when explicit
     assert.equal(Commands.parse(command).mode,mode);
     assert.equal(Commands.parse(command+' analyze this').text,'analyze this');
   }
-  assert.equal(Commands.parse('/goal'),null);
+  assert.equal(Commands.parse('/goal').action,'goal');
   assert.equal(Commands.parse('Quoted /autoresearch analyze this'),null);
   assert.equal(Commands.parse('/ideas'),null);
   assert.equal(Commands.parse('/tasks').action,'tasks');
@@ -67,18 +67,19 @@ test('research slash commands select full and component modes only when explicit
 test('bare research commands change mode without dispatch; panel commands never start jobs',async()=>{
   const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-  const source=html.slice(html.indexOf('async function handleComposerCommand('),html.indexOf('async function openScheduledTasks('));
+  const source=html.slice(html.indexOf('async function handleComposerCommand('),html.indexOf('async function openGoalMode('));
   const session={researchMode:'off'},opened=[];
   const context={window:{ComposerCommands:Commands},state:{},inputEl:{value:'/autoresearch',focus(){}},
     syncModelTrigger(){},renderModelMenu(){},saveSessions(){},rememberComposerSettings(){},closeSlashMenu(){},setStatus(){},tr:value=>value,autoResearchLabel:mode=>mode,uiText:en=>en,
-    setActiveView:view=>opened.push(view),openScheduledTasks:async value=>opened.push(value),compactConversation:()=>assert.fail('Unexpected compaction'),showError:message=>{throw Error(message);}};
+    setActiveView:view=>opened.push(view),openScheduledTasks:async value=>opened.push(value),openGoalMode:async value=>opened.push({goal:value}),compactConversation:()=>assert.fail('Unexpected compaction'),showError:message=>{throw Error(message);}};
   vm.createContext(context);vm.runInContext(source,context);
   assert.equal((await context.handleComposerCommand('/autoresearch',session)).handled,true);
   assert.equal(session.researchMode,'end-to-end');
   const command=await context.handleComposerCommand('/idea read papers',session);
   assert.equal(command.handled,false);assert.equal(command.text,'read papers');assert.equal(session.researchMode,'idea');
   await context.handleComposerCommand('/tasks',session);assert.equal(opened[0],session);
-  await context.handleComposerCommand('/usage',session);assert.equal(context.state.settingsSection,'usage');assert.equal(opened[1],'settings');
+  await context.handleComposerCommand('/goal',session);assert.deepEqual(opened[1],{goal:session});
+  await context.handleComposerCommand('/usage',session);assert.equal(context.state.settingsSection,'usage');assert.equal(opened[2],'settings');
 });
 
 test('AutoResearch preflight refuses an old backend before sending any research', async()=>{
