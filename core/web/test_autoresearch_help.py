@@ -353,7 +353,7 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         self.assertIn(
             "applyTextScale(state.textScale - TEXT_SCALE_STEP, true)", index_html
         )
-        self.assertIn("applyTextScale(TEXT_SCALE_DEFAULT, true)", index_html)
+        self.assertIn("applyTextScale(1, true)", index_html)
         self.assertIn("function syncStudyTextScaleFrames()", index_html)
         self.assertIn("textScale=${encodeURIComponent(state.textScale)}", index_html)
         self.assertIn(
@@ -767,7 +767,10 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         )
 
         self.assertIn("function describeLlmConnectionStatus(config)", desktop_main)
-        self.assertIn("apiKeyConfigured: !apiKeyRequired || Boolean(apiKey || environmentKey)", desktop_main)
+        self.assertIn(
+            "apiKeyConfigured: connection === 'subscription' ? false : (!apiKeyRequired || Boolean(apiKey || environmentKey))",
+            desktop_main,
+        )
         self.assertIn(
             "llmConnectionStatus: describeLlmConnectionStatus(config)", desktop_main
         )
