@@ -1,12 +1,31 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 const DESKTOP_VERSION = '1.0.0';
+let latestSettingsSection = null;
+const settingsNavigateListeners = new Set();
+ipcRenderer.on('neuroclaw:settings-navigate', (_event, section) => {
+  latestSettingsSection = section;
+  for (const callback of settingsNavigateListeners) callback(section);
+});
 
 contextBridge.exposeInMainWorld('neuroclawDesktop', {
   version: DESKTOP_VERSION,
   platform: process.platform,
   titleBarOverlay: false,
   showApplicationMenu: () => ipcRenderer.invoke('neuroclaw:show-application-menu'),
+  openSettingsWindow: (target) => ipcRenderer.invoke('neuroclaw:open-settings-window', target),
+  onSettingsNavigate: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    settingsNavigateListeners.add(callback);
+    if (latestSettingsSection !== null) callback(latestSettingsSection);
+    return () => settingsNavigateListeners.delete(callback);
+  },
+  onConfigChanged: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, change) => callback(change);
+    ipcRenderer.on('neuroclaw:config-changed', listener);
+    return () => ipcRenderer.removeListener('neuroclaw:config-changed', listener);
+  },
   onMenuAction: (callback) => {
     if (typeof callback !== 'function') return () => {};
     const listener = (_event, action) => callback(action);

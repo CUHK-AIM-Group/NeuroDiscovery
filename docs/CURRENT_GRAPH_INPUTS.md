@@ -12,6 +12,13 @@ date-named directory or the most recently modified JSON file:
    There is no silent fallback to `full_snapshot_v1`, `full_snapshot_v2`, a small
    display export, or an empty graph.
 
+During a graph rebuild reset, `neurooracle/configs/graph_explorer.json` may be
+absent intentionally. In that state there is no active accepted evidence
+campaign, so the default graph loader uses the canonical `full_v2/CURRENT_STATE.json`
+entry above; the evidence web layer remains unavailable until a new accepted
+campaign is published. The old campaign pointer is retained only in the cleanup
+manifest and is never used as the formal graph.
+
 Inspect the resolved input without loading the large graph:
 
 ```bash

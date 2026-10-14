@@ -53,7 +53,9 @@ def test_evaluation_landing_uses_shared_palette():
 def test_shared_controls_loaded_after_page_styles(page):
     markup = (STATIC / f"{page}.html").read_text(encoding="utf-8")
     styles = re.findall(r'<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"', markup)
-    assert styles[-1] == "/static/workspace-controls.css"
+    assert styles[-1] == ("/static/settings-window.css" if page == "index" else "/static/workspace-controls.css")
+    if page == "index":
+        assert styles.index("/static/workspace-controls.css") < styles.index("/static/settings-window.css")
     assert styles.index("/static/workspace-tokens.css") < len(styles) - 1
 
 
@@ -69,7 +71,8 @@ def test_settings_sections_all_have_decorative_svg_icons():
     sections = re.search(r"const SETTINGS_SECTIONS = \[([\s\S]+?)\n  \];", HTML)[1]
     icons = re.search(r"const SETTINGS_SECTION_ICONS = \{([\s\S]+?)\n  \};", HTML)[1]
     section_ids = re.findall(r"\bid: '([^']+)'", sections)
-    assert "usage" in section_ids
+    assert "usage" not in section_ids
+    assert set(section_ids) == {"general", "llm", "runtime", "advanced"}
     for section_id in section_ids:
         assert re.search(rf"\b{re.escape(section_id)}: '<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">", icons)
 

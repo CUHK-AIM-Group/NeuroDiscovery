@@ -3,7 +3,7 @@ const source=fs.readFileSync(require('node:path').join(__dirname,'../main.js'),'
 const code=source.slice(source.indexOf('async function requestDesktopCompatible('),source.indexOf('async function findBackendPort('));
 test('bundled client does not silently reuse a server with an old study pack',async()=>{
   let requested=0;
-  const context={DEMO_BUILD:false,requestHealth:async()=>true,requestStatusCode:async()=>200,requestMultiTopicStudy:async()=>{requested++;return false;}};
+  const context={process:{argv:[]},DEMO_BUILD:false,requestHealth:async()=>true,requestStatusCode:async()=>200,requestMultiTopicStudy:async()=>{requested++;return false;}};
   vm.createContext(context);vm.runInContext(code,context);
   assert.equal(await context.requestDesktopCompatible('http://127.0.0.1:7080',true),false);
   assert.equal(requested,1);
@@ -55,6 +55,12 @@ test('the HTTP compatibility probe distinguishes readable cases from prior multi
     meta.lineage_detail_revision='specific-hypothesis-lineage-v1';
     assert.equal(await context.requestMultiTopicStudy(url),false);
     resultsRevision='visible-results-v3';
+    assert.equal(await context.requestMultiTopicStudy(url),false);
+    meta.related_literature_revision='five-reviewed-references-v1';
+    assert.equal(await context.requestMultiTopicStudy(url),false);
+    meta.questionnaire_revision='five-capabilities-runtime-process-v1';
+    assert.equal(await context.requestMultiTopicStudy(url),false);
+    meta.runtime_process_revision='record-bound-runtime-process-v1';
     assert.equal(await context.requestMultiTopicStudy(url),true);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });

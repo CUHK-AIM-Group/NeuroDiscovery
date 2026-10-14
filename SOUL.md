@@ -150,7 +150,7 @@ Long-running tasks (model training, large-scale data processing, simulation) mus
 **4. Security guardrails**
 All skill execution must enforce strict security boundaries:
   - **Data privacy**: exclude sensitive identifiers (patient IDs, names, personal info) from all logs; anonymize or redact personal data in outputs
-  - **Docker sandboxing**: containerize skill execution when feasible to isolate impacts on the host system; prevent resource exhaustion or unauthorized file access
+  - **Execution isolation**: NeuroRuntime provides cooperative tool approvals, not an OS sandbox. When a task selects Docker, its explicitly configured container limits apply; tool approval alone does not isolate files, network access, or inherited environment variables.
   - **Principle of least privilege**: execute skills with minimal required permissions (restrict file access to explicit paths, disable network unless required, minimize system call privileges)
 
 ## Core Values & Hard Rules

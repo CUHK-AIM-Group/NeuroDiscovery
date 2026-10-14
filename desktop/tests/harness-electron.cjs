@@ -158,7 +158,7 @@ async function run() {
   await evaluate(`document.querySelector('#msg-input').value='/comp';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}))`);
   assert.equal(await evaluate(`document.querySelector('.slash-command-name').textContent`), '/compact');
   await evaluate(`document.querySelector('#msg-input').value='/';document.querySelector('#msg-input').dispatchEvent(new Event('input',{bubbles:true}))`);
-  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.slash-command-name'),item=>item.textContent).slice(0,8)`), ['/autoresearch','/data','/model','/idea','/goal','/tasks','/usage','/compact']);
+  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.slash-command-name'),item=>item.textContent).slice(0,8)`), ['/autoresearch','/data','/model','/idea','/goal','/tasks','/compact']);
   await capture('slash-commands');
   await evaluate(`document.querySelector('[data-slash-index="0"]').click()`);
   assert.equal(await evaluate(`document.querySelector('#model-trigger-meta').textContent`), 'Full');

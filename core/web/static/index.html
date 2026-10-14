@@ -6,12 +6,16 @@
   <title>NeuroDiscovery</title>
   <script>
     if (window.location.pathname === '/harness') document.documentElement.dataset.harness = 'true';
+    if (window.neuroclawDesktop && new URLSearchParams(window.location.search).get('settingsWindow') === '1') {
+      document.documentElement.dataset.settingsWindow = 'true';
+    }
     if (window.neuroclawDesktop?.titleBarOverlay && window.parent === window) {
       document.documentElement.dataset.desktopTitlebar = 'true';
     }
   </script>
   <link rel="icon" href="/static/logo.png" type="image/png">
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <script src="/static/vendor/purify-3.4.16.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <style>
@@ -3605,6 +3609,10 @@
       <section class="workspace-page settings-page" id="settings-page" hidden>
         <div class="settings-layout">
           <aside class="settings-sidebar" aria-label="Settings navigation">
+            <div class="settings-window-brand">
+              <img src="/static/logo.png" alt="" width="30" height="30">
+              <div><strong>NeuroDiscovery</strong><span id="settings-window-brand-label">Settings</span></div>
+            </div>
             <button class="settings-back" id="settings-back-btn" type="button">&larr; Back to chat</button>
             <input class="page-search" id="settings-search" type="search" placeholder="Search settings">
             <div class="settings-nav-group" id="settings-nav"></div>
@@ -3801,6 +3809,7 @@
   <link rel="stylesheet" href="/static/code-blocks.css">
   <link rel="stylesheet" href="/static/evidence-graph.css">
   <link rel="stylesheet" href="/static/workspace-controls.css">
+  <link rel="stylesheet" href="/static/settings-window.css">
 <script src="/static/client-workbench.js"></script>
 <script src="/static/code-blocks.js"></script>
 <script src="/static/evidence-graph.js"></script>
@@ -3809,6 +3818,7 @@
 <script src="/static/composer-commands.js"></script>
 <script src="/static/model-library.js"></script>
 <script>
+  const IS_SETTINGS_WINDOW = document.documentElement.dataset.settingsWindow === 'true';
   function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -4054,6 +4064,7 @@
       note: 'Language, text, and everyday desktop behavior.',
       rows: [
         { key: 'language', scope: 'desktop', label: 'Language', desc: 'Interface and backend language preference.', type: 'select', options: ['System default', 'English', 'Simplified Chinese'] },
+        { key: 'theme', scope: 'desktop', label: 'Appearance', desc: 'Choose a light or dark window.', type: 'select', options: ['light', 'dark'] },
         { key: 'textScale', scope: 'local', label: 'Text size', desc: 'Scale interface text without using browser zoom.', type: 'textScale' },
         { key: 'defaultShell', scope: 'local', label: 'Integrated terminal shell', desc: 'Preferred shell for commands and copied run snippets.', type: 'select', options: ['PowerShell', 'cmd', 'Git Bash', 'WSL bash'] },
         { key: 'fileOpenTarget', scope: 'local', label: 'Default file opener', desc: 'Where folders, logs, and generated files should open by default.', type: 'select', options: ['VS Code', 'Explorer', 'System default'] },
@@ -4080,9 +4091,6 @@
         { key: 'llmMaxOutputTokens', scope: 'desktop', whenConnection: 'api', label: 'Output token limit', desc: 'Blank preserves the provider/default limit. Never increased automatically.', type: 'number' },
         { key: 'llmTemperature', scope: 'desktop', whenConnection: 'api', label: 'Temperature', desc: 'Leave blank for GPT-6, recent Claude and Kimi fixed-sampling models.', type: 'number' },
       ],
-    },
-    {
-      id: 'usage', group: 'Configuration', title: 'Usage', note: 'Local API usage, separate from account balances.', rows: [],
     },
     {
       id: 'runtime',
@@ -4434,6 +4442,8 @@
 
   const UI_ZH = {
     'Usage': '使用量',
+    'Appearance': '外观',
+    'Choose a light or dark window.': '选择浅色或深色窗口。',
     'Day': '日间',
     'Night': '夜间',
     'Ready': '就绪',
@@ -4798,6 +4808,7 @@
     window.neuroArtifactPanel?.sync();
     const lang = currentUiLanguage();
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    if (IS_SETTINGS_WINDOW) document.title = `${uiText('Settings', '设置')} — NeuroDiscovery`;
     window.NeuroCodeBlocks?.refresh();
     window.NeuroDiscoveryHarness?.sync(document, { language: lang, view: state.activeView, mode: state.autoResearchMode });
     syncHypothesisControls();
@@ -4898,6 +4909,7 @@
     setPlaceholder('#workspace-search-input', 'Search chats');
 
     setText('#settings-back-btn', '← Back to chat');
+    setText('#settings-window-brand-label', 'Settings');
     setPlaceholder('#settings-search', 'Search settings');
     setText('#settings-page .page-eyebrow', 'Desktop Settings');
     setText('#settings-page .page-title', 'Settings');
@@ -5652,7 +5664,7 @@
     );
   }
 
-  async function loadDesktopSettings() {
+  async function loadDesktopSettings({ changedFields = null } = {}) {
     if (!window.neuroclawDesktop || typeof window.neuroclawDesktop.getConfig !== 'function') {
       state.settingsLoaded = true;
       renderSettings();
@@ -5661,7 +5673,14 @@
     try {
       const result = await window.neuroclawDesktop.getConfig();
       if (result && result.config) {
-        state.desktopConfig = { ...DEFAULT_DESKTOP_CONFIG, ...result.config };
+        state.desktopConfig = Array.isArray(changedFields)
+          ? { ...state.desktopConfig, ...Object.fromEntries(changedFields.filter(key => Object.prototype.hasOwnProperty.call(result.config, key)).map(key => [key, result.config[key]])) }
+          : { ...DEFAULT_DESKTOP_CONFIG, ...result.config };
+        const desktopTheme = result.config.theme === 'dark' ? 'dark' : 'light';
+        state.theme = desktopTheme;
+        document.documentElement.setAttribute('data-theme', desktopTheme);
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === desktopTheme));
+        syncEmbeddedThemeFrames();
         const storedLanguage = localStorage.getItem(UI_LANGUAGE_KEY);
         if (storedLanguage) state.desktopConfig.language = storedLanguage;
       }
@@ -5725,6 +5744,7 @@
   }
 
   function settingOptionLabel(row, option) {
+    if (row.key === 'theme') return option === 'dark' ? 'Night' : 'Day';
     if (row.key === 'llmApiKeySlot') {
       return option === 'reserve' ? 'Reserve (last line)' : 'Primary (second-last line)';
     }
@@ -5967,7 +5987,6 @@
   const SETTINGS_SECTION_ICONS = {
     general: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.1h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1z"></path></svg>',
     llm: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8"></path><path d="M12 8v8"></path><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M20 9h3M1 15h3M20 15h3"></path></svg>',
-    usage: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16M8 16v-5M12 16V7M16 16v-8"></path></svg>',
     runtime: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="m7 9 3 3-3 3M13 15h4"></path></svg>',
     advanced: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="13" cy="18" r="2"></circle></svg>',
   };
@@ -6076,13 +6095,7 @@
 
   function renderSettings() {
     if (!settingsContentEl) return;
-    if (settingsSaveBtn) settingsSaveBtn.hidden = state.settingsSection === 'usage' && !state.settingsSearch.trim();
     renderSettingsNav();
-    if (state.settingsSection === 'usage' && !state.settingsSearch.trim()) {
-      if (settingsResetZone) settingsResetZone.hidden = true;
-      void window.ClientWorkbench.usagePanel(settingsContentEl, {zh:isChineseUi(), projects:state.projects});
-      return;
-    }
     const active = SETTINGS_SECTIONS.find(section => section.id === state.settingsSection) || SETTINGS_SECTIONS[0];
     const sectionsToRender = state.settingsSearch.trim()
       ? SETTINGS_SECTIONS
@@ -6336,7 +6349,10 @@
       if (up) up.disabled = state.textScale >= TEXT_SCALE_MAX;
     });
     syncStudyTextScaleFrames();
-    if (persist) savePrefs();
+    if (persist) {
+      savePrefs();
+      saveLocalSettings();
+    }
   }
 
   function sidebarWidthBounds() {
@@ -7968,8 +7984,24 @@
     const scrollPositions = Array.from(bubble.querySelectorAll('.message-table-scroll'), el => el.scrollLeft);
     const codeStates = window.NeuroCodeBlocks?.capture(bubble);
     const graphViews = window.NeuroEvidenceGraph?.capture(bubble);
-    try { bubble.innerHTML = window.marked.parse(String(text || '')); }
-    catch (_) { bubble.innerHTML = fallbackMarkdown(String(text || '')); }
+    if (window.DOMPurify?.isSupported) {
+      let html;
+      try { html = window.marked.parse(String(text || '')); }
+      catch (_) { html = fallbackMarkdown(String(text || '')); }
+      bubble.innerHTML = window.DOMPurify.sanitize(html, {
+        USE_PROFILES: { html: true },
+        FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select'],
+        FORBID_ATTR: ['style'],
+        SANITIZE_NAMED_PROPS: true,
+      });
+      bubble.querySelectorAll('a[href]').forEach(link => {
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+      });
+    } else {
+      // A missing sanitizer must not enable the unfiltered Markdown path.
+      bubble.textContent = String(text || '');
+    }
     window.NeuroCodeBlocks?.enhance(bubble, codeStates);
     window.NeuroEvidenceGraph?.enhance(bubble, graphViews);
     bubble.querySelectorAll('table').forEach((table, index) => {
@@ -8028,11 +8060,6 @@
     }
     const timeline = renderToolTimeline(message.execution?.tools?.length ? [] : message.toolEvents, message.workspaceChanges);
     if (timeline) main.insertAdjacentHTML('beforeend', timeline);
-    if (message.usage) {
-      const details = document.createElement('details'); details.className = 'wb-usage-inline';
-      details.innerHTML = `<summary>${escapeHtml(uiText('This turn','本轮'))} · ${escapeHtml(window.ClientWorkbench.countLabel(message.usage,'input_tokens',isChineseUi()))} ↑ / ${escapeHtml(window.ClientWorkbench.countLabel(message.usage,'output_tokens',isChineseUi()))} ↓</summary>${window.ClientWorkbench.usageDetails(message.usage,isChineseUi())}`;
-      main.appendChild(details);
-    }
     main.insertAdjacentHTML('beforeend', actions);
     wrapper.appendChild(main);
     messagesEl.appendChild(wrapper);
@@ -8415,7 +8442,6 @@
     if(command.text) {showError(uiText('This command takes no arguments. Open its panel to configure it.','此指令不接受附加文字，请在打开的面板中配置。'));return {handled:true};}
     if(command.action==='compact') {await compactConversation(session);return {handled:true};}
     inputEl.value='';session.draft='';saveSessions();closeSlashMenu();
-    if(command.action==='usage') {state.settingsSection='usage';setActiveView('settings',{focus:false});}
     if(command.action==='goal') await openGoalMode(session);
     if(command.action==='tasks') await openScheduledTasks(session);
     return {handled:true};
@@ -8779,7 +8805,11 @@
     let text = queued ? queued.text || queued.displayText : inputEl.value.trim();
     const session = getActiveSession();
     if(!queued && text.trim()==='/compact') {await compactConversation(session);return;}
-    if(!queued && /^\/(?:autoresearch|data|model|idea|goal|tasks|usage)(?:\s|$)/i.test(text)) {
+    if (!queued && /^\/usage(?:\s|$)/i.test(text)) {
+      showError(uiText('The usage panel is no longer available.', '用量面板已移除。'));
+      return;
+    }
+    if(!queued && /^\/(?:autoresearch|data|model|idea|goal|tasks)(?:\s|$)/i.test(text)) {
       const command=await handleComposerCommand(text,session);
       if(command.handled) return;
       text=command.text;
@@ -9115,6 +9145,12 @@
   function setActiveView(view, opts = {}) {
     if (!HUMAN_EVALUATION_ENABLED && STUDY_VIEW_NAMES.includes(view)) return;
     const nextView = ['skills', 'search', 'settings', 'neurooracle', 'expert-study', 'hypothesis-ranking', 'study-results'].includes(view) ? view : 'chat';
+    if (nextView === 'settings' && !IS_SETTINGS_WINDOW && window.neuroclawDesktop?.openSettingsWindow) {
+      void window.neuroclawDesktop.openSettingsWindow({ section: state.settingsSection }).then(opened => {
+        if (!opened) showError(uiText('Settings window is unavailable while the desktop runtime starts.', '桌面运行环境启动期间暂时无法打开设置窗口。'));
+      }).catch(error => showError(error && error.message ? error.message : String(error)));
+      return;
+    }
     const previousView = state.activeView;
     const wasStudyView = STUDY_VIEW_NAMES.includes(previousView);
     const enteringStudyView = STUDY_VIEW_NAMES.includes(nextView);
@@ -9573,6 +9609,36 @@
     if (window.neuroclawDesktop && typeof window.neuroclawDesktop.onMenuAction === 'function') {
       window.neuroclawDesktop.onMenuAction(handleDesktopMenuAction);
     }
+    if (IS_SETTINGS_WINDOW && window.neuroclawDesktop?.onSettingsNavigate) {
+      window.neuroclawDesktop.onSettingsNavigate(section => {
+        if (!SETTINGS_SECTIONS.some(item => item.id === section)) return;
+        collectSettingsFromForm();
+        state.settingsSection = section;
+        state.settingsSearch = '';
+        if (settingsSearchEl) settingsSearchEl.value = '';
+        renderSettings();
+      });
+    }
+    if (window.neuroclawDesktop?.onConfigChanged) {
+      window.neuroclawDesktop.onConfigChanged(change => {
+        if (IS_SETTINGS_WINDOW) collectSettingsFromForm();
+        void loadDesktopSettings({ changedFields: IS_SETTINGS_WINDOW ? change?.fields : null });
+      });
+    }
+    window.addEventListener('storage', event => {
+      if (![SETTINGS_KEY, UI_LANGUAGE_KEY].includes(event.key)) return;
+      if (IS_SETTINGS_WINDOW) collectSettingsFromForm();
+      if (event.key === SETTINGS_KEY) {
+        const draft = IS_SETTINGS_WINDOW ? { ...state.localSettings } : null;
+        loadLocalSettings();
+        if (draft) state.localSettings = { ...draft, textScale: state.textScale };
+        applyTextScale(state.textScale, false);
+      } else {
+        state.desktopConfig.language = event.newValue || 'System default';
+        applyLanguage(false);
+      }
+      if (IS_SETTINGS_WINDOW) renderSettings();
+    });
     const desktopMenu = document.getElementById('desktop-menu-btn');
     if (desktopMenu && window.neuroclawDesktop?.titleBarOverlay === true && window.neuroclawDesktop?.showApplicationMenu && window.neuroclawDesktop.platform !== 'darwin') {
       desktopMenu.hidden = false;
@@ -9763,6 +9829,12 @@
           applyLanguage(true);
           renderSettings();
           applyLanguage(false);
+          return;
+        }
+        if (control.dataset.settingKey === 'theme') {
+          collectSettingsFromForm();
+          applyTheme(control.value);
+          renderSettings();
           return;
         }
         if (control.dataset.settingKey === 'runtimeMode') {
@@ -10950,6 +11022,22 @@
   async function boot() {
     inputEl.disabled = true;
     loadState();
+    if (IS_SETTINGS_WINDOW) {
+      const requestedSection = new URLSearchParams(window.location.search).get('section');
+      if (SETTINGS_SECTIONS.some(section => section.id === requestedSection)) state.settingsSection = requestedSection;
+      try {
+        const response = await fetch('/api/workbench/state');
+        if (response.ok) {
+          const payload = await response.json();
+          state.projects = Array.isArray(payload.state?.projects) ? payload.state.projects : [];
+        }
+      } catch (_error) {}
+      bindEvents();
+      applyTextScale(state.textScale, false);
+      await loadDesktopSettings();
+      setActiveView('settings', { focus: false });
+      return;
+    }
     workbenchHistory = window.ClientWorkbench.createHistory({
       snapshot:()=>({sessions:state.sessions,projects:state.projects,activeSessionId:state.activeSessionId,activeProjectId:state.activeProjectId,composerDefaults:lastComposerSettings(),lastModelChoice:state.lastModelChoice}),
       restore:saved=>{ state.sessions=Array.isArray(saved.sessions)?saved.sessions:[];state.projects=Array.isArray(saved.projects)?saved.projects:[];state.activeSessionId=saved.activeSessionId;state.activeProjectId=saved.activeProjectId;state.composerDefaults=saved.composerDefaults?composerSettings(saved.composerDefaults):null;state.lastModelChoice=saved.lastModelChoice || null;normalizeAllSessions(); },

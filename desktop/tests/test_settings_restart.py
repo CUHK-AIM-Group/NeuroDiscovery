@@ -80,6 +80,7 @@ const context={require, path:require('node:path'),app:{isPackaged:false,getPath:
  ipcMain:{handle:(name,handler)=>handlers[name]=handler},loadConfig:()=>({...saved}),
  saveConfig:next=>(saved={...saved,...next}),userConfigPath:()=>'/fixture/config.json',
  describeLlmConnectionStatus:()=>({}),setApplicationMenu:()=>menus++,
+ requireTrustedDesktopSender:()=>{},notifyMainSettingsChanged:()=>{},
  settingsRestartTracker:createRestartTracker(config)};
 vm.createContext(context);
 for(const name of ['get-config','save-config']){

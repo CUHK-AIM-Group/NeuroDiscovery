@@ -1,0 +1,266 @@
+/* The desktop settings window keeps the existing form behavior and gives it
+   a focused shell, following Camellia's compact sidebar and quiet surfaces. */
+.settings-window-brand { display: none; }
+
+html[data-settings-window="true"] {
+  --settings-window-bg: #ffffff;
+  --settings-window-sidebar: #f7f8fa;
+  --settings-window-hover: #eceef2;
+  --settings-window-active: #e7e9ed;
+  --settings-window-line: #e5e7eb;
+  --settings-window-card: #ffffff;
+  --settings-window-input: #ffffff;
+  --settings-window-text: #242833;
+  --settings-window-muted: #69717f;
+  --settings-window-accent: #4777e6;
+  --settings-window-accent-hover: #3466d6;
+}
+html[data-settings-window="true"][data-theme="dark"] {
+  --settings-window-bg: #1a1b20;
+  --settings-window-sidebar: #202127;
+  --settings-window-hover: #2c2e35;
+  --settings-window-active: #353844;
+  --settings-window-line: #34363d;
+  --settings-window-card: #1a1b20;
+  --settings-window-input: #202127;
+  --settings-window-text: #edeef2;
+  --settings-window-muted: #adb1bc;
+  --settings-window-accent: #6993f4;
+  --settings-window-accent-hover: #83a5f8;
+}
+html[data-settings-window="true"] body,
+html[data-settings-window="true"] #app {
+  background: var(--settings-window-bg);
+  color: var(--settings-window-text);
+}
+html[data-settings-window="true"][data-harness="true"] #app {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  grid-template-rows: none;
+}
+html[data-settings-window="true"][data-harness="true"] #app > .main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+html[data-settings-window="true"][data-harness="true"] #chat-panel {
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+}
+html[data-settings-window="true"] #app > header,
+html[data-settings-window="true"] #app > #error-banner,
+html[data-settings-window="true"] .main > .sidebar,
+html[data-settings-window="true"] .main > .app-sidebar-resizer,
+html[data-settings-window="true"] .chat-panel > :not(#settings-page) {
+  display: none !important;
+}
+html[data-settings-window="true"] .main {
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+}
+html[data-settings-window="true"] .chat-panel {
+  border: 0;
+  border-radius: 0;
+  background: var(--settings-window-bg);
+  box-shadow: none;
+}
+html[data-settings-window="true"] .settings-page {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--settings-window-bg);
+}
+html[data-settings-window="true"] .settings-layout {
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+  height: 100%;
+}
+html[data-settings-window="true"] .settings-sidebar {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  padding: 28px 12px 18px;
+  overflow-y: auto;
+  border-right: 1px solid var(--settings-window-line);
+  background: var(--settings-window-sidebar);
+}
+html[data-settings-window="true"] .settings-window-brand {
+  order: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  margin: 0 10px 18px;
+}
+html[data-settings-window="true"] .settings-window-brand img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+html[data-settings-window="true"] .settings-window-brand strong,
+html[data-settings-window="true"] .settings-window-brand span {
+  display: block;
+  line-height: 1.4;
+}
+html[data-settings-window="true"] .settings-window-brand strong {
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 650;
+}
+html[data-settings-window="true"] .settings-window-brand span {
+  color: var(--settings-window-muted);
+  font-size: calc(10px * var(--text-scale));
+}
+html[data-settings-window="true"] .settings-search,
+html[data-settings-window="true"] #settings-search {
+  order: 1;
+  flex: none;
+  width: 100%;
+  min-height: 36px;
+  margin: 0 0 12px;
+  border: 1px solid var(--settings-window-line);
+  border-radius: 9px;
+  background: var(--settings-window-input);
+  color: var(--settings-window-text);
+  font-size: calc(11px * var(--text-scale));
+}
+html[data-settings-window="true"] .settings-nav-group {
+  order: 2;
+  display: grid;
+  gap: 3px;
+}
+html[data-settings-window="true"] .settings-nav-label {
+  margin: 19px 10px 7px;
+  color: var(--settings-window-muted);
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+html[data-settings-window="true"] .settings-nav-item {
+  min-height: 38px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  color: var(--settings-window-muted);
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 450;
+}
+html[data-settings-window="true"] .settings-nav-item:hover {
+  background: var(--settings-window-hover);
+  color: var(--settings-window-text);
+}
+html[data-settings-window="true"] .settings-nav-item.active {
+  background: var(--settings-window-active);
+  color: var(--settings-window-text);
+  font-weight: 640;
+}
+html[data-settings-window="true"] .settings-back { display: none !important; }
+html[data-settings-window="true"] .settings-panel {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  padding: 32px max(32px, calc((100% - 860px) / 2)) 40px;
+  overflow-y: auto;
+  background: var(--settings-window-bg);
+}
+html[data-settings-window="true"] .settings-panel .page-eyebrow { display: none; }
+html[data-settings-window="true"] .settings-panel .page-title {
+  font-size: calc(18px * var(--text-scale));
+  font-weight: 650;
+  letter-spacing: -.02em;
+}
+html[data-settings-window="true"] .settings-panel .page-subtitle {
+  margin-top: 7px;
+  color: var(--settings-window-muted);
+  font-size: calc(11px * var(--text-scale));
+}
+html[data-settings-window="true"] .settings-section { margin-top: 28px; }
+html[data-settings-window="true"] .settings-section-title {
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 640;
+}
+html[data-settings-window="true"] .settings-section-note {
+  color: var(--settings-window-muted);
+  font-size: calc(11px * var(--text-scale));
+}
+html[data-settings-window="true"] .settings-card {
+  border: 0;
+  border-radius: 0;
+  background: var(--settings-window-card);
+  box-shadow: none;
+}
+html[data-settings-window="true"] .settings-row {
+  padding: 19px 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--settings-window-line);
+  border-radius: 0;
+}
+html[data-settings-window="true"] .settings-row:first-child,
+html[data-settings-window="true"] .settings-row:last-child,
+html[data-settings-window="true"] .settings-row:only-child { border-radius: 0; }
+html[data-settings-window="true"] .settings-row-label {
+  color: var(--settings-window-text);
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+}
+html[data-settings-window="true"] .settings-row-desc,
+html[data-settings-window="true"] .settings-status {
+  color: var(--settings-window-muted);
+  font-size: calc(11px * var(--text-scale));
+}
+html[data-settings-window="true"] .settings-control,
+html[data-settings-window="true"] .settings-select-trigger {
+  border-color: var(--settings-window-line);
+  border-radius: 9px;
+  background: var(--settings-window-input);
+  color: var(--settings-window-text);
+  font-size: calc(12px * var(--text-scale));
+}
+html[data-settings-window="true"] .settings-control:focus,
+html[data-settings-window="true"] .settings-select-trigger:focus-visible,
+html[data-settings-window="true"] #settings-search:focus-visible {
+  border-color: var(--settings-window-accent);
+  outline: 2px solid color-mix(in srgb, var(--settings-window-accent), transparent 78%);
+  outline-offset: 1px;
+}
+html[data-settings-window="true"] .settings-toggle.active { background: var(--settings-window-accent); }
+html[data-settings-window="true"] .settings-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+html[data-settings-window="true"] .settings-save,
+html[data-settings-window="true"] .settings-restart {
+  width: auto;
+  min-width: 108px;
+  height: 36px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  border-radius: 18px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+  box-shadow: none;
+}
+html[data-settings-window="true"] .settings-save { background: var(--settings-window-accent); }
+html[data-settings-window="true"] .settings-save:hover { background: var(--settings-window-accent-hover); }
+html[data-settings-window="true"] .settings-restart {
+  border-color: var(--settings-window-line);
+  background: transparent;
+  color: var(--settings-window-text);
+}
+html[data-settings-window="true"] .settings-restart:hover { background: var(--settings-window-hover); }
+html[data-settings-window="true"] .settings-reset-zone {
+  background: transparent;
+  box-shadow: none;
+}
+@media (max-width: 800px) {
+  html[data-settings-window="true"] .settings-layout { grid-template-columns: 180px minmax(0, 1fr); }
+  html[data-settings-window="true"] .settings-panel { padding: 28px 24px 36px; }
+  html[data-settings-window="true"] .settings-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+}
