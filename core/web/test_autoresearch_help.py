@@ -1194,7 +1194,7 @@ class AutoResearchHelpEndpointTests(unittest.TestCase):
         )[1].split("const STUDY_VIEW_NAMES", 1)[0]
         self.assertEqual(
             re.findall(r"\n\s+id: '([^']+)'", settings_sections),
-            ["general", "llm", "usage", "runtime", "advanced"],
+            ["general", "llm", "runtime", "advanced"],
         )
         self.assertIn("title: 'Models'", settings_sections)
         self.assertIn("Reset application", index_html)

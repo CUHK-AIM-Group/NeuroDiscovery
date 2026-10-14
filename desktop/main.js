@@ -38,6 +38,7 @@ function validateProjectFolderName(value) {
 }
 
 let mainWindow = null;
+let settingsWindow = null;
 let backendProcess = null;
 let backendStartedByDesktop = false;
 let backendUrl = '';
@@ -61,6 +62,9 @@ function applyNativeTheme(value) {
   nativeTheme.themeSource = theme;
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.setBackgroundColor(theme === 'dark' ? '#171c1b' : '#fcfcfb');
+  }
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.setBackgroundColor(theme === 'dark' ? '#17191e' : '#ffffff');
   }
   return theme;
 }
@@ -1247,6 +1251,33 @@ async function ensureBackend() {
   return { url: backendUrl, reused: false };
 }
 
+function isTrustedDesktopSender(event) {
+  if (!event || !backendUrl) return false;
+  const owner = [mainWindow, settingsWindow].find(window => window && !window.isDestroyed() && event.sender === window.webContents);
+  if (!owner || event.senderFrame !== owner.webContents.mainFrame) return false;
+  try {
+    const source = new URL(event.senderFrame.url);
+    return source.origin === new URL(backendUrl).origin && ['/', '/harness'].includes(source.pathname);
+  } catch (_error) { return false; }
+}
+
+function requireTrustedDesktopSender(event) {
+  if (!isTrustedDesktopSender(event)) throw new Error('Untrusted desktop IPC sender');
+}
+
+function installDesktopNavigation(window) {
+  const guard = (event, address, _isInPlace, isMainFrame) => {
+    if (event.isMainFrame === false || isMainFrame === false) return;
+    try {
+      const target = new URL(address || event.url);
+      if (backendUrl && target.origin === new URL(backendUrl).origin && ['/', '/harness'].includes(target.pathname)) return;
+    } catch (_error) {}
+    event.preventDefault();
+  };
+  window.webContents.on('will-navigate', guard);
+  window.webContents.on('will-redirect', guard);
+}
+
 function createWindow() {
   if (focusMainWindow()) return mainWindow;
   mainWindow = new BrowserWindow({
@@ -1283,8 +1314,82 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  installDesktopNavigation(mainWindow);
   installContextMenu(mainWindow);
   return mainWindow;
+}
+
+function openSettingsWindow(target = {}) {
+  const section = ['general', 'llm', 'runtime', 'advanced'].includes(target.section)
+    ? target.section : 'general';
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.show();
+    settingsWindow.focus();
+    if (settingsWindow.webContents.isLoadingMainFrame()) {
+      settingsWindow.webContents.once('did-finish-load', () => {
+        if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.webContents.send('neuroclaw:settings-navigate', section);
+      });
+    } else {
+      settingsWindow.webContents.send('neuroclaw:settings-navigate', section);
+    }
+    return true;
+  }
+  if (!backendUrl || !mainWindow || mainWindow.isDestroyed()) return false;
+  const url = new URL(backendUrl);
+  url.pathname = '/harness';
+  url.searchParams.set('desktop', app.isPackaged ? app.getVersion() : String(Date.now()));
+  url.searchParams.set('settingsWindow', '1');
+  url.searchParams.set('section', section);
+
+  const window = new BrowserWindow({
+    width: 1160,
+    height: 800,
+    minWidth: 760,
+    minHeight: 580,
+    show: false,
+    center: true,
+    title: `${desktopText('Settings', '设置')} — ${APP_NAME}`,
+    icon: APP_ICON_PATH,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#17191e' : '#ffffff',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  settingsWindow = window;
+  window.once('ready-to-show', () => {
+    if (!window.isDestroyed()) {
+      window.center();
+      window.show();
+    }
+  });
+  window.on('closed', () => {
+    if (settingsWindow === window) settingsWindow = null;
+  });
+  window.webContents.setWindowOpenHandler(({ url: requestedUrl }) => {
+    try {
+      const parsed = new URL(requestedUrl);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') void shell.openExternal(parsed.href);
+    } catch (_error) {}
+    return { action: 'deny' };
+  });
+  installDesktopNavigation(window);
+  installContextMenu(window);
+  void window.loadURL(url.toString()).catch(error => {
+    log(`Settings window failed to load: ${error && error.message ? error.message : error}`);
+    if (!window.isDestroyed()) window.close();
+  });
+  return true;
+}
+
+function notifyMainSettingsChanged(event, fields) {
+  for (const window of [mainWindow, settingsWindow]) {
+    if (window && !window.isDestroyed() && event.sender !== window.webContents) {
+      window.webContents.send('neuroclaw:config-changed', { fields });
+    }
+  }
 }
 
 function compactMenuTemplate(template) {
@@ -1395,8 +1500,19 @@ function installContextMenu(window) {
 }
 
 function sendMenuAction(action) {
-  const target = BrowserWindow.getFocusedWindow() || mainWindow;
+  if (action === 'open-settings') {
+    openSettingsWindow();
+    return;
+  }
+  if (['new-chat', 'open-expert-study', 'open-hypothesis-ranking', 'open-study-results'].includes(action) &&
+      (!mainWindow || mainWindow.isDestroyed())) {
+    void restoreMainWindow().then(() => { if (mainWindow && !mainWindow.isDestroyed()) sendMenuAction(action); });
+    return;
+  }
+  const target = ['new-chat', 'open-expert-study', 'open-hypothesis-ranking', 'open-study-results'].includes(action)
+    ? mainWindow : BrowserWindow.getFocusedWindow() || mainWindow;
   if (target && !target.isDestroyed()) {
+    if (target === mainWindow && BrowserWindow.getFocusedWindow() === settingsWindow) focusMainWindow();
     target.webContents.send('neuroclaw:menu-action', action);
     target.webContents.executeJavaScript(
       `window.dispatchEvent(new CustomEvent('neuroclaw:menu-action', { detail: ${JSON.stringify(action)} }))`,
@@ -1567,7 +1683,8 @@ ipcMain.handle('neuroclaw:show-application-menu', (event) => {
   return true;
 });
 
-ipcMain.handle('neuroclaw:get-config', () => {
+ipcMain.handle('neuroclaw:get-config', (event) => {
+  requireTrustedDesktopSender(event);
   const config = loadConfig();
   return {
     config,
@@ -1580,7 +1697,12 @@ ipcMain.handle('neuroclaw:get-config', () => {
   };
 });
 
-ipcMain.handle('neuroclaw:subscription-status', (_event, requestedEngine) => {
+ipcMain.handle('neuroclaw:open-settings-window', (event, target) => {
+  return isTrustedDesktopSender(event) ? openSettingsWindow(target && typeof target === 'object' ? target : {}) : false;
+});
+
+ipcMain.handle('neuroclaw:subscription-status', (event, requestedEngine) => {
+  requireTrustedDesktopSender(event);
   try {
     const config = loadConfig();
     const engine = String(requestedEngine || config.subscriptionEngine || 'codex').trim().toLowerCase();
@@ -1590,7 +1712,8 @@ ipcMain.handle('neuroclaw:subscription-status', (_event, requestedEngine) => {
   }
 });
 
-ipcMain.handle('neuroclaw:subscription-login', (_event, requestedEngine) => {
+ipcMain.handle('neuroclaw:subscription-login', (event, requestedEngine) => {
+  requireTrustedDesktopSender(event);
   try {
     const config = loadConfig();
     const engine = String(requestedEngine || config.subscriptionEngine || 'codex').trim().toLowerCase();
@@ -1600,7 +1723,8 @@ ipcMain.handle('neuroclaw:subscription-login', (_event, requestedEngine) => {
   }
 });
 
-ipcMain.handle('neuroclaw:discover-models', async (_event, config) => {
+ipcMain.handle('neuroclaw:discover-models', async (event, config) => {
+  requireTrustedDesktopSender(event);
   // Unsaved connection fields are intentional; discovery never saves or adds models.
   try {
     return {ok: true, ...await require('./model-library').discoverModels(config, net.fetch.bind(net))};
@@ -1609,10 +1733,12 @@ ipcMain.handle('neuroclaw:discover-models', async (_event, config) => {
   }
 });
 
-ipcMain.handle('neuroclaw:save-config', (_event, config) => {
+ipcMain.handle('neuroclaw:save-config', (event, config) => {
+  requireTrustedDesktopSender(event);
   const previousConfig = loadConfig();
   const savedConfig = saveConfig(config);
   if (savedConfig.language !== previousConfig.language) setApplicationMenu();
+  notifyMainSettingsChanged(event, Object.keys(savedConfig).filter(key => JSON.stringify(savedConfig[key]) !== JSON.stringify(previousConfig[key])));
   return {
     config: savedConfig,
     llmConnectionStatus: describeLlmConnectionStatus(savedConfig),
@@ -1621,24 +1747,29 @@ ipcMain.handle('neuroclaw:save-config', (_event, config) => {
   };
 });
 
-ipcMain.handle('neuroclaw:set-language', (_event, requestedLanguage) => {
+ipcMain.handle('neuroclaw:set-language', (event, requestedLanguage) => {
+  requireTrustedDesktopSender(event);
   const language = ['System default', 'English', 'Simplified Chinese'].includes(requestedLanguage)
     ? requestedLanguage
     : 'System default';
   const config = loadConfig();
   if (config.language !== language) saveConfig({ ...config, language });
   setApplicationMenu();
+  notifyMainSettingsChanged(event, ['language']);
   return { language };
 });
 
-ipcMain.handle('neuroclaw:set-theme', (_event, requestedTheme) => {
+ipcMain.handle('neuroclaw:set-theme', (event, requestedTheme) => {
+  requireTrustedDesktopSender(event);
   const theme = applyNativeTheme(requestedTheme);
   const config = loadConfig();
   if (config.theme !== theme) saveConfig({ ...config, theme });
+  notifyMainSettingsChanged(event, ['theme']);
   return { theme, shouldUseDarkColors: nativeTheme.shouldUseDarkColors };
 });
 
-ipcMain.handle('neuroclaw:reset-application', async () => {
+ipcMain.handle('neuroclaw:reset-application', async (event) => {
+  requireTrustedDesktopSender(event);
   const owner = BrowserWindow.getFocusedWindow() || mainWindow;
   const confirmation = await dialog.showMessageBox(owner && !owner.isDestroyed() ? owner : undefined, {
     type: 'warning',
@@ -1866,13 +1997,31 @@ ipcMain.handle('neuroclaw:export-user-study-results', async (_event, request) =>
   }
 });
 
-ipcMain.handle('neuroclaw:restart', () => {
+ipcMain.handle('neuroclaw:restart', (event) => {
+  requireTrustedDesktopSender(event);
   log('Restart requested from settings');
   stopBackend();
   app.relaunch();
   app.exit(0);
   return { ok: true };
 });
+
+async function restoreMainWindow() {
+  if (focusMainWindow() || isBooting) return;
+  if (!backendUrl) return boot();
+  isBooting = true;
+  try {
+    createWindow();
+    const url = new URL(backendUrl);
+    if (!process.argv.includes('--legacy-ui')) url.pathname = '/harness';
+    url.searchParams.set('desktop', app.isPackaged ? app.getVersion() : String(Date.now()));
+    await mainWindow.loadURL(url.toString());
+    focusMainWindow();
+  } catch (error) {
+    log(`Workspace restore failed: ${error && error.message ? error.message : error}`);
+    await loadErrorPage(error);
+  } finally { isBooting = false; }
+}
 
 async function boot() {
   if (focusMainWindow() || isBooting) return;
@@ -1926,13 +2075,13 @@ if (!hasSingleInstanceLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    focusMainWindow();
+    void restoreMainWindow();
   });
 
   app.whenReady().then(boot);
 
   app.on('activate', () => {
-    if (!focusMainWindow() && BrowserWindow.getAllWindows().length === 0) boot();
+    void restoreMainWindow();
   });
 
   app.on('before-quit', stopBackend);

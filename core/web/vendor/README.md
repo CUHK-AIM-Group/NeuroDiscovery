@@ -27,3 +27,11 @@ Upstream API and license sources:
 
 The layout worker receives only the displayed node-position/edge arrays. It does
 not retrieve sources, rewrite evidence, call a model, or mutate the server graph.
+
+## Markdown sanitizer
+
+`../static/vendor/purify-3.4.16.min.js` is the unmodified DOMPurify 3.4.16
+browser bundle from https://github.com/cure53/DOMPurify/tree/3.4.16/dist.
+Its upstream license is checked in as `../static/vendor/DOMPurify-LICENSE`.
+Chat Markdown uses the local bundle for both online and fallback rendering;
+if it cannot load, messages render as plain text.

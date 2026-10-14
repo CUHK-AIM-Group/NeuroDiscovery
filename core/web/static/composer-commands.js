@@ -7,7 +7,6 @@
     {command:'/idea',icon:'I',mode:'idea',en:'Idea · literature and research hypotheses',zh:'Idea 子模式 · 文献检索与研究假设'},
     {command:'/goal',icon:'G',action:'goal',en:'Goal · bounded objective with explicit acceptance review',zh:'Goal · 有界目标与独立验收'},
     {command:'/tasks',icon:'◷',action:'tasks',en:'Manage periodic experiment status checks',zh:'管理实验状态定时检查'},
-    {command:'/usage',icon:'▥',action:'usage',en:'View requests and token usage',zh:'查看请求次数与 token 使用量'},
     {command:'/compact',icon:'⛶',action:'compact',en:'Compact context; preserve the full local archive',zh:'压缩上下文，保留完整本地归档'},
   ];
   function parse(value) {

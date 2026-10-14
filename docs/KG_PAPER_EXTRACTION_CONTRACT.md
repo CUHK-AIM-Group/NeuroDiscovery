@@ -1,6 +1,6 @@
 **从论文源材料抽取的合同**
 
-2026-09-27离线v3补充：明确population/exposure/outcome/comparator/timepoint/disease_stage与逐字段来源绑定、原子化和比较特定的显著性。实现、使用方式及未验证边界见 `docs/KG_EXTRACTION_OFFLINE_REPAIR_V3_20260927.md`；仅新增离线契约校验，未切换真实发送器或迁移旧产物，不放宽严格等价标准。
+v3 契约明确 population/exposure/outcome/comparator/timepoint/disease_stage 与逐字段来源绑定、原子化和比较特定的显著性。实现见 [paper_extraction_contract_v3.py](../neurooracle/src/paper_extraction_contract_v3.py)，离线校验入口见 [check_paper_extraction_v3.py](../neurooracle/scripts/check_paper_extraction_v3.py)。这些契约校验不放宽严格等价标准，也不代表真实发送器已切换或旧产物已迁移。
 
 每个抽取包绑定具体论文发布记录、作品身份状态、源快照 SHA256、材料类型（摘要/全文）和正文。抽取输入不包含旧 claim、旧共享键、旧审核答案或旧投产计数。论文身份、同作品版本与复用队列分别处理。
 

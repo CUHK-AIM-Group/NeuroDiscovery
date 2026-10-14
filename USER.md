@@ -1,5 +1,17 @@
 # USER.md - About My Human
 
+## 当前实验 API 约定（用户更新：2026-09-12 HKT）
+
+此节适用于之后的新实验，优先于历史实验文档中的模型默认值；它不是已完成实验的模型记录，也不表示所有旧运行器已经完成接入。
+
+- 统一使用 **Ollama Cloud**，模型为 **`deepseek-v4.1-flash:cloud`**。本次用户更新取代此前的 `deepseek-v4-pro:cloud`；不使用 DeepSeek 官方接口、OpenCode Go 或 Luna 会话替代，除非用户另行明确更改。
+- 框架把自己的提示词和对话历史交给本地请求队列；调用程序将 `messages` 原样发往 `https://ollama.com/api/chat`，不得额外注入协调本实验的会话上下文。
+- 当前调用设置：`think="high"`、`options.temperature=0`、`stream=false`、`options.num_predict=65536`；按根目录 `AGENTS.md` 的最新统一策略，上游请求串行（并发 1）。这是单次生成上限，不是上下文长度；不得在重试时自动上调。旧批次的 8192 等实际设置保留，新预算通过独立版本验收后启用。
+- 密钥仅在运行时从 `C:\Users\45846\Downloads\keys.txt` 最后三个非空行读取。优先轮换最后两个；二者均确认额度耗尽后，才使用这三行中剩下的那个。三个都耗尽时保存检查点并等待一小时后重试。
+- 网络错误在原 key 上按 2、8、30 秒重试，不把网络错误或一般限速直接当作额度耗尽；不因错误自动换模型或转入其他渠道。
+- 只将 `message.content` 中的最终答案返回实验框架；推理文本不作为答案。请求和结果保留用于断点恢复及审计，密钥及 Authorization 请求头不得输出或写入日志。
+- 运行前核对实际队列/适配器是否遵守本约定。记录实际模型和参数；不改写历史结果的模型标注，不将新模型结果混入旧模型批次。本次偏好更新不自动授权重跑、改变在途冻结实验或启动 API 连通性测试。
+
 - **Preferred name / how to address you**: Researcher (or you can use "you" directly in conversation)  
 - **Pronouns**: they/them (neutral; adjust if told otherwise)  
 - **Timezone**: Asia/Hong_Kong (HKT) — convert ALL times, logs, timestamps to HKT  

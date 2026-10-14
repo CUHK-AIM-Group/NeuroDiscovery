@@ -61,7 +61,7 @@ test('research slash commands select full and component modes only when explicit
   assert.equal(Commands.parse('Quoted /autoresearch analyze this'),null);
   assert.equal(Commands.parse('/ideas'),null);
   assert.equal(Commands.parse('/tasks').action,'tasks');
-  assert.equal(Commands.parse('/usage').action,'usage');
+  assert.equal(Commands.parse('/usage'),null);
 });
 
 test('bare research commands change mode without dispatch; panel commands never start jobs',async()=>{
@@ -79,7 +79,7 @@ test('bare research commands change mode without dispatch; panel commands never 
   assert.equal(command.handled,false);assert.equal(command.text,'read papers');assert.equal(session.researchMode,'idea');
   await context.handleComposerCommand('/tasks',session);assert.equal(opened[0],session);
   await context.handleComposerCommand('/goal',session);assert.deepEqual(opened[1],{goal:session});
-  await context.handleComposerCommand('/usage',session);assert.equal(context.state.settingsSection,'usage');assert.equal(opened[2],'settings');
+  assert.equal(opened.length,2);
 });
 
 test('AutoResearch preflight refuses an old backend before sending any research', async()=>{
