@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest openai anthropic networkx choix pandas httpx requests ijson fastapi uvicorn scipy scikit-learn statsmodels jsonschema pyarrow nibabel nilearn
+          pip install pytest openai anthropic networkx choix pandas httpx requests ijson fastapi uvicorn scipy scikit-learn statsmodels jsonschema pyarrow nibabel nilearn zstandard
 
       - name: Run tests
         run: >-
@@ -50,6 +50,11 @@ jobs:
           core/agent/test_reflexion.py
           core/memory/test_memory.py
           core/test_autoresearch.py
+          core/test_formal_graph_evidence.py
+          core/test_graph_installation.py
+          core/test_topic_evidence.py
+          core/web/test_claim_evidence.py
+          core/web/test_claim_layer_v8.py
           desktop/tests/test_runtime_packaging.py
           desktop/tests/test_ollama_credentials.py
           desktop/tests/test_model_library.py

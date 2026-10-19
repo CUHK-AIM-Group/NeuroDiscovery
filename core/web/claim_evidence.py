@@ -27,19 +27,8 @@ class EvidenceUnavailable(RuntimeError):
 
 
 def configured_campaign(repo_root: Path) -> Path | None:
-    configured = os.environ.get("NEUROCLAW_KG_CAMPAIGN")
-    if not configured:
-        config = repo_root / "neurooracle/configs/graph_explorer.json"
-        if not config.exists():
-            return None
-        payload = json.loads(config.read_text(encoding="utf-8"))
-        if payload.get("version") != 1 or not isinstance(payload.get("campaign"), str):
-            raise ValueError("Invalid graph explorer configuration")
-        configured = payload["campaign"]
-    if not configured.strip():
-        raise ValueError("Empty accepted graph campaign path")
-    path = Path(configured)
-    return (path if path.is_absolute() else repo_root / path).resolve()
+    from core.graph_installation import configured_campaign_path
+    return configured_campaign_path(repo_root)
 
 
 class AcceptedClaimEvidence:

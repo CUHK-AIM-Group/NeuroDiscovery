@@ -15,6 +15,7 @@ from core.web.claim_layer_support_v1 import paper_evidence, load_support_records
 from neurooracle.src.kg_identity_pilot import digest
 from neurooracle.src.relation_evidence import relation_id
 from neurooracle.src.shared_relation_catalog import check_file
+from neurooracle.src.kg_storage import storage_path
 
 FIELDS = ('subject_id', 'subject_name', 'predicate', 'object_id', 'object_name')
 VERSION = 'kg.accepted_claim_layer.v6'
@@ -131,7 +132,7 @@ class AcceptedClaimLayer(AcceptedClaimEvidence):
                 # projections and all source inputs still fail closed.
                 self._historical_code_drift = []
                 for fp in self._historical_web_code:
-                    current_sha = hashlib.sha256(Path(fp['path']).read_bytes()).hexdigest()
+                    current_sha = hashlib.sha256(storage_path(fp['path']).read_bytes()).hexdigest()
                     if current_sha != fp['sha256']:
                         self._historical_code_drift.append(dict(
                             path=fp['path'], accepted_sha256=fp['sha256'],

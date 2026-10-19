@@ -964,7 +964,8 @@ def create_app() -> Any:
     from core.web.claim_evidence import EvidenceUnavailable, configured_campaign
     from core.web.claim_layer_v8 import AcceptedClaimLayer, validate_queries
     from core.topic_evidence import TopicQueryError
-    accepted_evidence = AcceptedClaimLayer(configured_campaign(REPO_ROOT))
+    from core.graph_installation import InstalledClaimLayer, installed_package, selected_graph_path, install_archive, formal_source
+    accepted_evidence = InstalledClaimLayer(REPO_ROOT)
     app.state.accepted_claim_evidence = accepted_evidence
     study_service = None if demo_build else UserStudyService()
     study_password = (
@@ -2372,6 +2373,7 @@ def create_app() -> Any:
     KG_QUICK_DIR = KG_DATA_DIR / "quick"
     NEUROORACLE_HF_REPO = "zxcvb20001/NeuroOracle"
     NEUROORACLE_HF_BASE = f"https://huggingface.co/spaces/{NEUROORACLE_HF_REPO}/resolve/main"
+    FORMAL_PUBLICATION_PATH = 'neurooracle/data/releases/full_v2_20260906_bbccd816de32/manifest.json'
     NEUROORACLE_MANIFEST_PATH = KG_DATA_DIR / ".download_manifest.json"
     NEUROORACLE_DOWNLOAD_FILES = [
         ("neurooracle/data/knowledge_graph.json.gz", KG_PATH.with_suffix(KG_PATH.suffix + ".gz")),
@@ -2591,7 +2593,7 @@ def create_app() -> Any:
         return path.read_text(encoding="utf-8")
 
     def _neurooracle_graph_path() -> Path:
-        return _resolve_optional_gz(KG_PATH)
+        return selected_graph_path(REPO_ROOT)
 
     def _neurooracle_proxy_url() -> str:
         return (
@@ -2657,6 +2659,60 @@ def create_app() -> Any:
                 digest.update(chunk)
         return digest.hexdigest()
 
+    def _graph_release_descriptor() -> dict[str, Any] | None:
+        from core.graph_installation import RELEASE_SCHEMA
+        url = f'{NEUROORACLE_HF_BASE}/neurooracle/data/releases/desktop/latest.json'
+        req = urllib.request.Request(url, headers={'User-Agent': 'NeuroDiscovery Desktop'})
+        try:
+            with _neurooracle_urlopen(req, timeout=20) as response:
+                raw = response.read(1024 * 1024 + 1)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                # The full formal KG is already public. Its claim nodes contain
+                # original evidence, even though the separate audit store is
+                # not included. Keep the original publication bytes as receipt.
+                req = urllib.request.Request(f'{NEUROORACLE_HF_BASE}/{FORMAL_PUBLICATION_PATH}',
+                                             headers={'User-Agent': 'NeuroDiscovery Desktop'})
+                try:
+                    with _neurooracle_urlopen(req, timeout=20) as response:
+                        raw = response.read(1024 * 1024 + 1)
+                except urllib.error.HTTPError as fallback:
+                    if fallback.code == 404:
+                        return None
+                    raise
+                if len(raw) > 1024 * 1024:
+                    raise ValueError('Formal graph publication is too large')
+                publication = json.loads(raw)
+                graph = publication.get('graph') or {}
+                if (publication.get('schema_version') != 'neurodiscovery.graph-publication.v1'
+                        or publication.get('source_status') != 'canonical_current'
+                        or graph.get('compression') != 'zstandard'
+                        or not re.fullmatch(r'[a-zA-Z0-9_.-]+\.zst', graph.get('file', ''))
+                        or any(not re.fullmatch('[a-f0-9]{64}', graph.get(k, ''))
+                               for k in ('sha256', 'uncompressed_sha256'))
+                        or any(type(graph.get(k)) is not int or graph[k] < 1
+                               for k in ('bytes', 'uncompressed_bytes'))):
+                    raise ValueError('Invalid formal graph publication')
+                return dict(source_kind='formal_snapshot', release_id=publication['release_id'],
+                            publication=publication, publication_bytes=raw,
+                            archive=dict(path=FORMAL_PUBLICATION_PATH.rsplit('/', 1)[0] + '/' + graph['file'],
+                                         bytes=graph['bytes'], sha256=graph['sha256']))
+            raise
+        if len(raw) > 1024 * 1024:
+            raise ValueError('Graph release descriptor is too large')
+        release = json.loads(raw)
+        archive = release.get('archive') or {}
+        relative = archive.get('path', '')
+        if (release.get('schema') != RELEASE_SCHEMA
+                or not re.fullmatch('[a-f0-9]{64}', release.get('package_sha256', ''))
+                or not re.fullmatch('[a-f0-9]{64}', archive.get('sha256', ''))
+                or type(archive.get('bytes')) is not int or archive['bytes'] < 1
+                or not relative.startswith('neurooracle/data/releases/')
+                or '..' in relative.split('/') or '\\' in relative or ':' in relative
+                or '?' in relative or '#' in relative):
+            raise ValueError('Invalid graph release descriptor')
+        return release
+
     def _remote_file_metadata(remote_path: str) -> dict[str, Any]:
         url = f"{NEUROORACLE_HF_BASE}/{remote_path}"
         req = urllib.request.Request(
@@ -2704,6 +2760,22 @@ def create_app() -> Any:
         raise RuntimeError(f"Unable to read remote metadata for {remote_path}")
 
     def _neurooracle_remote_update_status() -> dict[str, Any]:
+        package = installed_package(REPO_ROOT)
+        formal = formal_source(REPO_ROOT)
+        if package is not None or formal is not None:
+            release = _graph_release_descriptor()
+            if release is None:
+                raise ValueError('The installed evidence package has no published update descriptor')
+            if release.get('source_kind') == 'formal_snapshot':
+                current = package.graph_revision if package else accepted_evidence.status()['graph_revision']
+                changed = release['publication']['graph']['uncompressed_sha256'] != current
+            else:
+                changed = package is None or release['package_sha256'] != package.signature
+            return {'type': 'done', 'update_available': changed,
+                    'release_id': release.get('release_id'), 'files': [], 'errors': [],
+                    'remote_checked': 1, 'check_failed': False,
+                    'checked_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                    'proxy': _neurooracle_proxy_info()}
         manifest = _load_neurooracle_manifest()
         manifest_files = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
         files: list[dict[str, Any]] = []
@@ -2783,13 +2855,22 @@ def create_app() -> Any:
         }
 
     def _neurooracle_graph_status() -> dict[str, Any]:
-        graph_path = _neurooracle_graph_path()
-        exists = graph_path.exists()
-        stat = graph_path.stat() if exists else None
+        # Snapshot progress first: completed=True must not be paired with source
+        # metadata read just before the downloader atomically activates a package.
         with _neurooracle_download_lock:
             download = dict(_neurooracle_download_state)
+        source_error = None
+        try:
+            graph_path = _neurooracle_graph_path()
+            package = installed_package(REPO_ROOT)
+            campaign = configured_campaign(REPO_ROOT)
+            formal = formal_source(REPO_ROOT)
+        except (ValueError, OSError) as exc:
+            graph_path, package, campaign, formal, source_error = KG_PATH, None, None, None, str(exc)
+        exists = graph_path.exists()
+        stat = graph_path.stat() if exists else None
         return {
-            "available": exists,
+            "available": exists and source_error is None,
             "path": str(graph_path if exists else KG_PATH),
             "size_bytes": stat.st_size if stat else 0,
             "loaded": bool(_kg_state.get("loaded")),
@@ -2798,6 +2879,13 @@ def create_app() -> Any:
             "hf_repo": NEUROORACLE_HF_REPO,
             "proxy": _neurooracle_proxy_info(),
             "download": download,
+            "installation_error": source_error,
+            "installation_release": package.manifest.get('release_id') if package else None,
+            "graph_revision": (package.graph_revision if package else
+                               json.loads(formal[0].read_text(encoding='utf-8'))['canonical_files']['knowledge_graph']['sha256'] if formal else None),
+            "evidence_source": 'formal_current_graph' if formal else 'accepted_current_graph' if campaign else None,
+            "evidence_configured": source_error is None and (campaign is not None or formal is not None),
+            "evidence_install_required": exists and source_error is None and campaign is None and formal is None,
         }
 
     def _reset_kg_state_after_graph_update() -> None:
@@ -2859,6 +2947,35 @@ def create_app() -> Any:
         try:
             manifest = _load_neurooracle_manifest()
             manifest_files = manifest.setdefault("files", {})
+            release = _graph_release_descriptor()
+            if release is not None:
+                archive = release['archive']
+                is_formal = release.get('source_kind') == 'formal_snapshot'
+                destination = KG_DATA_DIR / ('.formal-graph-download.zst' if is_formal else '.graph-package-download.zip')
+                metadata = _download_url_to_file(f"{NEUROORACLE_HF_BASE}/{archive['path']}", destination,
+                                                 label=archive['path'])
+                if destination.stat().st_size != archive['bytes']:
+                    raise ValueError('Downloaded graph package size does not match its release')
+                # The archive is checked before activation; failed downloads or
+                # evidence checks cannot replace the previous installation.
+                if is_formal:
+                    from core.graph_installation import install_formal_snapshot
+                    install_formal_snapshot(release['publication_bytes'], destination, KG_DATA_DIR)
+                else:
+                    install_archive(destination, KG_DATA_DIR, expected_sha256=archive['sha256'],
+                                    expected_package_sha256=release['package_sha256'])
+                manifest_files[archive['path']] = {**metadata, 'release_id': release.get('release_id'),
+                                                  'package_sha256': release.get('package_sha256')}
+                manifest.update(hf_repo=NEUROORACLE_HF_REPO,
+                                updated_at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
+                _save_neurooracle_manifest(manifest)
+                _reset_kg_state_after_graph_update()
+                with _neurooracle_download_lock:
+                    _neurooracle_download_state.update(running=False, completed=True, current=None,
+                                                       files_done=1, files_total=1)
+                return _neurooracle_graph_status()
+            if installed_package(REPO_ROOT) is not None:
+                raise ValueError('A concept-only download cannot replace the installed evidence package')
             for remote_path, dest in NEUROORACLE_DOWNLOAD_FILES:
                 if dest.exists() and not force:
                     with _neurooracle_download_lock:
@@ -2908,8 +3025,11 @@ def create_app() -> Any:
         from neurooracle.src.hypothesis_engine import Hypothesis
 
         t0 = time.time()
-        print(f"[kg] loading knowledge graph from {KG_PATH} ...", flush=True)
-        kg = load_graph(KG_PATH)
+        graph_path = _neurooracle_graph_path()
+        print(f"[kg] loading knowledge graph from {graph_path} ...", flush=True)
+        kg = load_graph(graph_path)
+        if graph_path != _neurooracle_graph_path():
+            raise ValueError('Graph installation changed during concept loading; retry')
 
         # name_index: lower(name|alias) -> [node_id]
         name_index: dict[str, list[str]] = {}
@@ -3091,6 +3211,8 @@ def create_app() -> Any:
             "loading": False,
             "error": None,
             "kg": kg,
+            "graph_path": str(graph_path),
+            "graph_stat": (graph_path.stat().st_size, graph_path.stat().st_mtime_ns),
             "name_index": name_index,
             "clean_name_index": clean_name_index,
             "trigram_index": trigram_index,
@@ -3117,6 +3239,11 @@ def create_app() -> Any:
 
     async def _get_kg_state() -> dict:
         """Lazy-load the KG on first request; subsequent calls return cached state."""
+        if _kg_state.get('loaded'):
+            current = await asyncio.to_thread(_neurooracle_graph_path)
+            if (_kg_state.get('graph_path') != str(current)
+                    or _kg_state.get('graph_stat') != (current.stat().st_size, current.stat().st_mtime_ns)):
+                _reset_kg_state_after_graph_update()
         if _kg_state.get("loaded"):
             return _kg_state
         # serialize concurrent first-load attempts
@@ -3488,7 +3615,7 @@ def create_app() -> Any:
 
     @app.get("/api/neurooracle/graph/status")
     async def neurooracle_graph_status() -> Any:
-        return _neurooracle_graph_status()
+        return await asyncio.to_thread(_neurooracle_graph_status)
 
     @app.post("/api/neurooracle/graph/download")
     async def neurooracle_graph_download(payload: dict = Body(default={})) -> Any:
@@ -3504,7 +3631,7 @@ def create_app() -> Any:
             thread.start()
             # Give the worker a tiny moment to publish "running" before the UI polls.
             await asyncio.sleep(0.05)
-        return _neurooracle_graph_status()
+        return await asyncio.to_thread(_neurooracle_graph_status)
 
     @app.get("/api/neurooracle/graph/update-status")
     async def neurooracle_graph_update_status() -> Any:
@@ -3524,7 +3651,11 @@ def create_app() -> Any:
         except KeyError as exc:
             return JSONResponse({"error": str(exc)}, status_code=404)
         except (EvidenceUnavailable, OSError) as exc:
-            return JSONResponse({"configured": True, "available": False, "error": str(exc)}, status_code=503)
+            missing = isinstance(exc, FileNotFoundError) or any(text in str(exc) for text in (
+                'No accepted claim evidence source is configured',
+                'The configured accepted claim evidence source is unavailable'))
+            return JSONResponse({"configured": True, "available": False, "error": str(exc),
+                                 "code": "evidence_not_installed" if missing else "evidence_unavailable"}, status_code=503)
         except ValueError as exc:
             # Input ranges are checked by the routes; a stale or invalid accepted
             # artifact must remain an explicit unavailable state, never old evidence.
@@ -3535,10 +3666,13 @@ def create_app() -> Any:
         return await _accepted_evidence_response("status")
 
     @app.get("/api/kg/shared-claims")
-    async def kg_shared_claims(q: str = "", minimum_papers: int = 2, offset: int = 0, limit: int = 30) -> Any:
-        if len(q) > 300 or not 0 <= minimum_papers <= 10000 or offset < 0 or not 1 <= limit <= 100:
+    async def kg_shared_claims(q: str = "", minimum_papers: int | None = None, offset: int = 0, limit: int = 30) -> Any:
+        if len(q) > 300 or (minimum_papers is not None and not 0 <= minimum_papers <= 10000) or offset < 0 or not 1 <= limit <= 100:
             return JSONResponse({"error": "Invalid claim search or page"}, status_code=422)
-        return await _accepted_evidence_response("search", query=q, minimum_papers=minimum_papers, offset=offset, limit=limit)
+        options = dict(query=q, offset=offset, limit=limit)
+        if minimum_papers is not None:
+            options['minimum_papers'] = minimum_papers
+        return await _accepted_evidence_response("search", **options)
 
     @app.get("/api/kg/topic-evidence")
     async def kg_topic_evidence(topic: str, limit: int = 20, evidence_claims: int = 10,
@@ -3574,7 +3708,8 @@ def create_app() -> Any:
 
     @app.get("/api/kg/stats")
     async def kg_stats() -> Any:
-        if not _neurooracle_graph_path().exists():
+        graph_path = await asyncio.to_thread(_neurooracle_graph_path)
+        if not graph_path.exists():
             return {"loaded": False, "loading": False, "missing": True, "path": str(KG_PATH)}
         if not _kg_state.get("loaded"):
             if _kg_state.get("loading"):
@@ -3586,7 +3721,8 @@ def create_app() -> Any:
 
     @app.post("/api/kg/load")
     async def kg_load() -> Any:
-        if not _neurooracle_graph_path().exists():
+        graph_path = await asyncio.to_thread(_neurooracle_graph_path)
+        if not graph_path.exists():
             return JSONResponse(
                 {"loaded": False, "missing": True, "error": f"NeuroOracle graph file is missing: {KG_PATH}"},
                 status_code=404,

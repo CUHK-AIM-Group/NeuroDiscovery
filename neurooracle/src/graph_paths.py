@@ -1,7 +1,8 @@
 """Resolve the published graph, never the newest file or an old snapshot.
 
-The explorer's existing campaign pointer takes precedence over the formal base
-release. Publication receipts are small and hash-checked; graph metadata is
+The installed release and formal current state take precedence over a legacy
+development pointer. Explicit campaign overrides retain acceptance checks;
+publication receipts are small and hash-checked, and graph metadata is
 checked against its accepted fingerprint without rereading gigabytes here.
 Explicit paths remain available for reproducible, version-pinned experiments.
 """
@@ -36,10 +37,19 @@ def _relative_to_root(value: str, root: Path) -> Path:
 def current_graph_path(repo_root: Path | None = None) -> Path:
     """Return the latest accepted graph, failing closed on stale publication.
 
-    A configured but missing/in-progress campaign is an error, not permission to
+    An explicit but missing/in-progress campaign is an error, not permission to
     silently fall back to an older graph. No experiment or publication is run.
     """
     root = Path(repo_root or REPO_ROOT).resolve()
+    # Keep CLI/MCP and skill consumers on the same source as the client. Explicit
+    # --graph inputs below still pin frozen experiments without this selection.
+    from core.graph_installation import installed_package, formal_source
+    package = installed_package(root)
+    if package is not None:
+        return package.graph
+    formal = formal_source(root)
+    if formal is not None:
+        return formal[1]
     configured = os.environ.get("NEUROCLAW_KG_CAMPAIGN")
     config_path = root / "neurooracle/configs/graph_explorer.json"
     if configured is None and config_path.exists():

@@ -3,8 +3,9 @@
   "use strict";
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const s = { active: false, offset: 0, limit: 30, total: 0, revision: null, selected: null, data: null, request: 0, detailRequest: 0, timer: null, hooks: null };
+  const s = { active: false, offset: 0, limit: 30, total: 0, revision: null, source: null, indexReady: true, selected: null, data: null, request: 0, detailRequest: 0, timer: null, hooks: null };
   const tr = (en, zh) => s.hooks?.language() === "zh" ? zh : en;
+  const formal = () => s.source === 'formal_current_graph';
   const badge = (text, kind = "") => `<span class="ce-badge ${kind}">${esc(text)}</span>`;
   const roles = {
     own_result: ["Own study result", "本研究结果"], review_synthesis: ["Review / synthesis", "综述／综合证据"],
@@ -68,13 +69,15 @@
     translate();
   }
   function translate() {
-    $("ceHeading").textContent = tr("Shared claims", "共同主张");
-    $("ceHint").textContent = tr("Search a scientific claim, paper, or original claim ID.", "搜索科学主张、论文或原 claim ID。");
+    $("ceHeading").textContent = formal() ? tr('Extracted claims', '提取声明') : tr("Shared claims", "共同主张");
+    $("ceHint").textContent = formal()
+      ? tr('Original records from the current formal KG. Source support has not been newly reviewed.', '读取当前正式图谱中的原始记录；不新增来源支持审核结论。')
+      : tr("Search a scientific claim, paper, or original claim ID.", "搜索科学主张、论文或原 claim ID。");
     $("ceSearch").placeholder = tr("Concept, PMID, CLM:… or REL:…", "概念、PMID、CLM:… 或 REL:…");
     $("ceSearch").setAttribute("aria-label", tr("Search current claim evidence", "搜索当前主张证据"));
     $("ceFilterLabel").textContent = tr("Reviewed supporting papers", "获审支持论文");
     $("ceMinimum").setAttribute("aria-label", $("ceFilterLabel").textContent);
-    $("ceMinimum").lastElementChild.textContent = tr("All shared claims", "全部共同主张");
+    $("ceMinimum").lastElementChild.textContent = formal() ? tr('All extracted claims', '全部提取声明') : tr("All shared claims", "全部共同主张");
     $("cePrevious").textContent = tr("Previous", "上一页"); $("ceNext").textContent = tr("Next", "下一页");
     $("ceRefresh").textContent = tr("Refresh", "刷新");
     $('oracleViewTabs').setAttribute('aria-label', tr('NeuroOracle views', 'NeuroOracle 视图'));
@@ -91,31 +94,42 @@
     else s.hooks.legacyStart();
   }
   function showEmpty() {
+    if (formal()) {
+      $("ceDetail").innerHTML = `<div class="ce-empty"><h2>${tr('Claims from the formal graph', '正式图谱中的声明')}</h2><p class="ce-muted">${tr('Select an extraction to read its source paper, stored text and statistics. Extraction text and Case Study membership do not establish reviewed proposition support.', '选择一条提取记录，查看来源论文、已保存的文本和统计字段。提取文本与 Case Study 归属不等同于已审核的命题支持。')}</p></div>`;
+      return;
+    }
     $("ceDetail").innerHTML = `<div class="ce-empty"><div class="oracle-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="m7 7 3 3m4-1 3-2M10 14l-3 3"/></svg></div><h2>${tr("One claim, all its papers", "一个主张，查看全部论文")}</h2><p class="ce-muted">${tr("Select a claim to compare its original observations, populations, statistics and evidence roles. Papers are deduplicated; their independence is not assumed.", "选择一个主张，逐篇查看原句、人群、统计和证据角色。论文已按确认的版本去重，篇数不代表独立研究数。")}</p></div>`;
   }
   function showError(error, target = "ceDetail") {
     const missing = error.status === 404;
+    const notInstalled = error.data?.code === 'evidence_not_installed';
+    const title = missing ? tr('Claim not found', '未找到该 claim') : notInstalled
+      ? tr('Claim evidence data is not installed', '尚未安装主张证据数据')
+      : tr('Evidence temporarily unavailable', '证据暂不可用');
+    const description = missing ? tr('This ID is not present in the accepted current graph.', '当前已验收图中没有这个 ID。') : notInstalled
+      ? tr('Install the current formal graph or a matching graph and evidence package to use this view and graph-backed AutoResearch. The historical demo download is incomplete.', '请安装当前正式图谱，或版本匹配的图谱与证据包，以使用此视图和图谱驱动的 AutoResearch。历史演示下载不完整。')
+      : tr('The graph may be updating or its validation may no longer match. Retry to read the accepted revision.', '图谱可能正在更新，或当前文件与验收记录不一致。请重试读取已验收版本。');
     if (target === "ceResults") {
-      $("statsLine").textContent = tr("Evidence temporarily unavailable", "证据暂不可用");
+      $("statsLine").textContent = title;
       $("cePage").textContent = "—";
       $("cePrevious").disabled = true;
       $("ceNext").disabled = true;
     }
-    $(target).innerHTML = `<div class="ce-empty"><h2>${missing ? tr("Claim not found", "未找到该 claim") : tr("Evidence temporarily unavailable", "证据暂不可用")}</h2><p class="ce-muted">${missing ? tr("This ID is not present in the accepted current graph.", "当前已验收图中没有这个 ID。") : tr("The graph may be updating or its validation may no longer match. Retry to read the accepted revision.", "图谱可能正在更新，或当前文件与验收记录不一致。请重试读取已验收版本。")}</p><button class="ce-action" data-ce-retry type="button">${tr("Retry", "重试")}</button></div>`;
+    $(target).innerHTML = `<div class="ce-empty"><h2>${title}</h2><p class="ce-muted">${description}</p>${notInstalled ? '' : `<button class="ce-action" data-ce-retry type="button">${tr('Retry', '重试')}</button>`}</div>`;
     if (target === "ceDetail") s.data = null;
   }
   async function search() {
     if (!s.active) return;
     const request = ++s.request, q = $("ceSearch").value.trim();
     if (/^(CLM|REL):/.test(q)) { openClaim(q); return; }
-    $("ceResults").innerHTML = `<p class="ce-muted" style="padding:15px">${tr("Reading current evidence…", "正在读取当前证据…")}</p>`;
+    $("ceResults").innerHTML = `<p class="ce-muted" style="padding:15px">${formal() && !s.indexReady ? tr('Preparing claim search for this graph. The first load can take a few minutes…', '正在准备该版本的声明检索，首次加载可能需要几分钟…') : tr("Reading current evidence…", "正在读取当前证据…")}</p>`;
     try {
       const data = await api("/api/kg/shared-claims", { q, minimum_papers: $("ceMinimum").value, offset: s.offset, limit: s.limit });
       if (request !== s.request || !s.active) return;
-      s.total = data.total; s.revision = data.graph_revision;
-      $("statsLine").textContent = tr(`${data.total} matching shared claims`, `${data.total} 个匹配的共同主张`);
+      s.total = data.total; s.revision = data.graph_revision; s.source = data.source; s.indexReady = true; translate();
+      $("statsLine").textContent = formal() ? tr(`${data.total} matching extracted claims`, `${data.total} 条匹配的提取声明`) : tr(`${data.total} matching shared claims`, `${data.total} 个匹配的共同主张`);
       $("ceResults").innerHTML = data.claims.map(c => `<button class="ce-result" type="button" data-shared-claim="${esc(c.shared_claim_id)}" aria-current="${s.data?.shared_claim_id === c.shared_claim_id}">
-        <strong>${esc(c.claim.subject_name)}</strong><span class="ce-predicate">${esc(c.claim.predicate)} →</span><strong>${esc(c.claim.object_name)}</strong><div class="ce-badges">${badge(tr(`${c.reviewed_supporting_article_count} supporting papers`, `${c.reviewed_supporting_article_count} 篇获审支持论文`), "ce-support")}${badge(tr(`${c.article_count} source works total`, `共 ${c.article_count} 项来源`))}</div></button>`).join("") || `<p class="ce-muted" style="padding:15px">${tr("No claims match this search and paper threshold.", "没有符合搜索词和论文数量条件的主张。")}</p>`;
+        <strong>${esc(c.claim.subject_name)}</strong><span class="ce-predicate">${esc(c.claim.predicate)} →</span><strong>${esc(c.claim.object_name)}</strong><div class="ce-badges">${formal() ? badge(tr('Original extraction', '原始提取记录')) : badge(tr(`${c.reviewed_supporting_article_count} supporting papers`, `${c.reviewed_supporting_article_count} 篇获审支持论文`), "ce-support")}${badge(tr(`${c.article_count} source records`, `${c.article_count} 项来源记录`))}</div></button>`).join("") || `<p class="ce-muted" style="padding:15px">${tr("No claims match this search and paper threshold.", "没有符合搜索词和论文数量条件的主张。")}</p>`;
       $("cePage").textContent = data.total ? `${s.offset + 1}–${Math.min(s.offset + s.limit, data.total)} / ${data.total}` : "0 / 0";
       $("cePrevious").disabled = s.offset === 0; $("ceNext").disabled = s.offset + s.limit >= data.total;
       if (s.data && (s.data.graph_revision !== data.graph_revision || s.data.claim_layer_revision !== data.claim_layer_revision)) openClaim(s.selected);
@@ -128,7 +142,7 @@
     try {
       const data = await api("/api/kg/claim-evidence", id.startsWith("CLM:") ? { claim_id: id } : { relation_id: id });
       if (request !== s.detailRequest || !s.active) return;
-      s.data = data; renderDetail(data);
+      s.data = data; s.source = data.source; translate(); renderDetail(data);
       document.querySelectorAll("[data-shared-claim]").forEach(el => el.setAttribute("aria-current", String(el.dataset.sharedClaim === data.shared_claim_id)));
       const url = new URL(location.href); url.searchParams.delete("claim"); url.searchParams.delete("relation"); url.searchParams.set(id.startsWith("CLM:") ? "claim" : "relation", id); history.replaceState(null, "", url);
       $("ceDetail").scrollTop = 0;
@@ -157,12 +171,13 @@
     const c = data.claim;
     const originalCount = data.original_observation_count ?? data.original_claim_ids.length;
     const supplementalCount = data.supplemental_observation_ids?.length ?? Math.max(0, data.observation_count - originalCount);
-    $("ceDetail").innerHTML = `<p class="ce-muted">${tr("Current shared scientific claim", "当前共同科学主张")}</p>
+    const isFormal = data.source === 'formal_current_graph';
+    $("ceDetail").innerHTML = `<p class="ce-muted">${isFormal ? tr('Original claim in the formal KG', '正式图谱中的原始声明') : tr("Current shared scientific claim", "当前共同科学主张")}</p>
       <div class="ce-triple"><div class="ce-endpoint">${esc(c.subject_name)}</div><div class="ce-relation">${esc(c.predicate)}<span>→</span></div><div class="ce-endpoint">${esc(c.object_name)}</div></div>
       <div class="ce-summary">${badge(tr(`${data.reviewed_supporting_article_count} reviewed supporting papers`, `${data.reviewed_supporting_article_count} 篇获审支持论文`), "ce-support")}${badge(tr(`${data.article_count} source works total`, `共 ${data.article_count} 项来源`))}${badge(tr(`${originalCount} original observations`, `${originalCount} 条原始观察`))}${supplementalCount ? badge(tr(`${supplementalCount} supplemental source records`, `${supplementalCount} 条补充来源记录`)) : ""}</div>
-      <p class="ce-muted">${tr("Counts combine reviewed support from results, reviews and background assertions. Paper count does not establish independent replication or consensus.", "支持篇数包含经审核的研究结果、综述和背景陈述。论文篇数不代表独立重复验证或科学共识。")}</p>
+      <p class="ce-muted">${isFormal ? tr('Text and study fields are preserved from the formal KG extraction. Source support and publication identity have not been newly reviewed. Case Study membership is a separate annotation.', '文本与研究字段保留自正式图谱的提取记录；不新增来源支持或论文身份核验结论。Case Study 归属是另一类标记。') : tr("Counts combine reviewed support from results, reviews and background assertions. Paper count does not establish independent replication or consensus.", "支持篇数包含经审核的研究结果、综述和背景陈述。论文篇数不代表独立重复验证或科学共识。")}</p>
       ${data.canonical_scope_note ? `<details><summary>${tr("Scope of this shared claim", "这一共同主张的支持范围")}</summary><p class="ce-muted">${esc(data.canonical_scope_note)}</p></details>` : ""}
-      <details class="ce-ids"><summary>${tr("Shared ID and original claim IDs", "共同 ID 与原 claim ID")}</summary><code>${esc(data.shared_claim_id)}</code>${data.original_claim_ids.map(id => `<code>${esc(id)}</code>`).join("")}</details>
+      <details class="ce-ids"><summary>${isFormal ? tr('Original claim ID', '原始声明 ID') : tr("Shared ID and original claim IDs", "共同 ID 与原 claim ID")}</summary><code>${esc(data.shared_claim_id)}</code>${data.original_claim_ids.filter(id => id !== data.shared_claim_id).map(id => `<code>${esc(id)}</code>`).join("")}</details>
       <div class="ce-toolbar"><h2>${tr("Paper-level evidence", "逐篇论文证据")}</h2><button type="button" class="ce-action" data-ce-export>${tr("Export evidence", "导出证据")}</button></div>
       ${data.papers.map((p,i) => { const b = p.bibliography, status = p.publication_review?.status; return `<article class="ce-paper" data-paper-key="${esc(p.work_key)}"><h3>${i + 1}. ${esc(b.title || tr("Untitled source", "无题名来源"))}</h3><p class="ce-muted">${esc([b.authors, b.journal, b.year].filter(v => v !== undefined && v !== null && v !== "").join(" · "))}</p><div class="ce-badges">${bibliographyLinks(b)}${badge(p.supports_reviewed_proposition ? tr("Reviewed support", "支持内容已审核") : tr("Not counted as reviewed support", "未计入获审支持"), p.supports_reviewed_proposition ? "ce-support" : "ce-nonsupport")}${!p.verified ? badge(tr("Publication identity unverified", "论文身份未核验"), "ce-nonsupport") : ""}${status === "retracted" ? badge(tr("Retracted", "已撤稿"), "ce-nonsupport") : ""}</div>
       ${p.publication_versions.length > 1 ? `<details class="ce-ids"><summary>${tr(`${p.publication_versions.length} publication versions · counted once`, `${p.publication_versions.length} 个发表版本 · 合计一篇`)}</summary>${p.publication_versions.map(v => `<div>${esc(v.bibliography.title)} ${bibliographyLinks(v.bibliography)}</div>`).join("")}</details>` : ""}${p.observations.map(observation).join("")}</article>`; }).join("")}`;
@@ -172,8 +187,10 @@
     const direct = params.get("claim") || params.get("relation");
     try {
       const status = await api("/api/kg/evidence-status");
-      if (!status.configured) { $("claimEvidenceToggle").hidden = true; setActive(false); return; }
-      s.revision = status.graph_revision;
+      $("claimEvidenceToggle").hidden = false;
+      if (!status.configured) { setActive(false); return; }
+      s.revision = status.graph_revision; s.source = status.source; s.indexReady = status.index_ready !== false;
+      if (formal()) $("ceMinimum").value = '0';
       if (params.get("view") === "concepts" && !direct) { setActive(false); return; }
       setActive(true); if (direct) openClaim(direct);
     } catch (error) { setActive(true, false); showError(error); showError(error, "ceResults"); }

@@ -26,6 +26,7 @@ def fingerprint(path):
 @pytest.fixture
 def release(tmp_path, monkeypatch):
     monkeypatch.delenv("NEUROCLAW_KG_CAMPAIGN", raising=False)
+    monkeypatch.delenv("NEUROCLAW_GRAPH_INSTALLATION", raising=False)
     monkeypatch.setattr(graph_paths, "REPO_ROOT", tmp_path)
     graph = write_json(tmp_path / "accepted/graph.json", {"concepts": {}, "edges": []})
     receipt = write_json(tmp_path / "accepted/CURRENT_ACCEPTANCE.json", dict(
@@ -42,7 +43,8 @@ def add_formal(release):
     path = write_json(release["root"] / "neurooracle/data/full_v2/knowledge_graph.json",
                       {"concepts": {}, "edges": []})
     write_json(path.parent / "CURRENT_STATE.json", dict(status="canonical_current",
-        canonical_files={"knowledge_graph": {"path": str(path), "bytes": path.stat().st_size}}))
+        canonical_files={"knowledge_graph": fingerprint(path)},
+        formal_kg_statistics={"general": {"claims": 0, "papers": 0}}))
     return path
 
 
@@ -53,9 +55,15 @@ def update_receipt(release, receipt):
     write_json(release["campaign"], campaign)
 
 
-def test_published_campaign_wins_over_base_and_newer_work_files(release):
-    add_formal(release)
+def test_formal_release_wins_over_legacy_selector_and_newer_work_files(release):
+    formal = add_formal(release)
     write_json(release["root"] / "unreviewed_latest/knowledge_graph.json", {"not": "accepted"})
+    assert graph_paths.current_graph_path() == formal
+
+
+def test_explicit_campaign_retains_acceptance_checks_with_formal_release(release, monkeypatch):
+    add_formal(release)
+    monkeypatch.setenv('NEUROCLAW_KG_CAMPAIGN', str(release['campaign']))
     assert graph_paths.current_graph_path() == release["graph"]
 
 
@@ -65,8 +73,9 @@ def test_formal_used_only_without_a_configured_campaign(release):
     assert graph_paths.current_graph_path() == formal
 
 
-def test_missing_configured_campaign_never_falls_back(release):
+def test_missing_explicit_campaign_never_falls_back(release, monkeypatch):
     add_formal(release)
+    monkeypatch.setenv('NEUROCLAW_KG_CAMPAIGN', str(release['campaign']))
     release["campaign"].unlink()
     with pytest.raises(FileNotFoundError):
         graph_paths.current_graph_path()

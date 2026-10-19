@@ -9294,18 +9294,21 @@
     const download = status && status.download ? status.download : {};
     const available = Boolean(status && status.available);
     const running = Boolean(download.running);
-    const show = state.activeView === 'chat' && !available;
+    const evidenceMissing = Boolean(status && status.evidence_install_required);
+    const show = state.activeView === 'chat' && (!available || evidenceMissing);
     neurooracleChatBannerEl.hidden = !show;
     if (!show) return;
     const failed = Boolean(download.error);
     neurooracleChatBannerTitleEl.textContent = running
       ? uiText('Downloading NeuroOracle graph', '正在下载 NeuroOracle 图谱')
       : failed ? uiText('NeuroOracle graph status is unavailable.', '暂时无法检查 NeuroOracle 图谱状态。')
-        : tr('NeuroOracle is not downloaded');
+        : evidenceMissing ? uiText('Claim evidence is not installed', '尚未安装主张证据')
+          : tr('NeuroOracle is not downloaded');
     neurooracleChatBannerMessageEl.textContent = running
       ? uiText('The NeuroOracle graph is downloading. You can continue after it finishes.', 'NeuroOracle 图谱正在下载，完成后即可继续使用。')
       : failed ? String(download.error)
-        : tr('Download the graph here to use graph-backed chat and AutoResearch.');
+        : evidenceMissing ? uiText('The concept graph is installed. Claim evidence requires the matching graph package.', '概念图已安装；主张证据需要版本匹配的完整图谱包。')
+          : tr('Download the graph here to use graph-backed chat and AutoResearch.');
     if (neurooracleChatDownloadBtn) {
       neurooracleChatDownloadBtn.disabled = running;
       neurooracleChatDownloadBtn.textContent = running ? uiText('Downloading…', '下载中…') : tr('Download graph');
@@ -9327,7 +9330,7 @@
     if (available) {
       const proxy = status && status.proxy ? status.proxy : {};
       neurooracleStatusEl.innerHTML = `
-        <strong>${escapeHtml(tr('Local graph is ready.'))}</strong><br>
+        <strong>${escapeHtml(status.evidence_install_required ? uiText('Concept graph is ready; claim evidence is not installed.', '概念图已就绪；尚未安装主张证据。') : tr('Local graph is ready.'))}</strong><br>
         ${escapeHtml(tr('Graph size'))}: ${escapeHtml(formatBytes(status.size_bytes))}<br>
         ${escapeHtml(tr('Proxy'))}: ${escapeHtml(proxy.enabled ? proxy.url : tr('No proxy configured'))}<br>
         <span title="${escapeAttr(status.path || '')}">${escapeHtml(status.path || '')}</span>

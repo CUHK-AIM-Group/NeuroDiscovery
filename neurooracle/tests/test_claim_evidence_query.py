@@ -13,7 +13,7 @@ def fingerprint(path):
     stat=path.stat()
     return dict(path=str(path),bytes=stat.st_size,mtime_ns=stat.st_mtime_ns,sha256=hashlib.sha256(path.read_bytes()).hexdigest())
 
-def setup(tmp_path):
+def setup(tmp_path, *, node_fields=None):
     def save(name,value,lines=False):
         path=tmp_path/name
         text=''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in value) if lines else json.dumps(value,ensure_ascii=False,separators=(',',':'))
@@ -28,7 +28,7 @@ def setup(tmp_path):
             object_id='Y',object_name='outcome',negated=False,raw_text='Own result '+cid,
             source_paper=dict(pmid=p,title='Own '+p,year=2020),evidence=dict(sample_size=0,p_value=None,unknown=False),
             population='Population '+p,conditions=['adjusted'],metadata={'qualifier':'retained'})
-        record=dict(id=cid,metadata=md);records.append(record)
+        record=dict(id=cid,metadata=md,**(node_fields or {}));records.append(record)
         role='own_result' if i==1 else 'background_assertion'
         reviews[cid]=dict(claim_sha256=digest(record),source_role='primary_research_article',observation_role=role,proposition_support='supports')
     shared=summarize_relation(relation_key(records[0]['metadata']),[r['metadata'] for r in records[:3]],papers=papers)

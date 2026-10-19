@@ -5,6 +5,8 @@ only translates an exact, hashed source fingerprint to its verified target;
 unrelated stale fingerprints still fail normal integrity checks.
 """
 from functools import lru_cache
+from contextlib import contextmanager
+from contextvars import ContextVar
 import hashlib
 import json
 import os
@@ -13,6 +15,21 @@ import sqlite3
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / 'neurooracle/configs/kg_storage.json'
+_installed_storage = ContextVar('installed_graph_storage', default=None)
+
+
+@contextmanager
+def installed_storage(resolver, validator):
+    """Bind immutable receipt paths to one verified installation for this read.
+
+    Context-local resolution keeps simultaneous installations and explicit
+    research reads separate. Unlisted dependencies are rejected by the resolver.
+    """
+    token = _installed_storage.set((resolver, validator))
+    try:
+        yield
+    finally:
+        _installed_storage.reset(token)
 
 
 def _key(path):
@@ -60,6 +77,9 @@ def _mapped(path, config):
 
 def storage_path(path):
     """Resolve current physical storage for a logical or already moved path."""
+    installed = _installed_storage.get()
+    if installed is not None:
+        return installed[0](path)
     path = Path(path)
     return (_mapped(path, configuration()) or path).resolve()
 
@@ -78,6 +98,9 @@ def _verified_catalog(path, size, stamp, sha):
 
 def stat_matches(fingerprint, path=None):
     """Accept native metadata or an exact cryptographically verified relocation."""
+    installed = _installed_storage.get()
+    if installed is not None:
+        return installed[1](fingerprint, path)
     physical = Path(path) if path is not None else storage_path(fingerprint['path'])
     info = physical.stat()
     if (info.st_size,info.st_mtime_ns)==(fingerprint['bytes'],fingerprint['mtime_ns']):

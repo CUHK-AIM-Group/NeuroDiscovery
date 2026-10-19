@@ -306,8 +306,10 @@ def _retrieve(layer, topic, groups, revision, limit, evidence_claims, minimum_pa
         "Study records state whether the observation was source-reviewed; unreviewed records stay unreviewed.",
         "The studies list applies the topic threshold and named diagnoses to each paper's own record; "
         "other papers remain only in claim-level context. Missing terms expose partial matches.",
-        "Scope: the accepted shared-claim catalog and its published extensions, plus the existing original-claim index when available. "
-        "An empty result is not absence of relevant literature. Counts describe this bounded result only.",
+        ("Scope: original extraction records from the current formal KG; no shared-claim or source-support review is inferred. "
+         if revision.get('source') == 'formal_current_graph' else
+         "Scope: the accepted shared-claim catalog and its published extensions, plus the existing original-claim index when available. ")
+        + "An empty result is not absence of relevant literature. Counts describe this bounded result only.",
         "Automatic aliases cover a small explicit vocabulary; use extra_terms for other translations or synonyms.",
         f"Bounded: {shared_matched} shared matches and {originals['matched']} additional original-observation matches; "
         f"one representative per original source competes for the same {limit}-claim budget; expanded {len(documents)}.",
@@ -386,13 +388,11 @@ def render_text(result: dict[str, Any]) -> str:
 
 def default_layer(campaign: Path | None = None):
     """The same read-only loader the graph explorer uses; never a rebuild."""
-    from core.web.claim_evidence import configured_campaign
     from core.web.claim_layer_v8 import AcceptedClaimLayer
+    from core.graph_installation import InstalledClaimLayer
 
-    path = Path(campaign) if campaign else configured_campaign(Path(__file__).resolve().parents[1])
-    if path is None:
-        raise ValueError("No accepted graph campaign is configured")
-    return AcceptedClaimLayer(path)
+    return (AcceptedClaimLayer(Path(campaign)) if campaign
+            else InstalledClaimLayer(Path(__file__).resolve().parents[1]))
 
 
 def main(argv: list[str] | None = None) -> None:
