@@ -79,6 +79,23 @@ def _read_skill(session: Any, args: Mapping[str, Any], workspace: Path) -> dict[
     return result
 
 
+def _read_skill_section(session: Any, args: Mapping[str, Any], workspace: Path) -> dict[str, Any]:
+    result = _skill_capability(session).load_section(
+        str(args.get("name", "")), args.get("query", ""), max_chars=args.get("max_chars", 4800))
+    _record(session, {"tool": "read_skill_section", "command": str(args.get("name", "")),
+                     "executed": bool(result.get("success")), "success": bool(result.get("success")),
+                     "skills_used": [result["name"]] if result.get("success") else [], "result": result})
+    return result
+
+
+def _compile_task(session: Any, args: Mapping[str, Any], workspace: Path) -> dict[str, Any]:
+    from core.harness_tasks import compile_task
+    result = compile_task(session, args, workspace, _skill_capability(session))
+    _record(session, {"tool": "compile_task", "executed": True, "success": True,
+                     "skills_used": [], "result": result})
+    return result
+
+
 def _run_shell(session: Any, args: Mapping[str, Any], workspace: Path) -> dict[str, Any]:
     from core.agent.main import _looks_file_io_shell_command, _run_shell_command
     from core.shell_safety import is_readonly_probe
@@ -189,7 +206,7 @@ def _read_file(session: Any, args: Mapping[str, Any], workspace: Path) -> dict[s
 
 
 def _extract_skills(result: dict[str, Any]) -> list[str]:
-    from core.agent.main import _extract_skills_from_result_payload
+    from neurobench.runner.scoring import _extract_skills_from_result_payload
 
     return _extract_skills_from_result_payload(result)
 
@@ -308,9 +325,27 @@ def register_core_tools() -> None:
         },
         handler=_read_skill,
     ))
+    register(ToolSpec(
+        name="compile_task",
+        description="Organize public task requirements, observe explicitly named workspace input files and headers, and suggest relevant existing skills. Does not execute a workflow or validate scientific correctness.",
+        parameters={"type": "object", "properties": {
+            "task_text": {"type": "string", "description": "Public task text; omit when the host binds the task."},
+            "input_paths": {"type": "array", "items": {"type": "string"}, "maxItems": 64,
+                            "description": "Explicit workspace input paths to inspect; no recursive discovery."},
+            "public_contract": {"type": "object", "description": "Optional existing public requirements to organize, without inferred steps or answers."},
+        }, "required": []}, handler=_compile_task,
+    ))
+    register(ToolSpec(
+        name="read_skill_section",
+        description="Read relevant paragraphs from a named skill, bounded by max_chars, with source hashes and a session cache. Use read_skill for full paginated instructions.",
+        parameters={"type": "object", "properties": {
+            "name": {"type": "string"}, "query": {"type": "string", "maxLength": 4096},
+            "max_chars": {"type": "integer", "minimum": 1, "maximum": 20000},
+        }, "required": ["name", "query"]}, handler=_read_skill_section,
+    ))
 
 
-SKILL_TOOL_NAMES = ("search_skills", "read_skill")
+SKILL_TOOL_NAMES = ("search_skills", "read_skill", "compile_task", "read_skill_section")
 
 
 def skill_tools_enabled() -> bool:
@@ -336,6 +371,9 @@ def visible_schemas(**kwargs) -> list[dict[str, Any]]:
     exclude = list(kwargs.pop("exclude", []) or [])
     if not skill_tools_enabled():
         exclude.extend(SKILL_TOOL_NAMES)
+    from core.config_flags import feature_enabled
+    if not feature_enabled('NEUROCLAW_HARNESS_PROPOSAL_CHECKS'):
+        exclude.extend(('describe_task_contract', 'validate_proposal'))
     return tool_registry.schemas(exclude=exclude, **kwargs)
 
 

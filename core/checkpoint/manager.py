@@ -43,6 +43,7 @@ _EXCLUDE_PATTERNS: list[str] = [
     "*.h5",
     "*.hdf5",
     "output/",
+    "dev/",
     ".DS_Store",
     "Thumbs.db",
     "*.egg-info/",

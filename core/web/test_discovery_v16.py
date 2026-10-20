@@ -7,13 +7,15 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from core.web.build_discovery_pilot_v16 import HERE, ROOT, PARENT, PACK_ID, REVISION, build
+from core.web.build_discovery_pilot_v16 import HERE, ROOT, PARENT, PACK_ID, REVISION, RUN, build
 from core.web.discovery_study import DEFAULT_PACK, DiscoveryStudy, StudyError, create_preview_app
 
 
 class RuntimeProcessQuestionnaireTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if not (RUN / "paper_ready/configuration_ledger.json").is_file():
+            raise unittest.SkipTest("Frozen execution ledger not installed on this machine")
         cls.outputs = build()
         cls.pack = json.loads(cls.outputs["cs1_discovery_pilot_v16.json"])
 
@@ -72,11 +74,11 @@ class RuntimeProcessQuestionnaireTests(unittest.TestCase):
                 self.assertEqual(invalid.status_code, 400)
                 for index, card in enumerate(view["cards"]):
                     response = client.post(endpoint + "/save", headers=headers, json={
-                        "request_id": f"save-{index}", "revision": view["session"]["revision"], "card_id": card["id"],
+                        "request_id": f"save-v16-{index}", "revision": view["session"]["revision"], "card_id": card["id"],
                         "answers": {question["id"]: "4" for question in view["questions"]}, "note": "SYNTHETIC QA"})
                     self.assertEqual(response.status_code, 200, response.text)
                     view = response.json()
-                response = client.post(endpoint + "/submit", headers=headers, json={"request_id": "submit", "revision": view["session"]["revision"]})
+                response = client.post(endpoint + "/submit", headers=headers, json={"request_id": "submit-v16", "revision": view["session"]["revision"]})
                 self.assertEqual(response.status_code, 200, response.text)
                 view = response.json()
                 self.assertEqual(view["score_summary"]["composite_mean"], 4)

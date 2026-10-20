@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from core.web.build_study_bank_reference_notes_v1 import (
-    BANK, BANK_SHA256, TARGET, build, _extract_cohort, _extract_p_value, _reference_key,
+    BANK, BANK_SHA256, CORPUS, TARGET, build, _extract_cohort, _extract_p_value, _reference_key,
 )
 
 _SERVICE_PATH = Path(__file__).resolve().parents[2] / "neurooracle" / "src" / "user_study.py"
@@ -17,6 +17,7 @@ _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
 
 
+@unittest.skipUnless(BANK.is_file() and CORPUS.is_file(), "Frozen reference-note inputs not installed on this machine")
 class BuilderTests(unittest.TestCase):
     def test_notes_on_disk_match_deterministic_rebuild(self):
         doc = build()

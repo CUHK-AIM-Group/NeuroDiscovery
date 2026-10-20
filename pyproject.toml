@@ -1,12 +1,66 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "neuroclaw"
 version = "0.1.0"
 requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "openai>=1.0,<3",
+    "anthropic>=0.40,<1",
+    "httpx>=0.27,<1",
+    "requests>=2.31,<3",
+    "python-multipart>=0.0.20,<1",
+    "PyYAML>=6,<7",
+    "pypdf>=5,<7",
+    "python-docx>=1.1,<2",
+    "openpyxl>=3.1,<4",
+    "python-pptx>=1.0,<2",
+    "networkx>=3,<4",
+    "ijson>=3,<4",
+    "zstandard>=0.23,<1",
+]
 
 [project.scripts]
 neurodiscovery = "core.cli:main"
 
 [project.optional-dependencies]
+graph = [
+    "choix>=0.3",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+    "statsmodels>=0.14",
+    "jsonschema>=4",
+    "pyarrow>=14",
+    "nibabel>=5.0",
+    "nilearn>=0.10",
+]
+benchmark = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "nibabel>=5.0",
+    "psutil>=5.9",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+    "statsmodels>=0.14",
+    "networkx>=3,<4",
+]
+test = ["pytest>=8,<10"]
+test-runtime = ["neuroclaw[test,graph]"]
+test-graph = ["neuroclaw[test,graph]", "torch>=2.2", "matplotlib>=3.7"]
+test-models = [
+    "neuroclaw[test,clinical-outputs,graph-models]",
+    "statsmodels>=0.14",
+    "pyarrow>=14",
+    "psutil>=5.9",
+]
+test-benchmark = ["neuroclaw[test,benchmark]"]
+test-all = ["neuroclaw[test-runtime,test-graph,test-models,test-benchmark]"]
 tabular-models = [
     "statsmodels>=0.14",
     "xgboost>=2.0",
@@ -46,25 +100,70 @@ include = [
     "core*",
     "models*",
     "neurooracle*",
+    "neurobench*",
 ]
+exclude = ["*.tests", "*.tests.*"]
+namespaces = false
 
 [tool.pytest.ini_options]
-testpaths = [
+cache_dir = "dev/cache/pytest"
+runtime_testpaths = [
+    "core/test_*.py",
+    "core/agent",
     "core/checkpoint",
-    "models/tests",
-    "neurooracle/tests",
-    "core/skill_loader",
-    "core/session",
-    "core/subagent",
     "core/llm/tests",
-    "core/web/test_workspace_theme.py",
-    "core/web/test_oracle_workspace.py",
-    "core/web/test_study_workspace.py",
-    "core/web/test_workbench.py",
-    "core/web/test_harness.py",
-    "desktop/tests/test_window_chrome.py",
+    "core/memory",
+    "core/session",
+    "core/skill_loader",
+    "core/subagent",
+    "core/web",
+    "desktop/tests",
     "skills/method-design/scripts",
 ]
+# Current graph contracts only. Historical campaigns and research experiments
+# remain runnable by explicit file path, outside the default product suite.
+graph_testpaths = [
+    "neurooracle/tests/test_current_graph_paths.py",
+    "neurooracle/tests/test_claim_compatibility.py",
+    "neurooracle/tests/test_claim_evidence_identity.py",
+    "neurooracle/tests/test_claim_evidence_query.py",
+    "neurooracle/tests/test_entity_resolution_safety.py",
+    "neurooracle/tests/test_relation_evidence.py",
+    "neurooracle/tests/test_relation_evidence_dossier.py",
+    "neurooracle/tests/test_shared_proposition_registry.py",
+    "neurooracle/tests/test_shared_relation_catalog.py",
+    "neurooracle/tests/test_complete_pubmed_title_evidence.py",
+    "neurooracle/tests/test_pubmed_title_integrity.py",
+    "neurooracle/tests/test_verified_entity_terms.py",
+    "neurooracle/src/tests/test_graph.py",
+    "neurooracle/src/tests/test_schema.py",
+    "neurooracle/src/tests/test_atoms.py",
+    "neurooracle/src/tests/test_claim_semantics.py",
+    "neurooracle/src/tests/test_claim_ingestion_persistence.py",
+    "neurooracle/src/tests/test_paper_identity.py",
+    "neurooracle/src/tests/test_claim_id_canonicalization.py",
+    "neurooracle/src/tests/test_kg_claim_support_contract.py",
+    "neurooracle/src/tests/test_case_study_membership_policy.py",
+    "neurooracle/src/tests/test_case_study_registry.py",
+    "neurooracle/src/tests/test_case_study_relation_contracts.py",
+    "neurooracle/src/tests/test_case_study_taxonomy_v2.py",
+    "neurooracle/src/tests/test_hypothesis_task.py",
+    "neurooracle/src/tests/test_hypothesis_enumeration_guard.py",
+    "neurooracle/src/tests/test_feedback_state.py",
+    "neurooracle/src/tests/test_evolution_engine.py",
+    "neurooracle/src/tests/test_kge_plausibility.py",
+    "neurooracle/src/tests/test_kge_specificity.py",
+    "neurooracle/src/tests/test_kge_triple_loader.py",
+    "neurooracle/src/tests/test_outcome_grounding.py",
+]
+models_testpaths = ["models/tests"]
+benchmark_testpaths = ["neurobench/tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --import-mode=importlib"
+
+[tool.ruff]
+cache-dir = "dev/cache/ruff"
+
+[tool.setuptools.package-data]
+neurobench = ["tasks/*/task.md", "task_atlas.json", "SOUL*.md"]

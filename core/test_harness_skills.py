@@ -26,11 +26,21 @@ def _registered():
 
 
 def test_provider_discovers_the_real_skill_library():
-    records = FilesystemSkillProvider(REPO_SKILLS).list()
+    records = FilesystemSkillProvider(REPO_SKILLS, include_cwd=False).list()
     assert len(records) > 50
     names = {record.name for record in records}
     assert {"adni-skill", "fmri-skill", "eeg-skill"} <= names
     assert all(record.skill_md.exists() for record in records)
+
+
+def test_explicit_provider_is_independent_of_the_launch_directory(tmp_path, monkeypatch):
+    foreign = tmp_path / "skills" / "unfrozen-skill"
+    foreign.mkdir(parents=True)
+    (foreign / "SKILL.md").write_text("---\nname: unfrozen-skill\ndescription: foreign\n---\nForeign", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    records = FilesystemSkillProvider(REPO_SKILLS, include_cwd=False).list()
+    assert "unfrozen-skill" not in {r.name for r in records}
+    assert "adni-skill" in {r.name for r in records}
 
 
 def test_definition_requires_at_least_one_provider():
@@ -76,6 +86,19 @@ def test_load_requires_a_name():
     assert result["error_type"] == "invalid_skill_name"
 
 
+def test_tool_consumer_can_read_every_page_of_a_long_frozen_skill(tmp_path):
+    from core.mcp_stdio import HarnessHost
+    path = tmp_path / "frozen" / "long" / "SKILL.md"
+    path.parent.mkdir(parents=True)
+    body = "---\nname: long\ndescription: large fixture\n---\n" + "A" * 20000 + "FINAL PAGE"
+    path.write_text(body, encoding="utf-8")
+    host = HarnessHost(tmp_path, skills_dir=path.parent.parent)
+    first = tool_registry.dispatch(host, "read_skill", {"name": "long"}, tmp_path)
+    second = tool_registry.dispatch(host, "read_skill", {"name": "long", "offset": first["next_offset"]}, tmp_path)
+    assert first["truncated"] and not second["truncated"]
+    assert first["content"] + second["content"] == body
+
+
 def test_consumers_are_registered():
     assert tool_registry.get("search_skills") is not None
     assert tool_registry.get("read_skill") is not None
@@ -86,9 +109,11 @@ def test_skill_tools_are_hidden_unless_the_harness_switch_is_on(monkeypatch):
     default_names = {item["function"]["name"] for item in visible_schemas()}
     assert "search_skills" not in default_names
     assert "read_skill" not in default_names
+    assert "compile_task" not in default_names
+    assert "read_skill_section" not in default_names
     monkeypatch.setenv("NEUROCLAW_HARNESS_SKILL_TOOLS", "1")
     harness_names = {item["function"]["name"] for item in visible_schemas()}
-    assert {"search_skills", "read_skill"} <= harness_names
+    assert {"search_skills", "read_skill", "compile_task", "read_skill_section"} <= harness_names
 
 
 def test_read_skill_tool_loads_through_the_consumer(monkeypatch):
@@ -148,3 +173,38 @@ def test_catalog_is_absent_in_benchmark_and_no_skill_modes(tmp_path, monkeypatch
     no_skill = _prompt_with(tmp_path, monkeypatch, enabled=True, benchmark=False, no_skill=True)
     assert "[Skill Catalog]" not in benchmark
     assert "[Skill Catalog]" not in no_skill
+
+
+
+def test_system_prompt_missing_file_uses_next_candidate(tmp_path):
+    from core.agent.main import _load_system_prompt_text
+
+    (tmp_path / "SOUL.md").write_text("workspace prompt", encoding="utf-8")
+    assert _load_system_prompt_text(True, tmp_path, True) == "workspace prompt"
+
+
+def test_system_prompt_invalid_utf8_is_not_hidden_by_fallback(tmp_path):
+    from core.agent.main import _load_system_prompt_text
+
+    (tmp_path / "SOUL_BENCHMARK.md").write_bytes(b"\xff")
+    (tmp_path / "SOUL.md").write_text("fallback", encoding="utf-8")
+    with pytest.raises(UnicodeDecodeError):
+        _load_system_prompt_text(True, tmp_path)
+
+
+def test_system_prompt_permission_error_is_not_hidden_by_fallback(tmp_path, monkeypatch):
+    from core.agent.main import _load_system_prompt_text
+
+    blocked = tmp_path / "SOUL_BENCHMARK_NO_SKILL.md"
+    blocked.write_text("benchmark prompt", encoding="utf-8")
+    (tmp_path / "SOUL.md").write_text("fallback", encoding="utf-8")
+    original = Path.read_text
+
+    def read(path, *args, **kwargs):
+        if path == blocked:
+            raise PermissionError("prompt unreadable")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read)
+    with pytest.raises(PermissionError, match="prompt unreadable"):
+        _load_system_prompt_text(True, tmp_path, True)

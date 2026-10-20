@@ -9,92 +9,41 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-
+        include:
+          - {layer: runtime, python: "3.10"}
+          - {layer: runtime, python: "3.11"}
+          - {layer: runtime, python: "3.12"}
+          - {layer: graph, python: "3.11"}
+          - {layer: models, python: "3.11"}
+          - {layer: benchmark, python: "3.11"}
+    name: ${{ matrix.layer }} / Python ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-
+          python-version: ${{ matrix.python }}
       - name: Configure git
         run: |
           git config --global user.name "CI"
           git config --global user.email "ci@test.local"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest openai anthropic networkx choix pandas httpx requests ijson fastapi uvicorn scipy scikit-learn statsmodels jsonschema pyarrow nibabel nilearn zstandard
-
-      - name: Run tests
-        run: >-
-          python -m pytest
-          core/checkpoint
-          neurooracle/tests
-          core/skill_loader
-          core/session
-          core/subagent
-          core/llm/tests
-          core/web/test_hypothesis_controls.py
-          core/web/test_workspace_theme.py
-          core/web/test_oracle_workspace.py
-          core/web/test_study_workspace.py
-          core/web/test_workbench.py
-          core/web/test_autoresearch_help.py
-          core/web/test_autoresearch_execution.py
-          core/agent/test_autoresearch_execution.py
-          core/agent/test_reflexion.py
-          core/memory/test_memory.py
-          core/test_autoresearch.py
-          core/test_formal_graph_evidence.py
-          core/test_graph_installation.py
-          core/test_topic_evidence.py
-          core/web/test_claim_evidence.py
-          core/web/test_claim_layer_v8.py
-          desktop/tests/test_runtime_packaging.py
-          desktop/tests/test_ollama_credentials.py
-          desktop/tests/test_model_library.py
-          desktop/tests/test_settings_restart.py
-          desktop/tests/test_window_chrome.py
-          skills/method-design/scripts
+      - name: Install CPU Torch for scientific tests
+        if: matrix.layer == 'models' || matrix.layer == 'graph'
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install declared dependencies
+        run: python -m pip install -e ".[test-${{ matrix.layer }}]"
+      - name: Run shared test scope
+        run: python -m pytest --layer ${{ matrix.layer }}
 
   windows-storage-tests:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install storage test dependencies
-        run: python -m pip install pytest networkx
-
+      - name: Install declared dependencies
+        run: python -m pip install -e ".[test]"
       - name: Test Windows NTFS compression and storage guards
         run: python -m pytest neurooracle/tests/test_kg_backup_storage.py
-
-  model-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install model test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install pytest numpy pandas scipy scikit-learn statsmodels torch-geometric nibabel matplotlib SimpleITK pyarrow psutil
-
-      - name: Run model tests
-        run: python -m pytest models/tests

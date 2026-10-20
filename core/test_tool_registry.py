@@ -42,13 +42,25 @@ EXPECTED = {
         "required": ["name"],
         "properties": {"name", "offset"},
     },
+    "compile_task": {
+        "required": [],
+        "properties": {"task_text", "input_paths", "public_contract"},
+    },
+    "read_skill_section": {
+        "required": ["name", "query"],
+        "properties": {"name", "query", "max_chars"},
+    },
 }
 
 
 @pytest.fixture(autouse=True)
 def _registered():
+    prior = dict(tool_registry.REGISTRY)
+    tool_registry.REGISTRY.clear()
     tools_impl.register_core_tools()
     yield
+    tool_registry.REGISTRY.clear()
+    tool_registry.REGISTRY.update(prior)
 
 
 def test_the_expected_tools_are_registered():

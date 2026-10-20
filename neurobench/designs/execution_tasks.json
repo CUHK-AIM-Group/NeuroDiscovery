@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "status": "DESIGN_ONLY_NOT_EXECUTION_QUALIFIED",
+  "common_public_contract": {
+    "inputs": "Read-only task data and protocol.json; the protocol states scientific endpoints, data definitions and resource limits.",
+    "delivery": "Actual task artifacts, a reproducible program entrypoint and an explicit result manifest. The host supplies input identities and artifact hashes.",
+    "methods": "Choose methods consistent with the public research protocol. Equivalent valid implementations and artifact orderings are accepted.",
+    "evidence": "Preserve actual execution and failures. Report completed, unsupported and uncertain results from the available evidence."
+  },
+  "tasks": [
+    {
+      "case_id": "H01",
+      "title": "多站点分析队列",
+      "task": "为给定多站点研究建立可复用的分析样本表，关联表型、AAL 与 CC200 时间序列及所附记录。交付样本表、纳入排除审计和可重复执行的程序，说明无法确定的记录。",
+      "inputs": ["phenotype.csv", "records/", "series/", "protocol.json"],
+      "deliverables": ["cohort.csv", "audit.json", "project/"]
+    },
+    {
+      "case_id": "H02",
+      "title": "多图谱连接结果比较",
+      "task": "比较同一队列在 AAL 与 CC200 图谱下的功能连接及网络统计结果。交付逐人产物、队列比较表和质量报告，使比较结论能够追溯到参与者与 ROI 定义。",
+      "inputs": ["cohort.csv", "series/", "roi_definitions/", "protocol.json"],
+      "deliverables": ["connectivity/", "comparison.csv", "qc.json", "project/"]
+    },
+    {
+      "case_id": "H03",
+      "title": "新站点诊断预测",
+      "task": "评估给定脑连接特征对未见站点诊断标签的预测能力。按所附研究协议交付逐人预测、分组评估、可复用模型和估计过程的证据；如结果缺乏支持，应如实报告。",
+      "inputs": ["cohort.csv", "features/", "protocol.json"],
+      "deliverables": ["predictions.csv", "evaluation.json", "model/", "fit_evidence.json", "project/"]
+    },
+    {
+      "case_id": "H04",
+      "title": "后续队列的数据转换",
+      "task": "为所附研究队列交付可持续应用于后续参与者的数据转换组件，并处理给定的待应用数据。交付转换结果、持久化参数、参数来源及适用性说明，使新增数据可使用同一组件。",
+      "inputs": ["cohort.csv", "features/", "application/", "protocol.json"],
+      "deliverables": ["transformed/", "preprocessor/", "fit_evidence.json", "applicability.json", "project/"]
+    },
+    {
+      "case_id": "H05",
+      "title": "连接与诊断的关联",
+      "task": "估计研究协议中指定连接特征与诊断标签的关联，区分所给协变量的影响与目标效应，并报告不确定性。交付估计结果、分析样本定义及可复现证据，结论应与实际结果一致。",
+      "inputs": ["cohort.csv", "connectivity/", "protocol.json"],
+      "deliverables": ["estimates.csv", "design.json", "sample_audit.csv", "report.json", "project/"]
+    },
+    {
+      "case_id": "H06",
+      "title": "网络结论的密度敏感性",
+      "task": "分析所给连接矩阵在协议规定密度范围内的网络指标，并判断相关比较结论对该范围的敏感性。交付指标曲线、汇总量和节点定义，使每个数值都可由对应图结构重现。",
+      "inputs": ["connectivity/", "roi_definitions.csv", "protocol.json"],
+      "deliverables": ["curves.csv", "summary.json", "graphs/", "project/"]
+    },
+    {
+      "case_id": "H07",
+      "title": "参考空间的区域测量",
+      "task": "将所给标注和数值图的区域测量结果汇总到指定参考空间，保留区域身份。交付区域体积、数值统计、对应影像和空间一致性证据，明确各结果采用的空间与单位。",
+      "inputs": ["images/", "reference.nii.gz", "spatial_metadata.json", "protocol.json"],
+      "deliverables": ["measurements.csv", "images/", "spatial_audit.json", "project/"]
+    },
+    {
+      "case_id": "H08",
+      "title": "功能影像的连接交付",
+      "task": "从所附功能影像和配套元数据生成 ROI 时间序列、功能连接与质量报告，使结果适用于研究协议规定的组间比较。保留可复现的处理定义，以及逐名参与者的适用性和交付状态。",
+      "inputs": ["cohort.csv", "imaging/", "metadata/", "atlas.nii.gz", "protocol.json"],
+      "deliverables": ["timeseries/", "connectivity/", "qc.csv", "processing.json", "project/"]
+    },
+    {
+      "case_id": "H09",
+      "title": "现有分析工程的研究交付",
+      "task": "使所附分析工程在当前输入上完成协议规定的连接分析与队列汇总。交付可运行工程、实际结果和执行记录，结果应在干净工作目录中重现。",
+      "inputs": ["project/", "cohort.csv", "series/", "protocol.json"],
+      "deliverables": ["project/", "connectivity/", "summary.csv", "execution.json"]
+    },
+    {
+      "case_id": "H10",
+      "title": "分析项目的持续更新",
+      "task": "完成给定批量分析，使结果在研究输入或配置更新后仍然有效，并复用仍适用的已有产物。交付最终结果、依赖关系和实际运行记录，保留有效的已完成工作。",
+      "inputs": ["project/", "inputs/", "results/", "records/", "protocol.json"],
+      "deliverables": ["results/", "dependencies.json", "execution.json", "project/"]
+    },
+    {
+      "case_id": "H11",
+      "title": "批量队列的逐条交付",
+      "task": "完成给定清单中能够由现有材料支持的参与者分析，并提交每条记录的结论和证据。交付有效产物、状态清单与未完成说明，队列层面汇总应与逐条记录一致。",
+      "inputs": ["cohort.csv", "series/", "records/", "protocol.json"],
+      "deliverables": ["outputs/", "status.csv", "summary.json", "project/"]
+    },
+    {
+      "case_id": "H12",
+      "title": "脑连接的增量预测价值",
+      "task": "检验给定队列中，功能连接是否在基本人口学变量之外提供跨站点的诊断预测信息。交付支持比较的逐人结果、统计不确定性、研究结论和可复现工程；结论可以是支持、不支持或不确定。",
+      "inputs": ["phenotype.csv", "series/", "roi_definitions/", "protocol.json"],
+      "deliverables": ["cohort.csv", "predictions.csv", "comparison.json", "report.json", "project/"]
+    }
+  ]
+}

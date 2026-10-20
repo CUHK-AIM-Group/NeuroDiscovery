@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """NeuroBench task expansion generator.
 
-Creates new task folders (T<num>_<slug>/task.md) under neurobench/ and
+Creates new task folders (T<num>_<slug>/task.md) under neurobench/tasks/ and
 registers them in neurobench/task_atlas.json. Idempotent: existing folders
 are skipped and atlas entries are not duplicated.
 
@@ -836,7 +836,7 @@ def main() -> None:
     created, skipped = [], []
     for num, slug, category, title, body in TASKS:
         folder = f"T{num}_{slug}"
-        task_dir = BENCH_DIR / folder
+        task_dir = BENCH_DIR / "tasks" / folder
         md = f"# {folder}: {title}\n{body.lstrip()}"
         if task_dir.exists():
             skipped.append(folder)

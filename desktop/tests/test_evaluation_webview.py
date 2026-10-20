@@ -14,6 +14,10 @@ PACKAGE = Path(os.environ.get("EVALUATION_WEBVIEW_PACKAGE", str(
 
 
 class WebViewLifecycleTests(unittest.TestCase):
+    def setUp(self):
+        if not (PACKAGE / "runtime/python/python.exe").is_file():
+            self.skipTest("Evaluation WebView package not built on this machine")
+
     def start_backend(self, data, port):
         return subprocess.Popen([str(PACKAGE / "runtime/python/python.exe"), "-I", "-B",
             str(PACKAGE / "evaluation-webview-server.py"), "--data", str(data), "--port", str(port)],

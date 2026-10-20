@@ -9,6 +9,8 @@ TRUTH = ROOT / "neurooracle" / "data" / "user_study" / "private_truth" / "case1_
 MIN_SCORE_GAP = 0.20
 
 
+@unittest.skipUnless(BANK.is_file() and TRUTH.is_file(),
+                     "Frozen v2 bank not installed on this machine")
 class StudyBankV2Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

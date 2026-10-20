@@ -1,5 +1,5 @@
 """
-NeuroClaw Skill Loader
+NeuroRuntime Skill Loader
 
 Scans skills/*/SKILL.md, parses YAML front-matter, and returns a list of
 skill descriptors.  Also discovers handler.js and Python handler files.
@@ -153,7 +153,7 @@ def _summarize_skill_text(skill_name: str, md_text: str, fallback_desc: str) -> 
 
 class SkillLoader:
     """
-    Discovers and registers NeuroClaw skills from a skills directory.
+    Discovers and registers NeuroRuntime skills from a skills directory.
 
     Parameters
     ----------
@@ -161,8 +161,9 @@ class SkillLoader:
         Directory containing one sub-folder per skill (each with SKILL.md).
     """
 
-    def __init__(self, skills_dir: Path) -> None:
+    def __init__(self, skills_dir: Path, *, include_cwd: bool = True) -> None:
         self.skills_dir = Path(skills_dir)
+        self.include_cwd = include_cwd
 
     def _candidate_skill_roots(self) -> list[Path]:
         """
@@ -175,7 +176,7 @@ class SkillLoader:
         This guarantees the default convention works without any path config:
             ./skills/<skill-name>/SKILL.md
         """
-        candidates = [Path.cwd() / "skills", self.skills_dir]
+        candidates = ([Path.cwd() / "skills"] if self.include_cwd else []) + [self.skills_dir]
         seen: set[Path] = set()
         ordered: list[Path] = []
         for c in candidates:

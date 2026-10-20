@@ -1,5 +1,5 @@
 {
-  "_comment": "NeuroClaw feature toggles. Set 'enabled: false' to disable a feature without removing its code.",
+  "_comment": "NeuroRuntime feature toggles. Set 'enabled: false' to disable a feature without removing its code.",
   "core": {
     "agent_loop": {
       "enabled": true,
@@ -11,7 +11,7 @@
     },
     "tool_runtime": {
       "enabled": true,
-      "description": "handler.js / Python handler execution sandbox"
+      "description": "Legacy standalone handler.js / Python subprocess executor; not an OS sandbox or the agent tool dispatcher"
     },
     "session_manager": {
       "enabled": true,

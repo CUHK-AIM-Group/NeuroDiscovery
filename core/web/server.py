@@ -2860,13 +2860,18 @@ def create_app() -> Any:
         with _neurooracle_download_lock:
             download = dict(_neurooracle_download_state)
         source_error = None
+        formal_revision = None
         try:
             graph_path = _neurooracle_graph_path()
             package = installed_package(REPO_ROOT)
             campaign = configured_campaign(REPO_ROOT)
             formal = formal_source(REPO_ROOT)
+            if formal is not None:
+                from core.formal_graph_evidence import FormalGraphEvidence
+                formal_revision = FormalGraphEvidence(formal[0], graph_path=formal[1]).status()
         except (ValueError, OSError) as exc:
             graph_path, package, campaign, formal, source_error = KG_PATH, None, None, None, str(exc)
+            formal_revision = None
         exists = graph_path.exists()
         stat = graph_path.stat() if exists else None
         return {
@@ -2882,7 +2887,7 @@ def create_app() -> Any:
             "installation_error": source_error,
             "installation_release": package.manifest.get('release_id') if package else None,
             "graph_revision": (package.graph_revision if package else
-                               json.loads(formal[0].read_text(encoding='utf-8'))['canonical_files']['knowledge_graph']['sha256'] if formal else None),
+                               formal_revision['graph_revision'] if formal_revision else None),
             "evidence_source": 'formal_current_graph' if formal else 'accepted_current_graph' if campaign else None,
             "evidence_configured": source_error is None and (campaign is not None or formal is not None),
             "evidence_install_required": exists and source_error is None and campaign is None and formal is None,

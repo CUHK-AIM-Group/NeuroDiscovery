@@ -10,8 +10,11 @@ from core.web.build_discovery_pilot_v13 import HERE, PARENT, PARENT_SHA, EVIDENC
 from core.web.discovery_study import DiscoveryStudy
 
 ROOT = HERE.parents[2]
+RUN = ROOT / ".codex_tmp/supplemental_two_case_full_nd_20260914_v1/paper_ready"
 
 
+@unittest.skipUnless((RUN / "hypothesis_ledger.json").is_file(),
+                     "Frozen execution ledger not installed on this machine")
 class NextResearchTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

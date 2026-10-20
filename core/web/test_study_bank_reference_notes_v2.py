@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from core.web.build_study_bank_reference_notes_v2 import (
-    BANK, BANK_SHA256, JIF_TABLE, TARGET, build, canonical_journal,
+    BANK, BANK_SHA256, CORPUS, JIF_TABLE, TARGET, build, canonical_journal,
     _extract_cohort, _extract_p_value, _reference_key,
 )
 
@@ -20,6 +20,8 @@ _SPEC.loader.exec_module(_MODULE)
 JIF_STATUSES = {"reported_online_search", "not_applicable", "not_available", "not_verified"}
 
 
+@unittest.skipUnless(BANK.is_file() and CORPUS.is_file() and JIF_TABLE.is_file(),
+                     "Frozen reference-note inputs not installed on this machine")
 class BuilderV2Tests(unittest.TestCase):
     def test_notes_on_disk_match_deterministic_rebuild(self):
         doc = build()
@@ -79,6 +81,7 @@ class BuilderV2Tests(unittest.TestCase):
         self.assertEqual(canonical_journal("medRxiv; published=10.1016/j.x.2026.1"), "medrxiv")
 
 
+@unittest.skipUnless(TARGET.is_file(), "Reference notes sidecar not built on this machine")
 class ServiceV2Tests(unittest.TestCase):
     def test_newest_sidecar_wins_with_older_fallback(self):
         with tempfile.TemporaryDirectory() as temp:

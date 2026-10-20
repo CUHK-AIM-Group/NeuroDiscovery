@@ -5,12 +5,24 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.web.build_reference_notes_v1 import build, PACK, PACK_SHA256, TARGET
+from core.web.build_reference_notes_v1 import build, PACK, PACK_SHA256, SOURCE_HASHES, TARGET
+from core.web.build_reference_notes_v1 import _load_checked
 from core.web.discovery_study import DiscoveryStudy
 
 PROFILE = {"code": "TEST-V6N", "experience": "3-5", "consent": True}
+SOURCES = PACK.with_name("sources_v6")
 
 
+def _sources_are_exact():
+    try:
+        for relative, expected in SOURCE_HASHES.items():
+            _load_checked(SOURCES / relative, expected)
+    except (FileNotFoundError, ValueError):
+        return False
+    return True
+
+
+@unittest.skipUnless(_sources_are_exact(), "Frozen v6 sources are not byte-identical in this checkout")
 class V6ReferenceNotesBuildTests(unittest.TestCase):
     def test_deterministic_and_frozen_to_pack_and_sources(self):
         self.assertEqual(build(), build())

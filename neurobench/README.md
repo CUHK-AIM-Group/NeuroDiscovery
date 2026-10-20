@@ -6,6 +6,15 @@ The complete mapping of task directories to categories is in [`task_atlas.json`]
 
 These execution tasks are distinct from the manuscript's nine scientific autoresearch tasks and its temporal evaluation of hypothesis generation (hindcasting).
 
+## Directory layout
+
+- `tasks/`: the 500 task definitions; task IDs and contents are unchanged.
+- `runner/`: campaign drivers, scoring and offline execution qualification.
+- `tests/`: harness regression tests, run with `python -m pytest --layer benchmark`.
+- `task_atlas.json`: category mapping shared by the task registry.
+
+Run the campaign CLI with `python -m neurobench.runner.campaign --help`.
+
 ## Task registry (T01–T500)
 
 All 500 tasks are assigned to seven categories:
@@ -40,60 +49,16 @@ In practice, `task.md` is the instruction file for evaluation. It defines:
 
 ## Benchmark Usage
 
-You can run NeuroDiscovery's execution-task benchmark through NeuroRuntime in two ways:
-
-NeuroBench accepts the following benchmark configurations:
-- `with-skills`: the agent may use loaded skills from `skills/`
-- `no-skills`: baseline run with skills disabled
-- paired comparison: `--benchmark-compare-skills` runs both variants for the same task set
-
-Benchmark scoring is handled separately with `--score-benchmark`. It reads reports in `output/`, applies a GPT-5.4 weighted rubric, and generates numeric scores for planning completeness, tool/skill reasonableness, and command/code correctness. For fairness, each task case is jointly scored across all comparable models in one batch to reduce scoring-standard drift. Skill-call counts are tracked separately for efficiency analysis.
-
-These rubric scores describe the evaluated reports. Execution completion, artifact validity, numerical correctness and reproducibility must be established from the corresponding run logs, outputs and verification records. The scoring rubric alone does not establish those execution outcomes.
-
-To score existing benchmark reports:
 ```bash
-python core/agent/main.py --score-benchmark
+python -m neurobench.runner.campaign --help
+python -m neurobench.runner.codex500 --help
+python -m neurobench.runner.scoring --output-root dev/outputs/selected-run --workers 8
+python -m pytest --layer benchmark
 ```
 
-To speed up scoring on larger runs:
-```bash
-python core/agent/main.py --score-benchmark --score-workers 8
-```
+`scoring.py` owns shared task/report parsing, the existing weighted scoring rubric and leaderboard generation. Report parsing requires no agent initialization. Actual model grading uses the configured backend; historical reports and frozen execution snapshots remain unchanged.
 
-### Web benchmark mode
-```bash
-python core/agent/main.py --web --benchmark
-```
-
-### CLI benchmark batch mode
-```bash
-python core/agent/main.py --benchmark
-```
-
-Paired skill comparison in CLI mode:
-```bash
-python core/agent/main.py --benchmark --benchmark-compare-skills
-```
-
-In CLI benchmark mode, NeuroRuntime will ask for:
-- the benchmark directory path
-- the model name to evaluate
-
-Then it will:
-- recursively read every `task.md` under the selected benchmark directory
-- sort tasks alphabetically by task folder name
-- execute each task in sequence without asking for intermediate confirmation
-- show progress in the terminal only
-- save one report per task to `output/<case_id>_<model_name>.md`
-
-Each report includes the solution thinking, the skills used, skill-call counts, and the commands or code that were used or suggested.
-
-
-Example:
-```bash
-cat T73_xcpd_denoising/task.md
-```
+The Web benchmark response mode remains available with `python core/agent/main.py --web --benchmark`. Batch execution and scoring use the modules above.
 
 ## Scope
 
@@ -119,6 +84,8 @@ Evaluation emphasis across scope:
 - Reproducibility readiness: are logs, parameters, and outputs auditable
 
 ## Next
+
+Eight executable research-delivery development cases have been tested with GPT-6.1-Sol and DeepSeek V4.1 Flash under one NR OFF/ON comparison. They are separate from the 500-task proposal registry. The [twelve-case design](designs/execution_tasks.json) includes four remaining cases that are not execution-qualified. See [the current engineering guide, section 17.8](../docs/NEURORUNTIME_ENGINEERING.md#178-首批困难题的双模型开发测试) for inputs, actual budgets, original verdicts, supplemental public-protocol review, known evaluator defects and limitations. Local evidence is under `dev/runs/benchmark_hard_trial_20261020_r1/`; do not resume its frozen controller or resend failed/unknown inputs.
 
 Next additions will focus on **Model Executability and Reproducibility** tasks.
 

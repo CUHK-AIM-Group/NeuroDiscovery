@@ -14,18 +14,35 @@ from core.web.build_evaluation_assignments_v12 import (
 from core.web.discovery_study import DiscoveryStudy
 from core.web.evaluation_export import ranking_export
 
+RANKING_INPUTS = (
+    RANKING / "case1_tcp_expert_study_v2.json",
+    RANKING / "case1_tcp_expert_pair_assignments_v3.json",
+)
+HE1_INPUTS = (
+    MATERIALS / "cs1_discovery_pilot_v10.json",
+    MATERIALS / "cs1_discovery_assignments_v5.json",
+    HE1_TARGET,
+)
+HE2_INPUTS = RANKING_INPUTS + (
+    RANKING / "case1_tcp_expert_pair_assignments_v2.json",
+)
+
 spec = importlib.util.spec_from_file_location("ranking_assignments_v12_test", RANKING.parents[1] / "src/user_study.py")
 ranking = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ranking)
 
 
 class AssignmentTableTests(unittest.TestCase):
+    @unittest.skipUnless(all(path.is_file() for path in HE1_INPUTS + HE2_INPUTS),
+                         "Frozen evaluation inputs not installed on this machine")
     def test_builds_are_reproducible_and_equal_to_the_release(self):
         self.assertEqual(build_he1(), build_he1())
         self.assertEqual(build_he2(), build_he2())
         self.assertEqual(build_he1(), json.loads(HE1_TARGET.read_bytes()))
         self.assertEqual(build_he2(), json.loads(HE2_TARGET.read_bytes()))
 
+    @unittest.skipUnless(all(path.is_file() for path in HE1_INPUTS),
+                         "Frozen HE1 inputs not installed on this machine")
     def test_he1_thirty_percent_and_equal_other_topic_totals(self):
         table = build_he1()
         pack = json.loads((MATERIALS / "cs1_discovery_pilot_v10.json").read_bytes())
@@ -42,6 +59,8 @@ class AssignmentTableTests(unittest.TestCase):
         self.assertEqual(set(table["coverage"]), set(topics))
         self.assertTrue(all(table["coverage"].values()))
 
+    @unittest.skipUnless(all(path.is_file() for path in HE2_INPUTS),
+                         "Frozen HE2 inputs not installed on this machine")
     def test_he2_only_order_changes_not_membership_or_difficulty(self):
         old = json.loads((RANKING / "case1_tcp_expert_pair_assignments_v2.json").read_bytes())
         new = build_he2()
@@ -54,6 +73,8 @@ class AssignmentTableTests(unittest.TestCase):
                 self.assertEqual(set(pairs), set(old["sessions"][expert][number]))
                 self.assertEqual(Counter(difficulty[p] for p in pairs), {"easy": 4, "medium": 4, "hard": 4})
 
+    @unittest.skipUnless(all(path.is_file() for path in HE2_INPUTS),
+                         "Frozen HE2 inputs not installed on this machine")
     def test_every_pair_once_per_band_and_exact_two_if_prefix_eight(self):
         positions = defaultdict(list)
         prefix = Counter()
@@ -67,6 +88,8 @@ class AssignmentTableTests(unittest.TestCase):
         self.assertEqual(set(prefix.values()), {2})
         self.assertEqual(len(prefix), 240)
 
+    @unittest.skipUnless(all(path.is_file() for path in HE2_INPUTS),
+                         "Frozen HE2 inputs not installed on this machine")
     def test_bad_order_or_membership_rejected(self):
         original = build_he2()
         ranking.validate_prebalanced_pair_table(original)
@@ -91,6 +114,8 @@ class AssignmentServiceTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)
 
+    @unittest.skipUnless(all(path.is_file() for path in HE1_INPUTS),
+                         "Frozen HE1 inputs not installed on this machine")
     def test_he1_keeps_existing_shuffle_and_freezes_new_allocation(self):
         service = DiscoveryStudy(MATERIALS / "cs1_discovery_pilot_v10.json", self.directory / "he1", record_kind="test")
         with patch("core.web.discovery_study.secrets.SystemRandom") as rng:
@@ -103,6 +128,8 @@ class AssignmentServiceTests(unittest.TestCase):
         self.assertEqual(view["session"]["allocation_revision"], HE1_REVISION)
         self.assertEqual(service.get(view["session"]["id"], view["session_token"])["session"], view["session"])
 
+    @unittest.skipUnless(all(path.is_file() for path in HE1_INPUTS),
+                         "Frozen HE1 inputs not installed on this machine")
     def test_he1_preexisting_six_case_allocation_is_not_changed(self):
         old = json.loads((MATERIALS / "cs1_discovery_assignments_v5.json").read_bytes())
         with patch("core.web.discovery_study.load_assignments", return_value=old):
@@ -120,6 +147,8 @@ class AssignmentServiceTests(unittest.TestCase):
         args.update(extra)
         return service.create_session(**args)
 
+    @unittest.skipUnless(all(path.is_file() for path in HE2_INPUTS),
+                         "Frozen HE2 inputs not installed on this machine")
     def test_he2_all_sixty_sessions_follow_exact_frozen_order(self):
         service = ranking.UserStudyService(self.directory / "he2")
         expected = build_he2()
@@ -133,6 +162,8 @@ class AssignmentServiceTests(unittest.TestCase):
                 self.assertEqual(restored["pairs"], view["pairs"])
                 self.assertEqual(restored["events"][0]["payload"]["pair_order_policy"], HE2_POLICY)
 
+    @unittest.skipUnless(all(path.is_file() for path in HE2_INPUTS),
+                         "Frozen HE2 inputs not installed on this machine")
     def test_he2_existing_session_and_preview_keep_original_order(self):
         service = ranking.UserStudyService(self.directory / "he2")
         old = json.loads((RANKING / "case1_tcp_expert_pair_assignments_v2.json").read_bytes())
@@ -146,6 +177,8 @@ class AssignmentServiceTests(unittest.TestCase):
         self.assertEqual([p["pair_id"] for p in preview["pairs"]],
                          [p["pair_id"] for p in bank["pair_schedule"] if p["session_number"] == 1])
 
+    @unittest.skipUnless(all(path.is_file() for path in HE2_INPUTS),
+                         "Frozen HE2 inputs not installed on this machine")
     def test_he2_legacy_table_still_loads_and_export_preserves_order(self):
         legacy = RANKING / "case1_tcp_external_expert_study_v1.json"
         import hashlib

@@ -68,6 +68,8 @@ def build():
     pack = copy.deepcopy(json.loads(raw_parent))
     catalog = json.loads((HERE / "cs1_discovery_en_v14.json").read_bytes())
     translations = catalog["strings"]
+    for entry in LABELS:
+        translations[entry["zh"]] = entry["en"]
     pack["questions"] = [question for question in pack["questions"] if question["id"] != "feedback"]
     for question in pack["questions"]:
         entries = {"grounding": GROUNDING, "validation": EXECUTION}.get(question["id"])
@@ -92,6 +94,8 @@ def build():
         entry = mapping[card["id"]]
         kind = entry.get("topic", "connectivity")
         paragraphs = {"imaging_genetics": GENETICS, "prognosis": PROGNOSIS, "connectivity": CONNECTIVITY}[kind]
+        for paragraph in paragraphs:
+            translations[paragraph["zh"]] = paragraph["en"]
         if kind != "connectivity":
             records = [row for row in ledger if row["configuration"]["hypothesis_id"] == entry["hypothesis_id"]
                        and row["configuration"]["seed"] == entry["seed"]]
