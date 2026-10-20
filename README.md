@@ -214,54 +214,44 @@ The installed host-agent skill retains its compatibility name, `neuroclaw`. Afte
 
 > Benchmark output files under `materials/benchmark_results/` are historical run artifacts. See their [coverage and scoring notes](materials/benchmark_results/README.md) before comparing them with a newer task registry.
 
+### Development installation and tests
+
+Install the runtime with `python -m pip install -e .`. Dependencies and test
+scopes are declared in `pyproject.toml`; CI uses the same layer commands:
+
+| Layer | Install | Test scope |
+| --- | --- | --- |
+| Runtime | `python -m pip install -e ".[test-runtime]"` | `python -m pytest --layer runtime` |
+| Models | `python -m pip install -e ".[test-models]"` | `python -m pytest --layer models` |
+| Graph | `python -m pip install -e ".[test-graph]"` | `python -m pytest --layer graph` |
+| Benchmark infrastructure | `python -m pip install -e ".[test-benchmark]"` | `python -m pytest --layer benchmark` |
+
+Install `.[test-all]` and run `python -m pytest` for all four layers. Explicit
+file paths and node IDs still work. Runtime covers the agent, Web backend,
+desktop Python checks and method-design tests; research scripts under
+`core/scripts/` remain explicit-path tests. Graph covers an explicit list of
+current graph contracts: loading, schema, identity, evidence, Case Study scopes,
+hypotheses and KGE. Historical campaign and research experiment tests remain
+available by explicit file path and are excluded from the default suite.
+Full-graph task integration tests additionally require `--live-graph` and
+enough memory to load the published graph; synthetic unit tests run by default.
+Benchmark tests check the runner and receipts, rather than start
+a benchmark campaign; retained-packet checks skip when local packets are absent.
+Electron/Node GUI tests remain in the desktop npm commands.
+
 ### Benchmark Evaluation
 
-The 500 neuroimaging execution tasks live under `neurobench/`. Each task directory contains a `task.md` instruction file, and [task_atlas.json](neurobench/task_atlas.json) assigns every task to one of seven categories. NeuroBench remains the name used by the existing benchmark interface.
+The 500 task definitions live in `neurobench/tasks/`; [task_atlas.json](neurobench/task_atlas.json) maps them to seven categories.
 
-NeuroBench currently accepts these benchmark configurations:
-- `with-skills`: the agent can use the skills loaded from `skills/`
-- `no-skills`: the baseline run without skills
-- `with-skills` + `no-skills` paired comparison: enable `--benchmark-compare-skills` to run both variants for the same task set
+Benchmark code is in `neurobench/runner/`. Use the campaign CLI for harness comparisons, the Codex CLI runner for the existing 500-task protocol, and the shared scorer for existing reports:
 
-Benchmark scoring is handled separately with `--score-benchmark`: it reads reports in `output/`, applies a GPT-5.4 weighted rubric, and generates numeric scores for planning completeness, tool/skill reasonableness, and command/code correctness. For fairness, each task case is scored in one batch across all comparable models to reduce scoring-standard drift. Skill-call counts are recorded separately and used for efficiency analysis.
-
-To score existing benchmark reports:
 ```bash
-python core/agent/main.py --score-benchmark
+python -m neurobench.runner.campaign --help
+python -m neurobench.runner.codex500 --help
+python -m neurobench.runner.scoring --output-root dev/outputs/selected-run --workers 8
 ```
 
-To speed up scoring on larger runs:
-```bash
-python core/agent/main.py --score-benchmark --score-workers 8
-```
-
-**Web benchmark mode**
-```bash
-python core/agent/main.py --web --benchmark
-```
-
-**CLI benchmark batch runner**
-```bash
-python core/agent/main.py --benchmark
-```
-
-To run the paired skill comparison in CLI mode:
-```bash
-python core/agent/main.py --benchmark --benchmark-compare-skills
-```
-
-In CLI benchmark mode, NeuroRuntime will ask for:
-- the benchmark directory path
-- the benchmark model name
-
-Then it will:
-- read all `task.md` files recursively from that directory
-- sort tasks alphabetically by task folder name
-- run tasks one by one without asking for intermediate confirmation
-- print progress in the terminal only
-- save reports under `output/<model_name>/`, with one markdown report per case and run
-
-The benchmark reports include the solution thinking, skills used, skill-call counts, and the commands or code that were used or suggested.
+The scorer preserves the existing weighted rubric and report format. Model grading uses the configured backend. The Web response mode remains available with `python core/agent/main.py --web --benchmark`.
 
 ---
 

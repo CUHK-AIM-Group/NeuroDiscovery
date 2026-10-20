@@ -210,56 +210,39 @@ python installer/install_agent_integration.py --target codex
   <img src="materials/index.png" alt="NeuroDiscovery 功能概览" style="width: 80%; max-width: 100%;" />
 </div>
 
-### Benchmark 测试
+### 开发安装与分层测试
 
-500 项神经影像执行任务位于 `neurobench/`，每个任务目录都包含一个 `task.md` 指令文件，[task_atlas.json](neurobench/task_atlas.json) 将全部任务映射到七个类别。已有 benchmark 接口继续使用 NeuroBench 名称。
+基础运行环境使用 `python -m pip install -e .` 安装。依赖与测试范围统一定义在
+`pyproject.toml`，本地与 CI 使用相同入口：
 
-`materials/benchmark_results/` 中保留的是历史运行产物。使用前请阅读其[任务覆盖与评分说明](materials/benchmark_results/README.md)，确认结果对应的任务集版本。
+| 层 | 安装 | 测试 |
+| --- | --- | --- |
+| 运行层 | `python -m pip install -e ".[test-runtime]"` | `python -m pytest --layer runtime` |
+| 模型层 | `python -m pip install -e ".[test-models]"` | `python -m pytest --layer models` |
+| 图谱层 | `python -m pip install -e ".[test-graph]"` | `python -m pytest --layer graph` |
+| Benchmark 基础设施 | `python -m pip install -e ".[test-benchmark]"` | `python -m pytest --layer benchmark` |
 
-NeuroBench 目前接受以下几种测试设定：
-- `with-skills`：Agent 可以使用 `skills/` 目录中加载的技能
-- `no-skills`：不启用技能的基线测试
-- `with-skills` + `no-skills` 配对对比：使用 `--benchmark-compare-skills` 对同一批任务同时运行两种设定
+安装 `.[test-all]` 后运行 `python -m pytest`，默认覆盖四层；也可指定单个测试文件。
+运行层包含 Agent、Web、桌面 Python 检查及方法设计测试；`core/scripts/` 的研究脚本测试
+按路径单独执行。图谱层使用明确的当前功能清单，覆盖加载、结构、身份、证据、Case Study
+范围、假设和 KGE；历史轮次与研究实验测试保留按文件路径运行，不进入默认测试。
+加载完整正式图谱的任务集成测试需显式添加 `--live-graph` 并准备足够内存，合成数据单元测试默认运行。
+Benchmark 测试不启动正式评测，缺少本地
+历史包时相关检查会明确跳过。Electron/Node 界面测试仍使用桌面的 npm 命令。
 
-评分阶段使用 `--score-benchmark` 单独完成：它会读取 `output/` 里的报告，使用 GPT-5.4 的加权评分规则，为计划完整性、工具/技能使用合理性以及命令/代码正确性生成分数。为保证公平，同一 task 会把所有可比模型放在同一批次联合打分，尽量降低评分标准漂移。报告里会单独记录 skill 调用次数，用于效率分析。
+### Benchmark 评测
 
-要对已有报告进行打分：
+500 个任务定义位于 `neurobench/tasks/`，[task_atlas.json](neurobench/task_atlas.json) 记录七类任务的映射。
+
+执行代码统一在 `neurobench/runner/`：campaign 用于 harness 对比，codex500 保留现有 500 任务协议，scoring 对已有报告评分：
+
 ```bash
-python core/agent/main.py --score-benchmark
+python -m neurobench.runner.campaign --help
+python -m neurobench.runner.codex500 --help
+python -m neurobench.runner.scoring --output-root dev/outputs/selected-run --workers 8
 ```
 
-如果希望在较大规模结果上加速打分：
-```bash
-python core/agent/main.py --score-benchmark --score-workers 8
-```
-
-**Web benchmark 模式**
-```bash
-python core/agent/main.py --web --benchmark
-```
-
-**命令行 benchmark 批处理模式**
-```bash
-python core/agent/main.py --benchmark
-```
-
-如果要在命令行下运行成对的 skill 对比测试：
-```bash
-python core/agent/main.py --benchmark --benchmark-compare-skills
-```
-
-在命令行 benchmark 模式下，NeuroRuntime 会先询问：
-- benchmark 目录路径
-- benchmark 模型名
-
-然后会自动：
-- 递归读取该目录下所有 `task.md`
-- 按任务文件夹名称字母顺序排序
-- 逐个执行任务，中途不再要求用户确认
-- 终端中只显示执行进度
-- 报告按模型名保存到 `output/<model_name>/` 目录下，并为每个 case 与 run 分别生成 markdown 报告
-
-报告会包含思路、使用的技能、skill 调用次数，以及实际使用或建议的命令/代码。
+评分权重和报告格式保持原样。模型评分使用当前配置的后端。Web 回答模式仍可使用 `python core/agent/main.py --web --benchmark`。
 
 ---
 
