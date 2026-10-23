@@ -1,4 +1,4 @@
-"""Shared contracts for NeuroClaw model skills."""
+"""Shared contracts for NeuroRuntime model skills."""
 
 from .artifacts import RunArtifacts
 from .data import TabularData, load_tabular_csv, make_splits

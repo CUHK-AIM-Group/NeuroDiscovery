@@ -1,6 +1,6 @@
 ---
 name: dmt-har-med-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the DMT-HAR-MED dataset (ds006644), including download, BIDS organization, and processing of rs-fMRI data from a psychedelic intervention study. Triggers include: 'DMT-HAR-MED', 'DMT HAR MED', 'ds006644', 'process DMT data', 'psychedelic fMRI', or any request to run the DMT-HAR-MED pipeline. This is the NeuroClaw dataset-orchestration layer for DMT-HAR-MED."
+description: "Use this skill whenever the user wants an end-to-end workflow for the DMT-HAR-MED dataset (ds006644), including download, BIDS organization, and processing of rs-fMRI data from a psychedelic intervention study. Triggers include: 'DMT-HAR-MED', 'DMT HAR MED', 'ds006644', 'process DMT data', 'psychedelic fMRI', or any request to run the DMT-HAR-MED pipeline. This is the NeuroRuntime dataset-orchestration layer for DMT-HAR-MED."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -12,7 +12,7 @@ dependencies:
 # DMT-HAR-MED Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`dmt-har-med-skill` is the NeuroClaw orchestration skill for the **DMT-HAR-MED** dataset (OpenNeuro ds006644).
+`dmt-har-med-skill` is the NeuroRuntime orchestration skill for the **DMT-HAR-MED** dataset (OpenNeuro ds006644).
 
 DMT-HAR-MED contains rs-fMRI data from 40 participants in a psychedelic intervention study investigating the effects of N,N-Dimethyltryptamine (DMT) on brain function. The dataset includes multiple experimental conditions (DMT, placebo) and behavioral/physiological measurements.
 
@@ -25,7 +25,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract DMT-HAR-MED phenotype data (intervention conditions, behavioral measures).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

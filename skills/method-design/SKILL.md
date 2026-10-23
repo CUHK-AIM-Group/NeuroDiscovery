@@ -1,6 +1,6 @@
 ---
 name: method-design
-description: "Use this skill whenever the user wants to formalize a network architecture and derive theoretical components from a research idea. Triggers include: 'method design', 'design method', 'network architecture', 'formula derivation', 'method-design', 'theoretical framework', 'derive equations', 'compare alternatives', 'architecture tournament', 'rank designs', 'design space exploration', or any request to transform IDEA.md into a detailed METHOD.md. This skill is the **mandatory interface-layer method formalizer** in NeuroClaw: it reads IDEA.md, optionally drafts N alternative architectures and ranks them via a Bradley-Terry pairwise tournament (Tournament Mode), designs concrete network structures (layers, modules, connections), performs mathematical derivations (equations, loss functions, proofs), and always outputs a structured METHOD.md."
+description: "Use this skill whenever the user wants to formalize a network architecture and derive theoretical components from a research idea. Triggers include: 'method design', 'design method', 'network architecture', 'formula derivation', 'method-design', 'theoretical framework', 'derive equations', 'compare alternatives', 'architecture tournament', 'rank designs', 'design space exploration', or any request to transform IDEA.md into a detailed METHOD.md. This skill is the **mandatory interface-layer method formalizer** in NeuroRuntime: it reads IDEA.md, optionally drafts N alternative architectures and ranks them via a Bradley-Terry pairwise tournament (Tournament Mode), designs concrete network structures (layers, modules, connections), performs mathematical derivations (equations, loss functions, proofs), and always outputs a structured METHOD.md."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
 skill_type: workflow
@@ -10,7 +10,7 @@ dependencies:
 # Method Design
 
 ## Overview
-This skill implements the **Framework Formalization & Theoretical Derivation** process for the NeuroClaw method-design phase.
+This skill implements the **Framework Formalization & Theoretical Derivation** process for the NeuroRuntime method-design phase.
 
 It acts as the Method Architect within the multi-agent framework:
 - Reads the latest **IDEA.md** from the workspace.
@@ -53,7 +53,7 @@ instead of single-shot architecture selection.
 1. Generate all C(N,2) unordered pairs (capped at 300 for cost)
 2. For each pair, prompt an LLM judge with the criteria in
    `scripts/tournament.py::ARCHITECTURE_JUDGE_SYSTEM_PROMPT`
-   (soundness > novelty > tractability > NeuroClaw compatibility > falsifiability)
+   (soundness > novelty > tractability > NeuroRuntime compatibility > falsifiability)
 3. Aggregate verdicts into a Bradley-Terry strength score via
    `choix.ilsr_pairwise` (alpha=0.1)
 4. Pick top-1 for downstream Step 3 (formula derivation)
@@ -101,7 +101,7 @@ judge criteria, no Edison platform dependency.
 - `paper-writing` → consumes METHOD.md
 
 ## Reference
-NeuroClaw architecture (section 1.5 method-design skill).  
+NeuroRuntime architecture (section 1.5 method-design skill).
 Flow: IDEA.md parsing → architecture design → equation derivation → pseudocode → METHOD.md  
 
 Created At: 2026-03-24 00:00 HKT

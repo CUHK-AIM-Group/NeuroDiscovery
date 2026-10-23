@@ -13,7 +13,7 @@ dependencies:
 
 CONN is a MATLAB/SPM-based toolbox for comprehensive functional and effective connectivity analysis. It excels at ROI-to-ROI, seed-to-voxel, ICA-based network analysis, and psychophysiological interaction (PPI/gPPI) as well as Dynamic Causal Modeling (DCM).
 
-This skill serves as the **NeuroClaw interface-layer wrapper** for the CONN Toolbox and strictly follows the hierarchical design:
+This skill serves as the **NeuroRuntime interface-layer wrapper** for the CONN Toolbox and strictly follows the hierarchical design:
 
 1. Check whether CONN Toolbox and dependencies (MATLAB + SPM) are installed.
 2. If missing → invoke `dependency-planner` to generate a safe installation plan.
@@ -73,7 +73,7 @@ For benchmark-style prompts, do not force the full CONN project workflow when th
 - When the task provides an explicit benchmark output directory, preserve that exact output contract instead of writing into generic CONN project folders or ad hoc subject-local directories.
 - Only use the full CONN Toolbox route as the default when the prompt explicitly asks for CONN, seed-to-voxel analysis, ICA, PPI/gPPI, DCM, or other advanced CONN-native workflows.
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 ```python
 # conn_wrapper.py (placed inside the skill folder for reference)
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
 - Official CONN Toolbox Website: https://web.conn-toolbox.org/
 - CONN Documentation: https://web.conn-toolbox.org/documentation
-- Aligned with NeuroClaw modality-skill pattern (see `fmri-skill`, `eeg-skill`).
+- Aligned with NeuroRuntime modality-skill pattern (see `fmri-skill`, `eeg-skill`).
 
 ## Post-Execution Verification (Harness Integration)
 

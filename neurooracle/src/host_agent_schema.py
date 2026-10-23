@@ -1,7 +1,7 @@
 """Schemas for host-agent-driven NeuroOracle autoresearch.
 
 The host-agent mode lets Codex, Claude Code, Cursor, or another installed host
-agent use its own reasoning model while NeuroClaw owns the run state and
+agent use its own reasoning model while NeuroDiscovery owns the run state and
 auditable file protocol.
 """
 

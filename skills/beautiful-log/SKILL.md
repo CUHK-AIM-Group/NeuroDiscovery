@@ -1,6 +1,6 @@
 ---
 name: beautiful-log
-description: "Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroClaw <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored message cards for each side."
+description: "Use this skill after a conversation or task is completed when the user wants a clean, beautiful HTML chat log. It keeps only direct NeuroRuntime <-> User dialogue, filters out tool calls / internal traces / SKILL.md reading notes, and renders distinct colored message cards for each side."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -14,9 +14,9 @@ dependencies: []
 It is designed for research logging and progress tracking, while removing noisy execution traces.
 
 This skill:
-- Keeps only direct dialogue between **User** and **NeuroClaw**.
+- Keeps only direct dialogue between **User** and **NeuroRuntime**.
 - Filters out tool/system/internal content (for example: tool calls, file-read traces, SKILL.md parsing notes, hidden reasoning traces).
-- Renders a polished HTML page with **different background colors** for User and NeuroClaw messages.
+- Renders a polished HTML page with **different background colors** for User and NeuroRuntime messages.
 - Preserves message order and basic formatting (line breaks, code blocks as plain text).
 
 ## When to Call This Skill
@@ -31,7 +31,7 @@ This skill:
 4. Remove internal/tool/system traces.
 5. Generate HTML cards:
    - User: warm light background card.
-   - NeuroClaw: cool light background card.
+   - NeuroRuntime: cool light background card.
 6. Save output HTML to user-specified location.
 7. Return summary: kept messages, filtered messages, output path.
 
@@ -48,7 +48,7 @@ Example:
 python skills/beautiful-log/scripts/beautiful_log.py \
   --input logs/session_2026-04-05.jsonl \
   --output logs/session_2026-04-05_beautiful.html \
-  --title "NeuroClaw Session Log"
+  --title "NeuroRuntime Session Log"
 ```
 
 ## Safety and Data Rules

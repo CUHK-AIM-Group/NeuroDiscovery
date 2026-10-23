@@ -13,7 +13,7 @@ dependencies:
 
 ## Overview
 
-`brain-age-modeling` is a leakage-safe task workflow over NeuroClaw regression
+`brain-age-modeling` is a leakage-safe task workflow over NeuroRuntime regression
 estimators. It trains predicted-age models, fits age-bias correction on each
 training fold, and exports held-out raw age, corrected age, and Brain-PAD.
 

@@ -206,7 +206,7 @@ Common targets:
 | Cursor | `python installer/install_agent_integration.py --target cursor --scope project` |
 | Multiple agents | `python installer/install_agent_integration.py --target all` |
 
-The installed host-agent skill retains its compatibility name, `neuroclaw`. After installation, ask the host agent to **use NeuroClaw** or **enter NeuroClaw mode** for neuroimaging, NeuroOracle, NeuroBench, and autoresearch tasks.
+The installed host-agent skill retains its compatibility name, `neuroclaw`. After installation, ask the host agent to **use NeuroRuntime** or **enter NeuroRuntime mode** for neuroimaging, NeuroOracle, NeuroBench, and autoresearch tasks.
 
 <div align="center">
   <img src="materials/index.png" alt="NeuroDiscovery Feature Overview" style="width: 80%; max-width: 100%;" />

@@ -12,7 +12,7 @@ dependencies:
 
 ## Overview
 
-`brain-visualization` is the NeuroClaw skill for turning processed neuroimaging outputs into publication-friendly figures and 3D assets.
+`brain-visualization` is the NeuroRuntime skill for turning processed neuroimaging outputs into publication-friendly figures and 3D assets.
 
 It focuses on three common visualization tasks drawn from the methods demonstrated in the referenced rs-fMRI tutorial:
 - 3D brain connectivity visualization from atlas coordinates and ROI-to-ROI connectivity matrices

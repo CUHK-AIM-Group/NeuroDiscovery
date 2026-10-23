@@ -1,6 +1,6 @@
-"""Com-BrainTF training reference — NeuroClaw edition.
+"""Com-BrainTF training reference — NeuroRuntime edition.
 
-Demonstrates the complete training loop for Com-BrainTF with NeuroClaw data.
+Demonstrates the complete training loop for Com-BrainTF with NeuroRuntime data.
 Auto-derives community partitions from atlas (Yeo 7-net for Schaefer, lobe for
 AAL, hash fallback otherwise) and supports classification + regression with
 stratified K-fold CV.

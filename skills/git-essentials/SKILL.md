@@ -9,9 +9,9 @@ dependencies: []
 
 ## Overview
 
-`git-essentials` is the **NeuroClaw base skill** for all version control operations. It provides the essential Git commands for initializing repositories, staging, committing, branching, merging, working with remotes, viewing history, undoing changes, stashing, rebasing, tagging, and common daily workflows.
+`git-essentials` is the **NeuroRuntime base skill** for all version control operations. It provides the essential Git commands for initializing repositories, staging, committing, branching, merging, working with remotes, viewing history, undoing changes, stashing, rebasing, tagging, and common daily workflows.
 
-This skill serves as the foundation for any project that requires reproducible code management, experiment tracking, or collaboration inside NeuroClaw.
+This skill serves as the foundation for any project that requires reproducible code management, experiment tracking, or collaboration inside NeuroRuntime.
 
 **Research use only** — always combine with `git-workflows` for advanced operations.
 
@@ -426,7 +426,7 @@ git commit   # Or git merge --continue
 ```
 
 ## When to Call This Skill
-- Any time you need basic version control inside NeuroClaw
+- Any time you need basic version control inside NeuroRuntime
 - Before running `git-workflows` for advanced operations
 - When managing experiment code, paper drafts, or data processing scripts
 - After `dependency-planner` installs new tools that require Git

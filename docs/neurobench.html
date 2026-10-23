@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NeuroClaw | NeuroBench</title>
+    <title>NeuroDiscovery | NeuroBench</title>
     <meta
       name="description"
-      content="NeuroBench overview, benchmark configurations, and scoring workflow for NeuroClaw."
+      content="NeuroBench overview, benchmark configurations, and scoring workflow for NeuroDiscovery."
     />
     <meta name="theme-color" content="#0f5c57" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,9 +22,9 @@
     <div class="bg-orb orb-b"></div>
 
     <header class="topbar">
-      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
-        <img src="assets/logo.png" alt="NeuroClaw logo" />
-        <span>NeuroClaw</span>
+      <a class="brand" href="index.html" aria-label="NeuroDiscovery Home">
+        <img src="assets/logo.png" alt="NeuroDiscovery logo" />
+        <span>NeuroDiscovery</span>
       </a>
       <nav>
         <a href="index.html">Home</a>
@@ -42,7 +42,7 @@
     <main>
       <section class="hero reveal faq-intro">
         <p class="eyebrow">NeuroBench</p>
-        <h1>Benchmark evaluation for NeuroClaw</h1>
+        <h1>Benchmark evaluation for NeuroDiscovery</h1>
         <p class="lead">
           NeuroBench is the benchmark suite used to evaluate end-to-end neuroimaging workflows, reproducibility readiness, and skill-guided execution. It currently covers both data processing and model training/evaluation.
         </p>
@@ -136,7 +136,7 @@ python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
       <section class="panel reveal">
         <h2>Results</h2>
         <p class="sub">
-          Each base model is evaluated under both <em>with-skills</em> (running within the NeuroClaw framework) and <em>no-skills</em> settings. The left panel below shows overall benchmark scores; the right panel shows the score-vs-token trade-off under <em>with-skills</em>.
+          Each base model is evaluated under both <em>with-skills</em> (running within the NeuroDiscovery framework) and <em>no-skills</em> settings. The left panel below shows overall benchmark scores; the right panel shows the score-vs-token trade-off under <em>with-skills</em>.
         </p>
         <div class="figure-preview">
           <img src="assets/results.png" alt="NeuroBench results: overall scores and score-vs-token trade-off across base models" />
@@ -172,7 +172,7 @@ python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
           </table>
         </div>
         <p class="sub">
-          All ten base models improve when run within the NeuroClaw framework, with an average absolute gain of 4.74 points. The largest relative gains come from MiniMax-M2.7 (g = 0.1998), Qwen3-plus (g = 0.1558), and Claude-Sonnet-4.6 (g = 0.1450).
+          All ten base models improve when run within the NeuroDiscovery framework, with an average absolute gain of 4.74 points. The largest relative gains come from MiniMax-M2.7 (g = 0.1998), Qwen3-plus (g = 0.1558), and Claude-Sonnet-4.6 (g = 0.1450).
         </p>
       </section>
 

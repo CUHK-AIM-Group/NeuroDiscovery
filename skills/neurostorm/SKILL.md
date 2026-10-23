@@ -295,9 +295,9 @@ Or run the bundled script: `sh scripts/run_demo.sh`.
 
 ---
 
-### 5. NeuroClaw External-Repository Adapter
+### 5. NeuroRuntime External-Repository Adapter
 
-NeuroSTORM remains an external repository. NeuroClaw's path and command helper
+NeuroSTORM remains an external repository. NeuroRuntime's path and command helper
 is owned by this skill:
 
 ```text
@@ -306,7 +306,7 @@ skills/neurostorm/scripts/neuroclaw_adapter.py
 
 Set `NEUROSTORM_ROOT` or pass an explicit repository root, then use
 `locate_neurostorm` and `prepare_neurostorm_command` to construct the upstream
-command without copying NeuroSTORM source or checkpoints into NeuroClaw.
+command without copying NeuroSTORM source or checkpoints into NeuroRuntime.
 
 ---
 

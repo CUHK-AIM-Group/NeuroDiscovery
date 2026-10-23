@@ -1,3 +1,3 @@
-"""NeuroClaw Model Context Protocol services."""
+"""NeuroDiscovery Model Context Protocol services."""
 
 __all__: list[str] = []

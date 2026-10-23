@@ -17,9 +17,9 @@ complementary_skills:
 
 ## Overview
 
-`camcan-skill` is the NeuroClaw orchestration skill for the **Cam-CAN (Cambridge Centre for Ageing and Neuroscience)** dataset.
+`camcan-skill` is the NeuroRuntime orchestration skill for the **Cam-CAN (Cambridge Centre for Ageing and Neuroscience)** dataset.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills via `claw-shell`.

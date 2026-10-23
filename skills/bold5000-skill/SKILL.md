@@ -1,6 +1,6 @@
 ---
 name: bold5000-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the BOLD5000 dataset, including download, BIDS organization, and processing of task-fMRI data with visual image stimuli. Triggers include: 'BOLD5000', 'BOLD 5000', 'process BOLD5000', 'visual fMRI', or any request to run the BOLD5000 pipeline. This is the NeuroClaw dataset-orchestration layer for BOLD5000."
+description: "Use this skill whenever the user wants an end-to-end workflow for the BOLD5000 dataset, including download, BIDS organization, and processing of task-fMRI data with visual image stimuli. Triggers include: 'BOLD5000', 'BOLD 5000', 'process BOLD5000', 'visual fMRI', or any request to run the BOLD5000 pipeline. This is the NeuroRuntime dataset-orchestration layer for BOLD5000."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -13,7 +13,7 @@ dependencies:
 # BOLD5000 Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`bold5000-skill` is the NeuroClaw orchestration skill for the **BOLD5000** dataset.
+`bold5000-skill` is the NeuroRuntime orchestration skill for the **BOLD5000** dataset.
 
 BOLD5000 is a high-density repeated visual fMRI dataset with 8 participants performing 5,000-image visual recognition tasks. It is designed for studying visual object recognition and scene understanding.
 
@@ -22,7 +22,7 @@ It coordinates a fixed three-phase workflow:
 2. Prepare and validate BIDS-style data organization for downstream processing.
 3. Delegate modality pipelines to `smri-skill` and `fmri-skill`.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

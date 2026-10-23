@@ -1,6 +1,6 @@
 """Phase 1.5: Experiment infrastructure ingestion.
 
-Adds static NeuroClaw experiment components into the knowledge graph:
+Adds static NeuroDiscovery experiment components into the knowledge graph:
 - Spatial references (atlases, parcellations, voxel grids, electrode layouts)
 - Imaging/data modalities (fMRI, dMRI, sMRI, PET, MEG, EEG, genetics, clinical)
 - ML model architectures (BrainGNN, NeuroStorm, BrainLM, SwiFT, 3D-CNN, XGBoost, SVM)

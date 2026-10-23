@@ -1,6 +1,6 @@
 """FreeSurfer Processor Reference - recon-all pipeline orchestration.
 
-Distilled from the NeuroClaw freesurfer-tool SKILL.md.
+Distilled from the NeuroRuntime freesurfer-tool SKILL.md.
 Agent should consult this script instead of copying from SKILL.md directly.
 
 Usage:
@@ -81,7 +81,7 @@ def build_recon_all_command(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="NeuroClaw FreeSurfer Processor")
+    parser = argparse.ArgumentParser(description="NeuroRuntime FreeSurfer Processor")
     parser.add_argument("--input-mri", required=True, help="Path to T1w (or other) NIfTI file")
     parser.add_argument("--subjid", required=True, help="Subject ID (e.g. sub-001)")
     parser.add_argument("--subjects-dir", required=True, help="Output SUBJECTS_DIR path")

@@ -12,7 +12,7 @@ dependencies:
 
 ## Overview
 
-`cpm` is the canonical NeuroClaw implementation of Connectome Predictive
+`cpm` is the canonical NeuroRuntime implementation of Connectome Predictive
 Modeling. Edge selection is repeated independently inside every training fold.
 
 | Task | Input | Output |

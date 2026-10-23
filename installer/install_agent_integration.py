@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Install NeuroClaw as an external-agent skill pack.
+"""Install NeuroDiscovery as an external-agent skill pack.
 
 This installer creates a small "router skill" plus generated references. The
-router skill gives the host agent a NeuroClaw persona and points it to the
-local NeuroClaw repository for concrete neuroimaging, NeuroOracle, NeuroBench,
+router skill gives the host agent a NeuroRuntime persona and points it to the
+local NeuroDiscovery repository for concrete neuroimaging, NeuroOracle, NeuroBench,
 and model execution workflows.
 """
 
@@ -110,7 +110,7 @@ def _write_skill_catalog(ref_dir: Path) -> None:
     skills = _discover_skills()
     lines = [
         GENERATED_MARKER,
-        "# NeuroClaw Skill Catalog",
+        "# NeuroDiscovery Skill Catalog",
         "",
         f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}",
         f"Repository: `{_repo_path(REPO_ROOT)}`",
@@ -180,7 +180,7 @@ def _write_neurobench_catalog(ref_dir: Path) -> None:
 
 def _write_autoresearch_reference(ref_dir: Path) -> None:
     text = f"""{GENERATED_MARKER}
-# NeuroClaw AutoResearch Reference
+# NeuroDiscovery AutoResearch Reference
 
 Repository: `{_repo_path(REPO_ROOT)}`
 NeuroOracle root: `{_repo_path(NEUROORACLE_ROOT)}`
@@ -217,7 +217,7 @@ python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic -
 Then the host agent should:
 
 1. Read `<runs/host_agent_case1>/tasks/round_001_task.json`.
-2. Use its own reasoning model to act as NeuroClaw's generator, critic, and
+2. Use its own reasoning model to act as NeuroDiscovery's generator, critic, and
    experiment supervisor.
 3. Run the deterministic NeuroOracle command in the task file when useful.
 4. Write JSON to the task's `expected_result_path`.
@@ -255,26 +255,26 @@ python -m neurooracle.phase2 --diseases "Alzheimer's disease" --year-start 2025 
 
 def _write_host_agent_autoresearch_reference(ref_dir: Path) -> None:
     text = f"""{GENERATED_MARKER}
-# NeuroClaw Host-Agent AutoResearch
+# NeuroDiscovery Host-Agent AutoResearch
 
 Use this reference when Codex, Claude Code, Cursor, OpenClaw, Hermes,
 WorkBuddy, or QClaw should use its own built-in model instead of a configured
-LLM API for NeuroClaw autoresearch.
+LLM API for NeuroDiscovery autoresearch.
 
 ## Core Idea
 
-The host agent is the reasoning backend. NeuroClaw provides the repository,
+The host agent is the reasoning backend. NeuroDiscovery provides the repository,
 knowledge graph, NeuroOracle commands, NeuroBench checks, task files, result
 schemas, and run-state validation.
 
 Do not try to call the host agent as a Python API. Instead, run a file-based
 loop:
 
-1. NeuroClaw creates a JSON task.
+1. NeuroDiscovery creates a JSON task.
 2. The host agent reads the task and uses its own model to reason.
-3. The host agent runs local NeuroClaw commands when useful.
+3. The host agent runs local NeuroDiscovery commands when useful.
 4. The host agent writes a JSON result.
-5. NeuroClaw validates the result and creates the next task.
+5. NeuroDiscovery validates the result and creates the next task.
 
 ## Start A Run
 
@@ -352,7 +352,7 @@ def _write_model_workflows(ref_dir: Path) -> None:
     ] if MODELS_ROOT.exists() else []
     lines = [
         GENERATED_MARKER,
-        "# NeuroClaw Model Workflow Reference",
+        "# NeuroRuntime Model Workflow Reference",
         "",
         f"Models root: `{_repo_path(MODELS_ROOT)}`",
         "",
@@ -378,19 +378,19 @@ def _write_model_workflows(ref_dir: Path) -> None:
 
 def _write_install_prompt_reference(ref_dir: Path) -> None:
     text = f"""{GENERATED_MARKER}
-# NeuroClaw Host-Agent Installation Prompt
+# NeuroDiscovery Host-Agent Installation Prompt
 
 Use this reference when a user wants Codex, Claude Code, Cursor, OpenClaw,
-Hermes, WorkBuddy, or QClaw to install NeuroClaw for them and then operate in
-NeuroClaw mode.
+Hermes, WorkBuddy, or QClaw to install NeuroDiscovery for them and then operate in
+NeuroRuntime mode.
 
 ## Copy-Paste Prompt For Codex / Claude Code
 
 ```text
-Please install NeuroClaw on this machine and then install the NeuroClaw agent
+Please install NeuroDiscovery on this machine and then install the NeuroDiscovery agent
 integration for this host agent.
 
-Repository: https://github.com/CUHK-AIM-Group/NeuroClaw
+Repository: https://github.com/CUHK-AIM-Group/NeuroDiscovery
 Preferred local path: <choose or ask me>
 Target host agent: <codex | claude-code | cursor | openclaw | hermes | workbuddy | qclaw | all>
 
@@ -429,7 +429,7 @@ Discover or confirm:
    - If I do not specify them, use `~/data/bids` and `~/data/outputs`.
 
 Then install:
-1. Clone or update the NeuroClaw repository.
+1. Clone or update the NeuroDiscovery repository.
 2. Run the setup wizard or write `neuroclaw_environment.json` from the discovered
    answers.
 3. Validate with `python installer/setup.py --check`.
@@ -437,7 +437,7 @@ Then install:
 
    `python installer/install_agent_integration.py --target <target>`
 
-5. Verify that the generated NeuroClaw skill/rule exists and that
+5. Verify that the generated NeuroDiscovery skill/rule exists and that
    `references/skill_catalog.md`, `references/autoresearch.md`,
    `references/host_agent_autoresearch.md`, `references/neurobench_catalog.md`,
    and `references/model_workflows.md` were generated.
@@ -445,7 +445,7 @@ Then install:
    status, FSL path, FreeSurfer path, dcm2niix path, LLM provider, BIDS root,
    output root, and installed integration path.
 
-After installation, enter NeuroClaw mode for neuroimaging and autoresearch
+After installation, enter NeuroRuntime mode for neuroimaging and autoresearch
 tasks.
 ```
 
@@ -454,8 +454,8 @@ tasks.
 Use these after the setup information above is known:
 
 ```bash
-git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/setup.py
 python installer/setup.py --check
 python installer/install_agent_integration.py --target codex
@@ -478,7 +478,7 @@ python installer/install_agent_integration.py --target all --export ./dist/agent
 - Prefer inspecting the machine first over asking the user a long questionnaire.
 - Ask the user only for secrets, missing paths, or policy choices such as Docker
   versus local Python when the local state is ambiguous.
-- Never claim NeuroClaw is installed until `installer/setup.py --check` passes
+- Never claim NeuroDiscovery is installed until `installer/setup.py --check` passes
   or you clearly explain why it could not be run.
 - A newly installed skill may require a new host-agent thread/session before it
   appears in the active skill list.
@@ -489,43 +489,43 @@ python installer/install_agent_integration.py --target all --export ./dist/agent
 def _router_skill_text() -> str:
     return f"""---
 name: neuroclaw
-description: Use NeuroClaw for neuroimaging, BIDS, fMRI, DWI, sMRI, FreeSurfer, FSL, NeuroOracle, NeuroBench, brain model training, and autoresearch.
+description: Use NeuroRuntime, the execution agent inside NeuroDiscovery, for neuroimaging, BIDS, fMRI, DWI, sMRI, FreeSurfer, FSL, NeuroOracle, NeuroBench, brain model training, and autoresearch.
 ---
 
-# NeuroClaw Mode
+# NeuroRuntime Mode
 
-You are operating in NeuroClaw mode inside the host agent.
+You are operating in NeuroRuntime mode inside the host agent.
 
-NeuroClaw is a neuroscience-first research agent for executable neuroimaging
+NeuroRuntime is the execution agent inside NeuroDiscovery for neuroimaging
 workflows, reproducible model execution, NeuroOracle autoresearch, and
-NeuroBench evaluation. Use the local NeuroClaw repository as the source of
+NeuroBench evaluation. Use the local NeuroDiscovery repository as the source of
 domain capability:
 
 `{_repo_path(REPO_ROOT)}`
 
 ## Identity
 
-When this skill is active, behave as NeuroClaw:
+When this skill is active, behave as NeuroRuntime:
 
 - Focus on neuroimaging, BIDS, fMRI, DWI, sMRI, EEG/MEG, PET, FreeSurfer, FSL,
   fMRIPrep, QSIPrep, Nilearn, MNE, NeuroOracle, NeuroBench, and brain model
   execution.
 - Prefer executable workflows and reproducible commands over abstract advice.
 - Inspect generated catalogs before reading full source files.
-- Use NeuroClaw skills and scripts as implementation references.
+- Use NeuroDiscovery skills and scripts as implementation references.
 - Keep scientific claims grounded in data, graph evidence, or cited literature.
 
 ## Reference Order
 
 1. Read `references/skill_catalog.md` to choose a workflow skill.
 2. Read `references/install_prompt.md` when the user wants this host agent to
-   install NeuroClaw or enter NeuroClaw mode from a fresh machine.
+   install NeuroDiscovery or enter NeuroRuntime mode from a fresh machine.
 3. Read `references/autoresearch.md` for NeuroOracle and autoresearch.
 4. Read `references/host_agent_autoresearch.md` when this host agent should use
-   its own model as NeuroClaw's generator, critic, and experiment supervisor.
+   its own model as NeuroDiscovery's generator, critic, and experiment supervisor.
 5. Read `references/neurobench_catalog.md` for benchmark tasks.
 6. Read `references/model_workflows.md` for model training/evaluation.
-7. Read the selected full `SKILL.md` or script from the NeuroClaw repository.
+7. Read the selected full `SKILL.md` or script from the NeuroDiscovery repository.
 
 ## Common Commands
 
@@ -542,19 +542,19 @@ python installer/install_agent_integration.py --target codex
 
 ## Guardrails
 
-- Do not read every NeuroClaw skill at once. Use the catalog and then inspect the
+- Do not read every NeuroDiscovery skill at once. Use the catalog and then inspect the
   narrow skill needed for the user task.
 - Do not claim a pipeline has run unless commands were actually executed and
   outputs were checked.
 - For long jobs, state expected inputs, outputs, and runtime assumptions first.
 - If external datasets, licensed tools, API keys, or large compute are missing,
   say exactly what is missing and provide the closest reproducible dry-run path.
-- If asked to install NeuroClaw, first inspect Python, Docker, CUDA/GPU, FSL,
+- If asked to install NeuroDiscovery, first inspect Python, Docker, CUDA/GPU, FSL,
   FreeSurfer, dcm2niix, LLM provider/API-key environment variable, BIDS root,
   and output root. Use `references/install_prompt.md` as the checklist.
 - If asked to use this host agent's built-in model for autoresearch, use
   `references/host_agent_autoresearch.md` and the host-agent JSON loop. Do not
-  route that work through NeuroClaw's configured LLM API unless requested.
+  route that work through NeuroDiscovery's configured LLM API unless requested.
 """
 
 
@@ -586,19 +586,19 @@ def _install_root(target: str, scope: str) -> Path:
 
 def _cursor_rule_text(ref_dir: Path) -> str:
     return f"""---
-description: NeuroClaw mode for neuroimaging, NeuroOracle, NeuroBench, model workflows, and autoresearch.
+description: NeuroRuntime mode for neuroimaging, NeuroOracle, NeuroBench, model workflows, and autoresearch.
 globs:
   - "**/*"
 alwaysApply: false
 ---
 
-# NeuroClaw Mode
+# NeuroRuntime Mode
 
-Use NeuroClaw mode when the task involves neuroimaging, BIDS, fMRI, DWI, sMRI,
+Use NeuroRuntime mode when the task involves neuroimaging, BIDS, fMRI, DWI, sMRI,
 FreeSurfer, FSL, fMRIPrep, QSIPrep, Nilearn, MNE, NeuroOracle, NeuroBench,
 brain model training, or autoresearch.
 
-NeuroClaw repository:
+NeuroDiscovery repository:
 
 `{_repo_path(REPO_ROOT)}`
 
@@ -611,8 +611,8 @@ Before reading the full repository, inspect the generated references:
 - `{_repo_path(ref_dir / "neurobench_catalog.md")}`
 - `{_repo_path(ref_dir / "model_workflows.md")}`
 
-Behave as NeuroClaw: prioritize executable, reproducible neuroimaging workflows;
-use NeuroClaw skills and scripts as implementation references; keep scientific
+Behave as NeuroRuntime: prioritize executable, reproducible neuroimaging workflows;
+use NeuroDiscovery skills and scripts as implementation references; keep scientific
 claims grounded in data, graph evidence, or cited literature; and do not claim a
 pipeline has run unless commands were executed and outputs were checked.
 """
@@ -658,11 +658,11 @@ def _append_persona_default(target: str, scope: str) -> Path | None:
         "\n"
         f"{GENERATED_MARKER}\n"
         "For neuroscience, neuroimaging, BIDS, NeuroOracle, NeuroBench, brain model "
-        "training, and autoresearch tasks, use the installed NeuroClaw skill and "
-        "operate in NeuroClaw mode.\n"
+        "training, and autoresearch tasks, use the installed NeuroDiscovery skill and "
+        "operate in NeuroRuntime mode.\n"
     )
     existing = _read_text(memory_path)
-    if "operate in NeuroClaw mode" not in existing:
+    if "operate in NeuroRuntime mode" not in existing:
         with memory_path.open("a", encoding="utf-8") as f:
             f.write(block)
     return memory_path
@@ -676,7 +676,7 @@ def _copy_to_output(path: Path, output: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Install NeuroClaw as an external-agent skill pack.",
+        description="Install NeuroDiscovery as an external-agent skill pack.",
     )
     parser.add_argument(
         "--target",
@@ -693,7 +693,7 @@ def main() -> None:
     parser.add_argument(
         "--persona-default",
         action="store_true",
-        help="Add a small persistent NeuroClaw-mode hint where the host supports it.",
+        help="Add a small persistent NeuroRuntime-mode hint where the host supports it.",
     )
     parser.add_argument(
         "--export",
@@ -713,7 +713,7 @@ def main() -> None:
     for target in targets:
         path = _install_skill(target, args.scope)
         installed.append((target, path))
-        print(f"Installed NeuroClaw skill for {target}: {path}")
+        print(f"Installed NeuroDiscovery skill for {target}: {path}")
         if args.persona_default:
             memory_path = _append_persona_default(target, args.scope)
             if memory_path is not None:

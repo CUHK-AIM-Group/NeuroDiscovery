@@ -1,7 +1,7 @@
 """Built-in LLM provider profiles.
 
 These profiles cover providers that expose an OpenAI-compatible Chat
-Completions API. NeuroClaw keeps their provider names for UI/benchmark
+Completions API. NeuroRuntime keeps their provider names for UI/benchmark
 reporting, while the core request path reuses the OpenAI SDK adapter.
 """
 

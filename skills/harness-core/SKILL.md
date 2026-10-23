@@ -1,6 +1,6 @@
 ---
 name: harness-core
-description: "Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroClaw skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for harness-compliant execution, validation, and reproducibility. Use this as a foundation/plugin SDK when building or enhancing other skills. Triggers: none (library import only). This skill provides: HarnessController class, VerificationRunner, CheckpointManager, DriftDetector, AuditLogger, DependencyManifest, and related utilities."
+description: "Core harness library providing standardized self-verification, checkpoint management, drift detection, and audit logging utilities for all NeuroRuntime skills. This is NOT directly called by users; instead, it is imported as a Python module by other skills for harness-compliant execution, validation, and reproducibility. Use this as a foundation/plugin SDK when building or enhancing other skills. Triggers: none (library import only). This skill provides: HarnessController class, VerificationRunner, CheckpointManager, DriftDetector, AuditLogger, DependencyManifest, and related utilities."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -10,7 +10,7 @@ dependencies: []
 
 ## Overview
 
-`harness-core` is the **base SDK / plugin library** for implementing NeuroClaw harness engineering standards across all skills.
+`harness-core` is the **base SDK / plugin library** for implementing NeuroRuntime harness engineering standards across all skills.
 
 Instead of reimplementing validation, checkpointing, logging, and drift detection in every skill, `harness-core` provides reusable, well-tested Python classes and utilities that all other skills can import and extend.
 
@@ -28,7 +28,7 @@ Instead of reimplementing validation, checkpointing, logging, and drift detectio
 **Indirectly (as a dependency)**: 
 - When developing or modifying skills like `experiment-controller`, `run_models`, `fmri-skill`, `smri-skill`, etc.
 - When using skills that have been enhanced to support harness engineering
-- When integrating external tools or models into NeuroClaw (inherit harness patterns)
+- When integrating external tools or models into NeuroRuntime (inherit harness patterns)
 
 ## Core Components
 

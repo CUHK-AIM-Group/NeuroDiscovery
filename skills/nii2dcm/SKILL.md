@@ -32,7 +32,7 @@ It supports modality-specific metadata (MR, SVR) and optional metadata transfer 
 
 ## Installation
 
-### Via pip (recommended for NeuroClaw)
+### Via pip (recommended for NeuroRuntime)
 ```bash
 pip install nii2dcm>=0.1.6
 # or latest
@@ -97,7 +97,7 @@ Transferred attributes (from DicomMRI class, see source):
 - SeriesInstanceUID, SeriesNumber, SeriesDescription, etc.
 (Full list: https://github.com/tomaroberts/nii2dcm/blob/main/nii2dcm/dcm.py#L236)
 
-### NeuroClaw recommended wrapper (simpler for agent calling)
+### NeuroRuntime recommended wrapper (simpler for agent calling)
 Use a thin wrapper script (to be provided in skill dir):
 ```bash
 python nii2dcm_wrapper.py \
@@ -136,7 +136,7 @@ Original: https://github.com/tomaroberts/nii2dcm (v0.1.6, May 2025)
 Built on: highdicom (DICOM creation), SimpleITK (image I/O)  
 Inspired by: dcm2niix (reverse tool), SVRTK project
 
-Report issues or request extensions (e.g., CT support, 4D handling) in NeuroClaw repo.
+Report issues or request extensions (e.g., CT support, 4D handling) in NeuroRuntime repo.
 
 Created At: 2026-03-18 20:09 HKT
 Last Updated At: 2026-03-26 00:21 HKT  

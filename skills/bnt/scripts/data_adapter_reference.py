@@ -1,4 +1,4 @@
-"""BNT data adapter reference — loading NeuroClaw .pt files into dense FC format.
+"""BNT data adapter reference — loading NeuroRuntime .pt files into dense FC format.
 
 Key design decisions (learned from debugging):
 1. Fisher-z -> Pearson r via torch.tanh(), diagonal zeroed

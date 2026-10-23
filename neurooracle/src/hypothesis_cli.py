@@ -1,4 +1,4 @@
-"""Hypothesis engine CLI for the NeuroClaw knowledge graph.
+"""Hypothesis engine CLI for the NeuroDiscovery knowledge graph.
 
 Usage (run from project root):
     python -m neurooracle.phase3 batch --output neurooracle/data/hypotheses.json
@@ -1297,7 +1297,7 @@ def cmd_case_study(case_study_name, output_dir, stages, kge_path, kg_path,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Hypothesis engine for NeuroClaw knowledge graph")
+    parser = argparse.ArgumentParser(description="Hypothesis engine for NeuroDiscovery knowledge graph")
     parser.add_argument("--graph", default=None, help="Path to graph JSON")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.add_argument(

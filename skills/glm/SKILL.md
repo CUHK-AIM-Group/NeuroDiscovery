@@ -25,7 +25,7 @@ GLM refers to the classical General Linear Model used for task-based fMRI activa
 - Primary input: preprocessed task fMRI, events, TR, optional confounds, optional brain mask
 - Primary output: first-level contrast maps, second-level z maps, thresholded activation maps, region-level summaries
 
-In NeuroClaw, this document is model-level guidance for statistical activation workflows rather than phenotype prediction.
+In NeuroRuntime, this document is model-level guidance for statistical activation workflows rather than phenotype prediction.
 
 Upstream preparation should usually be delegated to:
 - `fmri-skill` for task-fMRI preprocessing and confounds preparation

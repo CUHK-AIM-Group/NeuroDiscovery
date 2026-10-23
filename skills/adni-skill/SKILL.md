@@ -12,7 +12,7 @@ dependencies:
 # ADNI Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`adni-skill` is the NeuroClaw orchestration skill for ADNI subject-level fMRI + T1 workflows.
+`adni-skill` is the NeuroRuntime orchestration skill for ADNI subject-level fMRI + T1 workflows.
 
 It supports two distinct usage modes:
 1. A narrow ADNI raw NIfTI -> BIDS staging path.
@@ -27,7 +27,7 @@ It also provides an **optional VQA generation path** for VLM use cases:
 - Generate task labels (task1-task5).
 - Generate VQA pairs from task outputs.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to tool skills.

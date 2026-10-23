@@ -1,4 +1,4 @@
-"""BrainGNN data adapter reference — loading NeuroClaw .pt files into PyG format.
+"""BrainGNN data adapter reference — loading NeuroRuntime .pt files into PyG format.
 
 Key design decisions (learned from debugging):
 1. Fisher-z -> Pearson r via torch.tanh(), diagonal zeroed

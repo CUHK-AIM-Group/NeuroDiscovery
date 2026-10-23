@@ -23,7 +23,7 @@ SpaceNet is a classical non-deep-learning method for neuroimaging-based disease 
 - Primary input: aligned subject images, labels, optional covariates, optional mask
 - Primary output: class predictions, decision scores, cross-validation metrics, coefficient maps
 
-In NeuroClaw, this document is model-level guidance for SpaceNet-based disease classification workflows rather than deep learning phenotype prediction.
+In NeuroRuntime, this document is model-level guidance for SpaceNet-based disease classification workflows rather than deep learning phenotype prediction.
 
 Upstream preparation should usually be delegated to:
 - `fmri-skill` for fMRI preprocessing and voxel-wise feature preparation

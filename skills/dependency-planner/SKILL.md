@@ -1,6 +1,6 @@
 ---
 name: dependency-planner  
-description: "Use this skill whenever a NeuroClaw skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler, CUDA toolkit, conda environment, system tool, or git-based repository. Triggers include: 'install', 'setup', 'missing dependency', 'fix import error', 'install torch cuda', 'conda create environment', 'pip install from git', 'install nnU-Net', 'setup gcc nvcc', 'prepare environment for deep learning', 'handle dep error', or any phrase indicating the need to prepare or install software components. This skill is the **mandatory gatekeeper**: it ALWAYS plans first, never installs anything without explicit user confirmation."  
+description: "Use this skill whenever a NeuroRuntime skill, model, or sub-agent reports a missing dependency (e.g. ImportError, ModuleNotFoundError, command not found), or when the user explicitly requests to install, setup, configure, or fix any library, package, compiler, CUDA toolkit, conda environment, system tool, or git-based repository. Triggers include: 'install', 'setup', 'missing dependency', 'fix import error', 'install torch cuda', 'conda create environment', 'pip install from git', 'install nnU-Net', 'setup gcc nvcc', 'prepare environment for deep learning', 'handle dep error', or any phrase indicating the need to prepare or install software components. This skill is the **mandatory gatekeeper**: it ALWAYS plans first, never installs anything without explicit user confirmation."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: subagent
 skill_type: tool
@@ -12,9 +12,9 @@ dependencies:
 
 ## Overview
 
-Many NeuroClaw skills (especially deep-learning, neuroimaging, and custom model execution skills) fail due to missing dependencies — a key pain point identified in the MedicalClaw / OpenClaw-Medical-Skills evaluation.  
+Many NeuroRuntime skills (especially deep-learning, neuroimaging, and custom model execution skills) fail due to missing dependencies — a key pain point identified in the MedicalClaw / OpenClaw-Medical-Skills evaluation.
 
-This skill acts as the **interface-layer planner** that ensures safe, reproducible, auditable, and user-approved installations across the entire NeuroClaw hierarchy (interface → subagent → base tool).
+This skill acts as the **interface-layer planner** that ensures safe, reproducible, auditable, and user-approved installations across the entire NeuroRuntime hierarchy (interface → subagent → base tool).
 
 **Strict workflow (never bypassed):**
 
@@ -32,7 +32,7 @@ This skill acts as the **interface-layer planner** that ensures safe, reproducib
 - Always version-pin where possible  
 - Log every command and output  
 - Offer dry-run / plan-only mode  
-- Integrate tightly with NeuroClaw’s self-evolution and safety strategy
+- Integrate tightly with NeuroRuntime’s self-evolution and safety strategy
 
 ## Quick Reference
 
@@ -47,7 +47,7 @@ This skill acts as the **interface-layer planner** that ensures safe, reproducib
 
 ## Installation
 
-This skill is **pure Python orchestration** — it has no external binary dependencies beyond already-available NeuroClaw skills.
+This skill is **pure Python orchestration** — it has no external binary dependencies beyond already-available NeuroRuntime skills.
 
 **Required prerequisites (must exist before this skill can be used):**
 
@@ -55,7 +55,7 @@ This skill is **pure Python orchestration** — it has no external binary depend
 - `git-essentials` & `git-workflows` (for any source-code cloning & branch management)
 - Basic shell/subprocess access
 
-To register in NeuroClaw:
+To register in NeuroRuntime:
 
 ```bash
 # Place files in: skills/dependency-planner/
@@ -93,7 +93,7 @@ Step 3: pip install -e .
 Risk: medium (may conflict with existing torch)
 ```
 
-## NeuroClaw recommended wrapper script (placed inside the skill folder)
+## NeuroRuntime recommended wrapper script (placed inside the skill folder)
 
 ```python
 # dependency_planner.py
@@ -123,7 +123,7 @@ def placeholder_search_instructions(dep_name):
     return f"(Simulated) Official instructions for {dep_name} retrieved from Google."
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NeuroClaw Dependency Planner")
+    parser = argparse.ArgumentParser(description="NeuroRuntime Dependency Planner")
     parser.add_argument("--request", required=True, help="User request or error message")
     parser.add_argument("--plan-only", action="store_true")
     args = parser.parse_args()
@@ -301,7 +301,7 @@ When resuming from checkpoint, **dependency-planner** automatically:
 - **User confirmation is mandatory** — no auto-execution
 - Full transcript saved: `./logs/install_YYYYMMDD_HHMMSS.log`
 - CUDA installs are **strictly version-matched** to prevent driver/kernel panics
-- Windows support exists but **strongly recommends WSL2** for serious NeuroClaw usage
+- Windows support exists but **strongly recommends WSL2** for serious NeuroRuntime usage
 - Large downloads include size/time estimate + warning
 - Rollback support: conda env export, git stash / reset
 - Git operations are always delegated to `git-essentials` / `git-workflows`
@@ -322,7 +322,7 @@ When resuming from checkpoint, **dependency-planner** automatically:
 
 ## Reference
 
-Custom interface-layer skill created for NeuroClaw to close the dependency-management gap highlighted in the MedicalClaw / OpenClaw evaluation report.
+Custom interface-layer skill created for NeuroRuntime to close the dependency-management gap highlighted in the MedicalClaw / OpenClaw evaluation report.
 
 ---
 Created At: 2026-03-19 01:15 HKT  

@@ -1,6 +1,6 @@
 ---
 name: research-idea
-description: "Use this skill whenever the user wants to generate or refine a research idea through literature search and discussion. Triggers include: 'research idea', 'brainstorm idea', 'generate idea', 'research-idea', 'idea generation', 'discuss new direction', or any request to explore literature and output to IDEA.md. This skill is the **mandatory interface-layer idea generator** in NeuroClaw: it calls networking search skills to retrieve recent papers, identifies gaps/trends, then iteratively discusses with the user to finalize a structured idea, always saving the result as IDEA.md."
+description: "Use this skill whenever the user wants to generate or refine a research idea through literature search and discussion. Triggers include: 'research idea', 'brainstorm idea', 'generate idea', 'research-idea', 'idea generation', 'discuss new direction', or any request to explore literature and output to IDEA.md. This skill is the **mandatory interface-layer idea generator** in NeuroRuntime: it calls networking search skills to retrieve recent papers, identifies gaps/trends, then iteratively discusses with the user to finalize a structured idea, always saving the result as IDEA.md."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
 skill_type: workflow
@@ -11,7 +11,7 @@ dependencies:
 # Research Idea
 
 ## Overview
-This skill implements the **Literature Search + User Discussion** process for NeuroClaw research-idea phase.
+This skill implements the **Literature Search + User Discussion** process for NeuroRuntime research-idea phase.
 
 It acts as the Idea Generator within the multi-agent framework:
 - Automatically calls search skills (`multi-search-engine`, `academic-research-hub`, etc.) for the latest papers (prefer last 3–6 months).
@@ -57,7 +57,7 @@ If no topic is provided, it first asks the user for a domain (e.g., MRI segmenta
 - `experiment-controller` → follows finalized idea
 
 ## Reference
-NeuroClaw architecture (section 1.4 research survey skill).  
+NeuroRuntime architecture (section 1.4 research survey skill).
 Flow: search → gap analysis → proposal → user discussion → IDEA.md  
 
 Created At: 2026-03-24 20:00 HKT

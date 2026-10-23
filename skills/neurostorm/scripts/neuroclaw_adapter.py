@@ -1,4 +1,4 @@
-"""Keep NeuroSTORM external while exposing a stable NeuroClaw route."""
+"""Keep NeuroSTORM external while exposing a stable NeuroRuntime route."""
 
 from __future__ import annotations
 

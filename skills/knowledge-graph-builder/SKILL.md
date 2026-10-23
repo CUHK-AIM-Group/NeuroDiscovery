@@ -20,7 +20,7 @@ This skill provides a reusable framework for constructing domain-specific knowle
 
 The output is a directed knowledge graph (NetworkX DiGraph + JSON serialization) where nodes represent domain concepts and claims, and edges represent typed relationships with confidence scores and provenance.
 
-**Primary implementation**: `neurooracle/` in the NeuroClaw project.
+**Primary implementation**: `neurooracle/` in the NeuroRuntime project.
 
 ## Architecture
 
@@ -396,7 +396,7 @@ Each hypothesis is scored on four dimensions:
 | **Confidence** | 0.25 | Edge confidence × study type quality × replicability |
 | **Novelty** | 0.25 | Cross-domain paths, rare relations, few supporting papers |
 | **Evidence** | 0.25 | p-value strength, sample size, effect size presence |
-| **Testability** | 0.25 | Can NeuroClaw execute this? Modality detection (sMRI, EEG, fMRI, PET, DTI), brain region specificity |
+| **Testability** | 0.25 | Can NeuroRuntime execute this? Modality detection (sMRI, EEG, fMRI, PET, DTI), brain region specificity |
 
 Composite ranking: `confidence^0.25 * evidence^0.25 * novelty^0.25 * testability^0.25`
 

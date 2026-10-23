@@ -19,9 +19,9 @@ complementary_skills:
 
 ## Overview
 
-`fmri-skill` is the NeuroClaw **modality-layer** interface skill responsible for all fMRI data processing and analysis tasks.
+`fmri-skill` is the NeuroRuntime **modality-layer** interface skill responsible for all fMRI data processing and analysis tasks.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills: `fmriprep-tool`, `hcppipeline-tool`, `conn-tool`, `fsl-tool`, `bids-organizer`, and `claw-shell`.
@@ -202,7 +202,7 @@ Output:
 
 ---
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 No wrapper script is needed at the modality layer.  
 All execution is routed through `bids-organizer`, `fmriprep-tool`, `hcppipeline-tool`, `conn-tool`, `fsl-tool`, and `claw-shell`.
@@ -350,7 +350,7 @@ fmri_output/
 
 ## Reference
 
-Aligned with NeuroClaw modality-skill pattern (see `smri-skill`, `eeg-skill`, `dwi-skill`).  
+Aligned with NeuroRuntime modality-skill pattern (see `smri-skill`, `eeg-skill`, `dwi-skill`).
 **Validated pipeline**: ADNI resting-state fMRI processing workflow (fMRIPrep 23.x + XCP-D).  
 Core tools used:
 - `fmriprep-tool` (v23.2.1+): Motion correction, coregistration, FreeSurfer wrapper

@@ -1,2 +1,2 @@
-"""LLM provider helpers for NeuroClaw."""
+"""LLM provider helpers for NeuroRuntime."""
 

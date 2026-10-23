@@ -121,7 +121,7 @@ def write_dataset_description(bids_root: Path, version: str = "I") -> None:
         "DatasetType": "raw",
         "GeneratedBy": [
             {
-                "Name": "NeuroClaw abide-skill",
+                "Name": "NeuroRuntime abide-skill",
                 "Description": "ABIDE raw data reorganized to BIDS structure",
                 "Version": "1.0.0",
             }

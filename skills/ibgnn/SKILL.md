@@ -15,7 +15,7 @@ IBGNN (Interpretable Brain Graph Neural Network) 是面向脑连接组分析的�
 
 - Paper: Cui et al., 2022, "Interpretable Graph Neural Networks for Connectome-Based Brain Disorder Analysis"，MICCAI
 - Official code: https://github.com/HennyJie/IBGNN
-- NeuroClaw reimplementation: `models/ibgnn/`（移除 explainer 用的 edge_flag 机制，仅保留 encoder）
+- NeuroRuntime reimplementation: `models/ibgnn/`（移除 explainer 用的 edge_flag 机制，仅保留 encoder）
 - Primary input: PyG Data graph（与 BrainGNN 共享数据格式）
 - Primary output: phenotype prediction（可选 attention/重要边解释）
 
@@ -23,11 +23,11 @@ IBGNN (Interpretable Brain Graph Neural Network) 是面向脑连接组分析的�
 
 ---
 
-## NeuroClaw 实现要点
+## NeuroRuntime 实现要点
 
 1. **MPConv 核心**：每条边的消息 = `Linear([x_i, x_j, edge_attr])`，比 GCN 多一层非线性表达。
 2. **GCN 归一化**：边权 |corr| 经过对称归一化（与 GCN 相同），再注入 self-loop。
-3. **去除 edge_flag**：原版用于 explainer 屏蔽边，普通 forward 中 edge_flag 是全 1 tensor，NeuroClaw 直接砍掉以简化代码。
+3. **去除 edge_flag**：原版用于 explainer 屏蔽边，普通 forward 中 edge_flag 是全 1 tensor，NeuroRuntime 直接砍掉以简化代码。
 4. **正边权约束**：`edge_attr.abs()` 后传入，与 BrainGNN 同样做法（softmax 类操作需要非负）。
 5. **任务统一接口**：classification (`nclass=N`) 与 regression (`nclass=1, task='regression'`) 一套代码。
 6. **PyG 2.7 兼容**：`torch_scatter.scatter_add` 已被 `torch_geometric.utils.scatter(reduce='sum')` 替代。
@@ -35,7 +35,7 @@ IBGNN (Interpretable Brain Graph Neural Network) 是面向脑连接组分析的�
 
 ---
 
-## Quick Start (NeuroClaw 内部)
+## Quick Start (NeuroRuntime 内部)
 
 ### 前置条件
 - conda env: `neuroclaw` (Python 3.11)
@@ -87,7 +87,7 @@ Output: logits
 
 ## 关键训练参数
 
-| 参数 | 论文默认 | NeuroClaw 默认 | 说明 |
+| 参数 | 论文默认 | NeuroRuntime 默认 | 说明 |
 |---|---|---|---|
 | `--lr` | 1e-4 | 1e-3 | 论文 1e-4，对齐其他模型用 1e-3 |
 | `--wd` | 1e-5 | 5e-4 | 权重衰减 |
@@ -112,7 +112,7 @@ Output: logits
 
 ---
 
-## NeuroClaw 委托规则
+## NeuroRuntime 委托规则
 
 - ROI 生成和预处理：委托 `fmri-skill`
 - HCP 数据下载/编排：委托 `hcpya-skill` / `hcpa-skill` / `hcpd-skill` / `hcpep-skill`
@@ -128,7 +128,7 @@ Output: logits
 - Cui H, Dai W, Zhu Y, Li X, He L, Yang C. 2022. Interpretable Graph Neural Networks for Connectome-Based Brain Disorder Analysis. MICCAI.
 - Official repository: https://github.com/HennyJie/IBGNN
 - BrainGB benchmark by same author: https://github.com/HennyJie/BrainGB
-- NeuroClaw BrainGNN skill (共享数据格式): `skills/brain_gnn/SKILL.md`
+- NeuroRuntime BrainGNN skill (共享数据格式): `skills/brain_gnn/SKILL.md`
 
 Created At: 2026-05-19 01:30 HKT
 Last Updated At: 2026-05-19 01:30 HKT

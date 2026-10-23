@@ -1,6 +1,6 @@
 """MNE-EEG Pipeline Reference - Core EEG processing functions.
 
-Distilled from the NeuroClaw mne-eeg-tool SKILL.md.
+Distilled from the NeuroRuntime mne-eeg-tool SKILL.md.
 Agent should consult this script instead of copying from SKILL.md directly.
 
 Functions:

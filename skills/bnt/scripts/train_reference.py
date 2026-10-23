@@ -1,6 +1,6 @@
-"""BNT training reference — NeuroClaw edition.
+"""BNT training reference — NeuroRuntime edition.
 
-Demonstrates the complete training loop for BrainNetworkTransformer with NeuroClaw data.
+Demonstrates the complete training loop for BrainNetworkTransformer with NeuroRuntime data.
 Supports both classification and regression tasks with stratified K-fold CV.
 
 Usage (classification, smoke test):

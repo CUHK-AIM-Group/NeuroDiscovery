@@ -15,9 +15,9 @@ complementary_skills:
 
 ## Overview
 
-`seed-vig-skill` is the NeuroClaw orchestration skill for the **SEED-VIG (SJTU Emotion EEG Dataset - Vigilance)** dataset, developed by the BCMI Lab at Shanghai Jiao Tong University for vigilance/fatigue detection research.
+`seed-vig-skill` is the NeuroRuntime orchestration skill for the **SEED-VIG (SJTU Emotion EEG Dataset - Vigilance)** dataset, developed by the BCMI Lab at Shanghai Jiao Tong University for vigilance/fatigue detection research.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills via `claw-shell`.

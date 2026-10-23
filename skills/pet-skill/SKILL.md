@@ -18,9 +18,9 @@ complementary_skills:
 
 ## Overview
 
-`pet-skill` is the NeuroClaw **modality-layer** interface skill responsible for all PET neuroimaging data processing tasks.
+`pet-skill` is the NeuroRuntime **modality-layer** interface skill responsible for all PET neuroimaging data processing tasks.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills: `fsl-tool`, `freesurfer-tool`, `nibabel-skill`, and `claw-shell`.

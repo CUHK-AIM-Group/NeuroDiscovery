@@ -15,7 +15,7 @@ BrainGNN is an interpretable graph neural network for fMRI analysis and phenotyp
 
 - Paper: Li et al., 2020, BrainGNN
 - Official code: https://github.com/xxlya/BrainGNN_Pytorch/tree/main
-- NeuroClaw reimplementation: `models/braingnn/` (Windows-compatible, 无需 torch_sparse)
+- NeuroRuntime reimplementation: `models/braingnn/` (Windows-compatible, 无需 torch_sparse)
 - Primary input: ROI-level fMRI connectivity matrices (per-subject .pt files)
 - Primary output: phenotype prediction (classification/regression) + interpretable pooling scores
 
@@ -23,9 +23,9 @@ BrainGNN is an interpretable graph neural network for fMRI analysis and phenotyp
 
 ---
 
-## NeuroClaw 实现要点
+## NeuroRuntime 实现要点
 
-NeuroClaw 版本对原始 BrainGNN 做了以下关键改动：
+NeuroRuntime 版本对原始 BrainGNN 做了以下关键改动：
 
 1. **去除 torch_sparse 依赖**：`augment_adj` 不再使用 `spspmm` 做邻接矩阵平方，改用 `add_self_loops + remove_self_loops`，在 Windows 上可直接运行。
 2. **全连接输入图**：data_adapter 构建 FULL graph（所有 i!=j 对），edge_attr = |Pearson r|。TopKPooling 负责选择，不在输入端做稀疏化。
@@ -36,7 +36,7 @@ NeuroClaw 版本对原始 BrainGNN 做了以下关键改动：
 
 ---
 
-## Quick Start (NeuroClaw 内部)
+## Quick Start (NeuroRuntime 内部)
 
 ### 前置条件
 - conda env: `neuroclaw` (Python 3.11)
@@ -82,7 +82,7 @@ python models/braingnn/scripts/train.py --atlas aal_116 --dry-run
 | 文件 | 作用 |
 |---|---|
 | `models/braingnn/net/braingnn.py` | 模型定义：MyNNConv + TopKPooling + FC head + loss functions |
-| `models/braingnn/scripts/data_adapter.py` | 数据加载：NeuroClaw .pt -> PyG InMemoryDataset |
+| `models/braingnn/scripts/data_adapter.py` | 数据加载：NeuroRuntime .pt -> PyG InMemoryDataset |
 | `models/braingnn/scripts/train.py` | 训练入口：K-fold CV, classification/regression |
 | `models/braingnn/scripts/sweep_atlases.py` | Atlas 对比扫描脚本 |
 
@@ -161,7 +161,7 @@ python models/braingnn/scripts/train.py --atlas aal_116 --dry-run
 
 ---
 
-## NeuroClaw 委托规则
+## NeuroRuntime 委托规则
 
 - ROI 生成和预处理：委托 `fmri-skill`
 - HCP 数据下载/编排：委托 `hcpya-skill` / `hcpa-skill` / `hcpd-skill` / `hcpep-skill`

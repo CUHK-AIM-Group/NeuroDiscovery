@@ -15,7 +15,7 @@ from urllib.request import urlopen
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINES_ROOT = ROOT.parent / "autoresearch_baselines"
+BASELINES_ROOT = ROOT / "dev/baselines/autoresearch_baselines"
 DEFAULT_RUN_ROOT = Path(
     r"\\192.168.3.61\data\Public Dataset\case1_autoresearch_comparison"
     r"\20260826_kg2c0273_deepseekv4pro_true_closed_loop_3seeds_v1"

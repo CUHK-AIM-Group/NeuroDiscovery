@@ -2,7 +2,7 @@
 
 This module does not call an LLM API. It creates auditable task files that a
 host agent such as Codex or Claude Code can read, solve with its own built-in
-model, and write back as JSON. NeuroClaw then validates the result and advances
+model, and write back as JSON. NeuroDiscovery then validates the result and advances
 the run state.
 """
 
@@ -139,8 +139,8 @@ def _create_round_task(
         "run_dir": str(run_dir),
         "expected_result_path": str(run_dir / result_rel),
         "role_contract": [
-            "Use the host agent's built-in reasoning model as NeuroClaw's generator, critic, and experiment supervisor.",
-            "Do not call NeuroClaw's configured LLM API for this task unless the user explicitly requests API mode.",
+            "Use the host agent's built-in reasoning model as NeuroDiscovery's generator, critic, and experiment supervisor.",
+            "Do not call NeuroDiscovery's configured LLM API for this task unless the user explicitly requests API mode.",
             "Ground claims in graph evidence, generated artifacts, cited literature, or inspected command outputs.",
             "Run local commands when useful, then record exact commands and checked outputs.",
         ],

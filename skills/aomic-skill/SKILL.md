@@ -1,6 +1,6 @@
 ---
 name: aomic-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the AOMIC (Amsterdam Open MRI Collection) dataset, including data access, BIDS organization, and multimodal processing of sMRI, rs-fMRI, and task-fMRI. Triggers include: 'AOMIC', 'AOMIC data', 'process AOMIC', 'AOMIC fMRI', 'AOMIC resting state', or any request to run the AOMIC multimodal pipeline. This is the NeuroClaw dataset-orchestration layer for AOMIC."
+description: "Use this skill whenever the user wants an end-to-end workflow for the AOMIC (Amsterdam Open MRI Collection) dataset, including data access, BIDS organization, and multimodal processing of sMRI, rs-fMRI, and task-fMRI. Triggers include: 'AOMIC', 'AOMIC data', 'process AOMIC', 'AOMIC fMRI', 'AOMIC resting state', or any request to run the AOMIC multimodal pipeline. This is the NeuroRuntime dataset-orchestration layer for AOMIC."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -13,7 +13,7 @@ dependencies:
 # AOMIC Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`aomic-skill` is the NeuroClaw orchestration skill for the **AOMIC (Amsterdam Open MRI Collection)** dataset.
+`aomic-skill` is the NeuroRuntime orchestration skill for the **AOMIC (Amsterdam Open MRI Collection)** dataset.
 
 It coordinates a fixed three-phase workflow:
 1. Guide AOMIC data access and download from OpenNeuro / the AOMIC repository.
@@ -24,7 +24,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract and merge AOMIC phenotype tables (Big Five personality traits, fluid intelligence, demographics).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

@@ -30,12 +30,12 @@ from case1_exhaustive_full import atlas_roi_meta
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MANIFEST = Path("outputs/case1_adni_validation/adni_validation_manifest.csv")
+DEFAULT_MANIFEST = Path("dev/outputs/case1_adni_validation/adni_validation_manifest.csv")
 DEFAULT_METHOD_DIR = Path(
     r"Z:\Public Dataset\case1_exhaustive_full\20260616_full_main_noboot\method_comparison"
 )
 DEFAULT_ATLAS_ROOT = REPO_ROOT.parent / "NeuroSTORM" / "datasets" / "atlas"
-DEFAULT_OUT_DIR = Path("outputs/case1_adni_validation/fmri_schaefer400")
+DEFAULT_OUT_DIR = Path("dev/outputs/case1_adni_validation/fmri_schaefer400")
 TCP_FULL_ATLASES = (
     "aal3_166",
     "aal_116",

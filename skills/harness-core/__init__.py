@@ -1,9 +1,9 @@
 """
-NeuroClaw Harness Core Library
+NeuroRuntime Harness Core Library
 ==============================
 
 Base SDK for implementing harness engineering standards (self-verification,
-checkpointing, drift detection, audit logging) across all NeuroClaw skills.
+checkpointing, drift detection, audit logging) across all NeuroRuntime skills.
 
 Usage:
     from skills.harness_core import HarnessController, VerificationRunner

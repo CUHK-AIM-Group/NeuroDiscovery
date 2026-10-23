@@ -1,6 +1,6 @@
-"""LG-GNN training reference — NeuroClaw edition.
+"""LG-GNN training reference — NeuroRuntime edition.
 
-Demonstrates the complete training loop for LG-GNN with NeuroClaw data.
+Demonstrates the complete training loop for LG-GNN with NeuroRuntime data.
 Supports both classification and regression tasks with stratified K-fold CV.
 
 Usage (classification, smoke test):

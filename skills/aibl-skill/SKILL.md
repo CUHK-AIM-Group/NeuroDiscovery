@@ -1,6 +1,6 @@
 ---
 name: aibl-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the AIBL (Australian Imaging, Biomarkers and Lifestyle) dataset, including data access guidance, BIDS organization, and multimodal processing of sMRI and PET (PiB, FDG, tau). Triggers include: 'AIBL', 'AIBL data', 'process AIBL', 'AIBL PET', 'AIBL MRI', or any request to run the AIBL multimodal pipeline. This is the NeuroClaw dataset-orchestration layer for AIBL."
+description: "Use this skill whenever the user wants an end-to-end workflow for the AIBL (Australian Imaging, Biomarkers and Lifestyle) dataset, including data access guidance, BIDS organization, and multimodal processing of sMRI and PET (PiB, FDG, tau). Triggers include: 'AIBL', 'AIBL data', 'process AIBL', 'AIBL PET', 'AIBL MRI', or any request to run the AIBL multimodal pipeline. This is the NeuroRuntime dataset-orchestration layer for AIBL."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -14,7 +14,7 @@ complementary_skills:
 # AIBL Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`aibl-skill` is the NeuroClaw orchestration skill for the **AIBL (Australian Imaging, Biomarkers and Lifestyle)** dataset.
+`aibl-skill` is the NeuroRuntime orchestration skill for the **AIBL (Australian Imaging, Biomarkers and Lifestyle)** dataset.
 
 It coordinates a fixed three-phase workflow:
 1. Guide AIBL data access and download from the AIBL research portal.
@@ -25,7 +25,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract and merge AIBL phenotype tables (cognitive assessments, blood biomarkers, APOE genotype, lifestyle data).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

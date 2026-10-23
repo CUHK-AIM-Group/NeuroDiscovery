@@ -1,7 +1,7 @@
 """Inject IM/GM nodes and their connecting edges into the v2 KG.
 
 Both `imaging_markers.json` (88 IMs) and `genetic_markers.json` (73 GMs)
-are operationalised marker objects that NeuroClaw's atom-aware hypothesis
+are operationalised marker objects that NeuroDiscovery's atom-aware hypothesis
 engine treats as the IMAGING_MARKER and GENE_TARGET surfaces. The v2 KG
 predates the marker registries and contains zero IM:*/GM:* nodes — this
 module folds them in, plus 17 GENESET:* group nodes for gene-set bookkeeping.

@@ -15,7 +15,7 @@ BrainNetworkTransformer 是一种基于 Transformer 的脑网络分析模型，�
 
 - Paper: Kan et al., 2022, BrainNetworkTransformer
 - Official code: https://github.com/Wayfear/BrainNetworkTransformer
-- NeuroClaw reimplementation: `models/bnt/` (无 hydra/omegaconf 依赖，纯 argparse)
+- NeuroRuntime reimplementation: `models/bnt/` (无 hydra/omegaconf 依赖，纯 argparse)
 - Primary input: ROI-level FC 矩阵（dense [N, N]，非 PyG 图格式）
 - Primary output: phenotype prediction (classification/regression) + attention weights + DEC assignments
 
@@ -23,11 +23,11 @@ BrainNetworkTransformer 是一种基于 Transformer 的脑网络分析模型，�
 
 ---
 
-## NeuroClaw 实现要点
+## NeuroRuntime 实现要点
 
-NeuroClaw 版本对原始 BNT 做了以下关键改动：
+NeuroRuntime 版本对原始 BNT 做了以下关键改动：
 
-1. **去除 hydra/omegaconf 依赖**：原始代码使用 hydra 配置系统，NeuroClaw 改为纯 argparse，降低依赖复杂度。
+1. **去除 hydra/omegaconf 依赖**：原始代码使用 hydra 配置系统，NeuroRuntime 改为纯 argparse，降低依赖复杂度。
 2. **纯 PyTorch Dataset**：不依赖 PyG，使用标准 `torch.utils.data.Dataset` + `DataLoader`，输入为 dense FC matrix [B, N, N]。
 3. **Fisher-z 反变换**：与 BrainGNN 一致，存储的 fc_matrix 是 Fisher-z，加载时用 `torch.tanh()` 还原为 Pearson r，对角线置零。
 4. **nhead 自动适配**：当 forward_dim (N + pos_embed_dim) 不能被 nhead 整除时，自动降低 nhead 到最大兼容值。
@@ -38,7 +38,7 @@ NeuroClaw 版本对原始 BNT 做了以下关键改动：
 
 ---
 
-## Quick Start (NeuroClaw 内部)
+## Quick Start (NeuroRuntime 内部)
 
 ### 前置条件
 - conda env: `neuroclaw` (Python 3.11)
@@ -78,7 +78,7 @@ python models/bnt/scripts/train.py --atlas aal_116 --dry-run
 | 文件 | 作用 |
 |---|---|
 | `models/bnt/net/bnt.py` | 模型定义：InterpretableTransformerEncoder + DEC pooling + FC head |
-| `models/bnt/scripts/data_adapter.py` | 数据加载：NeuroClaw .pt -> PyTorch Dataset (dense FC) |
+| `models/bnt/scripts/data_adapter.py` | 数据加载：NeuroRuntime .pt -> PyTorch Dataset (dense FC) |
 | `models/bnt/scripts/train.py` | 训练入口：K-fold CV, classification/regression (待创建) |
 
 ---
@@ -152,7 +152,7 @@ Input FC [B, N, N]
 
 ---
 
-## NeuroClaw 委托规则
+## NeuroRuntime 委托规则
 
 - ROI 生成和预处理：委托 `fmri-skill`
 - HCP 数据下载/编排：委托 `hcpya-skill` / `hcpa-skill` / `hcpd-skill` / `hcpep-skill`
@@ -167,7 +167,7 @@ Input FC [B, N, N]
 
 - Kan X, Dai W, Cui H, Zhang Z, Guo Y, He L. 2022. BrainNetworkTransformer. NeurIPS.
 - Official repository: https://github.com/Wayfear/BrainNetworkTransformer
-- NeuroClaw BrainGNN skill (共享数据格式): `skills/brain_gnn/SKILL.md`
+- NeuroRuntime BrainGNN skill (共享数据格式): `skills/brain_gnn/SKILL.md`
 
 Created At: 2026-05-15 23:00 HKT
 Last Updated At: 2026-05-15 23:00 HKT

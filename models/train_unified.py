@@ -1,6 +1,6 @@
 """Unified trainer for BrainGNN and BrainNetworkTransformer (BNT).
 
-Both models are trained on the same NeuroClaw preprocessed FC data.
+Both models are trained on the same NeuroRuntime preprocessed FC data.
 Supports classification and regression (with z-score label standardization).
 
 Usage:

@@ -15,9 +15,9 @@ complementary_skills:
 
 ## Overview
 
-`meg-skill` is the NeuroClaw **modality-layer** interface skill responsible for all MEG (magnetoencephalography) data processing tasks.
+`meg-skill` is the NeuroRuntime **modality-layer** interface skill responsible for all MEG (magnetoencephalography) data processing tasks.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to MNE-Python (via `claw-shell`) and companion scripts.

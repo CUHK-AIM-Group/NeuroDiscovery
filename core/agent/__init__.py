@@ -1,1 +1,1 @@
-# NeuroClaw agent package
+# NeuroRuntime agent package

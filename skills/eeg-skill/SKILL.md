@@ -12,8 +12,8 @@ dependencies:
 
 ## Overview
 
-`eeg-skill` is the NeuroClaw **modality-layer** interface skill responsible for all EEG data processing tasks.  
-It strictly follows the NeuroClaw hierarchical design principles:
+`eeg-skill` is the NeuroRuntime **modality-layer** interface skill responsible for all EEG data processing tasks.
+It strictly follows the NeuroRuntime hierarchical design principles:
 
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no full implementation code**.
@@ -52,7 +52,7 @@ It strictly follows the NeuroClaw hierarchical design principles:
 No manual installation required.  
 When first used, `eeg-skill` automatically calls `dependency-planner` to create the isolated `neuroclaw-eeg` conda environment containing MNE-Python, torchaudio, scipy, and all required packages.
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 ```python
 # Example snippets (for reference in mne-eeg-tool implementation)
@@ -188,7 +188,7 @@ if report.failed:
 
 ## Reference
 
-Aligned with NeuroClaw modality-skill pattern (see `freesurfer-tool`, `wmh-segmentation`, etc.).  
+Aligned with NeuroRuntime modality-skill pattern (see `freesurfer-tool`, `wmh-segmentation`, etc.).
 Core libraries: MNE-Python (main), `torchaudio.transforms.MelSpectrogram` (waveform to spectrogram), `scipy.signal.cwt` + `morlet2` (frequency band energy extraction).
 
 ---

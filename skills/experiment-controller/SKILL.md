@@ -1,6 +1,6 @@
 ---
 name: experiment-controller
-description: "Use this skill whenever the user wants to execute experiments based on a finalized method and record results. Triggers include: 'run experiment', 'experiment controller', 'implement experiment', 'run model', 'execute training', 'experiment-controller', 'record results', 'ablation study', or any request to turn METHOD.md into concrete runs and output to EXPERIMENT.md. This skill is the **mandatory interface-layer experiment executor** in NeuroClaw: it searches literature/GitHub for matching experimental setups and codebases, proposes one scheme + repo after user discussion, uses git skills to download and setup, runs the experiment(s), and iteratively appends every result + observation to EXPERIMENT.md."
+description: "Use this skill whenever the user wants to execute experiments based on a finalized method and record results. Triggers include: 'run experiment', 'experiment controller', 'implement experiment', 'run model', 'execute training', 'experiment-controller', 'record results', 'ablation study', or any request to turn METHOD.md into concrete runs and output to EXPERIMENT.md. This skill is the **mandatory interface-layer experiment executor** in NeuroRuntime: it searches literature/GitHub for matching experimental setups and codebases, proposes one scheme + repo after user discussion, uses git skills to download and setup, runs the experiment(s), and iteratively appends every result + observation to EXPERIMENT.md."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
 skill_type: workflow
@@ -11,7 +11,7 @@ dependencies:
 ---
 # Experiment Controller
 ## Overview
-This skill implements the **Literature/GitHub Search → Scheme Confirmation → Git Execution → Iterative Logging** process for the NeuroClaw experiment-controller phase.
+This skill implements the **Literature/GitHub Search → Scheme Confirmation → Git Execution → Iterative Logging** process for the NeuroRuntime experiment-controller phase.
 
 It acts as the Experiment Manager within the multi-agent framework:
 - Reads the latest **IDEA.md** and **METHOD.md** from the workspace.
@@ -131,7 +131,7 @@ Each skill integrated into experiment-controller must include **automatic valida
 - `paper-writing` → consumes EXPERIMENT.md for results/tables
 
 ## Reference
-NeuroClaw architecture (section 1.7 experiment-controller skill).  
+NeuroRuntime architecture (section 1.7 experiment-controller skill).
 Flow: literature/GitHub search → user-confirmed scheme → git clone → dependency setup → iterative execution → EXPERIMENT.md logging.  
 
 ---

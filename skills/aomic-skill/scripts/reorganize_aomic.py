@@ -110,7 +110,7 @@ def write_dataset_description(bids_root: Path, sub_dataset: str = "AOMIC") -> No
         "DatasetType": "raw",
         "GeneratedBy": [
             {
-                "Name": "NeuroClaw aomic-skill",
+                "Name": "NeuroRuntime aomic-skill",
                 "Description": f"AOMIC ({sub_dataset}) data validated and reorganized to BIDS structure",
                 "Version": "1.0.0",
             }

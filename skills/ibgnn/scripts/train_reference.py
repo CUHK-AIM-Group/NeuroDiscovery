@@ -1,6 +1,6 @@
-"""IBGNN training reference — NeuroClaw edition.
+"""IBGNN training reference — NeuroRuntime edition.
 
-Demonstrates the complete training loop for IBGNN with NeuroClaw data.
+Demonstrates the complete training loop for IBGNN with NeuroRuntime data.
 Supports both classification and regression tasks with stratified K-fold CV.
 
 Usage (classification, smoke test):

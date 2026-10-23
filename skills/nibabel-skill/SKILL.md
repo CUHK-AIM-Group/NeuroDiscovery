@@ -1,6 +1,6 @@
 ---
 name: nibabel-skill
-description: "Use this skill whenever NeuroClaw needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading FreeSurfer geometry and annotation files. Triggers include: 'nibabel', 'inspect NIfTI', 'read affine', 'save nifti', 'voxel to MNI', 'atlas coordinates', 'read FreeSurfer surface', 'read annot', or any request focused on low-level neuroimaging I/O rather than full preprocessing."
+description: "Use this skill whenever NeuroRuntime needs concrete nibabel operations for neuroimaging files: loading and validating NIfTI images, inspecting shapes and affine matrices, saving derived images, converting voxel coordinates to MNI/world coordinates, or reading FreeSurfer geometry and annotation files. Triggers include: 'nibabel', 'inspect NIfTI', 'read affine', 'save nifti', 'voxel to MNI', 'atlas coordinates', 'read FreeSurfer surface', 'read annot', or any request focused on low-level neuroimaging I/O rather than full preprocessing."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -10,7 +10,7 @@ dependencies: []
 
 ## Overview
 
-`nibabel-skill` is the NeuroClaw tool skill for low-level neuroimaging file I/O and geometry handling.
+`nibabel-skill` is the NeuroRuntime tool skill for low-level neuroimaging file I/O and geometry handling.
 
 It is the right skill when the task is about reading or writing NIfTI data, checking image dimensions and affine matrices, extracting atlas-space coordinates, or interacting with FreeSurfer surface and annotation files.
 

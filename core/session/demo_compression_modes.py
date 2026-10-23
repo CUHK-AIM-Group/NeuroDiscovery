@@ -20,7 +20,7 @@ def demo_stub_mode():
 
     # Simulate a conversation with 25 messages
     history = [
-        {"role": "system", "content": "You are NeuroClaw, a neuroscience research assistant."},
+        {"role": "system", "content": "You are NeuroRuntime, a neuroscience research assistant."},
     ]
 
     # Add 25 user/assistant messages
@@ -77,7 +77,7 @@ def demo_llm_summary_mode():
 
     # Simulate a realistic conversation
     history = [
-        {"role": "system", "content": "You are NeuroClaw, a neuroscience research assistant."},
+        {"role": "system", "content": "You are NeuroRuntime, a neuroscience research assistant."},
         {"role": "user", "content": "How do I run fMRI preprocessing with FSL?"},
         {"role": "assistant", "content": "You need to set FSLDIR environment variable first. Export it from neuroclaw_environment.json."},
         {"role": "user", "content": "I got 'FSLDIR not set' error when running fslmaths"},
@@ -156,7 +156,7 @@ def demo_comparison():
 def main():
     """Run all demos."""
     print("\n" + "=" * 70)
-    print("NeuroClaw Context Compression: Stub vs LLM Summary")
+    print("NeuroRuntime Context Compression: Stub vs LLM Summary")
     print("=" * 70 + "\n")
 
     try:
@@ -169,7 +169,7 @@ def main():
         print("=" * 70)
         print("All demos completed successfully! ✓")
         print("=" * 70)
-        print("\nTo enable LLM summary mode in your NeuroClaw installation:")
+        print("\nTo enable LLM summary mode in your NeuroRuntime installation:")
         print("1. Add to neuroclaw_environment.json:")
         print('   "compression_mode": "llm_summary"')
         print("\n2. Or keep default stub mode (zero cost)")

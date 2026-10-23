@@ -1,6 +1,6 @@
 ---
 name: hbn-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the Healthy Brain Network (HBN) dataset, including download, BIDS organization, and multimodal processing of sMRI, dMRI, rs-fMRI, task-fMRI, and EEG data. Triggers include: 'HBN', 'Healthy Brain Network', 'process HBN', 'HBN fMRI', 'HBN EEG', or any request to run the HBN multimodal pipeline. This is the NeuroClaw dataset-orchestration layer for HBN."
+description: "Use this skill whenever the user wants an end-to-end workflow for the Healthy Brain Network (HBN) dataset, including download, BIDS organization, and multimodal processing of sMRI, dMRI, rs-fMRI, task-fMRI, and EEG data. Triggers include: 'HBN', 'Healthy Brain Network', 'process HBN', 'HBN fMRI', 'HBN EEG', or any request to run the HBN multimodal pipeline. This is the NeuroRuntime dataset-orchestration layer for HBN."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -15,7 +15,7 @@ dependencies:
 # HBN Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`hbn-skill` is the NeuroClaw orchestration skill for the **Healthy Brain Network (HBN)** dataset.
+`hbn-skill` is the NeuroRuntime orchestration skill for the **Healthy Brain Network (HBN)** dataset.
 
 It coordinates a fixed multi-phase workflow:
 1. Download HBN data from the FCP/INDI repository.
@@ -26,7 +26,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract and merge HBN phenotype tables (psychiatric, behavioral, cognitive, lifestyle, genetics, actigraphy).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

@@ -1,6 +1,6 @@
 ---
 name: dwi-skill
-description: "Use this skill whenever the user wants to preprocess diffusion MRI / DWI data, compute diffusion metrics (FA/MD/AD/RD, etc.), extract ROI-wise diffusion features, or run tractography/connectome-related workflows. Triggers include: 'DWI', 'DTI', 'diffusion MRI', 'FA', 'MD', 'AD', 'RD', 'eddy', 'topup', 'QSIPrep', 'tractography', 'connectome', 'TBSS', 'white matter microstructure'. This is the NeuroClaw modality-layer interface: it plans WHAT to do and delegates execution to tool skills."
+description: "Use this skill whenever the user wants to preprocess diffusion MRI / DWI data, compute diffusion metrics (FA/MD/AD/RD, etc.), extract ROI-wise diffusion features, or run tractography/connectome-related workflows. Triggers include: 'DWI', 'DTI', 'diffusion MRI', 'FA', 'MD', 'AD', 'RD', 'eddy', 'topup', 'QSIPrep', 'tractography', 'connectome', 'TBSS', 'white matter microstructure'. This is the NeuroRuntime modality-layer interface: it plans WHAT to do and delegates execution to tool skills."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: subagent
 skill_type: modality
@@ -16,9 +16,9 @@ complementary_skills:
 # DWI Skill (Modality Layer)
 
 ## Overview
-`dwi-skill` is the NeuroClaw **modality-layer** interface skill responsible for diffusion MRI (DWI/DTI) preprocessing and feature extraction.
+`dwi-skill` is the NeuroRuntime **modality-layer** interface skill responsible for diffusion MRI (DWI/DTI) preprocessing and feature extraction.
 
-It strictly follows NeuroClaw hierarchical design principles:
+It strictly follows NeuroRuntime hierarchical design principles:
 - This skill defines **WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code** and **no concrete shell commands**.
 - All concrete execution is delegated to tool skills and routed through `claw-shell`.- Reference implementations (MATLAB, Python) are provided for user understanding but should be wrapped via tool skills in production workflows.
@@ -337,7 +337,7 @@ All outputs must be written under `./dwi_output/`:
 ---
 
 ## Reference
-Aligned with NeuroClaw modality-skill pattern (see `fmri-skill`, `smri-skill`, `eeg-skill`).  
+Aligned with NeuroRuntime modality-skill pattern (see `fmri-skill`, `smri-skill`, `eeg-skill`).
 **Validated pipeline**: HCP-style MRtrix3 fiber tractography (5TT + multi-tissue CSD FOD + ACT + SIFT filtering).  
 Core tools used:
 - `qsiprep-tool` (v0.16+): BIDS-App diffusion preprocessing + QC

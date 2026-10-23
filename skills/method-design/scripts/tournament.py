@@ -51,7 +51,7 @@ of importance:
    (sMRI/fMRI/dMRI/EEG/MEG/PET/ASL).
 2. Novelty relative to recent literature; avoid trivial re-skins.
 3. Computational tractability on common research GPUs (24-80 GB).
-4. Compatibility with NeuroClaw skill registry (BIDS-staged inputs,
+4. Compatibility with NeuroRuntime skill registry (BIDS-staged inputs,
    PyG/PyTorch outputs).
 5. Clarity and falsifiability of the claimed mechanism.
 

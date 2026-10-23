@@ -1,6 +1,6 @@
-"""BrainGNN training entry — NeuroClaw edition.
+"""BrainGNN training entry — NeuroRuntime edition.
 
-Loads atlas-processed NeuroClaw data, runs stratified K-fold CV,
+Loads atlas-processed NeuroRuntime data, runs stratified K-fold CV,
 and trains BrainGNN with the original 6 loss terms:
 
   loss = lamb0*NLL + lamb1*unit(w1) + lamb2*unit(w2)

@@ -14,7 +14,7 @@ dependencies:
 
 fMRIPrep is a robust, standardized preprocessing pipeline for BIDS-compliant functional and anatomical MRI data. It performs best-practice steps including anatomical segmentation, functional motion correction, susceptibility distortion correction, coregistration, normalization to standard space, and generates comprehensive QC reports.
 
-This skill serves as the **NeuroClaw interface-layer wrapper** for fMRIPrep and strictly follows the hierarchical design:
+This skill serves as the **NeuroRuntime interface-layer wrapper** for fMRIPrep and strictly follows the hierarchical design:
 
 1. Check whether fMRIPrep and its dependencies (Docker or Singularity) are installed.
 2. If missing → invoke `dependency-planner` to generate a safe installation plan.
@@ -80,7 +80,7 @@ fmriprep --version
 - Docker or Singularity
 - Sufficient disk space (~10–30 GB per subject) and RAM (≥16 GB recommended)
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 ```python
 # fmriprep_wrapper.py (placed inside the skill folder for reference)

@@ -1,6 +1,6 @@
 ---
 name: nilearn-tool
-description: "Use this skill whenever any NeuroClaw fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decoding utilities. This is the dedicated base/tool skill that contains Nilearn usage patterns and lightweight wrappers. Never called directly by the user."
+description: "Use this skill whenever any NeuroRuntime fMRI modality skill needs to execute concrete Nilearn operations: ROI/atlas time-series extraction, confounds handling (fMRIPrep), seed-based connectivity maps, ROI-to-ROI connectivity matrices, and optional GLM/decoding utilities. This is the dedicated base/tool skill that contains Nilearn usage patterns and lightweight wrappers. Never called directly by the user."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -10,7 +10,7 @@ dependencies:
 # Nilearn Tool (Base/Tool Layer)
 
 ## Overview
-`nilearn-tool` is the **NeuroClaw base/tool skill** that implements concrete **Nilearn** workflows for turning **preprocessed BOLD** into features (ROI time series, connectivity matrices, seed maps) and optional statistical modeling (GLM).
+`nilearn-tool` is the **NeuroRuntime base/tool skill** that implements concrete **Nilearn** workflows for turning **preprocessed BOLD** into features (ROI time series, connectivity matrices, seed maps) and optional statistical modeling (GLM).
 
 It is **never called directly by the user**. It is delegated to by `fmri-skill` (or other interface/modality skills) and executed via `claw-shell`.
 
@@ -174,7 +174,7 @@ conda install -n neuroclaw-nilearn -c conda-forge nilearn nibabel numpy scipy pa
 
 ---
 
-## Safety / Execution Rules (NeuroClaw)
+## Safety / Execution Rules (NeuroRuntime)
 - No direct `subprocess.run()` for long operations in this skill.
 - All shell commands go through `claw-shell`.
 - Always produce outputs under `fmri_output/.../nilearn/...` with deterministic filenames.

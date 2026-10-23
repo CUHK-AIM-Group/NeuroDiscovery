@@ -1,4 +1,4 @@
-"""STDIO MCP server for NeuroClaw academic literature workflows."""
+"""STDIO MCP server for NeuroDiscovery academic literature workflows."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .academic_service import SERVICE
 
 
 SERVER_INSTRUCTIONS = (
-    "Use this server for NeuroClaw academic literature discovery and staging. "
+    "Use this server for NeuroDiscovery academic literature discovery and staging. "
     "All searches are fixed to 1980-2026. Search provenance is not Case Study "
     "membership; labels are non-exclusive and determined only during claim "
     "extraction using the frozen policy. Always deduplicate against the formal "
@@ -23,7 +23,7 @@ SERVER_INSTRUCTIONS = (
 
 mcp = MCPServer(
     name="neuroclaw-academic",
-    title="NeuroClaw Academic Literature",
+    title="NeuroDiscovery Academic Literature",
     description=(
         "Search, deduplicate, retrieve complete abstracts, inspect staging batches, "
         "and validate extraction seals without modifying the formal NeuroOracle KG."
@@ -55,7 +55,7 @@ STAGING_WRITE_NETWORK = ToolAnnotations(
 
 @mcp.tool(
     name="neuroclaw_academic_list_case_studies",
-    title="List NeuroClaw Case Studies",
+    title="List NeuroDiscovery Case Studies",
     description=(
         "List the 17 peer Case Study IDs, display numbers, names, current formal-KG "
         "coverage, and frozen non-exclusive membership policy."

@@ -14,7 +14,7 @@ dependencies:
 # ABCD Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`abcd-skill` is the NeuroClaw orchestration skill for the **ABCD Study (Adolescent Brain Cognitive Development)** dataset.
+`abcd-skill` is the NeuroRuntime orchestration skill for the **ABCD Study (Adolescent Brain Cognitive Development)** dataset.
 
 It coordinates a fixed three-phase workflow:
 1. Obtain approved ABCD data from the NBDC Data Sharing Platform.
@@ -25,7 +25,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract and merge ABCD phenotype tables (mental health, cognition, substance use, etc.).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

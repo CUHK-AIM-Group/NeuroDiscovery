@@ -11,7 +11,7 @@ dependencies:
 
 ## Overview
 
-Academic Research Hub provides unified access to multiple academic databases (arXiv, PubMed, Semantic Scholar, etc.) for searching papers, downloading PDFs, extracting citations, and generating bibliographies. It is the recommended tool for literature review and reference management in NeuroClaw.
+Academic Research Hub provides unified access to multiple academic databases (arXiv, PubMed, Semantic Scholar, etc.) for searching papers, downloading PDFs, extracting citations, and generating bibliographies. It is the recommended tool for literature review and reference management in NeuroRuntime.
 
 **Prerequisite:** Install [OpenClawCLI](https://clawhub.ai/) (Windows, MacOS)
 

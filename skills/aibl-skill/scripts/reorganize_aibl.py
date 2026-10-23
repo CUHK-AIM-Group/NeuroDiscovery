@@ -148,7 +148,7 @@ def write_dataset_description(bids_root: Path) -> None:
         "DatasetType": "raw",
         "GeneratedBy": [
             {
-                "Name": "NeuroClaw aibl-skill",
+                "Name": "NeuroRuntime aibl-skill",
                 "Description": "AIBL raw data reorganized to BIDS structure",
                 "Version": "1.0.0",
             }

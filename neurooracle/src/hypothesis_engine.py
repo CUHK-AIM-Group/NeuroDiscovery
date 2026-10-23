@@ -1,10 +1,10 @@
 """Hypothesis engine: batch-generate, persist, and rank testable hypotheses.
 
-Phase 3 of the NeuroClaw discovery loop:
+Phase 3 of the NeuroDiscovery discovery loop:
   1. batch_generate() — traverse the graph to produce hypotheses at scale
   2. save / load — persist hypotheses to JSON
   3. rank_hypotheses() — sort by novelty, evidence, testability, confidence
-  4. (Phase 5-6) hypotheses become executable NeuroClaw analysis tasks
+  4. (Phase 5-6) hypotheses become executable NeuroRuntime analysis tasks
 
 Usage:
     from neurooracle import load_graph, HypothesisEngine
@@ -572,7 +572,7 @@ def _allowed_atom_domains() -> frozenset[str]:
         _ALLOWED_ATOM_DOMAINS_CACHE = frozenset(merged)
     return _ALLOWED_ATOM_DOMAINS_CACHE
 
-# domain pairs worth exploring — aligned with NeuroClaw imaging experiments
+# domain pairs worth exploring — aligned with NeuroDiscovery imaging experiments
 # target datasets: UKB (T1w/dMRI/rfMRI/SWI), ADNI (T1w/PET/fMRI/DTI), HCP-YA (T1w/T2w/fMRI/dMRI/MEG)
 # experiment models: BrainGNN, NeuroStorm, SVM, XGBoost on raw images + handcrafted features
 #
@@ -741,7 +741,7 @@ _OUTCOME_KEYWORDS = re.compile(
 # Target domains considered as valid dataset outcomes
 _OUTCOME_DOMAINS = {"disease", "cognitive_function"}
 
-# NeuroClaw testable modalities and their keywords
+# NeuroDiscovery testable modalities and their keywords
 # Aligned with UKB/ADNI/HCP-YA available data + deep learning models
 TESTABLE_MODALITIES = {
     "sMRI": ["cortical thickness", "volume", "atrophy", "gray matter", "white matter",
@@ -2904,7 +2904,7 @@ class HypothesisEngine:
     def _apply_task_testability_floor(self, h: Hypothesis, task) -> None:
         """Correct the imaging-only legacy floor for valid formal tasks.
 
-        The generic scorer was written for NeuroClaw imaging experiments and
+        The generic scorer was written for NeuroDiscovery imaging experiments and
         assigns 0.15 when no modality is named.  That is appropriate for an
         unconstrained imaging hypothesis, but not for registered tasks such as
         adverse-event prediction whose atom contract does not contain IM.  This
@@ -6440,7 +6440,7 @@ class HypothesisEngine:
         return self._geometric_mean(scores)
 
     def _compute_testability_score(self, path: list[HypothesisLink]) -> tuple[float, str]:
-        """Score how testable a hypothesis is with NeuroClaw imaging experiments.
+        """Score how testable a hypothesis is with NeuroDiscovery imaging experiments.
 
         Boosts for:
         - Brain region features directly measurable from sMRI (volume, thickness)

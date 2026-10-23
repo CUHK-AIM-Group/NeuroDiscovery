@@ -1,7 +1,7 @@
-"""Adapter: load NeuroClaw fMRI .pt files (+ optional T1 volume .npz) into
+"""Adapter: load NeuroRuntime fMRI .pt files (+ optional T1 volume .npz) into
 PyTorch Geometric `Data` objects compatible with BrainGNN.
 
-NeuroClaw fMRI output (per subject, per atlas):
+NeuroRuntime fMRI output (per subject, per atlas):
     data/braingnn_input/<atlas>/sub-<id>.pt
     {
       subject_id, atlas, n_rois,
@@ -13,7 +13,7 @@ NeuroClaw fMRI output (per subject, per atlas):
       roi_names: [n_roi],
     }
 
-NeuroClaw T1 volume output (optional, per subject, per atlas):
+NeuroRuntime T1 volume output (optional, per subject, per atlas):
     data/t1_volume/<atlas>/sub-<id>.npz
     {
       subject_id, atlas, n_rois, roi_names,
@@ -50,7 +50,7 @@ def _pyg_data_from_subject(sub_pt: dict, t1_npz: Optional[dict] = None,
                             label_dtype: str = "long",
                             roi_mask: Optional[list[bool]] = None,
                             edge_boost: Optional[np.ndarray] = None) -> Data:
-    """Convert a NeuroClaw subject dict to a PyG Data object.
+    """Convert a NeuroRuntime subject dict to a PyG Data object.
 
     Rebuilds the graph at load time to match the original BrainGNN
     (Li 2020, read_abide_stats_parall.read_sigle_data):
@@ -155,7 +155,7 @@ def scan_available_subjects(atlas: str) -> list[str]:
 
 
 class NeuroClawFCDataset(InMemoryDataset):
-    """In-memory PyG dataset built from NeuroClaw preprocessed files.
+    """In-memory PyG dataset built from NeuroRuntime preprocessed files.
 
     Args:
         atlas: atlas name (must match subdir in data/braingnn_input/<atlas>/)

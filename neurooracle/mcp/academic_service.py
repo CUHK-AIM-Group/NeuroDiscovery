@@ -1,4 +1,4 @@
-"""Read-mostly academic literature service for the NeuroClaw MCP server.
+"""Read-mostly academic literature service for the NeuroDiscovery MCP server.
 
 The service deliberately exposes no formal KG mutation operation.  Its only
 write operation starts a collection under the controlled academic MCP staging

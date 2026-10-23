@@ -42,7 +42,7 @@ from core.scripts.case_study_native_output import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINES_ROOT = ROOT.parent / "autoresearch_baselines"
+BASELINES_ROOT = ROOT / "dev/baselines/autoresearch_baselines"
 CASE2_ROOT = (
     Path(r"\\192.168.3.61\data\Dataset\genetics\ADNI\derived\qc")
     / "case2_adni_genetics_v1"

@@ -1,1 +1,1 @@
-# NeuroClaw session package
+# NeuroRuntime session package

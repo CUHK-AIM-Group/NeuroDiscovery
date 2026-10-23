@@ -15,7 +15,7 @@ None of the cohorts below currently offers an anonymous `DIRECT` download of the
 
 ## Cohort matrix
 
-| Cohort | Tier | Current route | Practical status | NeuroClaw support |
+| Cohort | Tier | Current route | Practical status | NeuroRuntime support |
 | --- | --- | --- | --- | --- |
 | ADNI | APPLY | [ADNI access through LONI IDA](https://adni.loni.usc.edu/data-samples/adni-data/) | DUA plus online application; approved users download from IDA. | `adni-skill` |
 | ADNI-DOD | APPLY | [ADNI-DOD project instructions](https://adni.loni.usc.edu/support/experts-knowledge-base/question/?QID=920) | Use the `ADNIDOD` project after ADNI/IDA access; subject identifiers are `SCRNO`, not standard ADNI RIDs. | `adni-skill` |

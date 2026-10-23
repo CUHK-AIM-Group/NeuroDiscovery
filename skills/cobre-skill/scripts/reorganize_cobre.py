@@ -47,7 +47,7 @@ def copy_with_sidecars(src_nifti: Path, dst_dir: Path, dst_stem: str) -> None:
 
 
 def write_dataset_description(bids_root: Path) -> None:
-    desc = {"Name": "COBRE", "BIDSVersion": "1.8.0", "DatasetType": "raw", "GeneratedBy": [{"Name": "NeuroClaw cobre-skill", "Version": "1.0.0"}]}
+    desc = {"Name": "COBRE", "BIDSVersion": "1.8.0", "DatasetType": "raw", "GeneratedBy": [{"Name": "NeuroRuntime cobre-skill", "Version": "1.0.0"}]}
     (bids_root / "dataset_description.json").write_text(json.dumps(desc, indent=2), encoding="utf-8")
 
 

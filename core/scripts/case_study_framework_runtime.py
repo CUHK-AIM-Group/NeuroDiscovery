@@ -26,7 +26,7 @@ from core.scripts.case_study_search_policy import (
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINES_ROOT = ROOT.parent / "autoresearch_baselines"
+BASELINES_ROOT = ROOT / "dev/baselines/autoresearch_baselines"
 OFFICIAL_METHODS = (
     "ai_scientist_v2",
     "open_coscientist",

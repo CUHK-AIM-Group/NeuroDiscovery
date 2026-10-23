@@ -65,7 +65,7 @@ def write_dataset_description(bids_root: Path) -> None:
         "Name": "Healthy Brain Network (HBN)",
         "BIDSVersion": "1.8.0",
         "DatasetType": "raw",
-        "GeneratedBy": [{"Name": "NeuroClaw hbn-skill", "Version": "1.0.0"}],
+        "GeneratedBy": [{"Name": "NeuroRuntime hbn-skill", "Version": "1.0.0"}],
     }
     (bids_root / "dataset_description.json").write_text(json.dumps(desc, indent=2), encoding="utf-8")
 

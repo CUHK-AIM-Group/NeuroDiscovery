@@ -1,7 +1,7 @@
 """Simple demonstration of Reflexion functionality.
 
 This script demonstrates the basic usage of the Reflexion module
-without requiring a full NeuroClaw agent setup.
+without requiring a full NeuroRuntime agent setup.
 """
 
 import json
@@ -187,7 +187,7 @@ def main():
         print("=" * 60)
         print("All demos completed successfully! ✓")
         print("=" * 60)
-        print("\nReflexion is ready to use in NeuroClaw.")
+        print("\nReflexion is ready to use in NeuroRuntime.")
         print("Try these commands in the agent REPL:")
         print("  /reflection list              - Show recent reflections")
         print("  /reflection search <keywords> - Search by keywords")

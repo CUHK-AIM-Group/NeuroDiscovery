@@ -1,6 +1,6 @@
 ---
 name: qsiprep-tool
-description: "Use this skill whenever the user wants to run QSIPrep (BIDS App) for diffusion MRI (DWI) preprocessing with best-practice workflows (topup/eddy, denoising/unringing options, susceptibility/motion correction, coregistration/normalization, QC reports) on BIDS datasets. This skill is the NeuroClaw interface-layer wrapper for QSIPrep: it checks installation (Docker/Singularity/conda), generates an execution plan with exact commands and resource estimates, waits for explicit confirmation, then routes all execution through claw-shell."
+description: "Use this skill whenever the user wants to run QSIPrep (BIDS App) for diffusion MRI (DWI) preprocessing with best-practice workflows (topup/eddy, denoising/unringing options, susceptibility/motion correction, coregistration/normalization, QC reports) on BIDS datasets. This skill is the NeuroRuntime interface-layer wrapper for QSIPrep: it checks installation (Docker/Singularity/conda), generates an execution plan with exact commands and resource estimates, waits for explicit confirmation, then routes all execution through claw-shell."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -16,7 +16,7 @@ QSIPrep is a BIDS-App pipeline for **diffusion MRI (DWI) preprocessing** that em
 - Interoperable derivatives for downstream modeling (DTI/DKI/CSD, tractography, connectome, etc.)
 - Strong QC reporting (HTML)
 
-This skill is the **NeuroClaw interface-layer wrapper** for QSIPrep and strictly follows the NeuroClaw safety pattern:
+This skill is the **NeuroRuntime interface-layer wrapper** for QSIPrep and strictly follows the NeuroRuntime safety pattern:
 
 1. Check whether QSIPrep is available (preferred: Docker/Singularity image; alternative: conda).
 2. If missing → invoke `dependency-planner` to produce an installation plan.
@@ -132,7 +132,7 @@ apptainer run --cleanenv \
 
 ---
 
-## NeuroClaw recommended wrapper script (Reference): `qsiprep_wrapper.py`
+## NeuroRuntime recommended wrapper script (Reference): `qsiprep_wrapper.py`
 
 > This wrapper only *builds and prints* a plan; actual execution must be routed through `claw-shell` by the calling skill.
 
@@ -313,7 +313,7 @@ if report.failed:
 
 ## Reference
 - QSIPrep documentation and BIDS App usage (official docs; version-dependent)
-- NeuroClaw interface-layer pattern aligned with `fmriprep-tool` and `hcppipeline-tool`
+- NeuroRuntime interface-layer pattern aligned with `fmriprep-tool` and `hcppipeline-tool`
 
 Created At: 2026-03-26 00:45 HKT
 Last Updated At: 2026-04-05 02:01 HKT

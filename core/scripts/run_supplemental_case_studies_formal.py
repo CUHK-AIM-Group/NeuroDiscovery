@@ -138,12 +138,12 @@ CODE_DIRECTORIES = (
 )
 CODE_SUFFIXES = frozenset({".py", ".mjs", ".js", ".ps1", ".json"})
 FRAMEWORK_REPOSITORIES = {
-    "ai_scientist_v2": ROOT.parent / "autoresearch_baselines/AI-Scientist-v2",
-    "open_coscientist": ROOT.parent / "autoresearch_baselines/open-coscientist",
-    "sciagents": ROOT.parent / "autoresearch_baselines/SciAgentsDiscovery",
-    "virtual_lab": ROOT.parent / "autoresearch_baselines/virtual-lab",
-    "brainpilot_native": ROOT.parent / "autoresearch_baselines/BrainPilot",
-    "biomni_native": ROOT.parent / "autoresearch_baselines/Biomni",
+    "ai_scientist_v2": ROOT / "dev/baselines/autoresearch_baselines/AI-Scientist-v2",
+    "open_coscientist": ROOT / "dev/baselines/autoresearch_baselines/open-coscientist",
+    "sciagents": ROOT / "dev/baselines/autoresearch_baselines/SciAgentsDiscovery",
+    "virtual_lab": ROOT / "dev/baselines/autoresearch_baselines/virtual-lab",
+    "brainpilot_native": ROOT / "dev/baselines/autoresearch_baselines/BrainPilot",
+    "biomni_native": ROOT / "dev/baselines/autoresearch_baselines/Biomni",
 }
 FRAMEWORK_UNTRACKED_CODE_SUFFIXES = frozenset(
     {".py", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".json", ".yaml", ".yml"}

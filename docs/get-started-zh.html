@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NeuroClaw | 快速开始</title>
+    <title>NeuroDiscovery | 快速开始</title>
     <meta
       name="description"
-      content="NeuroClaw 安装与快速使用指南，包括安装、启动、验证和 benchmark 评测方法。"
+      content="NeuroDiscovery 安装与快速使用指南，包括安装、启动、验证和 benchmark 评测方法。"
     />
     <meta name="theme-color" content="#0f5c57" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,9 +22,9 @@
     <div class="bg-orb orb-b"></div>
 
     <header class="topbar">
-      <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
-        <img src="assets/logo.png" alt="NeuroClaw logo" />
-        <span>NeuroClaw</span>
+      <a class="brand" href="index-zh.html" aria-label="NeuroDiscovery 首页">
+        <img src="assets/logo.png" alt="NeuroDiscovery logo" />
+        <span>NeuroDiscovery</span>
       </a>
       <nav>
         <a href="index-zh.html">首页</a>
@@ -42,13 +42,13 @@
     <main>
       <section class="hero reveal">
         <p class="eyebrow">快速开始</p>
-        <h1>几步即可安装并启动 NeuroClaw</h1>
+        <h1>几步即可安装并启动 NeuroDiscovery</h1>
         <p class="lead">
-          在这一页中，你可以完成 NeuroClaw 的安装、启动与验证。
+          在这一页中，你可以完成 NeuroDiscovery 的安装、启动与验证。
         </p>
         <div class="actions">
           <a class="btn" href="#install">开始安装</a>
-          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw/blob/main/README_zh.md" target="_blank" rel="noreferrer">查看 README</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroDiscovery/blob/main/README_zh.md" target="_blank" rel="noreferrer">查看 README</a>
         </div>
       </section>
 
@@ -69,7 +69,7 @@
           </article>
           <article>
             <h3>安装向导</h3>
-            <p>NeuroClaw 提供安装向导，帮助配置运行环境、工具链路径和 Web UI 相关依赖。</p>
+            <p>NeuroDiscovery 提供安装向导，帮助配置运行环境、工具链路径和 Web UI 相关依赖。</p>
           </article>
         </div>
       </section>
@@ -89,8 +89,8 @@
           </ul>
         </div>
         <div class="code-stack">
-          <pre><code>git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+          <pre><code>git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/setup.py
 python installer/setup.py --non-interactive
 pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx</code></pre>
@@ -100,7 +100,7 @@ pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx</
       <section id="launch" class="split reveal">
         <div>
           <p class="eyebrow">快速使用</p>
-          <h2>启动 NeuroClaw</h2>
+          <h2>启动 NeuroDiscovery</h2>
           <p>
             你可以在终端里使用 REPL，也可以使用浏览器 Web UI。
           </p>
@@ -119,10 +119,10 @@ python core/agent/main.py --web --port 8080 --host 0.0.0.0</code></pre>
       </section>
 
       <section id="agent-integrations" class="panel reveal">
-        <h2>在其他 Agent 系统中使用 NeuroClaw</h2>
+        <h2>在其他 Agent 系统中使用 NeuroDiscovery</h2>
         <p class="sub">
-          将 NeuroClaw 安装为 router skill 或规则包，使宿主 agent 进入
-          NeuroClaw mode，并获得 NeuroClaw catalogs、NeuroOracle、NeuroBench、
+          将 NeuroDiscovery 安装为 router skill 或规则包，使宿主 agent 进入
+          NeuroRuntime mode，并获得 NeuroDiscovery catalogs、NeuroOracle、NeuroBench、
           模型工作流和神经影像技能。
         </p>
         <div class="dataset-table-wrap" aria-label="Agent 集成表格">
@@ -179,20 +179,20 @@ python installer/install_agent_integration.py --target all
 python installer/install_agent_integration.py --target all --export ./dist/agent-integrations</code></pre>
         </div>
         <p>
-          安装后，可以让宿主 agent “use NeuroClaw” 或 “enter NeuroClaw mode”
+          安装后，可以让宿主 agent “use NeuroDiscovery” 或 “enter NeuroRuntime mode”
           来处理神经影像和 autoresearch 任务。如果宿主 agent 使用不同的导入位置，
           可以先导出生成的 skill pack，再手动导入或复制。
         </p>
         <p>
           如果希望 Codex、Claude Code、Cursor 或其他宿主 agent 使用自己的内置模型，
-          而不是 NeuroClaw 配置中的 LLM API key 来做 autoresearch，可以启动基于文件协议的
+          而不是 NeuroDiscovery 配置中的 LLM API key 来做 autoresearch，可以启动基于文件协议的
           host-agent 循环：
         </p>
         <div class="code-stack">
           <pre><code>python -m neurooracle.src.hypothesis_cli host-agent-init case1_transdiagnostic --output-dir neurooracle/data/host_agent_runs/case1 --max-rounds 5</code></pre>
         </div>
         <p>
-          宿主 agent 会读取 <code>tasks/round_XXX_task.json</code>，以 NeuroClaw 的身份承担假设生成、
+          宿主 agent 会读取 <code>tasks/round_XXX_task.json</code>，以 NeuroDiscovery 的身份承担假设生成、
           critic 审核和实验监督，写入 <code>host_outputs/round_XXX_result.json</code>，
           然后用下面的命令推进下一轮：
         </p>
@@ -221,11 +221,11 @@ for s in skills:
 
       <section class="cta reveal">
         <h2>下一步</h2>
-        <p>NeuroClaw 启动后，你就可以从主页继续浏览 benchmark、FAQ 和其他页面。</p>
+        <p>NeuroDiscovery 启动后，你就可以从主页继续浏览 benchmark、FAQ 和其他页面。</p>
         <div class="actions">
           <a class="btn" href="index-zh.html">返回首页</a>
           <a class="btn ghost" href="neurobench-zh.html">NeuroBench</a>
-          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw" target="_blank" rel="noreferrer">仓库</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroDiscovery" target="_blank" rel="noreferrer">仓库</a>
         </div>
       </section>
     </main>

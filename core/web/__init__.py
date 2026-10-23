@@ -1,1 +1,1 @@
-# NeuroClaw web UI package
+# NeuroDiscovery web UI package

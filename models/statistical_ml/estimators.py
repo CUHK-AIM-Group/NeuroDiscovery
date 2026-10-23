@@ -1,4 +1,4 @@
-"""Estimator registry for tabular NeuroClaw baselines."""
+"""Estimator registry for tabular NeuroRuntime baselines."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def _xgboost(model: str, task: str, seed: int, params: dict[str, Any]):
         from xgboost import XGBClassifier, XGBRegressor
     except ImportError as exc:
         raise RuntimeError(
-            "XGBoost is optional. Install the 'tabular' NeuroClaw model dependencies."
+            "XGBoost is optional. Install the 'tabular' NeuroRuntime model dependencies."
         ) from exc
     defaults = {
         "n_estimators": 300,

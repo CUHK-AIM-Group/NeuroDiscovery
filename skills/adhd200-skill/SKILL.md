@@ -1,6 +1,6 @@
 ---
 name: adhd200-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the ADHD-200 dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ADHD-200', 'ADHD200', 'process ADHD data', 'ADHD fMRI', or any request to run the ADHD-200 pipeline. This is the NeuroClaw dataset-orchestration layer for ADHD-200."
+description: "Use this skill whenever the user wants an end-to-end workflow for the ADHD-200 dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data. Triggers include: 'ADHD-200', 'ADHD200', 'process ADHD data', 'ADHD fMRI', or any request to run the ADHD-200 pipeline. This is the NeuroRuntime dataset-orchestration layer for ADHD-200."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -13,7 +13,7 @@ dependencies:
 # ADHD-200 Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`adhd200-skill` is the NeuroClaw orchestration skill for the **ADHD-200** dataset.
+`adhd200-skill` is the NeuroRuntime orchestration skill for the **ADHD-200** dataset.
 
 It coordinates a fixed three-phase workflow:
 1. Download ADHD-200 data from the FCP/INDI repository.
@@ -24,7 +24,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract and merge ADHD-200 phenotype tables (diagnosis, ADHD measures, demographics, medication).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

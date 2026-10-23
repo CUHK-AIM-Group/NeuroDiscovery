@@ -37,6 +37,6 @@ Programmatic usage:
     #   confidence_score - evidence quality
     #   novelty_score - how unexpected
     #   evidence_score - statistical strength
-    #   testability_score - can NeuroClaw execute this?
+    #   testability_score - can NeuroRuntime execute this?
     #   composite_score - combined ranking
 """

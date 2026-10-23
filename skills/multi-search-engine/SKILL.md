@@ -111,7 +111,7 @@ MIT
 - `academic-research-hub` → scholarly paper search
 
 ## Reference
-Core multi-engine search integration for NeuroClaw (v2.0.1).  
+Core multi-engine search integration for NeuroRuntime (v2.0.1).
 Used as the primary literature & web search backend across all interface-layer skills.
 
 Created At: 2026-03-24 00:00 HKT

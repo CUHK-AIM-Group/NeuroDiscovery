@@ -12,7 +12,7 @@ dependencies:
 ## Overview
 MARS-WMH is the state-of-the-art, clinically-validated deep-learning tool (nnU-Net architecture) for segmenting brain white matter hyperintensities of presumed vascular origin. It takes a FLAIR image (recommended 1 mm isotropic) and a co-registered or registrable T1w image (1 mm isotropic, no contrast) and outputs a precise WMH segmentation mask in NIfTI format (returned in the original input resolution).
 
-This skill serves as the **NeuroClaw interface-layer wrapper** for the official MARS-WMH Docker container (`ghcr.io/miac-research/wmh-nnunet:latest`) and strictly follows the hierarchical design:
+This skill serves as the **NeuroRuntime interface-layer wrapper** for the official MARS-WMH Docker container (`ghcr.io/miac-research/wmh-nnunet:latest`) and strictly follows the hierarchical design:
 
 1. Check whether Docker (with NVIDIA Container Toolkit) is installed (`docker --version` + `nvidia-smi` via `claw-shell`).
 2. If `nvidia-smi` fails → immediately print the exact NVIDIA Container Toolkit installation commands and instruct the user to run them manually before retry.
@@ -59,7 +59,7 @@ sudo systemctl restart docker
 - NVIDIA GPU + drivers
 - ≥8 GB VRAM
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 ```bash
 # WMH Segmentation Shell Commands (execute via claw-shell)
 
@@ -126,7 +126,7 @@ echo "WMH segmentation mask saved in $OUTPUT_DIR"
 ## Reference
 Official repo: https://github.com/miac-research/MARS-WMH  
 Docker image: `ghcr.io/miac-research/wmh-nnunet:latest`  
-Custom NeuroClaw skill.
+Custom NeuroRuntime skill.
 
 Created At: 2026-03-23  
 Last Updated At: 2026-03-26 00:29 HKT  

@@ -1,6 +1,6 @@
 ---
 name: docker-env-manager
-description: "Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroClaw skill (e.g. wmh-segmentation, freesurfer-processor in container mode) requires a clean, isolated, GPU-enabled Docker environment (e.g. 'pull mars-wmh image', 'run container with GPU', 'docker compose up', 'prune unused images', 'build custom dockerfile', 'manage nvidia docker'). Triggers include: 'docker run', 'docker pull', 'docker compose', 'docker build', 'docker env', 'manage container', 'nvidia docker', 'pull image', 'docker prune', 'containerize'. This skill is the **mandatory gatekeeper for all Docker operations** in NeuroClaw: it ALWAYS plans first, shows commands + risks + best practices, and waits for explicit user confirmation before executing anything. All actual Docker execution is routed through `claw-shell`."
+description: "Use this skill whenever the user wants to pull, run, build, compose, list, prune, manage, or otherwise handle Docker containers, images, volumes, networks, or Docker Compose projects, or when a NeuroRuntime skill (e.g. wmh-segmentation, freesurfer-processor in container mode) requires a clean, isolated, GPU-enabled Docker environment (e.g. 'pull mars-wmh image', 'run container with GPU', 'docker compose up', 'prune unused images', 'build custom dockerfile', 'manage nvidia docker'). Triggers include: 'docker run', 'docker pull', 'docker compose', 'docker build', 'docker env', 'manage container', 'nvidia docker', 'pull image', 'docker prune', 'containerize'. This skill is the **mandatory gatekeeper for all Docker operations** in NeuroRuntime: it ALWAYS plans first, shows commands + risks + best practices, and waits for explicit user confirmation before executing anything. All actual Docker execution is routed through `claw-shell`."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: subagent
 skill_type: tool
@@ -12,7 +12,7 @@ dependencies:
 
 ## Overview
 
-Docker is the backbone for reproducible, containerized, GPU-accelerated environments in NeuroClaw — especially for deep-learning and neuroimaging skills (MARS-WMH nnU-Net, future nnU-Net models, containerized FreeSurfer, etc.) that require exact runtime isolation, NVIDIA GPU passthrough, and large pre-built images.
+Docker is the backbone for reproducible, containerized, GPU-accelerated environments in NeuroRuntime — especially for deep-learning and neuroimaging skills (MARS-WMH nnU-Net, future nnU-Net models, containerized FreeSurfer, etc.) that require exact runtime isolation, NVIDIA GPU passthrough, and large pre-built images.
 
 This skill acts as the **interface-layer orchestrator** for all common Docker operations, preventing permission issues, GPU misconfiguration, port conflicts, and storage bloat while enforcing best practices (named containers, volume mounts, `--gpus all`, docker-compose for multi-service stacks, dry-run previews, and safe pruning).
 
@@ -21,7 +21,7 @@ This skill acts as the **interface-layer orchestrator** for all common Docker op
 2. Detect current Docker setup (`docker --version`, `docker info`, NVIDIA Container Toolkit via `nvidia-smi` through `claw-shell`, available disk space, GPU status).
 3. Propose a safe, best-practice plan:
    - Always prefer named containers/volumes over anonymous ones
-   - Suggest `--gpus all` + volume mounts for NeuroClaw GPU skills
+   - Suggest `--gpus all` + volume mounts for NeuroRuntime GPU skills
    - Recommend `docker-compose.yml` for reproducible multi-container stacks
    - Use `--dry-run` equivalents and plan preview by default
    - Warn about large image pulls (several GB), permission issues (`chmod -R 777` on data dirs), and GPU driver mismatches
@@ -37,7 +37,7 @@ This skill acts as the **interface-layer orchestrator** for all common Docker op
 - Integrate with `dependency-planner` for installing Docker + NVIDIA Container Toolkit
 - Log all actions to `./logs/docker_YYYYMMDD_HHMMSS.log`
 
-## Quick Reference (Common NeuroClaw Tasks)
+## Quick Reference (Common NeuroRuntime Tasks)
 
 | Task                                      | Recommended Approach (after user confirmation)                          |
 |-------------------------------------------|-------------------------------------------------------------------------|
@@ -60,13 +60,13 @@ This skill is pure Python orchestration — no external binaries needed beyond a
 - `dependency-planner` (recommended companion for installing Docker + NVIDIA Container Toolkit)
 - Basic shell access
 
-To register in NeuroClaw:
+To register in NeuroRuntime:
 ```bash
 # Place files in: skills/docker-env-manager/
 # Update SOUL.md and/or USER.md with trigger phrases
 ```
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 ```python
 # docker_env_manager.py
@@ -97,7 +97,7 @@ def check_gpu():
         return "No NVIDIA GPU detected or NVIDIA Container Toolkit missing"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NeuroClaw Docker Environment Manager")
+    parser = argparse.ArgumentParser(description="NeuroRuntime Docker Environment Manager")
     parser.add_argument("--request", required=True, help="User request (pull/run/compose/prune...)")
     parser.add_argument("--dry-run", action="store_true", help="Only show plan")
     args = parser.parse_args()
@@ -362,7 +362,7 @@ docker start --checkpoint checkpoint_20260405_143000 ${CONTAINER_ID}
 
 ## Reference
 
-Custom interface-layer skill for NeuroClaw, addressing containerized environment setup gaps identified in the MedicalClaw / OpenClaw evaluation and aligned with 2026 Docker + NVIDIA best practices (GPU passthrough, compose reproducibility, claw-shell routing).
+Custom interface-layer skill for NeuroRuntime, addressing containerized environment setup gaps identified in the MedicalClaw / OpenClaw evaluation and aligned with 2026 Docker + NVIDIA best practices (GPU passthrough, compose reproducibility, claw-shell routing).
 
 ---
 Created At: 2026-03-25 23:08 HKT  

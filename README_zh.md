@@ -204,7 +204,7 @@ python installer/install_agent_integration.py --target codex
 | Cursor | `python installer/install_agent_integration.py --target cursor --scope project` |
 | 多个 agent | `python installer/install_agent_integration.py --target all` |
 
-安装后的宿主 agent 技能保留兼容名称 `neuroclaw`。可以让宿主 agent **use NeuroClaw** 或 **enter NeuroClaw mode** 来处理 neuroimaging、NeuroOracle、NeuroBench 和 autoresearch 任务。
+安装后的宿主 agent 技能保留兼容名称 `neuroclaw`。可以让宿主 agent **use NeuroRuntime** 或 **enter NeuroRuntime mode** 来处理 neuroimaging、NeuroOracle、NeuroBench 和 autoresearch 任务。
 
 <div align="center">
   <img src="materials/index.png" alt="NeuroDiscovery 功能概览" style="width: 80%; max-width: 100%;" />

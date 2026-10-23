@@ -1,6 +1,6 @@
 ---
 name: mne-eeg-tool
-description: "Use this skill whenever any NeuroClaw modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the dedicated base/tool skill that contains all specific MNE-Python code and usage patterns."
+description: "Use this skill whenever any NeuroRuntime modality skill (especially eeg-skill) needs to execute concrete MNE-Python operations for EEG loading, preprocessing, filtering, artifact removal, epoching, frequency-band analysis, or feature extraction. This is the dedicated base/tool skill that contains all specific MNE-Python code and usage patterns."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -10,7 +10,7 @@ dependencies:
 # MNE-EEG Tool (Base/Tool Layer)
 
 ## Overview
-`mne-eeg-tool` is the **NeuroClaw base/tool skill** that provides all concrete MNE-Python implementation for EEG processing.
+`mne-eeg-tool` is the **NeuroRuntime base/tool skill** that provides all concrete MNE-Python implementation for EEG processing.
 
 It is **never called directly by the user**. It is exclusively delegated to by the modality-layer skill `eeg-skill` (and any future EEG-related modality skills).
 
@@ -66,7 +66,7 @@ conda install -c conda-forge mne pyentrp scikit-learn pandas numpy matplotlib -y
 pip install mne[full]  # optional: full extras
 ```
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 The full EEG pipeline implementation is in `scripts/eeg_pipeline_reference.py` (see Agent Reference Rule above).
 
@@ -92,7 +92,7 @@ Functions: `load_eeg`, `detect_and_interpolate_bad_channels`, `preprocess_filter
 
 ## Reference
 Official MNE-Python documentation (https://mne.tools) + MNE-Connectivity + mne-microstates.
-Aligned with NeuroClaw base/tool skill pattern (freesurfer-tool, dcm2nii, etc.).
+Aligned with NeuroRuntime base/tool skill pattern (freesurfer-tool, dcm2nii, etc.).
 
 Curated reference snippet in this skill:
 - `skills/mne-eeg-tool/scripts/eeg_pipeline_reference.py`

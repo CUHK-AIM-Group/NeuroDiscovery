@@ -16,7 +16,7 @@ import pandas as pd
 
 
 DEFAULT_ADNI_ROOT = Path(r"Z:\Dataset\fMRI\ADNI_fmriprep_all")
-DEFAULT_OUT_DIR = Path("outputs/case1_adni_validation")
+DEFAULT_OUT_DIR = Path("dev/outputs/case1_adni_validation")
 BOLD_PATTERN = "*_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
 CONFOUND_PATTERN = "*_task-rest_desc-confounds_timeseries.tsv"
 

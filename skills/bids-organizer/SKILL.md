@@ -12,7 +12,7 @@ dependencies:
 
 ## Overview
 
-BIDS Organizer is the NeuroClaw interface-layer skill that automatically converts raw or semi-organized neuroimaging data into a standardized BIDS-compliant dataset.
+BIDS Organizer is the NeuroRuntime interface-layer skill that automatically converts raw or semi-organized neuroimaging data into a standardized BIDS-compliant dataset.
 
 It supports DICOM → NIfTI conversion + BIDS naming, existing NIfTI reorganization, EEG (.set/.edf/.bdf/.fif), and basic metadata handling. The skill generates a clear execution plan, waits for user confirmation, then delegates all heavy work to appropriate base tools.
 
@@ -58,7 +58,7 @@ dcm2niix --version
 bids-validator --version
 ```
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 ```python
 # bids_organizer_wrapper.py (placed inside the skill folder for reference)
@@ -80,7 +80,7 @@ def organize_to_bids(raw_dir, bids_dir, subject_id, session_id="01"):
     
     # Create basic dataset_description.json
     desc = {
-        "Name": "NeuroClaw BIDS Dataset",
+        "Name": "NeuroRuntime BIDS Dataset",
         "BIDSVersion": "1.8.0",
         "DatasetType": "raw"
     }

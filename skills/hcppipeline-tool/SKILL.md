@@ -12,7 +12,7 @@ dependencies:
 ## Overview
 The HCP Pipelines are the official, highly optimized preprocessing pipelines developed by the Human Connectome Project. They provide state-of-the-art processing for structural (T1w/T2w), functional (task/resting-state fMRI with ICA-FIX), and diffusion MRI (topup + eddy + bedpostx + probtrackx + MSMAll surface alignment).
 
-This skill serves as the **NeuroClaw interface-layer wrapper** for the HCP Pipelines and strictly follows the hierarchical design:
+This skill serves as the **NeuroRuntime interface-layer wrapper** for the HCP Pipelines and strictly follows the hierarchical design:
 
 1. Check whether HCP Pipelines and dependencies are installed.
 2. If missing → invoke `dependency-planner` to generate a safe installation plan.
@@ -95,7 +95,7 @@ echo $HCPPIPEDIR
 - MATLAB (for some legacy parts) or Octave
 - Sufficient disk space (20–100 GB per subject) and RAM (≥32 GB recommended)
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 Use this only as a last-resort orchestration reference. For benchmark-style tasks, prefer a direct task-level shell plan that first discovers BIDS inputs, checks required HCP resources, and only then calls the official stage script.
 
 ```python
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 - `multi-search-engine` / `academic-research-hub` → retrieve latest HCP best practices
 
 ## Reference
-Official HCP Pipelines integration for NeuroClaw high-precision multimodal preprocessing.  
+Official HCP Pipelines integration for NeuroRuntime high-precision multimodal preprocessing.
 Official repository: https://github.com/Washington-University/HCPpipelines
 
 ## Post-Execution Verification (Harness Integration)

@@ -1,4 +1,4 @@
-"""CLI for classical NeuroClaw statistical-learning models."""
+"""CLI for classical NeuroRuntime statistical-learning models."""
 
 from __future__ import annotations
 

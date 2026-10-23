@@ -22,7 +22,7 @@ DictLearning is a classical non-deep-learning method for resting-state network d
 - Primary input: preprocessed resting-state fMRI, optional mask, optional group subject list
 - Primary output: dictionary component maps, subject time series, optional connectomes or reports
 
-In NeuroClaw, this document is model-level guidance for DictLearning-based resting-state decomposition workflows rather than phenotype prediction.
+In NeuroRuntime, this document is model-level guidance for DictLearning-based resting-state decomposition workflows rather than phenotype prediction.
 
 Upstream preparation should usually be delegated to:
 - `fmri-skill` for rs-fMRI preprocessing, nuisance regression, filtering, and standard-space alignment

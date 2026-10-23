@@ -1,4 +1,4 @@
-"""BrainNetCNN training entry — NeuroClaw edition.
+"""BrainNetCNN training entry — NeuroRuntime edition.
 
 Usage:
     python models/brainnetcnn/scripts/train.py \

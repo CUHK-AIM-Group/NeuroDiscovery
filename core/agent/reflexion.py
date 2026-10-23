@@ -1,6 +1,6 @@
 """Reflexion: Self-reflection mechanism for learning from execution failures.
 
-This module implements the Reflexion framework for NeuroClaw, enabling the agent
+This module implements the Reflexion framework for NeuroRuntime, enabling the agent
 to reflect on tool execution failures and complex tasks, store reflections
 persistently, and retrieve relevant historical reflections for similar tasks.
 

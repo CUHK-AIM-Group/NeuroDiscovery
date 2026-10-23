@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate a clean HTML conversation log for NeuroClaw sessions.
+"""Generate a clean HTML conversation log for NeuroRuntime sessions.
 
-This script keeps only direct User <-> NeuroClaw dialogue and filters
+This script keeps only direct User <-> NeuroRuntime dialogue and filters
 system/tool/internal traces when they are available in the transcript format.
 """
 
@@ -157,14 +157,14 @@ def render_html(messages: List[Dict[str, str]], title: str) -> str:
     cards: List[str] = []
     for msg in messages:
         role = msg["role"]
-        speaker = "User" if role == "user" else "NeuroClaw"
+        speaker = "User" if role == "user" else "NeuroRuntime"
         css = "msg-user" if role == "user" else "msg-neuroclaw"
         timestamp = html.escape(msg["timestamp"]) if msg["timestamp"] else ""
         meta = f"<div class=\"meta\">{speaker}{(' · ' + timestamp) if timestamp else ''}</div>"
         body = html.escape(msg["content"]).replace("\n", "<br>")
         cards.append(f"<article class=\"msg {css}\">{meta}<div class=\"body\">{body}</div></article>")
 
-    cards_html = "\n".join(cards) if cards else "<p class=\"empty\">No direct User/NeuroClaw dialogue found.</p>"
+    cards_html = "\n".join(cards) if cards else "<p class=\"empty\">No direct User/NeuroRuntime dialogue found.</p>"
 
     return f"""<!doctype html>
 <html lang=\"en\">
@@ -236,7 +236,7 @@ def render_html(messages: List[Dict[str, str]], title: str) -> str:
   <main class=\"wrap\">
     <section class=\"hero\">
       <h1>{html.escape(title)}</h1>
-      <div class=\"sub\">Beautiful dialogue log containing only direct User and NeuroClaw messages.</div>
+      <div class=\"sub\">Beautiful dialogue log containing only direct User and NeuroRuntime messages.</div>
     </section>
     {cards_html}
     <footer>Generated at {html.escape(generated_at)}.</footer>
@@ -247,10 +247,10 @@ def render_html(messages: List[Dict[str, str]], title: str) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate a beautiful HTML log for NeuroClaw dialogue.")
+    parser = argparse.ArgumentParser(description="Generate a beautiful HTML log for NeuroRuntime dialogue.")
     parser.add_argument("--input", required=True, help="Input transcript file (.json, .jsonl, .md, .txt)")
     parser.add_argument("--output", required=True, help="Output HTML path")
-    parser.add_argument("--title", default="NeuroClaw Conversation Log", help="HTML page title")
+    parser.add_argument("--title", default="NeuroRuntime Conversation Log", help="HTML page title")
     args = parser.parse_args()
 
     input_path = Path(args.input).expanduser().resolve()

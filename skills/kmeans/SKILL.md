@@ -27,7 +27,7 @@ K-means is a classical non-deep-learning method for data-driven brain parcellati
 - Primary input: preprocessed neuroimaging features, optional mask
 - Primary output: parcel label map, cluster summaries, optional centroid outputs
 
-In NeuroClaw, this document is model-level guidance for K-means-based brain parcellation workflows rather than supervised prediction.
+In NeuroRuntime, this document is model-level guidance for K-means-based brain parcellation workflows rather than supervised prediction.
 
 Upstream preparation should usually be delegated to:
 - `fmri-skill` for rs-fMRI or task-fMRI feature preparation when parcellation is function-driven

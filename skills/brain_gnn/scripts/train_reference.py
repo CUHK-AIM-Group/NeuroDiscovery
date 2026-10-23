@@ -1,6 +1,6 @@
-"""BrainGNN training reference — NeuroClaw edition.
+"""BrainGNN training reference — NeuroRuntime edition.
 
-Demonstrates the complete training loop for BrainGNN with NeuroClaw data format.
+Demonstrates the complete training loop for BrainGNN with NeuroRuntime data format.
 Supports both classification and regression tasks with stratified K-fold CV.
 
 Usage (classification, smoke test):

@@ -1,5 +1,5 @@
 """
-NeuroClaw Session Manager
+NeuroRuntime Session Manager
 
 Manages conversation history, context-window compression, and lightweight
 checkpointing so long-running neuroscience sessions can be resumed.
@@ -34,7 +34,7 @@ MAX_CHECKPOINTS = 5
 
 class SessionManager:
     """
-    Manages context compression and checkpointing for a NeuroClaw session.
+    Manages context compression and checkpointing for a NeuroRuntime session.
 
     Parameters
     ----------

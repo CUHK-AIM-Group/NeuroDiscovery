@@ -12,7 +12,7 @@ dependencies:
 
 ## Overview
 
-`statistical-ml` is the shared NeuroClaw implementation for classical prediction
+`statistical-ml` is the shared NeuroRuntime implementation for classical prediction
 and inference on subject-level tabular features. It keeps imputation, scaling,
 feature selection, and model fitting inside each training fold.
 
@@ -33,7 +33,7 @@ or observation. Use `temporal-models` for sequence tensors and
 
 ## Installation
 
-Core dependencies are installed with NeuroClaw:
+Core dependencies are installed with NeuroRuntime:
 
 ```bash
 pip install numpy pandas scipy scikit-learn statsmodels joblib

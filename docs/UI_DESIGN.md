@@ -7,6 +7,8 @@ workflows, bilingual content and historical desktop/storage identifiers.
 
 Public naming: **NeuroDiscovery** identifies the application; **NeuroRuntime** identifies the execution view, backend and execution agent. Legacy storage and IPC identifiers retain their existing values.
 
+The naming audit also covers generated host-agent/MCP descriptions, demo replies, setup instructions and log exports. Existing configuration keys, storage/IPC identifiers, class names, license attribution, frozen study materials and clearly labeled historical release/report names retain their original values.
+
 ## Artifact workspace — 2026-09-29
 
 The shared production frontend now includes `artifact-panel.js` / `.css`.

@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NeuroClaw | Get Started</title>
+    <title>NeuroDiscovery | Get Started</title>
     <meta
       name="description"
-      content="Installation and quick start guide for NeuroClaw, including setup, launch, and verification steps."
+      content="Installation and quick start guide for NeuroDiscovery, including setup, launch, and verification steps."
     />
     <meta name="theme-color" content="#0f5c57" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,9 +22,9 @@
     <div class="bg-orb orb-b"></div>
 
     <header class="topbar">
-      <a class="brand" href="index.html" aria-label="NeuroClaw Home">
-        <img src="assets/logo.png" alt="NeuroClaw logo" />
-        <span>NeuroClaw</span>
+      <a class="brand" href="index.html" aria-label="NeuroDiscovery Home">
+        <img src="assets/logo.png" alt="NeuroDiscovery logo" />
+        <span>NeuroDiscovery</span>
       </a>
       <nav>
         <a href="index.html">Home</a>
@@ -42,13 +42,13 @@
     <main>
       <section class="hero reveal">
         <p class="eyebrow">Get Started</p>
-        <h1>Install and launch NeuroClaw in a few steps</h1>
+        <h1>Install and launch NeuroDiscovery in a few steps</h1>
         <p class="lead">
-          Install NeuroClaw, launch the agent, and verify the setup from one place.
+          Install NeuroDiscovery, launch the agent, and verify the setup from one place.
         </p>
         <div class="actions">
           <a class="btn" href="#install">Start Installation</a>
-          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw/blob/main/README.md" target="_blank" rel="noreferrer">Open README</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroDiscovery/blob/main/README.md" target="_blank" rel="noreferrer">Open README</a>
         </div>
       </section>
 
@@ -69,7 +69,7 @@
           </article>
           <article>
             <h3>Setup Wizard</h3>
-            <p>NeuroClaw provides a setup wizard for runtime configuration, toolchain paths, and Web UI dependencies.</p>
+            <p>NeuroDiscovery provides a setup wizard for runtime configuration, toolchain paths, and Web UI dependencies.</p>
           </article>
         </div>
       </section>
@@ -89,8 +89,8 @@
           </ul>
         </div>
         <div class="code-stack">
-          <pre><code>git clone https://github.com/CUHK-AIM-Group/NeuroClaw.git
-cd NeuroClaw
+          <pre><code>git clone https://github.com/CUHK-AIM-Group/NeuroDiscovery.git
+cd NeuroDiscovery
 python installer/setup.py
 python installer/setup.py --non-interactive
 pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx</code></pre>
@@ -100,9 +100,9 @@ pip install "fastapi[standard]" uvicorn pypdf python-docx openpyxl python-pptx</
       <section id="launch" class="split reveal">
         <div>
           <p class="eyebrow">Quick Use</p>
-          <h2>Start NeuroClaw</h2>
+          <h2>Start NeuroDiscovery</h2>
           <p>
-            You can run NeuroClaw either in the terminal REPL or in the browser-based Web UI.
+            You can run NeuroDiscovery either in the terminal REPL or in the browser-based Web UI.
           </p>
           <ul>
             <li>Terminal REPL: <code>python core/agent/main.py</code></li>
@@ -119,10 +119,10 @@ python core/agent/main.py --web --port 8080 --host 0.0.0.0</code></pre>
       </section>
 
       <section id="agent-integrations" class="panel reveal">
-        <h2>Use NeuroClaw in Other Agent Systems</h2>
+        <h2>Use NeuroDiscovery in Other Agent Systems</h2>
         <p class="sub">
-          Install NeuroClaw as a router skill or rule pack so the host agent can
-          enter NeuroClaw mode with NeuroClaw catalogs, NeuroOracle, NeuroBench,
+          Install NeuroDiscovery as a router skill or rule pack so the host agent can
+          enter NeuroRuntime mode with NeuroDiscovery catalogs, NeuroOracle, NeuroBench,
           model workflows, and neuroimaging skills.
         </p>
         <div class="dataset-table-wrap" aria-label="Agent integration table">
@@ -179,14 +179,14 @@ python installer/install_agent_integration.py --target all
 python installer/install_agent_integration.py --target all --export ./dist/agent-integrations</code></pre>
         </div>
         <p>
-          After installation, ask the host agent to "use NeuroClaw" or "enter
-          NeuroClaw mode" for neuroimaging and autoresearch work. If the host
+          After installation, ask the host agent to "use NeuroDiscovery" or "enter
+          NeuroRuntime mode" for neuroimaging and autoresearch work. If the host
           agent uses a different import location, export the generated skill pack
           and import or copy it manually.
         </p>
         <p>
           To let Codex, Claude Code, Cursor, or another host agent use its own
-          built-in model instead of a NeuroClaw LLM API key for autoresearch,
+          built-in model instead of a NeuroDiscovery LLM API key for autoresearch,
           start the file-based host-agent loop:
         </p>
         <div class="code-stack">
@@ -194,7 +194,7 @@ python installer/install_agent_integration.py --target all --export ./dist/agent
         </div>
         <p>
           The host agent reads <code>tasks/round_XXX_task.json</code>, acts as
-          NeuroClaw's hypothesis generator, critic, and experiment supervisor,
+          NeuroDiscovery's hypothesis generator, critic, and experiment supervisor,
           writes <code>host_outputs/round_XXX_result.json</code>, and advances
           the loop with:
         </p>
@@ -223,11 +223,11 @@ for s in skills:
 
       <section class="cta reveal">
         <h2>Next Step</h2>
-        <p>Once NeuroClaw is running, you can explore the benchmark, FAQ, and homepage pages directly from the site.</p>
+        <p>Once NeuroDiscovery is running, you can explore the benchmark, FAQ, and homepage pages directly from the site.</p>
         <div class="actions">
           <a class="btn" href="index.html">Back to Home</a>
           <a class="btn ghost" href="neurobench.html">NeuroBench</a>
-          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroClaw" target="_blank" rel="noreferrer">Repository</a>
+          <a class="btn ghost" href="https://github.com/CUHK-AIM-Group/NeuroDiscovery" target="_blank" rel="noreferrer">Repository</a>
         </div>
       </section>
     </main>

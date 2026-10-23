@@ -1,4 +1,4 @@
-"""NeuroClaw cross-session memory system.
+"""NeuroRuntime cross-session memory system.
 
 Stores user preferences, project context, feedback, and external references
 as fact-based markdown files under a shared local memory directory.

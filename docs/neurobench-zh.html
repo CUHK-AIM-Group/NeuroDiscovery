@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NeuroClaw | NeuroBench</title>
+    <title>NeuroDiscovery | NeuroBench</title>
     <meta
       name="description"
-      content="NeuroClaw 的 NeuroBench 介绍，包括任务范围、运行方式与评分流程。"
+      content="NeuroDiscovery 的 NeuroBench 介绍，包括任务范围、运行方式与评分流程。"
     />
     <meta name="theme-color" content="#0f5c57" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,9 +22,9 @@
     <div class="bg-orb orb-b"></div>
 
     <header class="topbar">
-      <a class="brand" href="index-zh.html" aria-label="NeuroClaw 首页">
-        <img src="assets/logo.png" alt="NeuroClaw logo" />
-        <span>NeuroClaw</span>
+      <a class="brand" href="index-zh.html" aria-label="NeuroDiscovery 首页">
+        <img src="assets/logo.png" alt="NeuroDiscovery logo" />
+        <span>NeuroDiscovery</span>
       </a>
       <nav>
         <a href="index-zh.html">首页</a>
@@ -42,7 +42,7 @@
     <main>
       <section class="hero reveal faq-intro">
         <p class="eyebrow">NeuroBench</p>
-        <h1>NeuroClaw 的 benchmark 评测页</h1>
+        <h1>NeuroDiscovery 的 benchmark 评测页</h1>
         <p class="lead">
           NeuroBench 用于评估端到端神经影像工作流、复现准备度以及技能驱动执行能力，目前已覆盖数据处理与模型训练/评估。
         </p>
@@ -136,7 +136,7 @@ python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
       <section class="panel reveal">
         <h2>评测结果</h2>
         <p class="sub">
-          每个基础模型都会在 <em>with-skills</em>（在 NeuroClaw 框架下运行）与 <em>no-skills</em> 两种设置下进行评测。下图左侧为整体 benchmark 分数，右侧为 <em>with-skills</em> 下分数与 token 消耗的权衡。
+          每个基础模型都会在 <em>with-skills</em>（在 NeuroDiscovery 框架下运行）与 <em>no-skills</em> 两种设置下进行评测。下图左侧为整体 benchmark 分数，右侧为 <em>with-skills</em> 下分数与 token 消耗的权衡。
         </p>
         <div class="figure-preview">
           <img src="assets/results.png" alt="NeuroBench 结果：各基础模型的整体得分与分数-token 权衡" />
@@ -172,7 +172,7 @@ python core/agent/main.py --score-benchmark --score-workers 8</code></pre>
           </table>
         </div>
         <p class="sub">
-          所有 10 个基础模型在 NeuroClaw 框架下都有提升，平均绝对增益为 4.74 分。相对增益最大的是 MiniMax-M2.7（g = 0.1998）、Qwen3-plus（g = 0.1558）和 Claude-Sonnet-4.6（g = 0.1450）。
+          所有 10 个基础模型在 NeuroDiscovery 框架下都有提升，平均绝对增益为 4.74 分。相对增益最大的是 MiniMax-M2.7（g = 0.1998）、Qwen3-plus（g = 0.1558）和 Claude-Sonnet-4.6（g = 0.1450）。
         </p>
       </section>
 

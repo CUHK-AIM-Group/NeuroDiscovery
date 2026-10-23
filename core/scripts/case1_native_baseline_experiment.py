@@ -52,7 +52,7 @@ except ModuleNotFoundError:
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINES_ROOT = ROOT.parent / "autoresearch_baselines"
+BASELINES_ROOT = ROOT / "dev/baselines/autoresearch_baselines"
 DEFAULT_OUT_DIR = Path(
     r"Z:\Public Dataset\case1_exhaustive_full\20260707_fullv2_kg_rerun\native_baselines_gpt55_high"
 )

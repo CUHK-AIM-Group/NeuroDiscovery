@@ -1,6 +1,6 @@
 ---
 name: combraintf
-description: "Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroClaw auto-derives community partitions from atlas naming conventions (Yeo 7-net for Schaefer, lobe-based for AAL)."
+description: "Use this model doc whenever the user wants to run Com-BrainTF (Community-aware Brain Transformer) for fMRI phenotype prediction. Com-BrainTF uses dense FC matrices with a two-level Transformer (per-community local + global) and DEC pooling. NeuroRuntime auto-derives community partitions from atlas naming conventions (Yeo 7-net for Schaefer, lobe-based for AAL)."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: base
 skill_type: model
@@ -15,7 +15,7 @@ Com-BrainTF (Community-aware Brain Transformer) 是一种针对 fMRI 连接组�
 
 - Paper: Bannadabhavi et al., 2023, "Community-Aware Transformer for Autism Prediction in fMRI Connectome"，MICCAI
 - Official code: https://github.com/ubc-tea/Com-BrainTF
-- NeuroClaw reimplementation: `models/combraintf/`（去除 hydra/omegaconf 与硬编码 node_clus_map，改为运行时从 atlas 推导）
+- NeuroRuntime reimplementation: `models/combraintf/`（去除 hydra/omegaconf 与硬编码 node_clus_map，改为运行时从 atlas 推导）
 - Primary input: dense FC 矩阵 [B, N, N]
 - Primary output: phenotype prediction + DEC assignment + per-level attention
 
@@ -23,10 +23,10 @@ Com-BrainTF (Community-aware Brain Transformer) 是一种针对 fMRI 连接组�
 
 ---
 
-## NeuroClaw 实现要点
+## NeuroRuntime 实现要点
 
-1. **去除 hydra/omegaconf**：原版用 hydra 配置 + DictConfig，NeuroClaw 改为纯 Python 构造函数，所有参数显式传入。
-2. **动态 community partition**：原版从 `node_clus_map.pickle` 加载 Schaefer-400 的固定社区映射；NeuroClaw 在 `data_adapter.py::build_community_ids(atlas)` 里根据 ROI 名自动推导：
+1. **去除 hydra/omegaconf**：原版用 hydra 配置 + DictConfig，NeuroRuntime 改为纯 Python 构造函数，所有参数显式传入。
+2. **动态 community partition**：原版从 `node_clus_map.pickle` 加载 Schaefer-400 的固定社区映射；NeuroRuntime 在 `data_adapter.py::build_community_ids(atlas)` 里根据 ROI 名自动推导：
    - `schaefer_*_7net` → Yeo 7-network（Vis/SomMot/DorsAttn/SalVentAttn/Limbic/Cont/Default）+ Unknown 兜底，共 8 组
    - `aal_*` / `destrieux` / `dk_*` / `harvard_oxford_*` → 7 lobe + Other = 8 组
    - 其他无语义命名的 atlas（cc200/glasser/basc/power/msdl）→ MD5 hash round-robin 8 组兜底
@@ -37,7 +37,7 @@ Com-BrainTF (Community-aware Brain Transformer) 是一种针对 fMRI 连接组�
 
 ---
 
-## Quick Start (NeuroClaw 内部)
+## Quick Start (NeuroRuntime 内部)
 
 ### 前置条件
 - conda env: `neuroclaw` (Python 3.11)
@@ -95,7 +95,7 @@ Output: (logits, assignment)
 
 ## 关键训练参数
 
-| 参数 | 论文默认 | NeuroClaw 默认 | 说明 |
+| 参数 | 论文默认 | NeuroRuntime 默认 | 说明 |
 |---|---|---|---|
 | `--lr` | 1e-4 | 1e-3 | 论文 1e-4，对齐其他模型用 1e-3 |
 | `--wd` | 1e-4 | 5e-4 | 权重衰减 |
@@ -111,7 +111,7 @@ Output: (logits, assignment)
 ## 调试经验与注意事项
 
 1. **nhead 整除 d_model**：d_model = n_roi，必须能被 nhead 整除。Schaefer_200/4/8 都 OK，AAL_116/4 也 OK，但奇数 ROI 数（如 cc200 实际 190）需调 nhead。
-2. **每社区 CLS 独立**：每个社区一个 `local_transformer`（含独立 CLS 参数），但 Transformer 层本身可共享或独立。NeuroClaw 实现为完全独立（每社区 1 个 TransformerEncoderLayer），略多参数但更易调试。
+2. **每社区 CLS 独立**：每个社区一个 `local_transformer`（含独立 CLS 参数），但 Transformer 层本身可共享或独立。NeuroRuntime 实现为完全独立（每社区 1 个 TransformerEncoderLayer），略多参数但更易调试。
 3. **community 边界顺序**：模型按 community_ids 排序，每个 community 的 ROI 必须连续。`get_community_ids` 返回的 list 内部数字未必连续，模型构造时会重排索引。
 4. **n_communities 推导**：默认从 `set(community_ids)` 大小取，无需显式传。
 5. **memory 占用**：local transformer 数 × hidden_size × d_model^2 量级，glasser_360 + hidden=1024 容易爆显存，建议 hidden=512 + batch=4。
@@ -120,7 +120,7 @@ Output: (logits, assignment)
 
 ---
 
-## NeuroClaw 委托规则
+## NeuroRuntime 委托规则
 
 - ROI 生成和预处理：委托 `fmri-skill`
 - HCP 数据下载/编排：委托 `hcpya-skill` / `hcpa-skill` / `hcpd-skill` / `hcpep-skill`
@@ -135,7 +135,7 @@ Output: (logits, assignment)
 
 - Bannadabhavi A, Lee S, Deng W, Ying R, Li X. 2023. Community-Aware Transformer for Autism Prediction in fMRI Connectome. MICCAI.
 - Official repository: https://github.com/ubc-tea/Com-BrainTF
-- NeuroClaw BNT skill (共享数据格式): `skills/bnt/SKILL.md`
+- NeuroRuntime BNT skill (共享数据格式): `skills/bnt/SKILL.md`
 
 Created At: 2026-05-19 01:30 HKT
 Last Updated At: 2026-05-19 01:30 HKT

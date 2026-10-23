@@ -1,6 +1,6 @@
 ---
 name: cobre-skill
-description: "Use this skill whenever the user wants an end-to-end workflow for the COBRE dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data for schizophrenia research. Triggers include: 'COBRE', 'process COBRE', 'COBRE schizophrenia', 'COBRE fMRI', or any request to run the COBRE pipeline. This is the NeuroClaw dataset-orchestration layer for COBRE."
+description: "Use this skill whenever the user wants an end-to-end workflow for the COBRE dataset, including download, BIDS organization, and processing of sMRI and rs-fMRI data for schizophrenia research. Triggers include: 'COBRE', 'process COBRE', 'COBRE schizophrenia', 'COBRE fMRI', or any request to run the COBRE pipeline. This is the NeuroRuntime dataset-orchestration layer for COBRE."
 license: MIT License (NeuroClaw custom skill - freely modifiable within the project)
 layer: subagent
 skill_type: dataset
@@ -13,7 +13,7 @@ dependencies:
 # COBRE Skill (Dataset-Orchestration Layer)
 
 ## Overview
-`cobre-skill` is the NeuroClaw orchestration skill for the **COBRE (Center for Biomedical Research Excellence)** dataset.
+`cobre-skill` is the NeuroRuntime orchestration skill for the **COBRE (Center for Biomedical Research Excellence)** dataset.
 
 COBRE contains 147 participants: 72 schizophrenia patients and 75 healthy controls, with T1w structural and rs-fMRI data. It is commonly used as a benchmark for brain disorder classification.
 
@@ -26,7 +26,7 @@ It also provides **phenotype extraction** and **QC integration** paths:
 - Extract COBRE phenotype data (diagnosis, demographics, handedness).
 - Generate per-subject QC summaries with exclusion lists.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell` to base/tool skills.

@@ -13,7 +13,7 @@ dependencies: []
 
 It reads the **session log** and **daily memory**, extracts new experience (what worked, new patterns, edge cases), identifies the most relevant skill files, and produces **diff-formatted** update suggestions for `SKILL.md`.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates any file scanning or execution via helper skills.

@@ -17,9 +17,9 @@ complementary_skills:
 
 ## Overview
 
-`pnc-skill` is the NeuroClaw orchestration skill for the **Philadelphia Neurodevelopmental Cohort (PNC)** dataset, a large-scale collaborative study between the University of Pennsylvania and the Children's Hospital of Philadelphia.
+`pnc-skill` is the NeuroRuntime orchestration skill for the **Philadelphia Neurodevelopmental Cohort (PNC)** dataset, a large-scale collaborative study between the University of Pennsylvania and the Children's Hospital of Philadelphia.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills via `claw-shell`.

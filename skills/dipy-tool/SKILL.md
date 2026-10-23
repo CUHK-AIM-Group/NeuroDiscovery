@@ -1,6 +1,6 @@
 ---
 name: dipy-tool
-description: "Use this skill whenever any NeuroClaw diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool skill that contains all specific DIPY code and usage patterns. Never called directly by the user."
+description: "Use this skill whenever any NeuroRuntime diffusion MRI / DWI modality skill needs to execute concrete DIPY operations: load DWI (NIfTI+bvals+bvecs), optional masking, DTI fitting, compute FA/MD/AD/RD, and extract ROI statistics. This is the dedicated base/tool skill that contains all specific DIPY code and usage patterns. Never called directly by the user."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -10,7 +10,7 @@ dependencies:
 # DIPY Tool (Base/Tool Layer)
 
 ## Overview
-`dipy-tool` is the **NeuroClaw base/tool skill** that provides the concrete **DIPY** implementation for diffusion MRI (DWI/DTI) processing and feature extraction.
+`dipy-tool` is the **NeuroRuntime base/tool skill** that provides the concrete **DIPY** implementation for diffusion MRI (DWI/DTI) processing and feature extraction.
 
 It is **never called directly by the user**. It is delegated to by a diffusion modality-layer skill (e.g., future `dwi-skill` / `dmri-skill`) and executed via `claw-shell` for safety, logging, and long-running stability.
 
@@ -48,7 +48,7 @@ Reference snippets available:
 
 ## Curated Reference Scripts
 
-These scripts are aligned with NeuroClaw's DWI handling pattern and with the modality / dependency expectations documented in `rs-fMRI-Pipeline-Tutorial/`:
+These scripts are aligned with NeuroRuntime's DWI handling pattern and with the modality / dependency expectations documented in `rs-fMRI-Pipeline-Tutorial/`:
 - the tutorial explicitly includes DTI/DWI as a supported modality
 - the tutorial installs `dipy` as a core dependency
 - the tutorial's multimodal structure motivates deterministic outputs and atlas-based summaries
@@ -114,7 +114,7 @@ conda install -c conda-forge matplotlib -y
 
 ---
 
-## NeuroClaw recommended wrapper
+## NeuroRuntime recommended wrapper
 
 If a single entry point is still needed later, it should be assembled from the curated snippets in `skills/dipy-tool/scripts/` rather than keeping a long monolithic example embedded in this document.
 
@@ -169,7 +169,7 @@ For benchmark-style ROI-statistics tasks, treat this tool as a library of narrow
     - `skills/dipy-tool/scripts/load_and_mask_reference.py`
     - `skills/dipy-tool/scripts/dti_metrics_reference.py`
     - `skills/dipy-tool/scripts/roi_stats_reference.py`
-- Aligned with NeuroClaw base/tool skill pattern (`mne-eeg-tool`, etc.)
+- Aligned with NeuroRuntime base/tool skill pattern (`mne-eeg-tool`, etc.)
 
 ## Post-Execution Verification (Harness Integration)
 

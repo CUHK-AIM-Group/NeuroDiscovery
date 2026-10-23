@@ -1,6 +1,6 @@
 """Small native-CLI bridge for provider subscription accounts.
 
-The official CLIs own OAuth credentials and context sessions.  NeuroClaw never
+The official CLIs own OAuth credentials and context sessions.  NeuroRuntime never
 reads or stores those credentials; it only asks the signed-in CLI for one
 read-only, non-interactive answer.  Tool-capable AutoResearch remains on the
 API path until a native session adapter can expose the same NeuroRuntime tools.

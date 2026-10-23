@@ -5,7 +5,7 @@ Brain Disorder Diagnosis" (Zhang et al. 2022, MICCAI).
 
 The original combines a per-subject Local_GNN (GCN + SABP mutual-info pooling)
 with a Global_GNN over a population graph built from non-imaging phenotypic
-data. Since NeuroClaw works at the per-subject brain-graph level only, we keep
+data. Since NeuroRuntime works at the per-subject brain-graph level only, we keep
 the Local_GNN backbone (the novel contribution: SABP pooling with MI loss) and
 replace the population Global_GNN with a graph-level MLP head.
 

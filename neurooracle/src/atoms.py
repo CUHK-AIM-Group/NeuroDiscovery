@@ -1,4 +1,4 @@
-"""Compositional task algebra for NeuroClaw / NeuroOracle.
+"""Compositional task algebra for NeuroDiscovery / NeuroOracle.
 
 A small alphabet of meta-concepts (atoms) — disease, drug, imaging marker,
 gene target, cognitive task, outcome, individual data — combines under

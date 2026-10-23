@@ -47,7 +47,7 @@ If the prompt is specifically about structural MRI DICOM conversion, keep the an
 
 ## Installation
 
-### Via pre-built binary (recommended for NeuroClaw)
+### Via pre-built binary (recommended for NeuroRuntime)
 Most reliable and fastest:
 
 ```bash
@@ -112,7 +112,7 @@ dcm2niix -z y -x n -o anonymized/ dicom_study/
 dcm2niix -z y -o nifti_all/ -b y ./patient_20250318/
 ```
 
-### NeuroClaw recommended wrapper (for agent consistency)
+### NeuroRuntime recommended wrapper (for agent consistency)
 
 A thin python wrapper can be placed in the skill directory:
 

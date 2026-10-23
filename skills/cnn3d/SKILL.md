@@ -13,7 +13,7 @@ dependencies:
 
 ## Overview
 
-`cnn3d` is NeuroClaw's canonical compact residual 3D CNN. It owns one model,
+`cnn3d` is NeuroRuntime's canonical compact residual 3D CNN. It owns one model,
 one NPZ input contract, and one checkpoint format. NeuroSTORM remains a
 separate model skill with its own external repository and runtime.
 

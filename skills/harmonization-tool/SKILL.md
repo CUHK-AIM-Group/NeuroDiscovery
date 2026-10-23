@@ -10,13 +10,13 @@ dependencies:
 # Harmonization Tool Skill (Cross-Site Feature Alignment Layer)
 
 ## Overview
-`harmonization-tool` is the NeuroClaw cross-cutting layer that sits **between** dataset skills (ABIDE, ADHD-200, ABCD, HCP, UKB, ...) and model skills (BrainGNN, BNT, IBGNN, LGGNN, BrainNetCNN, FM-APP, SVM, SpaceNet, ...).
+`harmonization-tool` is the NeuroRuntime cross-cutting layer that sits **between** dataset skills (ABIDE, ADHD-200, ABCD, HCP, UKB, ...) and model skills (BrainGNN, BNT, IBGNN, LGGNN, BrainNetCNN, FM-APP, SVM, SpaceNet, ...).
 
 Its job: take subject-level features extracted by dataset skills and remove **technical / batch variance** introduced by site, scanner, field strength, sequence, or dataset, while **preserving biological variance** (age, sex, diagnosis, ...).
 
 This is the prerequisite for any honest **mega-analysis** that pools individual-participant data (IPD) across sites or datasets.
 
-This skill follows NeuroClaw hierarchy:
+This skill follows NeuroRuntime hierarchy:
 - Defines **WHAT to do**, not low-level implementation details.
 - Does **not** execute direct shell commands itself.
 - Delegates all execution via `claw-shell`.
@@ -44,7 +44,7 @@ Do **NOT** trigger for:
 
 ---
 
-## Position in the NeuroClaw Pipeline
+## Position in the NeuroRuntime Pipeline
 
 ```
 [dataset-skill]  →  feature matrix + meta (site, scanner, age, sex, dx)
@@ -157,7 +157,7 @@ The `manifest.json` is the source of truth for downstream KG provenance — see 
 
 ## KG Integration (Provenance, not Pollution)
 
-Harmonization metadata enters the NeuroClaw KG via a **three-layer separation** that keeps the scientific main graph clean:
+Harmonization metadata enters the NeuroRuntime KG via a **three-layer separation** that keeps the scientific main graph clean:
 
 - **Layer 1 (main scientific KG)**: every `Claim` derived from harmonized features carries:
   - `harmonization_method` (e.g. `combat-gam`)

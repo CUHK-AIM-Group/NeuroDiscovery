@@ -1,6 +1,6 @@
 ---
 name: claw-shell
-description: "Use this skill whenever any NeuroClaw skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', 'shell command', 'tmux claw', 'run in claw session', 'safe shell execution', or any request that requires running terminal commands. This skill is the mandatory gatekeeper for all shell execution in NeuroClaw: it ALWAYS routes commands through the dedicated tmux session `claw`, never touches other sessions, and returns captured output to the calling agent."
+description: "Use this skill whenever any NeuroRuntime skill, sub-agent, or model needs to execute shell commands safely (e.g. source environment scripts, run recon-all, git operations, conda commands, ls, cat logs, etc.). Triggers include: 'run shell', 'execute command', 'shell command', 'tmux claw', 'run in claw session', 'safe shell execution', or any request that requires running terminal commands. This skill is the mandatory gatekeeper for all shell execution in NeuroRuntime: it ALWAYS routes commands through the dedicated tmux session `claw`, never touches other sessions, and returns captured output to the calling agent."
 license: MIT License (NeuroClaw core skill – freely modifiable within the project)
 layer: base
 skill_type: tool
@@ -10,7 +10,7 @@ dependencies: []
 
 ## Overview
 
-`claw-shell` is the central, safe shell execution layer for the entire NeuroClaw system. All long-running or system-level commands (FreeSurfer recon-all, dependency installation steps, git operations, conda commands, file operations, etc.) are routed through this skill.
+`claw-shell` is the central, safe shell execution layer for the entire NeuroRuntime system. All long-running or system-level commands (FreeSurfer recon-all, dependency installation steps, git operations, conda commands, file operations, etc.) are routed through this skill.
 
 **Core principles:**
 - **Always** uses the dedicated tmux session named `claw` (creates it automatically if missing).
@@ -36,7 +36,7 @@ This design solves the problems of the main agent not proactively installing dep
 
 ## Installation
 
-This is a core NeuroClaw skill and requires no external packages beyond tmux.
+This is a core NeuroRuntime skill and requires no external packages beyond tmux.
 
 **One-time setup (run once via dependency-planner or manually):**
 
@@ -45,7 +45,7 @@ This is a core NeuroClaw skill and requires no external packages beyond tmux.
 tmux new -s claw -d || true
 ```
 
-To register in NeuroClaw:
+To register in NeuroRuntime:
 ```bash
 # Place files in: skills/claw-shell/
 # Update SOUL.md and/or USER.md to register as the default shell executor
@@ -79,14 +79,14 @@ claw_shell_run with command="ls -la /data"
 "Warning: This command contains 'rm'. Do you confirm execution? Reply YES to proceed."
 ```
 
-## NeuroClaw recommended wrapper script
+## NeuroRuntime recommended wrapper script
 
 ```python
 # claw_shell.py
 import argparse
 import sys
 
-# In real NeuroClaw this is implemented as a tool call, not direct Python execution
+# In real NeuroRuntime this is implemented as a tool call, not direct Python execution
 def claw_shell_run(command: str):
     print(f"[claw-shell] Sending to tmux session 'claw':")
     print(f"  {command}")
@@ -95,7 +95,7 @@ def claw_shell_run(command: str):
     # return agent.tool_call("claw_shell_run", {"command": command})
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NeuroClaw Claw-Shell Wrapper")
+    parser = argparse.ArgumentParser(description="NeuroRuntime Claw-Shell Wrapper")
     parser.add_argument("--command", required=True, help="Shell command to run in tmux session 'claw'")
     args = parser.parse_args()
     claw_shell_run(args.command)
@@ -108,13 +108,13 @@ if __name__ == "__main__":
   - Commands containing `sudo`, `rm -rf`, `reboot`, `shutdown`, `docker system prune`, destructive `chmod`, etc. **must** receive explicit user “YES” confirmation.
   - Long-running commands (e.g. recon-all) are safe because they run detached in tmux.
 - Output is always captured and returned to the calling skill.
-- Session is persistent across NeuroClaw runs (ideal for monitoring long pipelines).
+- Session is persistent across NeuroRuntime runs (ideal for monitoring long pipelines).
 
 ## When to Call This Skill
 
 - Any skill (`freesurfer-tool`, `dependency-planner`, `git-essentials`, etc.) needs to run shell commands.
 - Post-installation environment variable setup.
-- File operations, log checking, or any terminal action inside NeuroClaw.
+- File operations, log checking, or any terminal action inside NeuroRuntime.
 
 ## Complementary / Related Skills
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
 ## Reference
 
-Custom core skill designed for NeuroClaw to provide safe, tmux-based shell execution while solving the dependency and long-running command issues from the MedicalClaw evaluation.
+Custom core skill designed for NeuroRuntime to provide safe, tmux-based shell execution while solving the dependency and long-running command issues from the MedicalClaw evaluation.
 
 ---
 Created At: 2026-03-19 20:00 HKT  

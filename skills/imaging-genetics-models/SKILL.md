@@ -39,7 +39,7 @@ pip install numpy pandas scipy scikit-learn statsmodels joblib
 ```
 
 For genome-wide command-line analyses, install PLINK2 separately and execute
-the generated command through NeuroClaw's audited shell workflow.
+the generated command through NeuroRuntime's audited shell workflow.
 
 ---
 

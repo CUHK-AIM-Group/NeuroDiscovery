@@ -11,7 +11,7 @@ dependencies:
 # Run Models Skill (Model Entry Layer)
 
 ## Overview
-`run_models` is the NeuroClaw entry skill for model-level inference workflows.
+`run_models` is the NeuroRuntime entry skill for model-level inference workflows.
 
 This skill is responsible for:
 - Maintaining a model registry (name, paper, source code, input/output, doc file path)
@@ -65,7 +65,7 @@ Do not retrain a frozen model or launch an additional study just to fill a repor
 | BNT | Kan et al., 2022, *BrainNetworkTransformer* | https://github.com/Wayfear/BrainNetworkTransformer | fMRI ROI FC matrix (dense [N, N], no PyG) | Phenotype prediction (classification/regression) + attention weights + DEC cluster assignments | `skills/bnt/SKILL.md` |
 | BrainNetCNN | Kawahara et al., 2017, *BrainNetCNN* | https://github.com/jeremykawahara/brainnetcnn | Dense ROI connectivity matrix [N, N] | Phenotype classification/regression with E2E, E2N, and N2G convolutions | `skills/brainnetcnn/SKILL.md` |
 | FM-APP | He et al., 2024, *FM-APP: Foundation model for any phenotype prediction via fMRI to sMRI knowledge transfer* | https://github.com/ZhibinHe/FM-APP | fMRI ROI features + sMRI features | Phenotype prediction (any-phenotype setting) | `skills/fm_app/SKILL.md` |
-| NeuroStorm | NeuroClaw model entry for storm-related phenotype prediction workflows | see `skills/neurostorm/SKILL.md` | Multi-modal neuroimaging features as specified in the model doc | Phenotype prediction / downstream inference as specified in the model doc | `skills/neurostorm/SKILL.md` |
+| NeuroStorm | NeuroRuntime model entry for storm-related phenotype prediction workflows | see `skills/neurostorm/SKILL.md` | Multi-modal neuroimaging features as specified in the model doc | Phenotype prediction / downstream inference as specified in the model doc | `skills/neurostorm/SKILL.md` |
 | GLM | Classical first-level and second-level task-fMRI general linear model | Nilearn / SPM-style implementation route | Preprocessed task fMRI, events, optional confounds, and optional subject-level contrast maps for group inference | Task activation contrasts, group z maps, and statistical inference outputs | `skills/glm/SKILL.md` |
 | ICA | Classical resting-state network decomposition method | Nilearn decomposition implementation route | Preprocessed resting-state fMRI, optional mask, optional confounds | Intrinsic connectivity component maps, subject time series, optional connectomes | `skills/ica/SKILL.md` |
 | DictLearning | Classical sparse resting-state network decomposition method | Nilearn decomposition implementation route | Preprocessed resting-state fMRI, optional mask, optional confounds | Sparse component maps, subject time series, optional connectomes | `skills/dictlearning/SKILL.md` |
@@ -74,14 +74,14 @@ Do not retrain a frozen model or launch an additional study just to fill a repor
 | Hierarchical | Classical hierarchical brain parcellation method for neuroimaging | Nilearn / clustering-based parcellation route | Preprocessed feature maps or image lists, optional mask, requested parcel count | Parcel labels, cluster summaries, optional dendrogram outputs | `skills/hierarchical/SKILL.md` |
 | Filtering | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Denoised BOLD, cleaned time series, optional QC summaries | `skills/filtering/SKILL.md` |
 | Detrending | Classical signal denoising method for neuroimaging time series | Nilearn / preprocessing route | Preprocessed BOLD image or time series, TR, optional confounds, optional mask | Cleaned BOLD, cleaned time series, optional QC summaries | `skills/detrending/SKILL.md` |
-| Statistical ML | OLS, logistic/Ridge/Elastic Net, SVM/SVR, XGBoost, MixedLM | NeuroClaw unified tabular trainer | Subject-level tabular/ROI features | Fold-local predictions, inference, metrics | `skills/statistical-ml/SKILL.md` |
-| Subject Subtyping | K-means, GMM, spectral, NMF, consensus, autoencoder | NeuroClaw subtyping trainer | Subject-level feature matrix | Subtype labels, embeddings, stability metrics | `skills/subject-subtyping/SKILL.md` |
-| Survival Models | Cox, RSF, DeepSurv, XGBoost survival | NeuroClaw censor-aware trainer | Features, duration, event | Risk scores, concordance | `skills/survival-models/SKILL.md` |
-| Causal Treatment | Meta-learners, DR, causal forest, TARNet, DragonNet | NeuroClaw cross-fitted causal trainer | Features, treatment, outcome | CATE, treatment policy, policy value | `skills/causal-treatment-models/SKILL.md` |
-| Temporal Models | LSTM, GRU, TCN, Transformer | NeuroClaw PyTorch trainer | Subject sequences | Classification/regression predictions | `skills/temporal-models/SKILL.md` |
-| Imaging Genetics | GWAS/PRS, PLS, CCA | PLINK2 + NeuroClaw matrix trainer | Genotype and imaging phenotype | Associations and latent scores | `skills/imaging-genetics-models/SKILL.md` |
-| CNN3D | Compact residual 3D CNN | NeuroClaw PyTorch trainer | Subject volumes | Predictions and checkpoints | `skills/cnn3d/SKILL.md` |
-| CPM | Connectome Predictive Modeling | NeuroClaw CPM trainer | FC matrices/vectors and labels | Fold-local predictions and selected-network models | `skills/cpm/SKILL.md` |
+| Statistical ML | OLS, logistic/Ridge/Elastic Net, SVM/SVR, XGBoost, MixedLM | NeuroRuntime unified tabular trainer | Subject-level tabular/ROI features | Fold-local predictions, inference, metrics | `skills/statistical-ml/SKILL.md` |
+| Subject Subtyping | K-means, GMM, spectral, NMF, consensus, autoencoder | NeuroRuntime subtyping trainer | Subject-level feature matrix | Subtype labels, embeddings, stability metrics | `skills/subject-subtyping/SKILL.md` |
+| Survival Models | Cox, RSF, DeepSurv, XGBoost survival | NeuroRuntime censor-aware trainer | Features, duration, event | Risk scores, concordance | `skills/survival-models/SKILL.md` |
+| Causal Treatment | Meta-learners, DR, causal forest, TARNet, DragonNet | NeuroRuntime cross-fitted causal trainer | Features, treatment, outcome | CATE, treatment policy, policy value | `skills/causal-treatment-models/SKILL.md` |
+| Temporal Models | LSTM, GRU, TCN, Transformer | NeuroRuntime PyTorch trainer | Subject sequences | Classification/regression predictions | `skills/temporal-models/SKILL.md` |
+| Imaging Genetics | GWAS/PRS, PLS, CCA | PLINK2 + NeuroRuntime matrix trainer | Genotype and imaging phenotype | Associations and latent scores | `skills/imaging-genetics-models/SKILL.md` |
+| CNN3D | Compact residual 3D CNN | NeuroRuntime PyTorch trainer | Subject volumes | Predictions and checkpoints | `skills/cnn3d/SKILL.md` |
+| CPM | Connectome Predictive Modeling | NeuroRuntime CPM trainer | FC matrices/vectors and labels | Fold-local predictions and selected-network models | `skills/cpm/SKILL.md` |
 | KG Link Prediction | ComplEx, R-GCN, GraphSAGE, GAT | NeuroOracle/PyG | Knowledge-graph triples | Triple scores and embeddings | `skills/kg-link-prediction/SKILL.md` |
 
 ## Scientific Workflow Registry

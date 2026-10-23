@@ -18,9 +18,9 @@ complementary_skills:
 
 ## Overview
 
-`oasis-skill` is the NeuroClaw orchestration skill for the **OASIS (Open Access Series of Imaging Studies)** dataset, founded by the Knight Alzheimer Disease Research Center at Washington University.
+`oasis-skill` is the NeuroRuntime orchestration skill for the **OASIS (Open Access Series of Imaging Studies)** dataset, founded by the Knight Alzheimer Disease Research Center at Washington University.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills via `claw-shell`.

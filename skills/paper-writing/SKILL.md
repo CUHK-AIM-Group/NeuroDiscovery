@@ -1,6 +1,6 @@
 ---
 name: paper-writing
-description: "Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create LaTeX paper', 'write research paper from IDEA METHOD EXPERIMENT', or any request to transform IDEA.md + METHOD.md + EXPERIMENT.md into a typeset-ready manuscript. This skill is the **mandatory interface-layer writer** in NeuroClaw: it strictly follows the hierarchical manuscript drafting and iterative refinement process (section 4.4 + provided flowchart), never generates the full paper in one shot, saves every intermediate step as a separate file, and produces either clean plain-text or LaTeX output."
+description: "Use this skill whenever the user wants to generate a full academic paper draft from existing research materials. Triggers include: 'write paper', 'generate manuscript', 'draft paper', 'paper-writing', 'hierarchical drafting', 'manuscript composer', 'create LaTeX paper', 'write research paper from IDEA METHOD EXPERIMENT', or any request to transform IDEA.md + METHOD.md + EXPERIMENT.md into a typeset-ready manuscript. This skill is the **mandatory interface-layer writer** in NeuroRuntime: it strictly follows the hierarchical manuscript drafting and iterative refinement process (section 4.4 + provided flowchart), never generates the full paper in one shot, saves every intermediate step as a separate file, and produces either clean plain-text or LaTeX output."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: interface
 skill_type: workflow
@@ -9,7 +9,7 @@ dependencies: []
 # Paper Writing
 
 ## Overview
-This skill implements the exact **Hierarchical Manuscript Drafting and Iterative Refinement** process described in section 4.4 of the NeuroClaw architecture and the accompanying flowchart.
+This skill implements the exact **Hierarchical Manuscript Drafting and Iterative Refinement** process described in section 4.4 of the NeuroRuntime architecture and the accompanying flowchart.
 
 It acts as the Manuscript Composer within an end-to-end multi-agent framework:
 - Reads the latest versions of **IDEA.md**, **METHOD.md**, and **EXPERIMENT.md** from the current workspace (continuously updated by the related skills research-idea, method-design, and experiment-controller).
@@ -133,7 +133,7 @@ When writing the Data Availability statement, use the templates in [`scripts/dat
 - [`nature-paper2ppt`](https://github.com/Yuan1z0825/nature-skills/tree/main/nature-paper2ppt) → paper-to-PPTX conversion for journal club presentations
 
 ## Reference
-Hierarchical Manuscript Drafting and Iterative Refinement (section 4.4 of NeuroClaw architecture).  
+Hierarchical Manuscript Drafting and Iterative Refinement (section 4.4 of NeuroRuntime architecture).
 Flowchart: multi-agent section generation → ethics review → iterative optimization → narrative writing → de-AI polishing → logic/continuity/length/reference checks → LaTeX repair → final draft.
 
 Integrated writing standards from [nature-skills](https://github.com/Yuan1z0825/nature-skills) by Yuan Yizhe (MIT License):  

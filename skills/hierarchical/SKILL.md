@@ -23,7 +23,7 @@ Hierarchical clustering is a classical non-deep-learning method for data-driven 
 - Primary input: preprocessed neuroimaging features, optional mask, optional similarity or connectivity representation
 - Primary output: parcel label map, cluster summaries, optional dendrogram outputs
 
-In NeuroClaw, this document is model-level guidance for Hierarchical-clustering-based brain parcellation workflows rather than supervised prediction.
+In NeuroRuntime, this document is model-level guidance for Hierarchical-clustering-based brain parcellation workflows rather than supervised prediction.
 
 Upstream preparation should usually be delegated to:
 - `fmri-skill` for rs-fMRI or task-fMRI feature preparation when parcellation is function-driven

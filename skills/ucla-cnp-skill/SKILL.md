@@ -17,9 +17,9 @@ complementary_skills:
 
 ## Overview
 
-`ucla-cnp-skill` is the NeuroClaw orchestration skill for the **UCLA CNP (Consortium for Neuropsychiatric Phenomics)** dataset, led by Russell Poldrack and colleagues at UCLA.
+`ucla-cnp-skill` is the NeuroRuntime orchestration skill for the **UCLA CNP (Consortium for Neuropsychiatric Phenomics)** dataset, led by Russell Poldrack and colleagues at UCLA.
 
-It strictly follows the NeuroClaw hierarchical design principles:
+It strictly follows the NeuroRuntime hierarchical design principles:
 - This skill **only describes WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code or concrete commands**.
 - All concrete execution is delegated to existing base/tool skills via `claw-shell`.

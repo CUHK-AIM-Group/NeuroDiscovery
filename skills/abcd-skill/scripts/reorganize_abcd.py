@@ -125,7 +125,7 @@ def write_dataset_description(bids_root: Path, release_version: str = "5.1") -> 
         "DatasetType": "raw",
         "GeneratedBy": [
             {
-                "Name": "NeuroClaw abcd-skill",
+                "Name": "NeuroRuntime abcd-skill",
                 "Description": "ABCD raw data reorganized to BIDS structure",
                 "Version": "1.0.0",
             }

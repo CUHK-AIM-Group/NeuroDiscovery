@@ -13,11 +13,11 @@ dependencies:
 
 ## Overview
 
-`ukb-skill` is the NeuroClaw **analysis-layer** skill for **brain-focused UK Biobank downstream research**.
+`ukb-skill` is the NeuroRuntime **analysis-layer** skill for **brain-focused UK Biobank downstream research**.
 
 This skill is designed for users who already have local UK Biobank tables, derived phenotype tables, or neuroimaging-derived feature matrices and want to run downstream statistical or machine learning analyses.
 
-It follows the NeuroClaw hierarchical design principles:
+It follows the NeuroRuntime hierarchical design principles:
 - This skill describes **WHAT needs to be analyzed** and **which existing skill should handle each part**.
 - It contains **no RAP download workflow** and **no cloud export instructions**.
 - It contains **no direct implementation code** and **no direct shell commands**.
@@ -212,7 +212,7 @@ When this skill is triggered, the response should:
 2. State that the skill assumes local data is already available and does not cover downloading.
 3. List the minimum required columns or files.
 4. Provide a numbered execution plan.
-5. State which NeuroClaw skills will be delegated to.
+5. State which NeuroRuntime skills will be delegated to.
 6. Wait for confirmation before execution.
 
 ---
@@ -303,7 +303,7 @@ Features:
 
 Companion scripts adapted from [UKBAnalytica_v2](https://github.com/Hinna0818/UKBAnalytica_v2) by Nan He (Southern Medical University). SKILL.md analysis design narrowed to brain-focused UK Biobank research.
 
-Custom NeuroClaw skill.
+Custom NeuroRuntime skill.
 
 Created At: 2026-04-20 15:47 HKT
 Last Updated At: 2026-05-06 15:12 HKT

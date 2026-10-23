@@ -19,7 +19,7 @@ matrix and the target is categorical or continuous.
 
 - Paper: Kawahara et al., 2017, *BrainNetCNN: Convolutional neural networks for
   brain networks; towards predicting neurodevelopment*
-- NeuroClaw implementation: `models/brainnetcnn/`
+- NeuroRuntime implementation: `models/brainnetcnn/`
 - Input: dense FC matrix `[subjects, ROI, ROI]`
 - Tasks: classification and regression
 - Data adapter: shared with BNT

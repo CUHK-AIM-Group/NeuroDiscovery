@@ -22,7 +22,7 @@ Filtering is a classical non-deep-learning method for neuroimaging signal denois
 - Primary input: preprocessed fMRI time series, optional confounds, optional mask, TR
 - Primary output: denoised BOLD image, cleaned ROI time series, optional QC summaries
 
-In NeuroClaw, this document is model-level guidance for temporal filtering workflows rather than predictive modeling.
+In NeuroRuntime, this document is model-level guidance for temporal filtering workflows rather than predictive modeling.
 
 Upstream preparation should usually be delegated to:
 - `fmri-skill` for modality-level denoising planning and validated preprocessing sequences

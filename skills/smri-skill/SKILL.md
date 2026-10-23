@@ -1,6 +1,6 @@
 ---
 name: smri-skill
-description: "Use this skill whenever the user wants to process structural MRI (sMRI) such as T1w/T2w/FLAIR for brain extraction, bias correction, tissue segmentation (GM/WM/CSF), registration to MNI, cortical/subcortical parcellation, cortical thickness/volumetry (FreeSurfer), HCP-style structural preprocessing, WMH lesion segmentation (FLAIR+T1), ROI-wise feature extraction, or converting results back to DICOM. This is the NeuroClaw modality-layer interface: it plans WHAT to do and delegates execution to tool skills."
+description: "Use this skill whenever the user wants to process structural MRI (sMRI) such as T1w/T2w/FLAIR for brain extraction, bias correction, tissue segmentation (GM/WM/CSF), registration to MNI, cortical/subcortical parcellation, cortical thickness/volumetry (FreeSurfer), HCP-style structural preprocessing, WMH lesion segmentation (FLAIR+T1), ROI-wise feature extraction, or converting results back to DICOM. This is the NeuroRuntime modality-layer interface: it plans WHAT to do and delegates execution to tool skills."
 license: MIT License (NeuroClaw custom skill – freely modifiable within the project)
 layer: subagent
 skill_type: modality
@@ -17,9 +17,9 @@ complementary_skills:
 # sMRI Skill (Modality Layer)
 
 ## Overview
-`smri-skill` is the NeuroClaw **modality-layer** interface skill responsible for **structural MRI** processing (T1w/T2w/FLAIR) and feature extraction.
+`smri-skill` is the NeuroRuntime **modality-layer** interface skill responsible for **structural MRI** processing (T1w/T2w/FLAIR) and feature extraction.
 
-It strictly follows NeuroClaw hierarchical design principles:
+It strictly follows NeuroRuntime hierarchical design principles:
 - This skill describes **WHAT needs to be done** and **which tool skill to delegate to**.
 - It contains **no implementation code** and **no direct shell commands**.
 - All concrete execution is delegated to tool skills and routed through `claw-shell`.
@@ -175,7 +175,7 @@ All outputs must be written under `./smri_output/`:
 
 ---
 
-## Safety / Execution Rules (NeuroClaw)
+## Safety / Execution Rules (NeuroRuntime)
 - **No execution without explicit user confirmation** of the full numbered plan.
 - All execution must be routed through `claw-shell`.
 - If a required dependency is missing, delegate installation planning to `dependency-planner`.
@@ -294,7 +294,7 @@ if report.failed:
 ---
 
 ## Reference
-Aligned with NeuroClaw modality-skill pattern (see `fmri-skill`, `dwi-skill`, `eeg-skill`).
+Aligned with NeuroRuntime modality-skill pattern (see `fmri-skill`, `dwi-skill`, `eeg-skill`).
 Common sMRI toolchain: FSL (fast structural utilities), FreeSurfer (surface morphometry), HCP pipelines (HCP-grade structural processing), fMRIPrep (BIDS anatomical derivatives), Nilearn (ROI features on NIfTI maps), MARS-WMH (WMH segmentation via Docker).
 
 Created At: 2026-03-26 01:09 HKT

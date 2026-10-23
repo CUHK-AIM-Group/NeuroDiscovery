@@ -31,7 +31,7 @@ def _jsonable(value: Any) -> Any:
 
 
 class RunArtifacts:
-    """Write the common NeuroClaw model-run contract."""
+    """Write the common NeuroRuntime model-run contract."""
 
     def __init__(self, output_dir: str | Path, config: dict[str, Any]):
         self.output_dir = Path(output_dir)

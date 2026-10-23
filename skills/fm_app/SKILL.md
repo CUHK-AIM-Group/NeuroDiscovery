@@ -20,7 +20,7 @@ FM-APP is a multi-stage framework for phenotype prediction via fMRI to sMRI know
 - Additional input: sMRI ROI structural features (required in Stage 2)
 - Primary output: multi-phenotype prediction and zero-shot phenotype reconstruction
 
-In NeuroClaw, this is model-level guidance. Upstream preparation should be delegated to:
+In NeuroRuntime, this is model-level guidance. Upstream preparation should be delegated to:
 - `fmri-skill` for fMRI preprocessing and ROI extraction
 - `smri-skill` for structural ROI feature extraction
 - `hcpya-skill` if HCP Young Adult download/orchestration is needed
@@ -162,7 +162,7 @@ FM-APP/
 
 ---
 
-## NeuroClaw Delegation Rules
+## NeuroRuntime Delegation Rules
 
 - fMRI preprocessing and ROI extraction: `fmri-skill`
 - sMRI feature extraction: `smri-skill`

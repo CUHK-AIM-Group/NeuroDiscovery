@@ -1,4 +1,5 @@
 # Runtime & build
+/dev/
 __pycache__/
 .pytest_cache/
 *.egg-info/
@@ -6,8 +7,6 @@ __pycache__/
 *.pyo
 *.log
 logs/
-output/
-deploy/
 benchmark-env/
 .venv-academic-mcp/
 hcp_env/
@@ -36,7 +35,6 @@ UKBAnalytica_v2-main
 
 # Experiment runs (harmonization pilots, model training outputs, etc.)
 runs/
-outputs/
 models/checkpoints/
 models/**/checkpoints/
 models/benchmark_results/
@@ -66,7 +64,6 @@ node_modules/
 .neurodiscovery/autoresearch/
 neuroclaw_environment.json
 installer/install_log.txt
-/scripts/
 !skills/*/scripts/
 skills/brain_gnn/scripts/*.json
 skills/brain_gnn/scripts/_*
@@ -91,7 +88,6 @@ neurodiscovery.tex
 neuroclaw.tex
 
 # Local paper-reading and manuscript build artifacts
-papers/
 tex/
 tex/_preview*/
 tex/.render_check/
@@ -130,10 +126,22 @@ chunk*.txt
 make1977.py
 
 # Local plans, handoffs and session records (keep outside public commits)
-/AGENTS.md
 *[Pp][Ll][Aa][Nn]*.md
 *[Hh][Aa][Nn][Dd][Oo][Ff][Ff]*.md
 *[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*.md
+*[Tt][Oo][Dd][Oo]*.md
+*[Bb][Aa][Cc][Kk][Ll][Oo][Gg]*.md
+*[Pp][Ll][Aa][Nn]*.rst
+*[Pp][Ll][Aa][Nn]*.txt
+*[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*.rst
+*[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*.txt
+*[Tt][Oo][Dd][Oo]*.rst
+*[Tt][Oo][Dd][Oo]*.txt
+*[Bb][Aa][Cc][Kk][Ll][Oo][Gg]*.rst
+*[Bb][Aa][Cc][Kk][Ll][Oo][Gg]*.txt
+/docs/*[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*.json
+/docs/*[Tt][Oo][Dd][Oo]*.json
+/docs/*[Bb][Aa][Cc][Kk][Ll][Oo][Gg]*.json
 /KG_*.md
 /KG_*.html
 /CASE1_*.md

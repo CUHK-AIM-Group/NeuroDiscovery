@@ -1,1 +1,1 @@
-# NeuroClaw core engine package
+# NeuroRuntime core engine package
